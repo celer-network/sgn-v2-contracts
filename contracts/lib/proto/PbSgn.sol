@@ -6,183 +6,184 @@ pragma solidity >=0.5.0;
 import "./Pb.sol";
 
 library PbSgn {
-    using Pb for Pb.Buffer;  // so we can call Pb funcs on Buffer obj
+    using Pb for Pb.Buffer; // so we can call Pb funcs on Buffer obj
 
     struct MultiSigMessage {
-        bytes msg;   // tag: 1
-        bytes[] sigs;   // tag: 2
+        bytes msg; // tag: 1
+        bytes[] sigs; // tag: 2
     } // end struct MultiSigMessage
 
     function decMultiSigMessage(bytes memory raw) internal pure returns (MultiSigMessage memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint[] memory cnts = buf.cntTags(2);
+        uint256[] memory cnts = buf.cntTags(2);
         m.sigs = new bytes[](cnts[2]);
-        cnts[2] = 0;  // reset counter for later use
-        
-        uint tag;
+        cnts[2] = 0; // reset counter for later use
+
+        uint256 tag;
         Pb.WireType wire;
         while (buf.hasMore()) {
             (tag, wire) = buf.decKey();
-            if (false) {} // solidity has no switch/case
+            if (false) {}
+            // solidity has no switch/case
             else if (tag == 1) {
                 m.msg = bytes(buf.decBytes());
-            }
-            else if (tag == 2) {
+            } else if (tag == 2) {
                 m.sigs[cnts[2]] = bytes(buf.decBytes());
                 cnts[2]++;
-            }
-            else { buf.skipValue(wire); } // skip value of unknown tag
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
         }
     } // end decoder MultiSigMessage
 
     struct PenaltyRequest {
-        bytes penalty;   // tag: 1
-        bytes[] sigs;   // tag: 2
+        bytes penalty; // tag: 1
+        bytes[] sigs; // tag: 2
     } // end struct PenaltyRequest
 
     function decPenaltyRequest(bytes memory raw) internal pure returns (PenaltyRequest memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint[] memory cnts = buf.cntTags(2);
+        uint256[] memory cnts = buf.cntTags(2);
         m.sigs = new bytes[](cnts[2]);
-        cnts[2] = 0;  // reset counter for later use
-        
-        uint tag;
+        cnts[2] = 0; // reset counter for later use
+
+        uint256 tag;
         Pb.WireType wire;
         while (buf.hasMore()) {
             (tag, wire) = buf.decKey();
-            if (false) {} // solidity has no switch/case
+            if (false) {}
+            // solidity has no switch/case
             else if (tag == 1) {
                 m.penalty = bytes(buf.decBytes());
-            }
-            else if (tag == 2) {
+            } else if (tag == 2) {
                 m.sigs[cnts[2]] = bytes(buf.decBytes());
                 cnts[2]++;
-            }
-            else { buf.skipValue(wire); } // skip value of unknown tag
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
         }
     } // end decoder PenaltyRequest
 
     struct RewardRequest {
-        bytes reward;   // tag: 1
-        bytes[] sigs;   // tag: 2
+        bytes reward; // tag: 1
+        bytes[] sigs; // tag: 2
     } // end struct RewardRequest
 
     function decRewardRequest(bytes memory raw) internal pure returns (RewardRequest memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint[] memory cnts = buf.cntTags(2);
+        uint256[] memory cnts = buf.cntTags(2);
         m.sigs = new bytes[](cnts[2]);
-        cnts[2] = 0;  // reset counter for later use
-        
-        uint tag;
+        cnts[2] = 0; // reset counter for later use
+
+        uint256 tag;
         Pb.WireType wire;
         while (buf.hasMore()) {
             (tag, wire) = buf.decKey();
-            if (false) {} // solidity has no switch/case
+            if (false) {}
+            // solidity has no switch/case
             else if (tag == 1) {
                 m.reward = bytes(buf.decBytes());
-            }
-            else if (tag == 2) {
+            } else if (tag == 2) {
                 m.sigs[cnts[2]] = bytes(buf.decBytes());
                 cnts[2]++;
-            }
-            else { buf.skipValue(wire); } // skip value of unknown tag
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
         }
     } // end decoder RewardRequest
 
     struct Penalty {
-        uint64 nonce;   // tag: 1
-        uint64 expireTime;   // tag: 2
-        address validatorAddress;   // tag: 3
-        AccountAmtPair[] penalizedDelegators;   // tag: 4
-        AccountAmtPair[] beneficiaries;   // tag: 5
+        uint64 nonce; // tag: 1
+        uint64 expireTime; // tag: 2
+        address validatorAddress; // tag: 3
+        AccountAmtPair[] penalizedDelegators; // tag: 4
+        AccountAmtPair[] beneficiaries; // tag: 5
     } // end struct Penalty
 
     function decPenalty(bytes memory raw) internal pure returns (Penalty memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint[] memory cnts = buf.cntTags(5);
+        uint256[] memory cnts = buf.cntTags(5);
         m.penalizedDelegators = new AccountAmtPair[](cnts[4]);
-        cnts[4] = 0;  // reset counter for later use
+        cnts[4] = 0; // reset counter for later use
         m.beneficiaries = new AccountAmtPair[](cnts[5]);
-        cnts[5] = 0;  // reset counter for later use
-        
-        uint tag;
+        cnts[5] = 0; // reset counter for later use
+
+        uint256 tag;
         Pb.WireType wire;
         while (buf.hasMore()) {
             (tag, wire) = buf.decKey();
-            if (false) {} // solidity has no switch/case
+            if (false) {}
+            // solidity has no switch/case
             else if (tag == 1) {
                 m.nonce = uint64(buf.decVarint());
-            }
-            else if (tag == 2) {
+            } else if (tag == 2) {
                 m.expireTime = uint64(buf.decVarint());
-            }
-            else if (tag == 3) {
+            } else if (tag == 3) {
                 m.validatorAddress = Pb._address(buf.decBytes());
-            }
-            else if (tag == 4) {
+            } else if (tag == 4) {
                 m.penalizedDelegators[cnts[4]] = decAccountAmtPair(buf.decBytes());
                 cnts[4]++;
-            }
-            else if (tag == 5) {
+            } else if (tag == 5) {
                 m.beneficiaries[cnts[5]] = decAccountAmtPair(buf.decBytes());
                 cnts[5]++;
-            }
-            else { buf.skipValue(wire); } // skip value of unknown tag
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
         }
     } // end decoder Penalty
 
     struct AccountAmtPair {
-        address account;   // tag: 1
-        uint256 amt;   // tag: 2
+        address account; // tag: 1
+        uint256 amt; // tag: 2
     } // end struct AccountAmtPair
 
     function decAccountAmtPair(bytes memory raw) internal pure returns (AccountAmtPair memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint tag;
+        uint256 tag;
         Pb.WireType wire;
         while (buf.hasMore()) {
             (tag, wire) = buf.decKey();
-            if (false) {} // solidity has no switch/case
+            if (false) {}
+            // solidity has no switch/case
             else if (tag == 1) {
                 m.account = Pb._address(buf.decBytes());
-            }
-            else if (tag == 2) {
+            } else if (tag == 2) {
                 m.amt = Pb._uint256(buf.decBytes());
-            }
-            else { buf.skipValue(wire); } // skip value of unknown tag
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
         }
     } // end decoder AccountAmtPair
 
     struct Reward {
-        address receiver;   // tag: 1
-        uint256 cumulativeMiningReward;   // tag: 2
-        uint256 cumulativeServiceReward;   // tag: 3
+        address receiver; // tag: 1
+        uint256 cumulativeMiningReward; // tag: 2
+        uint256 cumulativeServiceReward; // tag: 3
     } // end struct Reward
 
     function decReward(bytes memory raw) internal pure returns (Reward memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint tag;
+        uint256 tag;
         Pb.WireType wire;
         while (buf.hasMore()) {
             (tag, wire) = buf.decKey();
-            if (false) {} // solidity has no switch/case
+            if (false) {}
+            // solidity has no switch/case
             else if (tag == 1) {
                 m.receiver = Pb._address(buf.decBytes());
-            }
-            else if (tag == 2) {
+            } else if (tag == 2) {
                 m.cumulativeMiningReward = Pb._uint256(buf.decBytes());
-            }
-            else if (tag == 3) {
+            } else if (tag == 3) {
                 m.cumulativeServiceReward = Pb._uint256(buf.decBytes());
-            }
-            else { buf.skipValue(wire); } // skip value of unknown tag
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
         }
     } // end decoder Reward
-
 }

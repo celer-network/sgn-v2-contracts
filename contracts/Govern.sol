@@ -15,11 +15,29 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Govern is Ownable {
     using SafeERC20 for IERC20;
 
-    enum ParamNames { ProposalDeposit, GovernVoteTimeout, SlashTimeout, MinValidatorNum, MaxValidatorNum, MinStakeInPool, AdvanceNoticePeriod, MigrationTime }
+    enum ParamNames {
+        ProposalDeposit,
+        GovernVoteTimeout,
+        SlashTimeout,
+        MinValidatorNum,
+        MaxValidatorNum,
+        MinStakeInPool,
+        AdvanceNoticePeriod,
+        MigrationTime
+    }
 
-    enum ProposalStatus { Uninitiated, Voting, Closed }
+    enum ProposalStatus {
+        Uninitiated,
+        Voting,
+        Closed
+    }
 
-    enum VoteType { Unvoted, Yes, No, Abstain }
+    enum VoteType {
+        Unvoted,
+        Yes,
+        No,
+        Abstain
+    }
 
     struct ParamProposal {
         address proposer;
@@ -51,17 +69,31 @@ contract Govern is Ownable {
     mapping(uint256 => SidechainProposal) public sidechainProposals;
     uint256 public nextSidechainProposalId;
 
-    event CreateParamProposal(uint proposalId, address proposer, uint deposit, uint voteDeadline, uint record, uint newValue);
+    event CreateParamProposal(
+        uint256 proposalId,
+        address proposer,
+        uint256 deposit,
+        uint256 voteDeadline,
+        uint256 record,
+        uint256 newValue
+    );
 
-    event VoteParam(uint proposalId, address voter, VoteType voteType);
+    event VoteParam(uint256 proposalId, address voter, VoteType voteType);
 
-    event ConfirmParamProposal(uint proposalId, bool passed, uint record, uint newValue);
+    event ConfirmParamProposal(uint256 proposalId, bool passed, uint256 record, uint256 newValue);
 
-    event CreateSidechainProposal(uint proposalId, address proposer, uint deposit, uint voteDeadline, address sidechainAddr, bool registered);
+    event CreateSidechainProposal(
+        uint256 proposalId,
+        address proposer,
+        uint256 deposit,
+        uint256 voteDeadline,
+        address sidechainAddr,
+        bool registered
+    );
 
-    event VoteSidechain(uint proposalId, address voter, VoteType voteType);
+    event VoteSidechain(uint256 proposalId, address voter, VoteType voteType);
 
-    event ConfirmSidechainProposal(uint proposalId, bool passed, address sidechainAddr, bool registered);
+    event ConfirmSidechainProposal(uint256 proposalId, bool passed, address sidechainAddr, bool registered);
 
     /**
      * @notice Govern constructor
@@ -112,11 +144,7 @@ contract Govern is Ownable {
      * @param _voter the voter address
      * @return the vote type of the given voter on the given parameter proposal
      */
-    function getParamProposalVote(uint256 _proposalId, address _voter)
-        public
-        view
-        returns (VoteType)
-    {
+    function getParamProposalVote(uint256 _proposalId, address _voter) public view returns (VoteType) {
         return paramProposals[_proposalId].votes[_voter];
     }
 
@@ -135,11 +163,7 @@ contract Govern is Ownable {
      * @param _voter the voter address
      * @return the vote type of the given voter on the given sidechain proposal
      */
-    function getSidechainProposalVote(uint256 _proposalId, address _voter)
-        public
-        view
-        returns (VoteType)
-    {
+    function getSidechainProposalVote(uint256 _proposalId, address _voter) public view returns (VoteType) {
         return sidechainProposals[_proposalId].votes[_voter];
     }
 
@@ -164,14 +188,7 @@ contract Govern is Ownable {
 
         celerToken.safeTransferFrom(msgSender, address(this), deposit);
 
-        emit CreateParamProposal(
-            nextParamProposalId - 1,
-            msgSender,
-            deposit,
-            p.voteDeadline,
-            _record,
-            _value
-        );
+        emit CreateParamProposal(nextParamProposalId - 1, msgSender, deposit, p.voteDeadline, _record, _value);
     }
 
     /**
@@ -187,9 +204,9 @@ contract Govern is Ownable {
         VoteType _vote
     ) internal {
         ParamProposal storage p = paramProposals[_proposalId];
-        require(p.status == ProposalStatus.Voting, 'Invalid proposal status');
-        require(block.number < p.voteDeadline, 'Vote deadline reached');
-        require(p.votes[_voter] == VoteType.Unvoted, 'Voter has voted');
+        require(p.status == ProposalStatus.Voting, "Invalid proposal status");
+        require(block.number < p.voteDeadline, "Vote deadline reached");
+        require(p.votes[_voter] == VoteType.Unvoted, "Voter has voted");
 
         p.votes[_voter] = _vote;
 
@@ -204,8 +221,8 @@ contract Govern is Ownable {
      */
     function internalConfirmParamProposal(uint256 _proposalId, bool _passed) internal {
         ParamProposal storage p = paramProposals[_proposalId];
-        require(p.status == ProposalStatus.Voting, 'Invalid proposal status');
-        require(block.number >= p.voteDeadline, 'Vote deadline not reached');
+        require(p.status == ProposalStatus.Voting, "Invalid proposal status");
+        require(block.number >= p.voteDeadline, "Vote deadline not reached");
 
         p.status = ProposalStatus.Closed;
         if (_passed) {
@@ -269,9 +286,9 @@ contract Govern is Ownable {
         VoteType _vote
     ) internal {
         SidechainProposal storage p = sidechainProposals[_proposalId];
-        require(p.status == ProposalStatus.Voting, 'Invalid proposal status');
-        require(block.number < p.voteDeadline, 'Vote deadline reached');
-        require(p.votes[_voter] == VoteType.Unvoted, 'Voter has voted');
+        require(p.status == ProposalStatus.Voting, "Invalid proposal status");
+        require(block.number < p.voteDeadline, "Vote deadline reached");
+        require(p.votes[_voter] == VoteType.Unvoted, "Voter has voted");
 
         p.votes[_voter] = _vote;
 
@@ -286,8 +303,8 @@ contract Govern is Ownable {
      */
     function internalConfirmSidechainProposal(uint256 _proposalId, bool _passed) internal {
         SidechainProposal storage p = sidechainProposals[_proposalId];
-        require(p.status == ProposalStatus.Voting, 'Invalid proposal status');
-        require(block.number >= p.voteDeadline, 'Vote deadline not reached');
+        require(p.status == ProposalStatus.Voting, "Invalid proposal status");
+        require(block.number >= p.voteDeadline, "Vote deadline not reached");
 
         p.status = ProposalStatus.Closed;
         if (_passed) {

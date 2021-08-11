@@ -13,5 +13,9 @@ library DPoSCommon {
     // Unbonding: transitional status from Bonded to Unbonded. Candidate has lost the right of
     //   validator but is still responsible for any misbehaviour done during being validator.
     //   Delegators should wait until candidate's unbondTime to freely withdraw stakes.
-    enum CandidateStatus { Unbonded, Bonded, Unbonding }
+    enum CandidateStatus {
+        Unbonded,
+        Bonded,
+        Unbonding
+    }
 }

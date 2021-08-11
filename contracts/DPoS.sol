@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import './lib/proto/PbSgn.sol';
-import './lib/DPoSCommon.sol';
-import './Govern.sol';
+import "./lib/proto/PbSgn.sol";
+import "./lib/DPoSCommon.sol";
+import "./Govern.sol";
 
 /**
  * @title A DPoS contract shared by every sidechain
@@ -19,8 +19,14 @@ contract DPoS is Ownable, Pausable, Govern {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
-    enum MathOperation { Add, Sub }
-    enum ValidatorChangeType { Add, Removal }
+    enum MathOperation {
+        Add,
+        Sub
+    }
+    enum ValidatorChangeType {
+        Add,
+        Removal
+    }
 
     struct WithdrawIntent {
         uint256 amount;
@@ -70,42 +76,57 @@ contract DPoS is Ownable, Pausable, Govern {
     bool public enableWhitelist;
     bool public enableSlash;
 
-    event InitializeCandidate(address indexed candidate, uint minSelfStake, uint commissionRate, uint rateLockEndTime);
+    event InitializeCandidate(
+        address indexed candidate,
+        uint256 minSelfStake,
+        uint256 commissionRate,
+        uint256 rateLockEndTime
+    );
 
-    event CommissionRateAnnouncement(address indexed candidate, uint announcedRate, uint announcedLockEndTime);
+    event CommissionRateAnnouncement(address indexed candidate, uint256 announcedRate, uint256 announcedLockEndTime);
 
-    event UpdateCommissionRate(address indexed candidate, uint newRate, uint newLockEndTime);
+    event UpdateCommissionRate(address indexed candidate, uint256 newRate, uint256 newLockEndTime);
 
-    event UpdateMinSelfStake(address indexed candidate, uint minSelfStake);
+    event UpdateMinSelfStake(address indexed candidate, uint256 minSelfStake);
 
-    event Delegate(address indexed delegator, address indexed candidate, uint newStake, uint stakingPool);
+    event Delegate(address indexed delegator, address indexed candidate, uint256 newStake, uint256 stakingPool);
 
     event ValidatorChange(address indexed ethAddr, ValidatorChangeType indexed changeType);
 
-    event WithdrawFromUnbondedCandidate(address indexed delegator, address indexed candidate, uint amount);
+    event WithdrawFromUnbondedCandidate(address indexed delegator, address indexed candidate, uint256 amount);
 
-    event IntendWithdraw(address indexed delegator, address indexed candidate, uint withdrawAmount, uint proposedTime);
+    event IntendWithdraw(
+        address indexed delegator,
+        address indexed candidate,
+        uint256 withdrawAmount,
+        uint256 proposedTime
+    );
 
-    event ConfirmWithdraw(address indexed delegator, address indexed candidate, uint amount);
+    event ConfirmWithdraw(address indexed delegator, address indexed candidate, uint256 amount);
 
-    event Slash(address indexed validator, address indexed delegator, uint amount);
+    event Slash(address indexed validator, address indexed delegator, uint256 amount);
 
-    event UpdateDelegatedStake(address indexed delegator, address indexed candidate, uint delegatorStake, uint candidatePool);
+    event UpdateDelegatedStake(
+        address indexed delegator,
+        address indexed candidate,
+        uint256 delegatorStake,
+        uint256 candidatePool
+    );
 
-    event Compensate(address indexed indemnitee, uint amount);
+    event Compensate(address indexed indemnitee, uint256 amount);
 
     event CandidateUnbonded(address indexed candidate);
 
-    event RedeemMiningReward(address indexed receiver, uint reward, uint miningPool);
+    event RedeemMiningReward(address indexed receiver, uint256 reward, uint256 miningPool);
 
-    event MiningPoolContribution(address indexed contributor, uint contribution, uint miningPoolSize);
+    event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 miningPoolSize);
 
     /**
      * @notice Throws if given address is zero address
      * @param _addr address to be checked
      */
     modifier onlyNonZeroAddr(address _addr) {
-        require(_addr != address(0), '0 address');
+        require(_addr != address(0), "0 address");
         _;
     }
 
@@ -114,7 +135,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @dev Need to be checked before DPoS's operations
      */
     modifier onlyValidDPoS() {
-        require(isValidDPoS(), 'DPoS is not valid');
+        require(isValidDPoS(), "DPoS is not valid");
         _;
     }
 
@@ -122,7 +143,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @notice Throws if msg.sender is not a registered sidechain
      */
     modifier onlyRegisteredSidechains() {
-        require(isSidechainRegistered(msg.sender), 'Sidechain not registered');
+        require(isSidechainRegistered(msg.sender), "Sidechain not registered");
         _;
     }
 
@@ -146,7 +167,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @notice Throws if contract in migrating state
      */
     modifier onlyNotMigrating() {
-        require(!isMigrating(), 'contract migrating');
+        require(!isMigrating(), "contract migrating");
         _;
     }
 
@@ -154,7 +175,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @notice Throws if amount is smaller than minimum
      */
     modifier minAmount(uint256 _amount, uint256 _min) {
-        require(_amount >= _min, 'Amount is smaller than minimum requirement');
+        require(_amount >= _min, "Amount is smaller than minimum requirement");
         _;
     }
 
@@ -162,7 +183,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @notice Throws if sender is not validator
      */
     modifier onlyValidator() {
-        require(isValidator(msg.sender), 'msg sender is not a validator');
+        require(isValidator(msg.sender), "msg sender is not a validator");
         _;
     }
 
@@ -170,7 +191,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @notice Throws if candidate is not initialized
      */
     modifier isCandidateInitialized() {
-        require(candidateProfiles[msg.sender].initialized, 'Candidate is not initialized');
+        require(candidateProfiles[msg.sender].initialized, "Candidate is not initialized");
         _;
     }
 
@@ -325,7 +346,7 @@ contract DPoS is Ownable, Pausable, Govern {
         onlyRegisteredSidechains
     {
         uint256 newReward = _cumulativeReward - redeemedMiningReward[_receiver];
-        require(miningPool >= newReward, 'Mining pool is smaller than new reward');
+        require(miningPool >= newReward, "Mining pool is smaller than new reward");
 
         redeemedMiningReward[_receiver] = _cumulativeReward;
         miningPool = miningPool - newReward;
@@ -347,8 +368,8 @@ contract DPoS is Ownable, Pausable, Govern {
         uint256 _rateLockEndTime
     ) external whenNotPaused onlyWhitelist {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(!candidate.initialized, 'Candidate is initialized');
-        require(_commissionRate <= COMMISSION_RATE_BASE, 'Invalid commission rate');
+        require(!candidate.initialized, "Candidate is initialized");
+        require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
 
         candidate.initialized = true;
         candidate.minSelfStake = _minSelfStake;
@@ -365,12 +386,9 @@ contract DPoS is Ownable, Pausable, Govern {
      * @param _newRate new commission rate
      * @param _newLockEndTime new lock end time
      */
-    function nonIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime)
-        external
-        isCandidateInitialized
-    {
+    function nonIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime) external isCandidateInitialized {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(_newRate <= candidate.commissionRate, 'Invalid new rate');
+        require(_newRate <= candidate.commissionRate, "Invalid new rate");
 
         _updateCommissionRate(candidate, _newRate, _newLockEndTime);
     }
@@ -380,12 +398,9 @@ contract DPoS is Ownable, Pausable, Govern {
      * @param _newRate new commission rate
      * @param _newLockEndTime new lock end time
      */
-    function announceIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime)
-        external
-        isCandidateInitialized
-    {
+    function announceIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime) external isCandidateInitialized {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(candidate.commissionRate < _newRate, 'Invalid new rate');
+        require(candidate.commissionRate < _newRate, "Invalid new rate");
 
         candidate.announcedRate = _newRate;
         candidate.announcedLockEndTime = _newLockEndTime;
@@ -400,10 +415,8 @@ contract DPoS is Ownable, Pausable, Govern {
     function confirmIncreaseCommissionRate() external isCandidateInitialized {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
         require(
-            block.number >
-                candidate.announcementTime + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod)
-                ),
-            'Still in notice period'
+            block.number > candidate.announcementTime + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod)),
+            "Still in notice period"
         );
 
         _updateCommissionRate(candidate, candidate.announcedRate, candidate.announcedLockEndTime);
@@ -420,10 +433,8 @@ contract DPoS is Ownable, Pausable, Govern {
     function updateMinSelfStake(uint256 _minSelfStake) external isCandidateInitialized {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
         if (_minSelfStake < candidate.minSelfStake) {
-            require(candidate.status != DPoSCommon.CandidateStatus.Bonded, 'Candidate is bonded');
-            candidate.earliestBondTime = block.number +
-                getUIntValue(uint256(ParamNames.AdvanceNoticePeriod)
-            );
+            require(candidate.status != DPoSCommon.CandidateStatus.Bonded, "Candidate is bonded");
+            candidate.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
         }
         candidate.minSelfStake = _minSelfStake;
         emit UpdateMinSelfStake(msg.sender, _minSelfStake);
@@ -441,7 +452,7 @@ contract DPoS is Ownable, Pausable, Govern {
         minAmount(_amount, 1 * DECIMALS_MULTIPLIER) // minimal amount per delegate operation is 1 CELR
     {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.initialized, 'Candidate is not initialized');
+        require(candidate.initialized, "Candidate is not initialized");
 
         address msgSender = msg.sender;
         _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Add);
@@ -460,30 +471,27 @@ contract DPoS is Ownable, Pausable, Govern {
         require(
             candidate.status == DPoSCommon.CandidateStatus.Unbonded ||
                 candidate.status == DPoSCommon.CandidateStatus.Unbonding,
-            'Invalid candidate status'
+            "Invalid candidate status"
         );
-        require(block.number >= candidate.earliestBondTime, 'Not earliest bond time yet');
-        require(
-            candidate.stakingPool >= getUIntValue(uint256(ParamNames.MinStakeInPool)),
-            'Insufficient staking pool'
-        );
+        require(block.number >= candidate.earliestBondTime, "Not earliest bond time yet");
+        require(candidate.stakingPool >= getUIntValue(uint256(ParamNames.MinStakeInPool)), "Insufficient staking pool");
         require(
             candidate.delegatorProfiles[msgSender].delegatedStake >= candidate.minSelfStake,
-            'Not enough self stake'
+            "Not enough self stake"
         );
 
         uint256 minStakingPoolIndex;
         uint256 minStakingPool = candidateProfiles[validatorSet[0]].stakingPool;
-        require(validatorSet[0] != msgSender, 'Already in validator set');
+        require(validatorSet[0] != msgSender, "Already in validator set");
         uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
         for (uint256 i = 1; i < maxValidatorNum; i++) {
-            require(validatorSet[i] != msgSender, 'Already in validator set');
+            require(validatorSet[i] != msgSender, "Already in validator set");
             if (candidateProfiles[validatorSet[i]].stakingPool < minStakingPool) {
                 minStakingPoolIndex = i;
                 minStakingPool = candidateProfiles[validatorSet[i]].stakingPool;
             }
         }
-        require(candidate.stakingPool > minStakingPool, 'Not larger than smallest pool');
+        require(candidate.stakingPool > minStakingPool, "Not larger than smallest pool");
 
         address removedValidator = validatorSet[minStakingPoolIndex];
         if (removedValidator != address(0)) {
@@ -498,11 +506,8 @@ contract DPoS is Ownable, Pausable, Govern {
      */
     function confirmUnbondedCandidate(address _candidateAddr) external {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(
-            candidate.status == DPoSCommon.CandidateStatus.Unbonding,
-            'Candidate not unbonding'
-        );
-        require(block.number >= candidate.unbondTime, 'Unbonding time not reached');
+        require(candidate.status == DPoSCommon.CandidateStatus.Unbonding, "Candidate not unbonding");
+        require(block.number >= candidate.unbondTime, "Unbonding time not reached");
 
         candidate.status = DPoSCommon.CandidateStatus.Unbonded;
         delete candidate.unbondTime;
@@ -521,10 +526,7 @@ contract DPoS is Ownable, Pausable, Govern {
         minAmount(_amount, 1 * DECIMALS_MULTIPLIER)
     {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(
-            candidate.status == DPoSCommon.CandidateStatus.Unbonded || isMigrating(),
-            'invalid status'
-        );
+        require(candidate.status == DPoSCommon.CandidateStatus.Unbonded || isMigrating(), "invalid status");
 
         address msgSender = msg.sender;
         _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Sub);
@@ -568,19 +570,14 @@ contract DPoS is Ownable, Pausable, Govern {
      */
     function confirmWithdraw(address _candidateAddr) external onlyNonZeroAddr(_candidateAddr) {
         address msgSender = msg.sender;
-        Delegator storage delegator = candidateProfiles[_candidateAddr]
-            .delegatorProfiles[msgSender];
+        Delegator storage delegator = candidateProfiles[_candidateAddr].delegatorProfiles[msgSender];
 
         uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
-        bool isUnbonded = candidateProfiles[_candidateAddr].status ==
-            DPoSCommon.CandidateStatus.Unbonded;
+        bool isUnbonded = candidateProfiles[_candidateAddr].status == DPoSCommon.CandidateStatus.Unbonded;
         // for all undelegated withdraw intents
         uint256 i;
         for (i = delegator.intentStartIndex; i < delegator.intentEndIndex; i++) {
-            if (
-                isUnbonded ||
-                delegator.withdrawIntents[i].proposedTime + slashTimeout <= block.number
-            ) {
+            if (isUnbonded || delegator.withdrawIntents[i].proposedTime + slashTimeout <= block.number) {
                 // withdraw intent is undelegated when the validator becomes unbonded or
                 // the slashTimeout for the withdraw intent is up.
                 delete delegator.withdrawIntents[i];
@@ -592,8 +589,7 @@ contract DPoS is Ownable, Pausable, Govern {
         // for all undelegating withdraw intents
         uint256 undelegatingStakeWithoutSlash;
         for (; i < delegator.intentEndIndex; i++) {
-            undelegatingStakeWithoutSlash = undelegatingStakeWithoutSlash +
-                delegator.withdrawIntents[i].amount;
+            undelegatingStakeWithoutSlash = undelegatingStakeWithoutSlash + delegator.withdrawIntents[i].amount;
         }
 
         uint256 withdrawAmt;
@@ -611,34 +607,25 @@ contract DPoS is Ownable, Pausable, Govern {
      * @notice Slash a validator and its delegators
      * @param _penaltyRequest penalty request bytes coded in protobuf
      */
-    function slash(bytes calldata _penaltyRequest)
-        external
-        whenNotPaused
-        onlyValidDPoS
-        onlyNotMigrating
-    {
-        require(enableSlash, 'Slash is disabled');
+    function slash(bytes calldata _penaltyRequest) external whenNotPaused onlyValidDPoS onlyNotMigrating {
+        require(enableSlash, "Slash is disabled");
         PbSgn.PenaltyRequest memory penaltyRequest = PbSgn.decPenaltyRequest(_penaltyRequest);
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(penaltyRequest.penalty);
 
         ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
-        require(validator.status != DPoSCommon.CandidateStatus.Unbonded, 'Validator unbounded');
+        require(validator.status != DPoSCommon.CandidateStatus.Unbonded, "Validator unbounded");
 
         bytes32 h = keccak256(penaltyRequest.penalty);
-        require(_checkValidatorSigs(h, penaltyRequest.sigs), 'Validator sigs verification failed');
-        require(block.number < penalty.expireTime, 'Penalty expired');
-        require(!usedPenaltyNonce[penalty.nonce], 'Used penalty nonce');
+        require(_checkValidatorSigs(h, penaltyRequest.sigs), "Validator sigs verification failed");
+        require(block.number < penalty.expireTime, "Penalty expired");
+        require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
         usedPenaltyNonce[penalty.nonce] = true;
 
         uint256 totalSubAmt;
         for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {
             PbSgn.AccountAmtPair memory penalizedDelegator = penalty.penalizedDelegators[i];
             totalSubAmt = totalSubAmt + penalizedDelegator.amt;
-            emit Slash(
-                penalty.validatorAddress,
-                penalizedDelegator.account,
-                penalizedDelegator.amt
-            );
+            emit Slash(penalty.validatorAddress, penalizedDelegator.account, penalizedDelegator.amt);
 
             Delegator storage delegator = validator.delegatorProfiles[penalizedDelegator.account];
             uint256 _amt;
@@ -677,7 +664,7 @@ contract DPoS is Ownable, Pausable, Govern {
             }
         }
 
-        require(totalSubAmt == totalAddAmt, 'Amount not match');
+        require(totalSubAmt == totalAddAmt, "Amount not match");
     }
 
     /**
@@ -686,11 +673,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @param _request a multi-signed message bytes coded in protobuf
      * @return passed the validation or not
      */
-    function validateMultiSigMessage(bytes calldata _request)
-        external
-        onlyRegisteredSidechains
-        returns (bool)
-    {
+    function validateMultiSigMessage(bytes calldata _request) external onlyRegisteredSidechains returns (bool) {
         PbSgn.MultiSigMessage memory request = PbSgn.decMultiSigMessage(_request);
         bytes32 h = keccak256(request.msg);
 
@@ -790,9 +773,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @return DPoS is valid or not
      */
     function isValidDPoS() public view returns (bool) {
-        return
-            block.number >= dposGoLiveTime &&
-            getValidatorNum() >= getUIntValue(uint256(ParamNames.MinValidatorNum));
+        return block.number >= dposGoLiveTime && getValidatorNum() >= getUIntValue(uint256(ParamNames.MinValidatorNum));
     }
 
     /**
@@ -834,7 +815,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @return the minimum amount
      */
     function getMinQuorumStakingPool() public view returns (uint256) {
-        return getTotalValidatorStakingPool() * 2 / 3 + 1;
+        return (getTotalValidatorStakingPool() * 2) / 3 + 1;
     }
 
     /**
@@ -846,8 +827,7 @@ contract DPoS is Ownable, Pausable, Govern {
 
         uint256 totalValidatorStakingPool;
         for (uint256 i = 0; i < maxValidatorNum; i++) {
-            totalValidatorStakingPool = totalValidatorStakingPool +
-                candidateProfiles[validatorSet[i]].stakingPool;
+            totalValidatorStakingPool = totalValidatorStakingPool + candidateProfiles[validatorSet[i]].stakingPool;
         }
 
         return totalValidatorStakingPool;
@@ -864,13 +844,13 @@ contract DPoS is Ownable, Pausable, Govern {
         uint256 _newRate,
         uint256 _newLockEndTime
     ) private {
-        require(_newRate <= COMMISSION_RATE_BASE, 'Invalid new rate');
-        require(_newLockEndTime >= block.number, 'Outdated new lock end time');
+        require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
+        require(_newLockEndTime >= block.number, "Outdated new lock end time");
 
         if (_newRate <= _candidate.commissionRate) {
-            require(_newLockEndTime >= _candidate.rateLockEndTime, 'Invalid new lock end time');
+            require(_newLockEndTime >= _candidate.rateLockEndTime, "Invalid new lock end time");
         } else {
-            require(block.number > _candidate.rateLockEndTime, 'Commission rate is locked');
+            require(block.number > _candidate.rateLockEndTime, "Commission rate is locked");
         }
 
         _candidate.commissionRate = _newRate;
@@ -904,12 +884,7 @@ contract DPoS is Ownable, Pausable, Govern {
         } else {
             assert(false);
         }
-        emit UpdateDelegatedStake(
-            _delegatorAddr,
-            _candidateAddr,
-            delegator.delegatedStake,
-            _candidate.stakingPool
-        );
+        emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
     /**
@@ -918,7 +893,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @param _setIndex the index to put the validator
      */
     function _addValidator(address _validatorAddr, uint256 _setIndex) private {
-        require(validatorSet[_setIndex] == address(0), 'Validator slot occupied');
+        require(validatorSet[_setIndex] == address(0), "Validator slot occupied");
 
         validatorSet[_setIndex] = _validatorAddr;
         candidateProfiles[_validatorAddr].status = DPoSCommon.CandidateStatus.Bonded;
@@ -938,9 +913,7 @@ contract DPoS is Ownable, Pausable, Govern {
 
         delete validatorSet[_setIndex];
         candidateProfiles[removedValidator].status = DPoSCommon.CandidateStatus.Unbonding;
-        candidateProfiles[removedValidator].unbondTime = block.number + 
-            getUIntValue(uint256(ParamNames.SlashTimeout)
-        );
+        candidateProfiles[removedValidator].unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
         emit ValidatorChange(removedValidator, ValidatorChangeType.Removal);
     }
 
@@ -1012,6 +985,6 @@ contract DPoS is Ownable, Pausable, Govern {
             }
         }
 
-        revert('No such a validator');
+        revert("No such a validator");
     }
 }

@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import './DPoS.sol';
-import './lib/proto/PbSgn.sol';
-import './lib/DPoSCommon.sol';
+import "./DPoS.sol";
+import "./lib/proto/PbSgn.sol";
+import "./lib/DPoSCommon.sol";
 
 /**
  * @title Sidechain contract of State Guardian Network
@@ -23,18 +23,27 @@ contract SGN is Ownable, Pausable {
     mapping(address => uint256) public redeemedServiceReward;
     mapping(address => bytes) public sidechainAddrMap;
 
-    event UpdateSidechainAddr(address indexed candidate, bytes indexed oldSidechainAddr, bytes indexed newSidechainAddr);
+    event UpdateSidechainAddr(
+        address indexed candidate,
+        bytes indexed oldSidechainAddr,
+        bytes indexed newSidechainAddr
+    );
 
-    event AddSubscriptionBalance(address indexed consumer, uint amount);
+    event AddSubscriptionBalance(address indexed consumer, uint256 amount);
 
-    event RedeemReward(address indexed receiver, uint cumulativeMiningReward, uint serviceReward, uint servicePool);
+    event RedeemReward(
+        address indexed receiver,
+        uint256 cumulativeMiningReward,
+        uint256 serviceReward,
+        uint256 servicePool
+    );
 
     /**
      * @notice Throws if SGN sidechain is not valid
      * @dev Check this before sidechain's operations
      */
     modifier onlyValidSidechain() {
-        require(dPoSContract.isValidDPoS(), 'DPoS is not valid');
+        require(dPoSContract.isValidDPoS(), "DPoS is not valid");
         _;
     }
 
@@ -68,11 +77,8 @@ contract SGN is Ownable, Pausable {
         address msgSender = msg.sender;
 
         (bool initialized, , , uint256 status, , , ) = dPoSContract.getCandidateInfo(msgSender);
-        require(
-            status == uint256(DPoSCommon.CandidateStatus.Unbonded),
-            'msg.sender is not unbonded'
-        );
-        require(initialized, 'Candidate is not initialized');
+        require(status == uint256(DPoSCommon.CandidateStatus.Unbonded), "msg.sender is not unbonded");
+        require(initialized, "Candidate is not initialized");
 
         bytes memory oldSidechainAddr = sidechainAddrMap[msgSender];
         sidechainAddrMap[msgSender] = _sidechainAddr;
@@ -102,28 +108,19 @@ contract SGN is Ownable, Pausable {
      * @param _rewardRequest reward request bytes coded in protobuf
      */
     function redeemReward(bytes calldata _rewardRequest) external whenNotPaused onlyValidSidechain {
-        require(
-            dPoSContract.validateMultiSigMessage(_rewardRequest),
-            'Validator sigs verification failed'
-        );
+        require(dPoSContract.validateMultiSigMessage(_rewardRequest), "Validator sigs verification failed");
 
         PbSgn.RewardRequest memory rewardRequest = PbSgn.decRewardRequest(_rewardRequest);
         PbSgn.Reward memory reward = PbSgn.decReward(rewardRequest.reward);
-        uint256 newServiceReward = reward.cumulativeServiceReward - 
-            redeemedServiceReward[reward.receiver];
+        uint256 newServiceReward = reward.cumulativeServiceReward - redeemedServiceReward[reward.receiver];
 
-        require(servicePool >= newServiceReward, 'Service pool is smaller than new service reward');
+        require(servicePool >= newServiceReward, "Service pool is smaller than new service reward");
         redeemedServiceReward[reward.receiver] = reward.cumulativeServiceReward;
         servicePool = servicePool - newServiceReward;
 
         dPoSContract.redeemMiningReward(reward.receiver, reward.cumulativeMiningReward);
         celerToken.safeTransfer(reward.receiver, newServiceReward);
 
-        emit RedeemReward(
-            reward.receiver,
-            reward.cumulativeMiningReward,
-            newServiceReward,
-            servicePool
-        );
+        emit RedeemReward(reward.receiver, reward.cumulativeMiningReward, newServiceReward, servicePool);
     }
 }

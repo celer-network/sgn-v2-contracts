@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./lib/proto/PbSgn.sol";
+import "./libraries/PbSgn.sol";
 import "./Govern.sol";
 
 /**
@@ -231,6 +231,8 @@ contract DPoS is Ownable, Pausable, Govern {
         require(candidateProfiles[msg.sender].initialized, "Candidate is not initialized");
         _;
     }
+
+    receive() external payable {}
 
     /*********************************
      * External and Public Functions *

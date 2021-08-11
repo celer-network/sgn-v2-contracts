@@ -675,8 +675,24 @@ contract DPoS is Ownable, Pausable, Govern {
     }
 
     /**
+     * @notice Called by the owner to pause contract
+     * @dev emergency use only
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Called by the owner to unpause contract
+     * @dev emergency use only
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
      * @notice Owner drains one type of tokens when the contract is paused
-     * @dev This is for emergency situations.
+     * @dev emergency use only
      * @param _amount drained token amount
      */
     function drainToken(uint256 _amount) external whenPaused onlyOwner {

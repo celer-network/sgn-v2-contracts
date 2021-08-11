@@ -3,7 +3,7 @@
 pragma solidity 0.8.6;
 
 abstract contract Whitelist {
-    mapping (address => bool) whitelist;
+    mapping(address => bool) whitelist;
     bool public whitelistEnabled;
 
     event WhitelistedAdded(address account);
@@ -17,7 +17,7 @@ abstract contract Whitelist {
     }
 
     function isWhitelisted(address account) public view virtual returns (bool) {
-        return  whitelist[account];
+        return whitelist[account];
     }
 
     function _enableWhitelist() internal virtual {

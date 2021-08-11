@@ -9,12 +9,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./libraries/PbSgn.sol";
 import "./Govern.sol";
+import "./Whitelist.sol";
 
 /**
  * @title A DPoS contract shared by every sidechain
  * @notice This contract holds the basic logic of DPoS in Celer's coherent sidechain system
  */
-contract DPoS is Ownable, Pausable, Govern {
+contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 constant DECIMALS_MULTIPLIER = 10**18;
     uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
 
@@ -84,8 +85,7 @@ contract DPoS is Ownable, Pausable, Govern {
 
     uint256 public dposGoLiveTime; // used when bootstrapping initial validators
     uint256 public miningPool;
-    bool public enableWhitelist;
-    bool public enableSlash;
+    bool public slashEnabled;
 
     /* Events */
     event InitializeCandidate(
@@ -155,7 +155,7 @@ contract DPoS is Ownable, Pausable, Govern {
         )
     {
         dposGoLiveTime = block.number + _dposGoLiveTimeout;
-        enableSlash = true;
+        slashEnabled = true;
     }
 
     /**
@@ -181,22 +181,6 @@ contract DPoS is Ownable, Pausable, Govern {
      */
     modifier onlyRegisteredSidechains() {
         require(isSidechainRegistered(msg.sender), "Sidechain not registered");
-        _;
-    }
-
-    /**
-     * @notice Check if the sender is in the whitelist
-     */
-    modifier onlyWhitelist() {
-        if (enableWhitelist) {
-            // TODO: add back whitelist
-            /*
-            require(
-                isWhitelisted(msg.sender),
-                'WhitelistedRole: caller does not have the Whitelisted role'
-            );
-            */
-        }
         _;
     }
 
@@ -345,7 +329,7 @@ contract DPoS is Ownable, Pausable, Govern {
         uint256 _minSelfStake,
         uint256 _commissionRate,
         uint256 _rateLockEndTime
-    ) external whenNotPaused onlyWhitelist {
+    ) external whenNotPaused onlyWhitelisted {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
         require(!candidate.initialized, "Candidate is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
@@ -586,7 +570,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @param _penaltyRequest penalty request bytes coded in protobuf
      */
     function slash(bytes calldata _penaltyRequest) external whenNotPaused onlyValidDPoS onlyNotMigrating {
-        require(enableSlash, "Slash is disabled");
+        require(slashEnabled, "Slash is disabled");
         PbSgn.PenaltyRequest memory penaltyRequest = PbSgn.decPenaltyRequest(_penaltyRequest);
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(penaltyRequest.penalty);
 
@@ -659,19 +643,31 @@ contract DPoS is Ownable, Pausable, Govern {
     }
 
     /**
-     * @notice Update enableWhitelist
-     * @param _enable enable whitelist flag
+     * @notice Enable whitelist
      */
-    function updateEnableWhitelist(bool _enable) external onlyOwner {
-        enableWhitelist = _enable;
+    function enableWhitelist() external onlyOwner {
+        _enableWhitelist();
     }
 
     /**
-     * @notice Update enableSlash
-     * @param _enable enable slash flag
+     * @notice Disable whitelist
      */
-    function updateEnableSlash(bool _enable) external onlyOwner {
-        enableSlash = _enable;
+    function disableWhitelist() external onlyOwner {
+        _disableWhitelist();
+    }
+
+    /**
+     * @notice Enable slash
+     */
+    function enableSlash() external onlyOwner {
+        slashEnabled = true;
+    }
+
+    /**
+     * @notice Disable slash
+     */
+    function disableSlash() external onlyOwner {
+        slashEnabled = false;
     }
 
     /**

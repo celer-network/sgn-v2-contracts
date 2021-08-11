@@ -657,6 +657,20 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
+     * @notice Add an account to whitelist
+     */
+    function addWhitelisted(address account) external onlyOwner {
+        _addWhitelisted(account);
+    }
+
+    /**
+     * @notice Remove an account from whitelist
+     */
+    function removeWhitelisted(address account) external onlyOwner {
+        _removeWhitelisted(account);
+    }
+
+    /**
      * @notice Enable slash
      */
     function enableSlash() external onlyOwner {

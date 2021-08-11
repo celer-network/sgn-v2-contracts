@@ -8,29 +8,27 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./DPoS.sol";
 import "./lib/proto/PbSgn.sol";
-import "./lib/DPoSCommon.sol";
 
 /**
- * @title Sidechain contract of State Guardian Network
+ * @title Sidechain contract of SGN
  */
 contract SGN is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable celerToken;
-    DPoS public immutable dPoSContract;
+    IERC20 public immutable celr;
+    DPoS public immutable dpos;
     mapping(address => uint256) public subscriptionDeposits;
     uint256 public servicePool;
     mapping(address => uint256) public redeemedServiceReward;
     mapping(address => bytes) public sidechainAddrMap;
 
+    /* Events */
     event UpdateSidechainAddr(
         address indexed candidate,
         bytes indexed oldSidechainAddr,
         bytes indexed newSidechainAddr
     );
-
     event AddSubscriptionBalance(address indexed consumer, uint256 amount);
-
     event RedeemReward(
         address indexed receiver,
         uint256 cumulativeMiningReward,
@@ -39,32 +37,23 @@ contract SGN is Ownable, Pausable {
     );
 
     /**
+     * @notice SGN constructor
+     * @dev Need to deploy DPoS contract first before deploying SGN contract
+     * @param _celrAddress address of Celer Token Contract
+     * @param _dposAddress address of DPoS Contract
+     */
+    constructor(address _celrAddress, DPoS _dposAddress) {
+        celr = IERC20(_celrAddress);
+        dpos = _dposAddress;
+    }
+
+    /**
      * @notice Throws if SGN sidechain is not valid
      * @dev Check this before sidechain's operations
      */
     modifier onlyValidSidechain() {
-        require(dPoSContract.isValidDPoS(), "DPoS is not valid");
+        require(dpos.isValidDPoS(), "DPoS is not valid");
         _;
-    }
-
-    /**
-     * @notice SGN constructor
-     * @dev Need to deploy DPoS contract first before deploying SGN contract
-     * @param _celerTokenAddress address of Celer Token Contract
-     * @param _DPoS address of DPoS Contract
-     */
-    constructor(address _celerTokenAddress, DPoS _DPoS) {
-        celerToken = IERC20(_celerTokenAddress);
-        dPoSContract = _DPoS;
-    }
-
-    /**
-     * @notice Owner drains one type of tokens when the contract is paused
-     * @dev This is for emergency situations.
-     * @param _amount drained token amount
-     */
-    function drainToken(uint256 _amount) external whenPaused onlyOwner {
-        celerToken.safeTransfer(msg.sender, _amount);
     }
 
     /**
@@ -76,8 +65,8 @@ contract SGN is Ownable, Pausable {
     function updateSidechainAddr(bytes calldata _sidechainAddr) external {
         address msgSender = msg.sender;
 
-        (bool initialized, , , uint256 status, , , ) = dPoSContract.getCandidateInfo(msgSender);
-        require(status == uint256(DPoSCommon.CandidateStatus.Unbonded), "msg.sender is not unbonded");
+        (bool initialized, , , uint256 status, , , ) = dpos.getCandidateInfo(msgSender);
+        require(status == uint256(DPoS.CandidateStatus.Unbonded), "msg.sender is not unbonded");
         require(initialized, "Candidate is not initialized");
 
         bytes memory oldSidechainAddr = sidechainAddrMap[msgSender];
@@ -96,7 +85,7 @@ contract SGN is Ownable, Pausable {
         servicePool = servicePool + _amount;
         subscriptionDeposits[msgSender] = subscriptionDeposits[msgSender] + _amount;
 
-        celerToken.safeTransferFrom(msgSender, address(this), _amount);
+        celr.safeTransferFrom(msgSender, address(this), _amount);
 
         emit AddSubscriptionBalance(msgSender, _amount);
     }
@@ -108,7 +97,7 @@ contract SGN is Ownable, Pausable {
      * @param _rewardRequest reward request bytes coded in protobuf
      */
     function redeemReward(bytes calldata _rewardRequest) external whenNotPaused onlyValidSidechain {
-        require(dPoSContract.validateMultiSigMessage(_rewardRequest), "Validator sigs verification failed");
+        require(dpos.validateMultiSigMessage(_rewardRequest), "Validator sigs verification failed");
 
         PbSgn.RewardRequest memory rewardRequest = PbSgn.decRewardRequest(_rewardRequest);
         PbSgn.Reward memory reward = PbSgn.decReward(rewardRequest.reward);
@@ -118,9 +107,18 @@ contract SGN is Ownable, Pausable {
         redeemedServiceReward[reward.receiver] = reward.cumulativeServiceReward;
         servicePool = servicePool - newServiceReward;
 
-        dPoSContract.redeemMiningReward(reward.receiver, reward.cumulativeMiningReward);
-        celerToken.safeTransfer(reward.receiver, newServiceReward);
+        dpos.redeemMiningReward(reward.receiver, reward.cumulativeMiningReward);
+        celr.safeTransfer(reward.receiver, newServiceReward);
 
         emit RedeemReward(reward.receiver, reward.cumulativeMiningReward, newServiceReward, servicePool);
+    }
+
+    /**
+     * @notice Owner drains one type of tokens when the contract is paused
+     * @dev This is for emergency situations.
+     * @param _amount drained token amount
+     */
+    function drainToken(uint256 _amount) external whenPaused onlyOwner {
+        celr.safeTransfer(msg.sender, _amount);
     }
 }

@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./lib/proto/PbSgn.sol";
-import "./lib/DPoSCommon.sol";
 import "./Govern.sol";
 
 /**
@@ -16,16 +15,32 @@ import "./Govern.sol";
  * @notice This contract holds the basic logic of DPoS in Celer's coherent sidechain system
  */
 contract DPoS is Ownable, Pausable, Govern {
+    uint256 constant DECIMALS_MULTIPLIER = 10**18;
+    uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
+
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
+
+    // Unbonded: not a validator and not responsible for previous validator behaviors if any.
+    //   Delegators now are free to withdraw stakes (directly).
+    // Bonded: active validator. Delegators have to wait for slashTimeout to withdraw stakes.
+    // Unbonding: transitional status from Bonded to Unbonded. Candidate has lost the right of
+    //   validator but is still responsible for any misbehaviour done during being validator.
+    //   Delegators should wait until candidate's unbondTime to freely withdraw stakes.
+    enum CandidateStatus {
+        Unbonded,
+        Bonded,
+        Unbonding
+    }
+
+    enum ValidatorChangeType {
+        Add,
+        Removal
+    }
 
     enum MathOperation {
         Add,
         Sub
-    }
-    enum ValidatorChangeType {
-        Add,
-        Removal
     }
 
     struct WithdrawIntent {
@@ -47,7 +62,7 @@ contract DPoS is Ownable, Pausable, Govern {
         uint256 minSelfStake;
         uint256 stakingPool; // sum of all delegations to this candidate
         mapping(address => Delegator) delegatorProfiles;
-        DPoSCommon.CandidateStatus status;
+        CandidateStatus status;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
         uint256 rateLockEndTime; // must be monotonic increasing. Use block number
@@ -67,59 +82,81 @@ contract DPoS is Ownable, Pausable, Govern {
     mapping(address => ValidatorCandidate) private candidateProfiles;
     mapping(address => uint256) public redeemedMiningReward;
 
-    /********** Constants **********/
-    uint256 constant DECIMALS_MULTIPLIER = 10**18;
-    uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
-
     uint256 public dposGoLiveTime; // used when bootstrapping initial validators
     uint256 public miningPool;
     bool public enableWhitelist;
     bool public enableSlash;
 
+    /* Events */
     event InitializeCandidate(
         address indexed candidate,
         uint256 minSelfStake,
         uint256 commissionRate,
         uint256 rateLockEndTime
     );
-
     event CommissionRateAnnouncement(address indexed candidate, uint256 announcedRate, uint256 announcedLockEndTime);
-
     event UpdateCommissionRate(address indexed candidate, uint256 newRate, uint256 newLockEndTime);
-
     event UpdateMinSelfStake(address indexed candidate, uint256 minSelfStake);
-
     event Delegate(address indexed delegator, address indexed candidate, uint256 newStake, uint256 stakingPool);
-
     event ValidatorChange(address indexed ethAddr, ValidatorChangeType indexed changeType);
-
     event WithdrawFromUnbondedCandidate(address indexed delegator, address indexed candidate, uint256 amount);
-
     event IntendWithdraw(
         address indexed delegator,
         address indexed candidate,
         uint256 withdrawAmount,
         uint256 proposedTime
     );
-
     event ConfirmWithdraw(address indexed delegator, address indexed candidate, uint256 amount);
-
     event Slash(address indexed validator, address indexed delegator, uint256 amount);
-
     event UpdateDelegatedStake(
         address indexed delegator,
         address indexed candidate,
         uint256 delegatorStake,
         uint256 candidatePool
     );
-
     event Compensate(address indexed indemnitee, uint256 amount);
-
     event CandidateUnbonded(address indexed candidate);
-
     event RedeemMiningReward(address indexed receiver, uint256 reward, uint256 miningPool);
-
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 miningPoolSize);
+
+    /**
+     * @notice DPoS constructor
+     * @dev will initialize parent contract Govern first
+     * @param _celerTokenAddress address of Celer Token Contract
+     * @param _governProposalDeposit required deposit amount for a governance proposal
+     * @param _governVoteTimeout voting timeout for a governance proposal
+     * @param _slashTimeout the locking time for funds to be potentially slashed
+     * @param _minValidatorNum the minimum number of validators
+     * @param _maxValidatorNum the maximum number of validators
+     * @param _minStakeInPool the global minimum requirement of staking pool for each validator
+     * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
+     * @param _dposGoLiveTimeout the timeout for DPoS to go live after contract creation
+     */
+    constructor(
+        address _celerTokenAddress,
+        uint256 _governProposalDeposit,
+        uint256 _governVoteTimeout,
+        uint256 _slashTimeout,
+        uint256 _minValidatorNum,
+        uint256 _maxValidatorNum,
+        uint256 _minStakeInPool,
+        uint256 _advanceNoticePeriod,
+        uint256 _dposGoLiveTimeout
+    )
+        Govern(
+            _celerTokenAddress,
+            _governProposalDeposit,
+            _governVoteTimeout,
+            _slashTimeout,
+            _minValidatorNum,
+            _maxValidatorNum,
+            _minStakeInPool,
+            _advanceNoticePeriod
+        )
+    {
+        dposGoLiveTime = block.number + _dposGoLiveTimeout;
+        enableSlash = true;
+    }
 
     /**
      * @notice Throws if given address is zero address
@@ -195,69 +232,9 @@ contract DPoS is Ownable, Pausable, Govern {
         _;
     }
 
-    /**
-     * @notice DPoS constructor
-     * @dev will initialize parent contract Govern first
-     * @param _celerTokenAddress address of Celer Token Contract
-     * @param _governProposalDeposit required deposit amount for a governance proposal
-     * @param _governVoteTimeout voting timeout for a governance proposal
-     * @param _slashTimeout the locking time for funds to be potentially slashed
-     * @param _minValidatorNum the minimum number of validators
-     * @param _maxValidatorNum the maximum number of validators
-     * @param _minStakeInPool the global minimum requirement of staking pool for each validator
-     * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
-     * @param _dposGoLiveTimeout the timeout for DPoS to go live after contract creation
-     */
-    constructor(
-        address _celerTokenAddress,
-        uint256 _governProposalDeposit,
-        uint256 _governVoteTimeout,
-        uint256 _slashTimeout,
-        uint256 _minValidatorNum,
-        uint256 _maxValidatorNum,
-        uint256 _minStakeInPool,
-        uint256 _advanceNoticePeriod,
-        uint256 _dposGoLiveTimeout
-    )
-        Govern(
-            _celerTokenAddress,
-            _governProposalDeposit,
-            _governVoteTimeout,
-            _slashTimeout,
-            _minValidatorNum,
-            _maxValidatorNum,
-            _minStakeInPool,
-            _advanceNoticePeriod
-        )
-    {
-        dposGoLiveTime = block.number + _dposGoLiveTimeout;
-        enableSlash = true;
-    }
-
-    /**
-     * @notice Update enableWhitelist
-     * @param _enable enable whitelist flag
-     */
-    function updateEnableWhitelist(bool _enable) external onlyOwner {
-        enableWhitelist = _enable;
-    }
-
-    /**
-     * @notice Update enableSlash
-     * @param _enable enable slash flag
-     */
-    function updateEnableSlash(bool _enable) external onlyOwner {
-        enableSlash = _enable;
-    }
-
-    /**
-     * @notice Owner drains one type of tokens when the contract is paused
-     * @dev This is for emergency situations.
-     * @param _amount drained token amount
-     */
-    function drainToken(uint256 _amount) external whenPaused onlyOwner {
-        celerToken.safeTransfer(msg.sender, _amount);
-    }
+    /*********************************
+     * External and Public Functions *
+     *********************************/
 
     /**
      * @notice Vote for a parameter proposal with a specific type of vote
@@ -433,7 +410,7 @@ contract DPoS is Ownable, Pausable, Govern {
     function updateMinSelfStake(uint256 _minSelfStake) external isCandidateInitialized {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
         if (_minSelfStake < candidate.minSelfStake) {
-            require(candidate.status != DPoSCommon.CandidateStatus.Bonded, "Candidate is bonded");
+            require(candidate.status != CandidateStatus.Bonded, "Candidate is bonded");
             candidate.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
         }
         candidate.minSelfStake = _minSelfStake;
@@ -469,8 +446,7 @@ contract DPoS is Ownable, Pausable, Govern {
         address msgSender = msg.sender;
         ValidatorCandidate storage candidate = candidateProfiles[msgSender];
         require(
-            candidate.status == DPoSCommon.CandidateStatus.Unbonded ||
-                candidate.status == DPoSCommon.CandidateStatus.Unbonding,
+            candidate.status == CandidateStatus.Unbonded || candidate.status == CandidateStatus.Unbonding,
             "Invalid candidate status"
         );
         require(block.number >= candidate.earliestBondTime, "Not earliest bond time yet");
@@ -506,10 +482,10 @@ contract DPoS is Ownable, Pausable, Govern {
      */
     function confirmUnbondedCandidate(address _candidateAddr) external {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.status == DPoSCommon.CandidateStatus.Unbonding, "Candidate not unbonding");
+        require(candidate.status == CandidateStatus.Unbonding, "Candidate not unbonding");
         require(block.number >= candidate.unbondTime, "Unbonding time not reached");
 
-        candidate.status = DPoSCommon.CandidateStatus.Unbonded;
+        candidate.status = CandidateStatus.Unbonded;
         delete candidate.unbondTime;
         emit CandidateUnbonded(_candidateAddr);
     }
@@ -526,7 +502,7 @@ contract DPoS is Ownable, Pausable, Govern {
         minAmount(_amount, 1 * DECIMALS_MULTIPLIER)
     {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.status == DPoSCommon.CandidateStatus.Unbonded || isMigrating(), "invalid status");
+        require(candidate.status == CandidateStatus.Unbonded || isMigrating(), "invalid status");
 
         address msgSender = msg.sender;
         _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Sub);
@@ -573,7 +549,7 @@ contract DPoS is Ownable, Pausable, Govern {
         Delegator storage delegator = candidateProfiles[_candidateAddr].delegatorProfiles[msgSender];
 
         uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
-        bool isUnbonded = candidateProfiles[_candidateAddr].status == DPoSCommon.CandidateStatus.Unbonded;
+        bool isUnbonded = candidateProfiles[_candidateAddr].status == CandidateStatus.Unbonded;
         // for all undelegated withdraw intents
         uint256 i;
         for (i = delegator.intentStartIndex; i < delegator.intentEndIndex; i++) {
@@ -613,7 +589,7 @@ contract DPoS is Ownable, Pausable, Govern {
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(penaltyRequest.penalty);
 
         ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
-        require(validator.status != DPoSCommon.CandidateStatus.Unbonded, "Validator unbounded");
+        require(validator.status != CandidateStatus.Unbonded, "Validator unbounded");
 
         bytes32 h = keccak256(penaltyRequest.penalty);
         require(_checkValidatorSigs(h, penaltyRequest.sigs), "Validator sigs verification failed");
@@ -678,6 +654,31 @@ contract DPoS is Ownable, Pausable, Govern {
         bytes32 h = keccak256(request.msg);
 
         return _checkValidatorSigs(h, request.sigs);
+    }
+
+    /**
+     * @notice Update enableWhitelist
+     * @param _enable enable whitelist flag
+     */
+    function updateEnableWhitelist(bool _enable) external onlyOwner {
+        enableWhitelist = _enable;
+    }
+
+    /**
+     * @notice Update enableSlash
+     * @param _enable enable slash flag
+     */
+    function updateEnableSlash(bool _enable) external onlyOwner {
+        enableSlash = _enable;
+    }
+
+    /**
+     * @notice Owner drains one type of tokens when the contract is paused
+     * @dev This is for emergency situations.
+     * @param _amount drained token amount
+     */
+    function drainToken(uint256 _amount) external whenPaused onlyOwner {
+        celerToken.safeTransfer(msg.sender, _amount);
     }
 
     /**
@@ -782,7 +783,7 @@ contract DPoS is Ownable, Pausable, Govern {
      * @return the given address is a validator or not
      */
     function isValidator(address _addr) public view returns (bool) {
-        return candidateProfiles[_addr].status == DPoSCommon.CandidateStatus.Bonded;
+        return candidateProfiles[_addr].status == CandidateStatus.Bonded;
     }
 
     /**
@@ -832,6 +833,10 @@ contract DPoS is Ownable, Pausable, Govern {
 
         return totalValidatorStakingPool;
     }
+
+    /*********************
+     * Private Functions *
+     *********************/
 
     /**
      * @notice Update the commission rate of a candidate
@@ -896,7 +901,7 @@ contract DPoS is Ownable, Pausable, Govern {
         require(validatorSet[_setIndex] == address(0), "Validator slot occupied");
 
         validatorSet[_setIndex] = _validatorAddr;
-        candidateProfiles[_validatorAddr].status = DPoSCommon.CandidateStatus.Bonded;
+        candidateProfiles[_validatorAddr].status = CandidateStatus.Bonded;
         delete candidateProfiles[_validatorAddr].unbondTime;
         emit ValidatorChange(_validatorAddr, ValidatorChangeType.Add);
     }
@@ -912,7 +917,7 @@ contract DPoS is Ownable, Pausable, Govern {
         }
 
         delete validatorSet[_setIndex];
-        candidateProfiles[removedValidator].status = DPoSCommon.CandidateStatus.Unbonding;
+        candidateProfiles[removedValidator].status = CandidateStatus.Unbonding;
         candidateProfiles[removedValidator].unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
         emit ValidatorChange(removedValidator, ValidatorChangeType.Removal);
     }
@@ -924,7 +929,7 @@ contract DPoS is Ownable, Pausable, Govern {
      */
     function _validateValidator(address _validatorAddr) private {
         ValidatorCandidate storage v = candidateProfiles[_validatorAddr];
-        if (v.status != DPoSCommon.CandidateStatus.Bonded) {
+        if (v.status != CandidateStatus.Bonded) {
             // no need to validate the stake of a non-validator
             return;
         }
@@ -956,7 +961,7 @@ contract DPoS is Ownable, Pausable, Govern {
                 hasDuplicatedSig = true;
                 break;
             }
-            if (candidateProfiles[addrs[i]].status != DPoSCommon.CandidateStatus.Bonded) {
+            if (candidateProfiles[addrs[i]].status != CandidateStatus.Bonded) {
                 continue;
             }
 

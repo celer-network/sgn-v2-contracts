@@ -5,9 +5,9 @@ import { keccak256 } from '@ethersproject/solidity';
 import { parseEther } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './common';
-import { getPenaltyRequestBytes } from './proto';
-import * as consts from './constants';
+import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
+import { getPenaltyRequestBytes } from './lib/proto';
+import * as consts from './lib/constants';
 import { DPoS, SGN, TestERC20 } from '../typechain';
 
 describe('Basic Tests', function () {

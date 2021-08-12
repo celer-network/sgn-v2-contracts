@@ -4,8 +4,8 @@ import { ethers, waffle } from 'hardhat';
 import { parseEther } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { DPoS, SGN, TestERC20 } from '../typechain';
-import { DPoS__factory, SGN__factory, TestERC20__factory } from '../typechain';
+import { DPoS, SGN, TestERC20 } from '../../typechain';
+import { DPoS__factory, SGN__factory, TestERC20__factory } from '../../typechain';
 
 import * as consts from './constants';
 

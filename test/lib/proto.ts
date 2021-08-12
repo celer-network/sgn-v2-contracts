@@ -16,7 +16,7 @@ interface Proto {
 }
 
 async function getProtos(): Promise<Proto> {
-  const sgn = await protobuf.load(`${__dirname}/../contracts/libraries/proto/sgn.proto`);
+  const sgn = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/sgn.proto`);
 
   const PenaltyRequest = sgn.lookupType('sgn.PenaltyRequest');
   const RewardRequest = sgn.lookupType('sgn.RewardRequest');

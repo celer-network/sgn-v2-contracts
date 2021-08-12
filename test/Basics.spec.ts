@@ -6,6 +6,7 @@ import { parseEther } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './common';
+import { getPenaltyRequestBytes } from './proto';
 import * as consts from './constants';
 import { DPoS, SGN, TestERC20 } from '../typechain';
 
@@ -306,6 +307,47 @@ describe('Basic Tests', function () {
               res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
               expect(res.delegatedStake).to.equal(parseEther('2'));
               expect(res.undelegatingStake).to.equal(0);
+            });
+
+            it('should pass with multiple withdrawal intents', async function () {
+              const slashAmt = consts.DELEGATOR_STAKE.sub(parseEther('1'));
+              await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
+              const request = await getPenaltyRequestBytes(
+                1,
+                1000000,
+                candidate.address,
+                [delegator.address],
+                [slashAmt],
+                [consts.ZERO_ADDR],
+                [slashAmt],
+                [candidate]
+              );
+              await dpos.slash(request);
+
+              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
+                .to.emit(dpos, 'ConfirmWithdraw')
+                .withArgs(delegator.address, candidate.address, parseEther('1'));
+            });
+
+            it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
+              await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
+              const request = await getPenaltyRequestBytes(
+                1,
+                1000000,
+                candidate.address,
+                [delegator.address],
+                [consts.DELEGATOR_STAKE],
+                [consts.ZERO_ADDR],
+                [consts.DELEGATOR_STAKE],
+                [candidate]
+              );
+              await dpos.slash(request);
+
+              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
+                .to.emit(dpos, 'ConfirmWithdraw')
+                .withArgs(delegator.address, candidate.address, 0);
             });
           });
         });

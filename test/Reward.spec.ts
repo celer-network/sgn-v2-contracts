@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { parseEther, parseUnits } from '@ethersproject/units';
+import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
@@ -31,7 +31,7 @@ describe('Reward Tests', function () {
     celr = res.celr;
     const accounts = await getAccounts(res.admin, [celr], 3);
     for (let i = 0; i < 3; i++) {
-      await celr.connect(accounts[i]).approve(dpos.address, parseEther('100'));
+      await celr.connect(accounts[i]).approve(dpos.address, parseUnits('100'));
     }
     candidate = accounts[0];
     subscriber = accounts[1];
@@ -163,7 +163,7 @@ describe('Reward Tests', function () {
       });
 
       it('should fail to redeem reward more than amount in service pool', async function () {
-        const rewardRequest = await getRewardRequestBytes(receiver.address, parseUnits('0'), parseEther('1'), [
+        const rewardRequest = await getRewardRequestBytes(receiver.address, parseUnits('0'), parseUnits('1'), [
           candidate
         ]);
         await expect(sgn.redeemReward(rewardRequest)).to.be.revertedWith(

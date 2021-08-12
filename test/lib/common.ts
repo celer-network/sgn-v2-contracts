@@ -1,7 +1,7 @@
 import { Fixture } from 'ethereum-waffle';
 import { ethers, waffle } from 'hardhat';
 
-import { parseEther } from '@ethersproject/units';
+import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { DPoS, SGN, TestERC20 } from '../../typechain';
@@ -63,10 +63,10 @@ export async function getAccounts(admin: Wallet, assets: TestERC20[], num: numbe
     accounts.push(new ethers.Wallet(userPrivKeys[i]).connect(ethers.provider));
     await admin.sendTransaction({
       to: accounts[i].address,
-      value: parseEther('10')
+      value: parseUnits('10')
     });
     for (let j = 0; j < assets.length; j++) {
-      await assets[j].transfer(accounts[i].address, parseEther('1000'));
+      await assets[j].transfer(accounts[i].address, parseUnits('1000'));
     }
   }
   return accounts;

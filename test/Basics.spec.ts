@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
 import { keccak256 } from '@ethersproject/solidity';
-import { parseEther } from '@ethersproject/units';
+import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
@@ -32,8 +32,8 @@ describe('Basic Tests', function () {
     const accounts = await getAccounts(res.admin, [celr], 2);
     candidate = accounts[0];
     delegator = accounts[1];
-    await celr.connect(candidate).approve(dpos.address, parseEther('100'));
-    await celr.connect(delegator).approve(dpos.address, parseEther('100'));
+    await celr.connect(candidate).approve(dpos.address, parseUnits('100'));
+    await celr.connect(delegator).approve(dpos.address, parseUnits('100'));
   });
 
   it('should fail to delegate to an uninitialized candidate', async function () {
@@ -260,7 +260,7 @@ describe('Basic Tests', function () {
 
           describe('after a delegator intendWithdraw', async () => {
             beforeEach(async () => {
-              await dpos.connect(delegator).intendWithdraw(candidate.address, parseEther('2'));
+              await dpos.connect(delegator).intendWithdraw(candidate.address, parseUnits('2'));
             });
 
             it('should fail to intendWithdraw with a total more than it delegated', async function () {
@@ -280,7 +280,7 @@ describe('Basic Tests', function () {
               // first confirmWithdraw
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
                 .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseEther('2'));
+                .withArgs(delegator.address, candidate.address, parseUnits('2'));
 
               // second confirmWithdraw
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
@@ -289,25 +289,25 @@ describe('Basic Tests', function () {
             });
 
             it('should pass with multiple withdrawal intents', async function () {
-              await dpos.connect(delegator).intendWithdraw(candidate.address, parseEther('1'));
+              await dpos.connect(delegator).intendWithdraw(candidate.address, parseUnits('1'));
 
               let res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
-              expect(res.delegatedStake).to.equal(parseEther('3'));
-              expect(res.undelegatingStake).to.equal(parseEther('3'));
-              expect(res.intentAmounts[0]).to.equal(parseEther('2'));
-              expect(res.intentAmounts[1]).to.equal(parseEther('1'));
+              expect(res.delegatedStake).to.equal(parseUnits('3'));
+              expect(res.undelegatingStake).to.equal(parseUnits('3'));
+              expect(res.intentAmounts[0]).to.equal(parseUnits('2'));
+              expect(res.intentAmounts[1]).to.equal(parseUnits('1'));
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await dpos.connect(delegator).intendWithdraw(candidate.address, parseEther('1'));
+              await dpos.connect(delegator).intendWithdraw(candidate.address, parseUnits('1'));
 
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
                 .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseEther('3'));
+                .withArgs(delegator.address, candidate.address, parseUnits('3'));
 
               res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
-              expect(res.delegatedStake).to.equal(parseEther('2'));
-              expect(res.undelegatingStake).to.equal(parseEther('1'));
-              expect(res.intentAmounts[0]).to.equal(parseEther('1'));
+              expect(res.delegatedStake).to.equal(parseUnits('2'));
+              expect(res.undelegatingStake).to.equal(parseUnits('1'));
+              expect(res.intentAmounts[0]).to.equal(parseUnits('1'));
 
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
                 .to.emit(dpos, 'ConfirmWithdraw')
@@ -316,15 +316,15 @@ describe('Basic Tests', function () {
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
                 .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseEther('1'));
+                .withArgs(delegator.address, candidate.address, parseUnits('1'));
 
               res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
-              expect(res.delegatedStake).to.equal(parseEther('2'));
+              expect(res.delegatedStake).to.equal(parseUnits('2'));
               expect(res.undelegatingStake).to.equal(0);
             });
 
             it('should pass with multiple withdrawal intents', async function () {
-              const slashAmt = consts.DELEGATOR_STAKE.sub(parseEther('1'));
+              const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
               await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
               const request = await getPenaltyRequestBytes(
                 1,
@@ -341,7 +341,7 @@ describe('Basic Tests', function () {
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
                 .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseEther('1'));
+                .withArgs(delegator.address, candidate.address, parseUnits('1'));
             });
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {

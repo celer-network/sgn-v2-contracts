@@ -19,7 +19,7 @@ describe('Basic Tests', function () {
   let dpos: DPoS;
   let sgn: SGN;
   let celr: TestERC20;
-  let admin: Wallet
+  let admin: Wallet;
   let candidate: Wallet;
   let delegator: Wallet;
 
@@ -155,7 +155,7 @@ describe('Basic Tests', function () {
       });
 
       it('should fail to drain token when not paused', async function () {
-        await expect(dpos.drainToken(consts.DELEGATOR_STAKE)).to.be.revertedWith("Pausable: not paused");
+        await expect(dpos.drainToken(consts.DELEGATOR_STAKE)).to.be.revertedWith('Pausable: not paused');
       });
 
       it('should drainToken successfully when paused', async function () {

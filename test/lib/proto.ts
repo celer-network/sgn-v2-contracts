@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
-import { BigNumber } from "@ethersproject/bignumber";
-
+import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
 
 import protobuf from 'protobufjs';
 protobuf.common('google/protobuf/descriptor.proto', {});
@@ -109,4 +108,31 @@ export async function getPenaltyRequestBytes(
   const penaltyRequestBytes = PenaltyRequest.encode(penaltyRequestProto).finish();
 
   return penaltyRequestBytes;
+}
+
+export async function getRewardRequestBytes(
+  receiver: string,
+  cumulativeMiningReward: BigNumber,
+  cumulativeServiceReward: BigNumber,
+  signers: Wallet[]
+) {
+  const { Reward, RewardRequest } = await getProtos();
+  const reward = {
+    receiver: hex2Bytes(receiver),
+    cumulativeMiningReward: uint2Bytes(cumulativeMiningReward),
+    cumulativeServiceReward: uint2Bytes(cumulativeServiceReward)
+  };
+  const rewardProto = Reward.create(reward);
+  const rewardBytes = Reward.encode(rewardProto).finish();
+
+  const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
+  const rewardRequest = {
+    reward: rewardBytes,
+    sigs: sigs
+  };
+  const rewardRequestProto = RewardRequest.create(rewardRequest);
+  const rewardRequestBytes = RewardRequest.encode(rewardRequestProto).finish();
+
+  return rewardRequestBytes;
 }

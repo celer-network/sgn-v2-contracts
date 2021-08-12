@@ -71,3 +71,20 @@ export async function getAccounts(admin: Wallet, assets: TestERC20[], num: numbe
   }
   return accounts;
 }
+
+export async function advanceBlockNumber(blknum: number): Promise<void> {
+  const promises = [];
+  for (let i = 0; i < blknum; i++) {
+    promises.push(ethers.provider.send('evm_mine', []));
+  }
+  await Promise.all(promises);
+}
+
+export async function advanceBlockNumberTo(target: number): Promise<void> {
+  const blockNumber = await ethers.provider.getBlockNumber();
+  const promises = [];
+  for (let i = blockNumber; i < target; i++) {
+    promises.push(ethers.provider.send('evm_mine', []));
+  }
+  await Promise.all(promises);
+}

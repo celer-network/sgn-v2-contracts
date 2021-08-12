@@ -19,6 +19,7 @@ describe('Basic Tests', function () {
   let dpos: DPoS;
   let sgn: SGN;
   let celr: TestERC20;
+  let admin: Wallet
   let candidate: Wallet;
   let delegator: Wallet;
 
@@ -27,6 +28,7 @@ describe('Basic Tests', function () {
     dpos = res.dpos;
     sgn = res.sgn;
     celr = res.celr;
+    admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 2);
     candidate = accounts[0];
     delegator = accounts[1];
@@ -150,6 +152,18 @@ describe('Basic Tests', function () {
         await expect(dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, 1000)).to.be.revertedWith(
           'Amount is smaller than minimum requirement'
         );
+      });
+
+      it('should fail to drain token when not paused', async function () {
+        await expect(dpos.drainToken(consts.DELEGATOR_STAKE)).to.be.revertedWith("Pausable: not paused");
+      });
+
+      it('should drainToken successfully when paused', async function () {
+        await dpos.pause();
+        let balanceBefore = await celr.balanceOf(admin.address);
+        await dpos.drainToken(consts.DELEGATOR_STAKE);
+        let balanceAfter = await celr.balanceOf(admin.address);
+        expect(balanceAfter.sub(balanceBefore)).to.equal(consts.DELEGATOR_STAKE);
       });
 
       describe('after one delegator delegates enough stake to the candidate', async () => {

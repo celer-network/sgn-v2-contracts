@@ -9,15 +9,6 @@ import { DPoS__factory, SGN__factory, TestERC20__factory } from '../../typechain
 
 import * as consts from './constants';
 
-const userPrivKeys = [
-  '0x36f2243a51a0f879b1859fff1a663ac04aeebca1bcff4d7dc5a8b38e53211199',
-  '0xc0bf10873ddb6d554838f5e4f0c000e85d3307754151add9813ff331b746390d',
-  '0x68888cc706520c4d5049d38933e0b502e2863781d75de09c499cf0e4e00ba2de',
-  '0x400e64f3b8fe65ecda0bad60627c41fa607172cf0970fbe2551d6d923fd82f78',
-  '0xab4c840e48b11840f923a371ba453e4d8884fd23eee1b579f5a3910c9b00a4b6',
-  '0x0168ea2aa71023864b1c8eb65997996d726e5068c12b20dea81076ef56380465'
-];
-
 // Workaround for https://github.com/nomiclabs/hardhat/issues/849
 // TODO: Remove once fixed upstream.
 export function loadFixture<T>(fixture: Fixture<T>): Promise<T> {
@@ -60,7 +51,7 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {
   const accounts: Wallet[] = [];
   for (let i = 0; i < num; i++) {
-    accounts.push(new ethers.Wallet(userPrivKeys[i]).connect(ethers.provider));
+    accounts.push(new ethers.Wallet(consts.userPrivKeys[i]).connect(ethers.provider));
     await admin.sendTransaction({
       to: accounts[i].address,
       value: parseUnits('10')

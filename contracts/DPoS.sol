@@ -204,7 +204,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Throws if sender is not validator
      */
     modifier onlyValidator() {
-        require(isValidator(msg.sender), "msg sender is not a validator");
+        require(isValidator(msg.sender), "caller is not a validator");
         _;
     }
 

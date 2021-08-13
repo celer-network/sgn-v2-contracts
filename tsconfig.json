@@ -18,7 +18,6 @@
     "benchmark/**/*",
     "scripts/**/*",
     "test/**/*",
-    "test-strategy/**/*",
     "typechain/**/*",
     "types/**/*",
     "hardhat.config.ts"

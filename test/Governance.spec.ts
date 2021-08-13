@@ -8,7 +8,7 @@ import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from '.
 import * as consts from './lib/constants';
 import { DPoS, TestERC20 } from '../typechain';
 
-describe('Basic Tests', function () {
+describe('Governance Tests', function () {
   async function fixture([admin]: Wallet[]) {
     const { dpos, celr } = await deployContracts(admin);
     return { admin, dpos, celr };

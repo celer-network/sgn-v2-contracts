@@ -40,7 +40,7 @@ describe('Slash Tests', function () {
     await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
   });
 
-  it('should fail to redeem reward when paused', async function () {
+  it('should fail to slash when paused', async function () {
     await dpos.pause();
     const request = await getPenaltyRequestBytes(
       1,
@@ -54,5 +54,4 @@ describe('Slash Tests', function () {
     );
     await expect(dpos.slash(request)).to.be.revertedWith('Pausable: paused');
   });
-
-})
+});

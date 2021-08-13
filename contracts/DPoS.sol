@@ -204,7 +204,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Throws if sender is not validator
      */
     modifier onlyValidator() {
-        require(isValidator(msg.sender), "msg sender is not a validator");
+        require(isValidator(msg.sender), "caller is not a validator");
         _;
     }
 
@@ -654,6 +654,20 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function disableWhitelist() external onlyOwner {
         _disableWhitelist();
+    }
+
+    /**
+     * @notice Add an account to whitelist
+     */
+    function addWhitelisted(address account) external onlyOwner {
+        _addWhitelisted(account);
+    }
+
+    /**
+     * @notice Remove an account from whitelist
+     */
+    function removeWhitelisted(address account) external onlyOwner {
+        _removeWhitelisted(account);
     }
 
     /**

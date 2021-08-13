@@ -205,7 +205,7 @@ contract Govern is Ownable {
     ) internal {
         ParamProposal storage p = paramProposals[_proposalId];
         require(p.status == ProposalStatus.Voting, "Invalid proposal status");
-        require(block.number < p.voteDeadline, "Vote deadline reached");
+        require(block.number < p.voteDeadline, "Vote deadline passed");
         require(p.votes[_voter] == VoteType.Unvoted, "Voter has voted");
 
         p.votes[_voter] = _vote;
@@ -287,7 +287,7 @@ contract Govern is Ownable {
     ) internal {
         SidechainProposal storage p = sidechainProposals[_proposalId];
         require(p.status == ProposalStatus.Voting, "Invalid proposal status");
-        require(block.number < p.voteDeadline, "Vote deadline reached");
+        require(block.number < p.voteDeadline, "Vote deadline passed");
         require(p.votes[_voter] == VoteType.Unvoted, "Voter has voted");
 
         p.votes[_voter] = _vote;

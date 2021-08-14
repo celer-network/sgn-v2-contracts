@@ -70,6 +70,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     uint256 public rewardPool;
+    uint256 public totalValidatorStake;
     address[] public candidates;
     mapping(address => ValidatorCandidate) public candidateProfiles;
     mapping(uint256 => address) public validatorSet; // TODO: deal with set size reduction
@@ -173,9 +174,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             }
         }
 
-        bool passed = yesVoteStakes >= getMinQuorumStakingPool();
+        bool passed = yesVoteStakes >= getQuorumStake();
         if (!passed) {
-            rewardPool = rewardPool + paramProposals[_proposalId].deposit;
+            rewardPool += paramProposals[_proposalId].deposit;
         }
         internalConfirmParamProposal(_proposalId, passed);
     }
@@ -186,7 +187,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function contributeToMiningPool(uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
-        rewardPool = rewardPool + _amount;
+        rewardPool += _amount;
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
 
         emit MiningPoolContribution(msgSender, _amount, rewardPool);
@@ -207,7 +208,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(rewardPool >= newReward, "Reward pool is smaller than new reward");
 
         claimedReward[reward.recipient] = reward.cumulativeReward;
-        rewardPool = rewardPool - newReward;
+        rewardPool -= newReward;
         celerToken.safeTransfer(reward.recipient, newReward);
 
         emit RewardClaimed(reward.recipient, newReward, rewardPool);
@@ -367,7 +368,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Delegator storage delegator = candidate.delegatorProfiles[msgSender];
 
         _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
-        delegator.undelegatingStake = delegator.undelegatingStake + _amount;
+        delegator.undelegatingStake += _amount;
         _validateValidator(_candidateAddr);
 
         WithdrawIntent storage withdrawIntent = delegator.withdrawIntents[delegator.intentEndIndex];
@@ -406,7 +407,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         // for all undelegating withdraw intents
         uint256 undelegatingStakeWithoutSlash;
         for (; i < delegator.intentEndIndex; i++) {
-            undelegatingStakeWithoutSlash = undelegatingStakeWithoutSlash + delegator.withdrawIntents[i].amount;
+            undelegatingStakeWithoutSlash += delegator.withdrawIntents[i].amount;
         }
 
         uint256 withdrawAmt;
@@ -439,7 +440,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 totalSubAmt;
         for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {
             PbSgn.AccountAmtPair memory penalizedDelegator = penalty.penalizedDelegators[i];
-            totalSubAmt = totalSubAmt + penalizedDelegator.amt;
+            totalSubAmt += penalizedDelegator.amt;
             emit Slash(penalty.validatorAddress, penalizedDelegator.account, penalizedDelegator.amt);
 
             Delegator storage delegator = validator.delegatorProfiles[penalizedDelegator.account];
@@ -448,7 +449,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
                 _amt = penalizedDelegator.amt;
             } else {
                 uint256 remainingAmt = penalizedDelegator.amt - delegator.delegatedStake;
-                delegator.undelegatingStake = delegator.undelegatingStake - remainingAmt;
+                delegator.undelegatingStake -= remainingAmt;
                 _amt = delegator.delegatedStake;
             }
             _removeDelegatedStake(validator, penalty.validatorAddress, penalizedDelegator.account, _amt);
@@ -458,11 +459,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 totalAddAmt;
         for (uint256 i = 0; i < penalty.beneficiaries.length; i++) {
             PbSgn.AccountAmtPair memory beneficiary = penalty.beneficiaries[i];
-            totalAddAmt = totalAddAmt + beneficiary.amt;
+            totalAddAmt += beneficiary.amt;
 
             if (beneficiary.account == address(0)) {
                 // address(0) stands for rewardPool
-                rewardPool = rewardPool + beneficiary.amt;
+                rewardPool += beneficiary.amt;
             } else if (beneficiary.account == address(1)) {
                 // address(1) means beneficiary is msg sender
                 celerToken.safeTransfer(msg.sender, beneficiary.amt);
@@ -485,7 +486,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
         address[] memory signers = new address[](_sigs.length);
-        uint256 quorumStakingPool;
+        uint256 signedStake;
         address prev = address(0);
         for (uint256 i = 0; i < _sigs.length; i++) {
             signers[i] = hash.recover(_sigs[i]);
@@ -494,11 +495,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             if (candidateProfiles[signers[i]].status != CandidateStatus.Bonded) {
                 continue;
             }
-            quorumStakingPool = quorumStakingPool + candidateProfiles[signers[i]].stakingPool;
+            signedStake += candidateProfiles[signers[i]].stakingPool;
         }
 
-        uint256 minQuorumStakingPool = getMinQuorumStakingPool();
-        require(quorumStakingPool >= minQuorumStakingPool, "Not enough signatures");
+        require(signedStake >= getQuorumStake(), "Not enough signatures");
         return true;
     }
 
@@ -696,26 +696,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Get minimum amount of stakes for a quorum
-     * @return the minimum amount
+     * @notice Get quorum amount of stakes
+     * @return the quorum amount
      */
-    function getMinQuorumStakingPool() public view returns (uint256) {
-        return (getTotalValidatorStakingPool() * 2) / 3 + 1;
-    }
-
-    /**
-     * @notice Get the total amount of stakes in validators' staking pools
-     * @return the total amount
-     */
-    function getTotalValidatorStakingPool() public view returns (uint256) {
-        uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
-
-        uint256 totalValidatorStakingPool;
-        for (uint256 i = 0; i < maxValidatorNum; i++) {
-            totalValidatorStakingPool = totalValidatorStakingPool + candidateProfiles[validatorSet[i]].stakingPool;
-        }
-
-        return totalValidatorStakingPool;
+    function getQuorumStake() public view returns (uint256) {
+        return (totalValidatorStake * 2) / 3 + 1;
     }
 
     /*********************
@@ -735,8 +720,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _amount
     ) private {
         Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
-        _candidate.stakingPool = _candidate.stakingPool + _amount;
-        delegator.delegatedStake = delegator.delegatedStake + _amount;
+        _candidate.stakingPool += _amount;
+        delegator.delegatedStake += _amount;
+        if (_candidate.status == CandidateStatus.Bonded) {
+            totalValidatorStake += _amount;
+        }
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
@@ -753,8 +741,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _amount
     ) private {
         Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
-        delegator.delegatedStake = delegator.delegatedStake - _amount;
-        _candidate.stakingPool = _candidate.stakingPool - _amount;
+        delegator.delegatedStake -= _amount;
+        _candidate.stakingPool -= _amount;
+        if (_candidate.status == CandidateStatus.Bonded) {
+            totalValidatorStake -= _amount;
+        }
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
@@ -767,8 +758,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(validatorSet[_setIndex] == address(0), "Validator slot occupied");
 
         validatorSet[_setIndex] = _validatorAddr;
-        candidateProfiles[_validatorAddr].status = CandidateStatus.Bonded;
-        delete candidateProfiles[_validatorAddr].unbondTime;
+        ValidatorCandidate storage validator = candidateProfiles[_validatorAddr];
+        validator.status = CandidateStatus.Bonded;
+        delete validator.unbondTime;
+        totalValidatorStake += validator.stakingPool;
         emit ValidatorChange(_validatorAddr, ValidatorChangeType.Add);
     }
 
@@ -783,8 +776,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
 
         delete validatorSet[_setIndex];
-        candidateProfiles[removedValidator].status = CandidateStatus.Unbonding;
-        candidateProfiles[removedValidator].unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
+        ValidatorCandidate storage validator = candidateProfiles[removedValidator];
+        validator.status = CandidateStatus.Unbonding;
+        validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
+        totalValidatorStake -= validator.stakingPool;
         emit ValidatorChange(removedValidator, ValidatorChangeType.Removal);
     }
 

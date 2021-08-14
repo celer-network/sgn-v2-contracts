@@ -102,7 +102,7 @@ describe('Basic Tests', function () {
 
     it('should delegate to candidate by a delegator successfully', async function () {
       await expect(dpos.connect(delegator).delegate(candidate.address, consts.DELEGATOR_STAKE))
-        .to.emit(dpos, 'Delegate')
+        .to.emit(dpos, 'UpdateDelegatedStake')
         .withArgs(delegator.address, candidate.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
     });
 

@@ -17,6 +17,7 @@ import "./Whitelist.sol";
  */
 contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 10**18;
+    uint256 constant MAX_INT = 2**256 - 1;
     uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
 
     using SafeERC20 for IERC20;
@@ -71,7 +72,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 public rewardPool;
     address[] public candidates;
     mapping(address => ValidatorCandidate) public candidateProfiles;
-    mapping(uint256 => address) public validatorSet;
+    mapping(uint256 => address) public validatorSet; // TODO: deal with set size reduction
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
@@ -82,7 +83,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     event InitializeCandidate(address indexed candidate, uint256 minSelfStake, uint256 commissionRate);
     event UpdateCommissionRate(address indexed candidate, uint256 newRate);
     event UpdateMinSelfStake(address indexed candidate, uint256 minSelfStake);
-    event Delegate(address indexed delegator, address indexed candidate, uint256 newStake, uint256 stakingPool);
     event ValidatorChange(address indexed ethAddr, ValidatorChangeType indexed changeType);
     event WithdrawFromUnbondedCandidate(address indexed delegator, address indexed candidate, uint256 amount);
     event IntendWithdraw(
@@ -111,7 +111,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _governProposalDeposit required deposit amount for a governance proposal
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
-     * @param _minValidatorNum the minimum number of validators
      * @param _maxValidatorNum the maximum number of validators
      * @param _minStakeInPool the global minimum requirement of staking pool for each validator
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
@@ -121,7 +120,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _governProposalDeposit,
         uint256 _governVoteTimeout,
         uint256 _slashTimeout,
-        uint256 _minValidatorNum,
         uint256 _maxValidatorNum,
         uint256 _minStakeInPool,
         uint256 _advanceNoticePeriod
@@ -131,21 +129,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _governProposalDeposit,
             _governVoteTimeout,
             _slashTimeout,
-            _minValidatorNum,
             _maxValidatorNum,
             _minStakeInPool,
             _advanceNoticePeriod
         )
     {}
-
-    /**
-     * @notice Throws if DPoS is not valid
-     * @dev Need to be checked before DPoS's operations
-     */
-    modifier onlyValidDPoS() {
-        require(isValidDPoS(), "DPoS is not valid");
-        _;
-    }
 
     /**
      * @notice Throws if amount is smaller than minimum
@@ -296,13 +284,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function delegate(address _candidateAddr, uint256 _amount) public whenNotPaused minAmount(_amount, CELR_DECIMAL) {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
-
         address msgSender = msg.sender;
         _addDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
-
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
-
-        emit Delegate(msgSender, _candidateAddr, _amount, candidate.stakingPool);
     }
 
     /**
@@ -323,14 +307,16 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         );
 
         uint256 minStakingPoolIndex;
-        uint256 minStakingPool = candidateProfiles[validatorSet[0]].stakingPool;
-        require(validatorSet[0] != msgSender, "Already in validator set");
+        uint256 minStakingPool = MAX_INT;
         uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
-        for (uint256 i = 1; i < maxValidatorNum; i++) {
+        for (uint256 i = 0; i < maxValidatorNum; i++) {
             require(validatorSet[i] != msgSender, "Already in validator set");
             if (candidateProfiles[validatorSet[i]].stakingPool < minStakingPool) {
                 minStakingPoolIndex = i;
                 minStakingPool = candidateProfiles[validatorSet[i]].stakingPool;
+                if (minStakingPool == 0) {
+                    break;
+                }
             }
         }
         require(candidate.stakingPool > minStakingPool, "Not larger than smallest pool");
@@ -448,7 +434,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _penaltyRequest penalty request bytes coded in protobuf
      * @param _sigs list of validator signatures
      */
-    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs) external whenNotPaused onlyValidDPoS {
+    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs) external whenNotPaused {
         require(!slashDisabled, "Slash is disabled");
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
         verifySignatures(_penaltyRequest, _sigs);
@@ -601,11 +587,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         uint256 minStakingPool = candidateProfiles[validatorSet[0]].stakingPool;
         for (uint256 i = 0; i < maxValidatorNum; i++) {
-            if (validatorSet[i] == address(0)) {
-                return 0;
-            }
             if (candidateProfiles[validatorSet[i]].stakingPool < minStakingPool) {
                 minStakingPool = candidateProfiles[validatorSet[i]].stakingPool;
+                if (minStakingPool == 0) {
+                    return 0;
+                }
             }
         }
 
@@ -691,14 +677,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             delegatorInfos[i] = infos[i];
         }
         return delegatorInfos;
-    }
-
-    /**
-     * @notice Check this DPoS contract is valid or not now
-     * @return DPoS is valid or not
-     */
-    function isValidDPoS() public view returns (bool) {
-        return getValidatorNum() >= getUIntValue(uint256(ParamNames.MinValidatorNum));
     }
 
     /**

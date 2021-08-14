@@ -33,7 +33,6 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
     consts.GOVERN_PROPOSAL_DEPOSIT,
     consts.GOVERN_VOTE_TIMEOUT,
     consts.SLASH_TIMEOUT,
-    consts.MIN_VALIDATOR_NUM,
     consts.MAX_VALIDATOR_NUM,
     consts.MIN_STAKING_POOL,
     consts.ADVANCE_NOTICE_PERIOD

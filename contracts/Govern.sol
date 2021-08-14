@@ -19,7 +19,6 @@ contract Govern is Ownable {
         ProposalDeposit,
         GovernVoteTimeout,
         SlashTimeout,
-        MinValidatorNum,
         MaxValidatorNum,
         MinStakeInPool,
         AdvanceNoticePeriod
@@ -74,7 +73,6 @@ contract Govern is Ownable {
      * @param _governProposalDeposit required deposit amount for a governance proposal
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
-     * @param _minValidatorNum the minimum number of validators
      * @param _maxValidatorNum the maximum number of validators
      * @param _minStakeInPool the global minimum requirement of staking pool for each validator
      * @param _advanceNoticePeriod the time after the announcement and prior to the effective time of an update
@@ -84,7 +82,6 @@ contract Govern is Ownable {
         uint256 _governProposalDeposit,
         uint256 _governVoteTimeout,
         uint256 _slashTimeout,
-        uint256 _minValidatorNum,
         uint256 _maxValidatorNum,
         uint256 _minStakeInPool,
         uint256 _advanceNoticePeriod
@@ -94,7 +91,6 @@ contract Govern is Ownable {
         UIntStorage[uint256(ParamNames.ProposalDeposit)] = _governProposalDeposit;
         UIntStorage[uint256(ParamNames.GovernVoteTimeout)] = _governVoteTimeout;
         UIntStorage[uint256(ParamNames.SlashTimeout)] = _slashTimeout;
-        UIntStorage[uint256(ParamNames.MinValidatorNum)] = _minValidatorNum;
         UIntStorage[uint256(ParamNames.MaxValidatorNum)] = _maxValidatorNum;
         UIntStorage[uint256(ParamNames.MinStakeInPool)] = _minStakeInPool;
         UIntStorage[uint256(ParamNames.AdvanceNoticePeriod)] = _advanceNoticePeriod;

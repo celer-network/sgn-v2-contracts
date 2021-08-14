@@ -48,15 +48,6 @@ contract SGN is Ownable, Pausable {
     }
 
     /**
-     * @notice Throws if SGN sidechain is not valid
-     * @dev Check this before sidechain's operations
-     */
-    modifier onlyValidSidechain() {
-        require(dpos.isValidDPoS(), "DPoS is not valid");
-        _;
-    }
-
-    /**
      * @notice Update sidechain address
      * @dev Note that the "sidechain address" here means the address in the offchain sidechain system,
          which is different from the sidechain contract address
@@ -78,7 +69,7 @@ contract SGN is Ownable, Pausable {
      * @notice Subscribe the guardian service
      * @param _amount subscription fee paid along this function call in CELR tokens
      */
-    function subscribe(uint256 _amount) external whenNotPaused onlyValidSidechain {
+    function subscribe(uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
 
         servicePool = servicePool + _amount;

@@ -160,16 +160,17 @@ describe('Reward Tests', function () {
           validators[0],
           validators[1]
         ]);
-        await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Invalid validator sigs');
+        await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Not enough signatures');
       });
 
-      it('should fail to claim reward with duplicated signatures', async function () {
-        const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), [
-          validators[0],
-          validators[1],
-          validators[1]
-        ]);
-        await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Invalid validator sigs');
+      it('should fail to claim reward with disordered signatures', async function () {
+        const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), validators);
+        await expect(dpos.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[1], r.sigs[3], r.sigs[2]])).to.be.revertedWith(
+          'Signers not in ascending order'
+        );
+        await expect(dpos.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[0], r.sigs[1], r.sigs[2]])).to.be.revertedWith(
+          'Signers not in ascending order'
+        );
       });
     });
   });

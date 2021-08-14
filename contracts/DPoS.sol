@@ -77,8 +77,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     mapping(uint256 => address) public validatorSet;
     mapping(uint256 => bool) public usedPenaltyNonce;
-    // used in checkValidatorSigs(). mapping has to be storage type.
-    mapping(address => bool) public checkedValidators;
     // struct ValidatorCandidate includes a mapping and therefore candidateProfiles can't be public
     mapping(address => ValidatorCandidate) private candidateProfiles;
     mapping(address => uint256) public claimedReward;
@@ -265,7 +263,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _sigs list of validator signatures
      */
     function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
-        require(verifySignatures(_rewardRequest, _sigs), "Invalid validator sigs");
+        verifySignatures(_rewardRequest, _sigs);
         PbSgn.Reward memory reward = PbSgn.decReward(_rewardRequest);
 
         uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
@@ -539,7 +537,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     {
         require(slashEnabled, "Slash is disabled");
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
-        require(verifySignatures(_penaltyRequest, _sigs), "Invalid validator sigs");
+        verifySignatures(_penaltyRequest, _sigs);
         require(block.number < penalty.expireTime, "Penalty expired");
         require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
         usedPenaltyNonce[penalty.nonce] = true;
@@ -599,31 +597,24 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _sigs list of validator signatures
      * @return passed the validation or not
      */
-    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public returns (bool) {
+    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
-        address[] memory addrs = new address[](_sigs.length);
+        address[] memory signers = new address[](_sigs.length);
         uint256 quorumStakingPool;
-        bool hasDuplicatedSig;
+        address prev = address(0);
         for (uint256 i = 0; i < _sigs.length; i++) {
-            addrs[i] = hash.recover(_sigs[i]);
-            if (checkedValidators[addrs[i]]) {
-                hasDuplicatedSig = true;
-                break;
-            }
-            if (candidateProfiles[addrs[i]].status != CandidateStatus.Bonded) {
+            signers[i] = hash.recover(_sigs[i]);
+            require(signers[i] > prev, "Signers not in ascending order");
+            prev = signers[i];
+            if (candidateProfiles[signers[i]].status != CandidateStatus.Bonded) {
                 continue;
             }
-
-            quorumStakingPool = quorumStakingPool + candidateProfiles[addrs[i]].stakingPool;
-            checkedValidators[addrs[i]] = true;
-        }
-
-        for (uint256 i = 0; i < _sigs.length; i++) {
-            checkedValidators[addrs[i]] = false;
+            quorumStakingPool = quorumStakingPool + candidateProfiles[signers[i]].stakingPool;
         }
 
         uint256 minQuorumStakingPool = getMinQuorumStakingPool();
-        return !hasDuplicatedSig && quorumStakingPool >= minQuorumStakingPool;
+        require(quorumStakingPool >= minQuorumStakingPool, "Not enough signatures");
+        return true;
     }
 
     /**

@@ -60,6 +60,7 @@ export async function getAccounts(admin: Wallet, assets: TestERC20[], num: numbe
       await assets[j].transfer(accounts[i].address, parseUnits('1000'));
     }
   }
+  accounts.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
   return accounts;
 }
 

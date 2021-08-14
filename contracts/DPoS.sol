@@ -65,13 +65,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 earliestBondTime;
     }
 
+    uint256 public rewardPool;
     mapping(uint256 => address) public validatorSet;
-    mapping(uint256 => bool) public usedPenaltyNonce;
     mapping(address => ValidatorCandidate) public candidateProfiles;
     mapping(address => uint256) public claimedReward;
 
-    uint256 public rewardPool;
-    bool public slashEnabled;
+    bool public slashDisabled;
+    mapping(uint256 => bool) public usedPenaltyNonce;
 
     /* Events */
     // TODO: remove unnecessary event index
@@ -132,9 +132,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _minStakeInPool,
             _advanceNoticePeriod
         )
-    {
-        slashEnabled = true;
-    }
+    {}
 
     /**
      * @notice Throws if DPoS is not valid
@@ -444,7 +442,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _sigs list of validator signatures
      */
     function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs) external whenNotPaused onlyValidDPoS {
-        require(slashEnabled, "Slash is disabled");
+        require(!slashDisabled, "Slash is disabled");
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
         verifySignatures(_penaltyRequest, _sigs);
         require(block.number < penalty.expireTime, "Penalty expired");
@@ -552,14 +550,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Enable slash
      */
     function enableSlash() external onlyOwner {
-        slashEnabled = true;
+        slashDisabled = false;
     }
 
     /**
      * @notice Disable slash
      */
     function disableSlash() external onlyOwner {
-        slashEnabled = false;
+        slashDisabled = true;
     }
 
     /**

@@ -6,7 +6,7 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getPenaltyRequestBytes } from './lib/proto';
+import { getPenaltyRequest } from './lib/proto';
 import * as consts from './lib/constants';
 import { DPoS, SGN, TestERC20 } from '../typechain';
 
@@ -326,7 +326,7 @@ describe('Basic Tests', function () {
             it('should pass with multiple withdrawal intents', async function () {
               const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
               await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
-              const request = await getPenaltyRequestBytes(
+              const request = await getPenaltyRequest(
                 1,
                 1000000,
                 candidate.address,
@@ -336,7 +336,7 @@ describe('Basic Tests', function () {
                 [slashAmt],
                 [candidate]
               );
-              await dpos.slash(request);
+              await dpos.slash(request.penaltyBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
@@ -346,7 +346,7 @@ describe('Basic Tests', function () {
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
               await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
-              const request = await getPenaltyRequestBytes(
+              const request = await getPenaltyRequest(
                 1,
                 1000000,
                 candidate.address,
@@ -356,7 +356,7 @@ describe('Basic Tests', function () {
                 [consts.DELEGATOR_STAKE],
                 [candidate]
               );
-              await dpos.slash(request);
+              await dpos.slash(request.penaltyBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))

@@ -1,12 +1,10 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
 
-import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getPenaltyRequestBytes } from './lib/proto';
+import { getPenaltyRequest } from './lib/proto';
 import * as consts from './lib/constants';
 import { DPoS, TestERC20 } from '../typechain';
 
@@ -42,7 +40,7 @@ describe('Slash Tests', function () {
 
   it('should fail to slash when paused', async function () {
     await dpos.pause();
-    const request = await getPenaltyRequestBytes(
+    const request = await getPenaltyRequest(
       1,
       1000000,
       validators[0].address,
@@ -52,6 +50,6 @@ describe('Slash Tests', function () {
       [parseUnits('0.7'), parseUnits('0.8')],
       validators
     );
-    await expect(dpos.slash(request)).to.be.revertedWith('Pausable: paused');
+    await expect(dpos.slash(request.penaltyBytes, request.sigs)).to.be.revertedWith('Pausable: paused');
   });
 });

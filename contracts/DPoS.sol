@@ -81,13 +81,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     mapping(address => bool) public checkedValidators;
     // struct ValidatorCandidate includes a mapping and therefore candidateProfiles can't be public
     mapping(address => ValidatorCandidate) private candidateProfiles;
-    mapping(address => uint256) public redeemedMiningReward;
+    mapping(address => uint256) public claimedReward;
 
     uint256 public dposGoLiveTime; // used when bootstrapping initial validators
-    uint256 public miningPool;
+    uint256 public rewardPool;
     bool public slashEnabled;
 
     /* Events */
+    // TODO: remove unnecessary event index
     event InitializeCandidate(
         address indexed candidate,
         uint256 minSelfStake,
@@ -116,8 +117,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     );
     event Compensate(address indexed indemnitee, uint256 amount);
     event CandidateUnbonded(address indexed candidate);
-    event RedeemMiningReward(address indexed receiver, uint256 reward, uint256 miningPool);
-    event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 miningPoolSize);
+    event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
+    event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
     /**
      * @notice DPoS constructor
@@ -240,7 +241,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         bool passed = yesVoteStakes >= getMinQuorumStakingPool();
         if (!passed) {
-            miningPool = miningPool + paramProposals[_proposalId].deposit;
+            rewardPool = rewardPool + paramProposals[_proposalId].deposit;
         }
         internalConfirmParamProposal(_proposalId, passed);
     }
@@ -251,31 +252,31 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function contributeToMiningPool(uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
-        miningPool = miningPool + _amount;
+        rewardPool = rewardPool + _amount;
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
 
-        emit MiningPoolContribution(msgSender, _amount, miningPool);
+        emit MiningPoolContribution(msgSender, _amount, rewardPool);
     }
 
     /**
-     * @notice Redeem mining reward
-     * @dev The validation of this redeeming operation should be done by the caller, a registered sidechain contract
-     * @dev Here we use cumulative mining reward to simplify the logic in sidechain code
-     * @param _receiver the receiver of the redeemed mining reward
-     * @param _cumulativeReward the latest cumulative mining reward
+     * @notice Claim reward
+     * @dev Here we use cumulative mining reward to make claim process idempotent
+     * @param _rewardRequest reward request bytes coded in protobuf
+     * @param _sigs list of validator signatures
      */
-    function redeemMiningReward(address _receiver, uint256 _cumulativeReward)
-        external
-        whenNotPaused
-    {
-        uint256 newReward = _cumulativeReward - redeemedMiningReward[_receiver];
-        require(miningPool >= newReward, "Mining pool is smaller than new reward");
+    function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
+        require(verifySignatures(_rewardRequest, _sigs), "Invalid validator sigs");
+        PbSgn.Reward memory reward = PbSgn.decReward(_rewardRequest);
 
-        redeemedMiningReward[_receiver] = _cumulativeReward;
-        miningPool = miningPool - newReward;
-        celerToken.safeTransfer(_receiver, newReward);
+        uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
+        require(newReward > 0, "No new reward");
+        require(rewardPool >= newReward, "Reward pool is smaller than new reward");
 
-        emit RedeemMiningReward(_receiver, newReward, miningPool);
+        claimedReward[reward.recipient] = reward.cumulativeReward;
+        rewardPool = rewardPool - newReward;
+        celerToken.safeTransfer(reward.recipient, newReward);
+
+        emit RewardClaimed(reward.recipient, newReward, rewardPool);
     }
 
     /**
@@ -528,20 +529,23 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Slash a validator and its delegators
      * @param _penaltyRequest penalty request bytes coded in protobuf
+     * @param _sigs list of validator signatures
      */
-    function slash(bytes calldata _penaltyRequest) external whenNotPaused onlyValidDPoS onlyNotMigrating {
+    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs)
+        external
+        whenNotPaused
+        onlyValidDPoS
+        onlyNotMigrating
+    {
         require(slashEnabled, "Slash is disabled");
-        PbSgn.PenaltyRequest memory penaltyRequest = PbSgn.decPenaltyRequest(_penaltyRequest);
-        PbSgn.Penalty memory penalty = PbSgn.decPenalty(penaltyRequest.penalty);
-
-        ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
-        require(validator.status != CandidateStatus.Unbonded, "Validator unbounded");
-
-        bytes32 h = keccak256(penaltyRequest.penalty);
-        require(_checkValidatorSigs(h, penaltyRequest.sigs), "Validator sigs verification failed");
+        PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
+        require(verifySignatures(_penaltyRequest, _sigs), "Invalid validator sigs");
         require(block.number < penalty.expireTime, "Penalty expired");
         require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
         usedPenaltyNonce[penalty.nonce] = true;
+
+        ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
+        require(validator.status != CandidateStatus.Unbonded, "Validator unbounded");
 
         uint256 totalSubAmt;
         for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {
@@ -574,8 +578,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             totalAddAmt = totalAddAmt + beneficiary.amt;
 
             if (beneficiary.account == address(0)) {
-                // address(0) stands for miningPool
-                miningPool = miningPool + beneficiary.amt;
+                // address(0) stands for rewardPool
+                rewardPool = rewardPool + beneficiary.amt;
             } else if (beneficiary.account == address(1)) {
                 // address(1) means beneficiary is msg sender
                 celerToken.safeTransfer(msg.sender, beneficiary.amt);
@@ -591,15 +595,35 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Validate multi-signed message
-     * @dev Can't use view here because _checkValidatorSigs is not a view function
-     * @param _request a multi-signed message bytes coded in protobuf
+     * @param _msg signed message
+     * @param _sigs list of validator signatures
      * @return passed the validation or not
      */
-    function validateMultiSigMessage(bytes calldata _request) external returns (bool) {
-        PbSgn.MultiSigMessage memory request = PbSgn.decMultiSigMessage(_request);
-        bytes32 h = keccak256(request.msg);
+    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public returns (bool) {
+        bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
+        address[] memory addrs = new address[](_sigs.length);
+        uint256 quorumStakingPool;
+        bool hasDuplicatedSig;
+        for (uint256 i = 0; i < _sigs.length; i++) {
+            addrs[i] = hash.recover(_sigs[i]);
+            if (checkedValidators[addrs[i]]) {
+                hasDuplicatedSig = true;
+                break;
+            }
+            if (candidateProfiles[addrs[i]].status != CandidateStatus.Bonded) {
+                continue;
+            }
 
-        return _checkValidatorSigs(h, request.sigs);
+            quorumStakingPool = quorumStakingPool + candidateProfiles[addrs[i]].stakingPool;
+            checkedValidators[addrs[i]] = true;
+        }
+
+        for (uint256 i = 0; i < _sigs.length; i++) {
+            checkedValidators[addrs[i]] = false;
+        }
+
+        uint256 minQuorumStakingPool = getMinQuorumStakingPool();
+        return !hasDuplicatedSig && quorumStakingPool >= minQuorumStakingPool;
     }
 
     /**
@@ -928,40 +952,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         if (lowSelfStake || lowStakingPool) {
             _removeValidator(_getValidatorIdx(_validatorAddr));
         }
-    }
-
-    /**
-     * @notice Check whether validators with more than 2/3 total stakes have signed this hash
-     * @param _h signed hash
-     * @param _sigs signatures
-     * @return whether the signatures are valid or not
-     */
-    function _checkValidatorSigs(bytes32 _h, bytes[] memory _sigs) private returns (bool) {
-        uint256 minQuorumStakingPool = getMinQuorumStakingPool();
-
-        bytes32 hash = _h.toEthSignedMessageHash();
-        address[] memory addrs = new address[](_sigs.length);
-        uint256 quorumStakingPool;
-        bool hasDuplicatedSig;
-        for (uint256 i = 0; i < _sigs.length; i++) {
-            addrs[i] = hash.recover(_sigs[i]);
-            if (checkedValidators[addrs[i]]) {
-                hasDuplicatedSig = true;
-                break;
-            }
-            if (candidateProfiles[addrs[i]].status != CandidateStatus.Bonded) {
-                continue;
-            }
-
-            quorumStakingPool = quorumStakingPool + candidateProfiles[addrs[i]].stakingPool;
-            checkedValidators[addrs[i]] = true;
-        }
-
-        for (uint256 i = 0; i < _sigs.length; i++) {
-            checkedValidators[addrs[i]] = false;
-        }
-
-        return !hasDuplicatedSig && quorumStakingPool >= minQuorumStakingPool;
     }
 
     /**

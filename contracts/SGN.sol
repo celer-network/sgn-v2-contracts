@@ -91,29 +91,6 @@ contract SGN is Ownable, Pausable {
     }
 
     /**
-     * @notice Redeem rewards
-     * @dev The rewards include both the service reward and mining reward
-     * @dev SGN contract acts as an interface for users to redeem mining rewards
-     * @param _rewardRequest reward request bytes coded in protobuf
-     */
-    function redeemReward(bytes calldata _rewardRequest) external whenNotPaused onlyValidSidechain {
-        require(dpos.validateMultiSigMessage(_rewardRequest), "Validator sigs verification failed");
-
-        PbSgn.RewardRequest memory rewardRequest = PbSgn.decRewardRequest(_rewardRequest);
-        PbSgn.Reward memory reward = PbSgn.decReward(rewardRequest.reward);
-        uint256 newServiceReward = reward.cumulativeServiceReward - redeemedServiceReward[reward.receiver];
-
-        require(servicePool >= newServiceReward, "Service pool is smaller than new service reward");
-        redeemedServiceReward[reward.receiver] = reward.cumulativeServiceReward;
-        servicePool = servicePool - newServiceReward;
-
-        dpos.redeemMiningReward(reward.receiver, reward.cumulativeMiningReward);
-        celr.safeTransfer(reward.receiver, newServiceReward);
-
-        emit RedeemReward(reward.receiver, reward.cumulativeMiningReward, newServiceReward, servicePool);
-    }
-
-    /**
      * @notice Called by the owner to pause contract
      * @dev emergency use only
      */

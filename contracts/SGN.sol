@@ -48,15 +48,6 @@ contract SGN is Ownable, Pausable {
     }
 
     /**
-     * @notice Throws if SGN sidechain is not valid
-     * @dev Check this before sidechain's operations
-     */
-    modifier onlyValidSidechain() {
-        require(dpos.isValidDPoS(), "DPoS is not valid");
-        _;
-    }
-
-    /**
      * @notice Update sidechain address
      * @dev Note that the "sidechain address" here means the address in the offchain sidechain system,
          which is different from the sidechain contract address
@@ -65,9 +56,8 @@ contract SGN is Ownable, Pausable {
     function updateSidechainAddr(bytes calldata _sidechainAddr) external {
         address msgSender = msg.sender;
 
-        (bool initialized, , , uint256 status, , , ) = dpos.getCandidateInfo(msgSender);
+        (uint256 status, , , , ) = dpos.getCandidateInfo(msgSender);
         require(status == uint256(DPoS.CandidateStatus.Unbonded), "msg.sender is not unbonded");
-        require(initialized, "Candidate is not initialized");
 
         bytes memory oldSidechainAddr = sidechainAddrMap[msgSender];
         sidechainAddrMap[msgSender] = _sidechainAddr;
@@ -79,7 +69,7 @@ contract SGN is Ownable, Pausable {
      * @notice Subscribe the guardian service
      * @param _amount subscription fee paid along this function call in CELR tokens
      */
-    function subscribe(uint256 _amount) external whenNotPaused onlyValidSidechain {
+    function subscribe(uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
 
         servicePool = servicePool + _amount;
@@ -88,29 +78,6 @@ contract SGN is Ownable, Pausable {
         celr.safeTransferFrom(msgSender, address(this), _amount);
 
         emit AddSubscriptionBalance(msgSender, _amount);
-    }
-
-    /**
-     * @notice Redeem rewards
-     * @dev The rewards include both the service reward and mining reward
-     * @dev SGN contract acts as an interface for users to redeem mining rewards
-     * @param _rewardRequest reward request bytes coded in protobuf
-     */
-    function redeemReward(bytes calldata _rewardRequest) external whenNotPaused onlyValidSidechain {
-        require(dpos.validateMultiSigMessage(_rewardRequest), "Validator sigs verification failed");
-
-        PbSgn.RewardRequest memory rewardRequest = PbSgn.decRewardRequest(_rewardRequest);
-        PbSgn.Reward memory reward = PbSgn.decReward(rewardRequest.reward);
-        uint256 newServiceReward = reward.cumulativeServiceReward - redeemedServiceReward[reward.receiver];
-
-        require(servicePool >= newServiceReward, "Service pool is smaller than new service reward");
-        redeemedServiceReward[reward.receiver] = reward.cumulativeServiceReward;
-        servicePool = servicePool - newServiceReward;
-
-        dpos.redeemMiningReward(reward.receiver, reward.cumulativeMiningReward);
-        celr.safeTransfer(reward.receiver, newServiceReward);
-
-        emit RedeemReward(reward.receiver, reward.cumulativeMiningReward, newServiceReward, servicePool);
     }
 
     /**

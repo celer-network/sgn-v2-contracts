@@ -16,19 +16,15 @@ import "./Whitelist.sol";
  * @notice This contract holds the basic logic of DPoS in Celer's coherent sidechain system
  */
 contract DPoS is Ownable, Pausable, Whitelist, Govern {
-    uint256 constant DECIMALS_MULTIPLIER = 10**18;
+    uint256 constant CELR_DECIMAL = 10**18;
+    uint256 constant MAX_INT = 2**256 - 1;
     uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
 
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
-    // Unbonded: not a validator and not responsible for previous validator behaviors if any.
-    //   Delegators now are free to withdraw stakes (directly).
-    // Bonded: active validator. Delegators have to wait for slashTimeout to withdraw stakes.
-    // Unbonding: transitional status from Bonded to Unbonded. Candidate has lost the right of
-    //   validator but is still responsible for any misbehaviour done during being validator.
-    //   Delegators should wait until candidate's unbondTime to freely withdraw stakes.
     enum CandidateStatus {
+        Null,
         Unbonded,
         Bonded,
         Unbonding
@@ -37,11 +33,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     enum ValidatorChangeType {
         Add,
         Removal
-    }
-
-    enum MathOperation {
-        Add,
-        Sub
     }
 
     struct WithdrawIntent {
@@ -58,46 +49,40 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 intentEndIndex;
     }
 
+    // used for external delegator view output
+    struct DelegatorInfo {
+        address candidate;
+        uint256 delegatedStake;
+        uint256 undelegatingStake;
+        uint256[] intentAmounts;
+        uint256[] intentProposedTimes;
+    }
+
     struct ValidatorCandidate {
-        bool initialized;
+        CandidateStatus status;
         uint256 minSelfStake;
         uint256 stakingPool; // sum of all delegations to this candidate
         mapping(address => Delegator) delegatorProfiles;
-        CandidateStatus status;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
-        uint256 rateLockEndTime; // must be monotonic increasing. Use block number
-        // for the announcement of increasing commission rate
-        uint256 announcedRate;
-        uint256 announcedLockEndTime;
-        uint256 announcementTime;
         // for decreasing minSelfStake
         uint256 earliestBondTime;
     }
 
-    mapping(uint256 => address) public validatorSet;
-    mapping(uint256 => bool) public usedPenaltyNonce;
-    // used in checkValidatorSigs(). mapping has to be storage type.
-    mapping(address => bool) public checkedValidators;
-    // struct ValidatorCandidate includes a mapping and therefore candidateProfiles can't be public
-    mapping(address => ValidatorCandidate) private candidateProfiles;
-    mapping(address => uint256) public redeemedMiningReward;
+    uint256 public rewardPool;
+    address[] public candidates;
+    mapping(address => ValidatorCandidate) public candidateProfiles;
+    mapping(uint256 => address) public validatorSet; // TODO: deal with set size reduction
+    mapping(address => uint256) public claimedReward;
 
-    uint256 public dposGoLiveTime; // used when bootstrapping initial validators
-    uint256 public miningPool;
-    bool public slashEnabled;
+    bool public slashDisabled;
+    mapping(uint256 => bool) public usedPenaltyNonce;
 
     /* Events */
-    event InitializeCandidate(
-        address indexed candidate,
-        uint256 minSelfStake,
-        uint256 commissionRate,
-        uint256 rateLockEndTime
-    );
-    event CommissionRateAnnouncement(address indexed candidate, uint256 announcedRate, uint256 announcedLockEndTime);
-    event UpdateCommissionRate(address indexed candidate, uint256 newRate, uint256 newLockEndTime);
+    // TODO: remove unnecessary event index
+    event InitializeCandidate(address indexed candidate, uint256 minSelfStake, uint256 commissionRate);
+    event UpdateCommissionRate(address indexed candidate, uint256 newRate);
     event UpdateMinSelfStake(address indexed candidate, uint256 minSelfStake);
-    event Delegate(address indexed delegator, address indexed candidate, uint256 newStake, uint256 stakingPool);
     event ValidatorChange(address indexed ethAddr, ValidatorChangeType indexed changeType);
     event WithdrawFromUnbondedCandidate(address indexed delegator, address indexed candidate, uint256 amount);
     event IntendWithdraw(
@@ -116,8 +101,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     );
     event Compensate(address indexed indemnitee, uint256 amount);
     event CandidateUnbonded(address indexed candidate);
-    event RedeemMiningReward(address indexed receiver, uint256 reward, uint256 miningPool);
-    event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 miningPoolSize);
+    event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
+    event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
     /**
      * @notice DPoS constructor
@@ -126,93 +111,35 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _governProposalDeposit required deposit amount for a governance proposal
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
-     * @param _minValidatorNum the minimum number of validators
      * @param _maxValidatorNum the maximum number of validators
      * @param _minStakeInPool the global minimum requirement of staking pool for each validator
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
-     * @param _dposGoLiveTimeout the timeout for DPoS to go live after contract creation
      */
     constructor(
         address _celerTokenAddress,
         uint256 _governProposalDeposit,
         uint256 _governVoteTimeout,
         uint256 _slashTimeout,
-        uint256 _minValidatorNum,
         uint256 _maxValidatorNum,
         uint256 _minStakeInPool,
-        uint256 _advanceNoticePeriod,
-        uint256 _dposGoLiveTimeout
+        uint256 _advanceNoticePeriod
     )
         Govern(
             _celerTokenAddress,
             _governProposalDeposit,
             _governVoteTimeout,
             _slashTimeout,
-            _minValidatorNum,
             _maxValidatorNum,
             _minStakeInPool,
             _advanceNoticePeriod
         )
-    {
-        dposGoLiveTime = block.number + _dposGoLiveTimeout;
-        slashEnabled = true;
-    }
-
-    /**
-     * @notice Throws if given address is zero address
-     * @param _addr address to be checked
-     */
-    modifier onlyNonZeroAddr(address _addr) {
-        require(_addr != address(0), "0 address");
-        _;
-    }
-
-    /**
-     * @notice Throws if DPoS is not valid
-     * @dev Need to be checked before DPoS's operations
-     */
-    modifier onlyValidDPoS() {
-        require(isValidDPoS(), "DPoS is not valid");
-        _;
-    }
-
-    /**
-     * @notice Throws if msg.sender is not a registered sidechain
-     */
-    modifier onlyRegisteredSidechains() {
-        require(isSidechainRegistered(msg.sender), "Sidechain not registered");
-        _;
-    }
-
-    /**
-     * @notice Throws if contract in migrating state
-     */
-    modifier onlyNotMigrating() {
-        require(!isMigrating(), "contract migrating");
-        _;
-    }
-
-    /**
-     * @notice Throws if amount is smaller than minimum
-     */
-    modifier minAmount(uint256 _amount, uint256 _min) {
-        require(_amount >= _min, "Amount is smaller than minimum requirement");
-        _;
-    }
+    {}
 
     /**
      * @notice Throws if sender is not validator
      */
     modifier onlyValidator() {
         require(isValidator(msg.sender), "caller is not a validator");
-        _;
-    }
-
-    /**
-     * @notice Throws if candidate is not initialized
-     */
-    modifier isCandidateInitialized() {
-        require(candidateProfiles[msg.sender].initialized, "Candidate is not initialized");
         _;
     }
 
@@ -248,40 +175,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         bool passed = yesVoteStakes >= getMinQuorumStakingPool();
         if (!passed) {
-            miningPool = miningPool + paramProposals[_proposalId].deposit;
+            rewardPool = rewardPool + paramProposals[_proposalId].deposit;
         }
         internalConfirmParamProposal(_proposalId, passed);
-    }
-
-    /**
-     * @notice Vote for a sidechain proposal with a specific type of vote
-     * @param _proposalId the id of the sidechain proposal
-     * @param _vote the type of vote
-     */
-    function voteSidechain(uint256 _proposalId, VoteType _vote) external onlyValidator {
-        internalVoteSidechain(_proposalId, msg.sender, _vote);
-    }
-
-    /**
-     * @notice Confirm a sidechain proposal
-     * @param _proposalId the id of the sidechain proposal
-     */
-    function confirmSidechainProposal(uint256 _proposalId) external {
-        uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
-
-        // check Yes votes only now
-        uint256 yesVoteStakes;
-        for (uint256 i = 0; i < maxValidatorNum; i++) {
-            if (getSidechainProposalVote(_proposalId, validatorSet[i]) == VoteType.Yes) {
-                yesVoteStakes = yesVoteStakes + candidateProfiles[validatorSet[i]].stakingPool;
-            }
-        }
-
-        bool passed = yesVoteStakes >= getMinQuorumStakingPool();
-        if (!passed) {
-            miningPool = miningPool + sidechainProposals[_proposalId].deposit;
-        }
-        internalConfirmSidechainProposal(_proposalId, passed);
     }
 
     /**
@@ -290,32 +186,31 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function contributeToMiningPool(uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
-        miningPool = miningPool + _amount;
+        rewardPool = rewardPool + _amount;
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
 
-        emit MiningPoolContribution(msgSender, _amount, miningPool);
+        emit MiningPoolContribution(msgSender, _amount, rewardPool);
     }
 
     /**
-     * @notice Redeem mining reward
-     * @dev The validation of this redeeming operation should be done by the caller, a registered sidechain contract
-     * @dev Here we use cumulative mining reward to simplify the logic in sidechain code
-     * @param _receiver the receiver of the redeemed mining reward
-     * @param _cumulativeReward the latest cumulative mining reward
+     * @notice Claim reward
+     * @dev Here we use cumulative mining reward to make claim process idempotent
+     * @param _rewardRequest reward request bytes coded in protobuf
+     * @param _sigs list of validator signatures
      */
-    function redeemMiningReward(address _receiver, uint256 _cumulativeReward)
-        external
-        whenNotPaused
-        onlyRegisteredSidechains
-    {
-        uint256 newReward = _cumulativeReward - redeemedMiningReward[_receiver];
-        require(miningPool >= newReward, "Mining pool is smaller than new reward");
+    function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
+        verifySignatures(_rewardRequest, _sigs);
+        PbSgn.Reward memory reward = PbSgn.decReward(_rewardRequest);
 
-        redeemedMiningReward[_receiver] = _cumulativeReward;
-        miningPool = miningPool - newReward;
-        celerToken.safeTransfer(_receiver, newReward);
+        uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
+        require(newReward > 0, "No new reward");
+        require(rewardPool >= newReward, "Reward pool is smaller than new reward");
 
-        emit RedeemMiningReward(_receiver, newReward, miningPool);
+        claimedReward[reward.recipient] = reward.cumulativeReward;
+        rewardPool = rewardPool - newReward;
+        celerToken.safeTransfer(reward.recipient, newReward);
+
+        emit RewardClaimed(reward.recipient, newReward, rewardPool);
     }
 
     /**
@@ -323,78 +218,47 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @dev every validator must become a candidate first
      * @param _minSelfStake minimal amount of tokens staked by the validator itself
      * @param _commissionRate the self-declaimed commission rate
-     * @param _rateLockEndTime the lock end time of initial commission rate
      */
-    function initializeCandidate(
-        uint256 _minSelfStake,
-        uint256 _commissionRate,
-        uint256 _rateLockEndTime
-    ) external whenNotPaused onlyWhitelisted {
+    function initializeCandidate(uint256 _minSelfStake, uint256 _commissionRate)
+        external
+        whenNotPaused
+        onlyWhitelisted
+    {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(!candidate.initialized, "Candidate is initialized");
+        require(candidate.status == CandidateStatus.Null, "Candidate is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
+        require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
 
-        candidate.initialized = true;
+        candidate.status = CandidateStatus.Unbonded;
         candidate.minSelfStake = _minSelfStake;
         candidate.commissionRate = _commissionRate;
-        candidate.rateLockEndTime = _rateLockEndTime;
 
-        emit InitializeCandidate(msg.sender, _minSelfStake, _commissionRate, _rateLockEndTime);
+        candidates.push(msg.sender);
+
+        // TODO: auto self delegate when initialized?
+        emit InitializeCandidate(msg.sender, _minSelfStake, _commissionRate);
     }
 
     /**
-     * @notice Apply non-increase-commission-rate changes to commission rate or lock end time,
-     *   including decreasing commission rate and/or changing lock end time
-     * @dev It can increase lock end time immediately without waiting
+     * @notice Update commission rate
      * @param _newRate new commission rate
-     * @param _newLockEndTime new lock end time
      */
-    function nonIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime) external isCandidateInitialized {
+    function updateCommissionRate(uint256 _newRate) external {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(_newRate <= candidate.commissionRate, "Invalid new rate");
-
-        _updateCommissionRate(candidate, _newRate, _newLockEndTime);
-    }
-
-    /**
-     * @notice Announce the intent of increasing the commission rate
-     * @param _newRate new commission rate
-     * @param _newLockEndTime new lock end time
-     */
-    function announceIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime) external isCandidateInitialized {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(candidate.commissionRate < _newRate, "Invalid new rate");
-
-        candidate.announcedRate = _newRate;
-        candidate.announcedLockEndTime = _newLockEndTime;
-        candidate.announcementTime = block.number;
-
-        emit CommissionRateAnnouncement(msg.sender, _newRate, _newLockEndTime);
-    }
-
-    /**
-     * @notice Confirm the intent of increasing the commission rate
-     */
-    function confirmIncreaseCommissionRate() external isCandidateInitialized {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(
-            block.number > candidate.announcementTime + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod)),
-            "Still in notice period"
-        );
-
-        _updateCommissionRate(candidate, candidate.announcedRate, candidate.announcedLockEndTime);
-
-        delete candidate.announcedRate;
-        delete candidate.announcedLockEndTime;
-        delete candidate.announcementTime;
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
+        require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
+        candidate.commissionRate = _newRate;
+        emit UpdateCommissionRate(msg.sender, _newRate);
     }
 
     /**
      * @notice update minimal self stake value
      * @param _minSelfStake minimal amount of tokens staked by the validator itself
      */
-    function updateMinSelfStake(uint256 _minSelfStake) external isCandidateInitialized {
+    function updateMinSelfStake(uint256 _minSelfStake) external {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
+        require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
         if (_minSelfStake < candidate.minSelfStake) {
             require(candidate.status != CandidateStatus.Bonded, "Candidate is bonded");
             candidate.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
@@ -405,30 +269,23 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Delegate CELR tokens to a candidate
+     * @dev Minimal amount per delegate operation is 1 CELR
      * @param _candidateAddr candidate to delegate
      * @param _amount the amount of delegated CELR tokens
      */
-    function delegate(address _candidateAddr, uint256 _amount)
-        external
-        whenNotPaused
-        onlyNonZeroAddr(_candidateAddr)
-        minAmount(_amount, 1 * DECIMALS_MULTIPLIER) // minimal amount per delegate operation is 1 CELR
-    {
+    function delegate(address _candidateAddr, uint256 _amount) public whenNotPaused {
+        require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.initialized, "Candidate is not initialized");
-
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         address msgSender = msg.sender;
-        _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Add);
-
+        _addDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
-
-        emit Delegate(msgSender, _candidateAddr, _amount, candidate.stakingPool);
     }
 
     /**
      * @notice Candidate claims to become a validator
      */
-    function claimValidator() external isCandidateInitialized {
+    function claimValidator() external {
         address msgSender = msg.sender;
         ValidatorCandidate storage candidate = candidateProfiles[msgSender];
         require(
@@ -443,14 +300,16 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         );
 
         uint256 minStakingPoolIndex;
-        uint256 minStakingPool = candidateProfiles[validatorSet[0]].stakingPool;
-        require(validatorSet[0] != msgSender, "Already in validator set");
+        uint256 minStakingPool = MAX_INT;
         uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
-        for (uint256 i = 1; i < maxValidatorNum; i++) {
+        for (uint256 i = 0; i < maxValidatorNum; i++) {
             require(validatorSet[i] != msgSender, "Already in validator set");
             if (candidateProfiles[validatorSet[i]].stakingPool < minStakingPool) {
                 minStakingPoolIndex = i;
                 minStakingPool = candidateProfiles[validatorSet[i]].stakingPool;
+                if (minStakingPool == 0) {
+                    break;
+                }
             }
         }
         require(candidate.stakingPool > minStakingPool, "Not larger than smallest pool");
@@ -478,20 +337,17 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Withdraw delegated stakes from an unbonded candidate
-     * @dev note that the stakes are delegated by the msgSender to the candidate
+     * @dev Stakes are delegated by the msgSender to the candidate
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
-    function withdrawFromUnbondedCandidate(address _candidateAddr, uint256 _amount)
-        external
-        onlyNonZeroAddr(_candidateAddr)
-        minAmount(_amount, 1 * DECIMALS_MULTIPLIER)
-    {
+    function withdrawFromUnbondedCandidate(address _candidateAddr, uint256 _amount) external {
+        require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.status == CandidateStatus.Unbonded || isMigrating(), "invalid status");
+        require(candidate.status == CandidateStatus.Unbonded, "invalid candidate status");
 
         address msgSender = msg.sender;
-        _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Sub);
+        _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
         celerToken.safeTransfer(msgSender, _amount);
 
         emit WithdrawFromUnbondedCandidate(msgSender, _candidateAddr, _amount);
@@ -499,21 +355,18 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Intend to withdraw delegated stakes from a candidate
-     * @dev note that the stakes are delegated by the msgSender to the candidate
+     * @dev Stakes are delegated by the msgSender to the candidate
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
-    function intendWithdraw(address _candidateAddr, uint256 _amount)
-        external
-        onlyNonZeroAddr(_candidateAddr)
-        minAmount(_amount, 1 * DECIMALS_MULTIPLIER)
-    {
+    function intendWithdraw(address _candidateAddr, uint256 _amount) external {
         address msgSender = msg.sender;
-
+        require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         Delegator storage delegator = candidate.delegatorProfiles[msgSender];
 
-        _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Sub);
+        _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
         delegator.undelegatingStake = delegator.undelegatingStake + _amount;
         _validateValidator(_candidateAddr);
 
@@ -530,12 +383,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @dev note that the stakes are delegated by the msgSender to the candidate
      * @param _candidateAddr the address of the candidate
      */
-    function confirmWithdraw(address _candidateAddr) external onlyNonZeroAddr(_candidateAddr) {
+    function confirmWithdraw(address _candidateAddr) external {
         address msgSender = msg.sender;
-        Delegator storage delegator = candidateProfiles[_candidateAddr].delegatorProfiles[msgSender];
+        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
+        Delegator storage delegator = candidate.delegatorProfiles[msgSender];
 
         uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
-        bool isUnbonded = candidateProfiles[_candidateAddr].status == CandidateStatus.Unbonded;
+        bool isUnbonded = candidate.status == CandidateStatus.Unbonded;
         // for all undelegated withdraw intents
         uint256 i;
         for (i = delegator.intentStartIndex; i < delegator.intentEndIndex; i++) {
@@ -568,20 +423,18 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Slash a validator and its delegators
      * @param _penaltyRequest penalty request bytes coded in protobuf
+     * @param _sigs list of validator signatures
      */
-    function slash(bytes calldata _penaltyRequest) external whenNotPaused onlyValidDPoS onlyNotMigrating {
-        require(slashEnabled, "Slash is disabled");
-        PbSgn.PenaltyRequest memory penaltyRequest = PbSgn.decPenaltyRequest(_penaltyRequest);
-        PbSgn.Penalty memory penalty = PbSgn.decPenalty(penaltyRequest.penalty);
-
-        ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
-        require(validator.status != CandidateStatus.Unbonded, "Validator unbounded");
-
-        bytes32 h = keccak256(penaltyRequest.penalty);
-        require(_checkValidatorSigs(h, penaltyRequest.sigs), "Validator sigs verification failed");
+    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs) external whenNotPaused {
+        require(!slashDisabled, "Slash is disabled");
+        PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
+        verifySignatures(_penaltyRequest, _sigs);
         require(block.number < penalty.expireTime, "Penalty expired");
         require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
         usedPenaltyNonce[penalty.nonce] = true;
+
+        ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
+        require(validator.status != CandidateStatus.Unbonded, "Validator unbounded");
 
         uint256 totalSubAmt;
         for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {
@@ -598,13 +451,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
                 delegator.undelegatingStake = delegator.undelegatingStake - remainingAmt;
                 _amt = delegator.delegatedStake;
             }
-            _updateDelegatedStake(
-                validator,
-                penalty.validatorAddress,
-                penalizedDelegator.account,
-                _amt,
-                MathOperation.Sub
-            );
+            _removeDelegatedStake(validator, penalty.validatorAddress, penalizedDelegator.account, _amt);
         }
         _validateValidator(penalty.validatorAddress);
 
@@ -614,8 +461,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             totalAddAmt = totalAddAmt + beneficiary.amt;
 
             if (beneficiary.account == address(0)) {
-                // address(0) stands for miningPool
-                miningPool = miningPool + beneficiary.amt;
+                // address(0) stands for rewardPool
+                rewardPool = rewardPool + beneficiary.amt;
             } else if (beneficiary.account == address(1)) {
                 // address(1) means beneficiary is msg sender
                 celerToken.safeTransfer(msg.sender, beneficiary.amt);
@@ -631,15 +478,28 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Validate multi-signed message
-     * @dev Can't use view here because _checkValidatorSigs is not a view function
-     * @param _request a multi-signed message bytes coded in protobuf
+     * @param _msg signed message
+     * @param _sigs list of validator signatures
      * @return passed the validation or not
      */
-    function validateMultiSigMessage(bytes calldata _request) external onlyRegisteredSidechains returns (bool) {
-        PbSgn.MultiSigMessage memory request = PbSgn.decMultiSigMessage(_request);
-        bytes32 h = keccak256(request.msg);
+    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
+        bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
+        address[] memory signers = new address[](_sigs.length);
+        uint256 quorumStakingPool;
+        address prev = address(0);
+        for (uint256 i = 0; i < _sigs.length; i++) {
+            signers[i] = hash.recover(_sigs[i]);
+            require(signers[i] > prev, "Signers not in ascending order");
+            prev = signers[i];
+            if (candidateProfiles[signers[i]].status != CandidateStatus.Bonded) {
+                continue;
+            }
+            quorumStakingPool = quorumStakingPool + candidateProfiles[signers[i]].stakingPool;
+        }
 
-        return _checkValidatorSigs(h, request.sigs);
+        uint256 minQuorumStakingPool = getMinQuorumStakingPool();
+        require(quorumStakingPool >= minQuorumStakingPool, "Not enough signatures");
+        return true;
     }
 
     /**
@@ -674,14 +534,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Enable slash
      */
     function enableSlash() external onlyOwner {
-        slashEnabled = true;
+        slashDisabled = false;
     }
 
     /**
      * @notice Disable slash
      */
     function disableSlash() external onlyOwner {
-        slashEnabled = false;
+        slashDisabled = true;
     }
 
     /**
@@ -718,11 +578,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         uint256 minStakingPool = candidateProfiles[validatorSet[0]].stakingPool;
         for (uint256 i = 0; i < maxValidatorNum; i++) {
-            if (validatorSet[i] == address(0)) {
-                return 0;
-            }
             if (candidateProfiles[validatorSet[i]].stakingPool < minStakingPool) {
                 minStakingPool = candidateProfiles[validatorSet[i]].stakingPool;
+                if (minStakingPool == 0) {
+                    return 0;
+                }
             }
         }
 
@@ -732,77 +592,82 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Get candidate info
      * @param _candidateAddr the address of the candidate
-     * @return initialized whether initialized or not
+     * @return status candidate status
      * @return minSelfStake minimum self stakes
      * @return stakingPool staking pool
-     * @return status candidate status
      * @return unbondTime unbond time
      * @return commissionRate commission rate
-     * @return rateLockEndTime commission rate lock end time
      */
     function getCandidateInfo(address _candidateAddr)
         external
         view
         returns (
-            bool initialized,
+            uint256 status,
             uint256 minSelfStake,
             uint256 stakingPool,
-            uint256 status,
             uint256 unbondTime,
-            uint256 commissionRate,
-            uint256 rateLockEndTime
+            uint256 commissionRate
         )
     {
         ValidatorCandidate storage c = candidateProfiles[_candidateAddr];
-
-        initialized = c.initialized;
+        status = uint256(c.status);
         minSelfStake = c.minSelfStake;
         stakingPool = c.stakingPool;
-        status = uint256(c.status);
         unbondTime = c.unbondTime;
         commissionRate = c.commissionRate;
-        rateLockEndTime = c.rateLockEndTime;
     }
 
     /**
      * @notice Get the delegator info of a specific candidate
      * @param _candidateAddr the address of the candidate
      * @param _delegatorAddr the address of the delegator
-     * @return delegatedStake delegated stake to this candidate
-     * @return undelegatingStake undelegating stakes
-     * @return intentAmounts the amounts of withdraw intents
-     * @return intentProposedTimes the proposed times of withdraw intents
+     * @return DelegatorInfo from the given candidate
      */
     function getDelegatorInfo(address _candidateAddr, address _delegatorAddr)
-        external
+        public
         view
-        returns (
-            uint256 delegatedStake,
-            uint256 undelegatingStake,
-            uint256[] memory intentAmounts,
-            uint256[] memory intentProposedTimes
-        )
+        returns (DelegatorInfo memory)
     {
         Delegator storage d = candidateProfiles[_candidateAddr].delegatorProfiles[_delegatorAddr];
 
         uint256 len = d.intentEndIndex - d.intentStartIndex;
-        intentAmounts = new uint256[](len);
-        intentProposedTimes = new uint256[](len);
+        uint256[] memory intentAmounts = new uint256[](len);
+        uint256[] memory intentProposedTimes = new uint256[](len);
         for (uint256 i = 0; i < len; i++) {
             intentAmounts[i] = d.withdrawIntents[i + d.intentStartIndex].amount;
             intentProposedTimes[i] = d.withdrawIntents[i + d.intentStartIndex].proposedTime;
         }
 
-        delegatedStake = d.delegatedStake;
-        undelegatingStake = d.undelegatingStake;
+        return
+            DelegatorInfo({
+                candidate: _candidateAddr,
+                delegatedStake: d.delegatedStake,
+                undelegatingStake: d.undelegatingStake,
+                intentAmounts: intentAmounts,
+                intentProposedTimes: intentProposedTimes
+            });
     }
 
     /**
-     * @notice Check this DPoS contract is valid or not now
-     * @return DPoS is valid or not
+     * @notice Get the delegator info of a specific candidate
+     * @param _delegatorAddr the address of the delegator
+     * @return DelegatorInfo from all related candidates
      */
-    function isValidDPoS() public view returns (bool) {
-        return block.number >= dposGoLiveTime && getValidatorNum() >= getUIntValue(uint256(ParamNames.MinValidatorNum));
+    function getDelegatorInfos(address _delegatorAddr) external view returns (DelegatorInfo[] memory) {
+        DelegatorInfo[] memory infos = new DelegatorInfo[](candidates.length);
+        uint32 num = 0;
+        for (uint32 i = 0; i < candidates.length; i++) {
+            Delegator storage d = candidateProfiles[candidates[i]].delegatorProfiles[_delegatorAddr];
+            if (d.delegatedStake == 0 && d.undelegatingStake == 0 && d.intentEndIndex == d.intentStartIndex) {
+                infos[i] = getDelegatorInfo(candidates[i], _delegatorAddr);
+                num++;
+            }
+        }
+        DelegatorInfo[] memory delegatorInfos = new DelegatorInfo[](num);
+        for (uint32 i = 0; i < num; i++) {
+            delegatorInfos[i] = infos[i];
+        }
+        return delegatorInfos;
     }
 
     /**
@@ -812,15 +677,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function isValidator(address _addr) public view returns (bool) {
         return candidateProfiles[_addr].status == CandidateStatus.Bonded;
-    }
-
-    /**
-     * @notice Check if the contract is in migrating state
-     * @return contract in migrating state or not
-     */
-    function isMigrating() public view returns (bool) {
-        uint256 migrationTime = getUIntValue(uint256(ParamNames.MigrationTime));
-        return migrationTime != 0 && block.number >= migrationTime;
     }
 
     /**
@@ -867,56 +723,38 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      *********************/
 
     /**
-     * @notice Update the commission rate of a candidate
-     * @param _candidate the candidate to update
-     * @param _newRate new commission rate
-     * @param _newLockEndTime new lock end time
-     */
-    function _updateCommissionRate(
-        ValidatorCandidate storage _candidate,
-        uint256 _newRate,
-        uint256 _newLockEndTime
-    ) private {
-        require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
-        require(_newLockEndTime >= block.number, "Outdated new lock end time");
-
-        if (_newRate <= _candidate.commissionRate) {
-            require(_newLockEndTime >= _candidate.rateLockEndTime, "Invalid new lock end time");
-        } else {
-            require(block.number > _candidate.rateLockEndTime, "Commission rate is locked");
-        }
-
-        _candidate.commissionRate = _newRate;
-        _candidate.rateLockEndTime = _newLockEndTime;
-
-        emit UpdateCommissionRate(msg.sender, _newRate, _newLockEndTime);
-    }
-
-    /**
-     * @notice Update the delegated stake of a delegator to an candidate
+     * @notice Add the delegated stake of a delegator to an candidate
      * @param _candidate the candidate
      * @param _delegatorAddr the delegator address
      * @param _amount update amount
-     * @param _op update operation
      */
-    function _updateDelegatedStake(
+    function _addDelegatedStake(
         ValidatorCandidate storage _candidate,
         address _candidateAddr,
         address _delegatorAddr,
-        uint256 _amount,
-        MathOperation _op
+        uint256 _amount
     ) private {
         Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
+        _candidate.stakingPool = _candidate.stakingPool + _amount;
+        delegator.delegatedStake = delegator.delegatedStake + _amount;
+        emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
+    }
 
-        if (_op == MathOperation.Add) {
-            _candidate.stakingPool = _candidate.stakingPool + _amount;
-            delegator.delegatedStake = delegator.delegatedStake + _amount;
-        } else if (_op == MathOperation.Sub) {
-            _candidate.stakingPool = _candidate.stakingPool - _amount;
-            delegator.delegatedStake = delegator.delegatedStake - _amount;
-        } else {
-            assert(false);
-        }
+    /**
+     * @notice Add the delegated stake of a delegator to an candidate
+     * @param _candidate the candidate
+     * @param _delegatorAddr the delegator address
+     * @param _amount update amount
+     */
+    function _removeDelegatedStake(
+        ValidatorCandidate storage _candidate,
+        address _candidateAddr,
+        address _delegatorAddr,
+        uint256 _amount
+    ) private {
+        Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
+        delegator.delegatedStake = delegator.delegatedStake - _amount;
+        _candidate.stakingPool = _candidate.stakingPool - _amount;
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
@@ -968,40 +806,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         if (lowSelfStake || lowStakingPool) {
             _removeValidator(_getValidatorIdx(_validatorAddr));
         }
-    }
-
-    /**
-     * @notice Check whether validators with more than 2/3 total stakes have signed this hash
-     * @param _h signed hash
-     * @param _sigs signatures
-     * @return whether the signatures are valid or not
-     */
-    function _checkValidatorSigs(bytes32 _h, bytes[] memory _sigs) private returns (bool) {
-        uint256 minQuorumStakingPool = getMinQuorumStakingPool();
-
-        bytes32 hash = _h.toEthSignedMessageHash();
-        address[] memory addrs = new address[](_sigs.length);
-        uint256 quorumStakingPool;
-        bool hasDuplicatedSig;
-        for (uint256 i = 0; i < _sigs.length; i++) {
-            addrs[i] = hash.recover(_sigs[i]);
-            if (checkedValidators[addrs[i]]) {
-                hasDuplicatedSig = true;
-                break;
-            }
-            if (candidateProfiles[addrs[i]].status != CandidateStatus.Bonded) {
-                continue;
-            }
-
-            quorumStakingPool = quorumStakingPool + candidateProfiles[addrs[i]].stakingPool;
-            checkedValidators[addrs[i]] = true;
-        }
-
-        for (uint256 i = 0; i < _sigs.length; i++) {
-            checkedValidators[addrs[i]] = false;
-        }
-
-        return !hasDuplicatedSig && quorumStakingPool >= minQuorumStakingPool;
     }
 
     /**

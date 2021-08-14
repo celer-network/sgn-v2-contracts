@@ -6,7 +6,7 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getPenaltyRequestBytes } from './lib/proto';
+import { getPenaltyRequest } from './lib/proto';
 import * as consts from './lib/constants';
 import { DPoS, SGN, TestERC20 } from '../typechain';
 
@@ -45,41 +45,29 @@ describe('Basic Tests', function () {
   it('should fail to initialize a candidate when paused', async function () {
     await dpos.pause();
     await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
+      dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
     ).to.be.revertedWith('Pausable: paused');
   });
 
   it('should fail to initialize a non-whitelisted candidate when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
+      dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
     ).to.be.revertedWith('caller is not whitelisted');
   });
 
   it('should initialize a whitelisted candidate successfully when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await dpos.addWhitelisted(candidate.address);
-    await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
-    )
+    await expect(dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
       .to.emit(dpos, 'InitializeCandidate')
-      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);
+      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
   });
 
   it('should initialize a candidate and update sidechain address successfully', async function () {
-    await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
-    )
+    await expect(dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
       .to.emit(dpos, 'InitializeCandidate')
-      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);
+      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
 
     const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
     await expect(sgn.connect(candidate).updateSidechainAddr(sidechainAddr))
@@ -90,17 +78,13 @@ describe('Basic Tests', function () {
   describe('after one candidate finishes initialization', async () => {
     const sidechainAddr = keccak256(['string'], ['sgnaddr']);
     beforeEach(async () => {
-      await dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);
+      await dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
       await sgn.connect(candidate).updateSidechainAddr(sidechainAddr);
     });
 
     it('should fail to initialize the same candidate twice', async function () {
       await expect(
-        dpos
-          .connect(candidate)
-          .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
+        dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
       ).to.be.revertedWith('Candidate is initialized');
     });
 
@@ -118,7 +102,7 @@ describe('Basic Tests', function () {
 
     it('should delegate to candidate by a delegator successfully', async function () {
       await expect(dpos.connect(delegator).delegate(candidate.address, consts.DELEGATOR_STAKE))
-        .to.emit(dpos, 'Delegate')
+        .to.emit(dpos, 'UpdateDelegatedStake')
         .withArgs(delegator.address, candidate.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
     });
 
@@ -150,7 +134,7 @@ describe('Basic Tests', function () {
 
       it('should fail to withdrawFromUnbondedCandidate with amount smaller than 1 CELR', async function () {
         await expect(dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, 1000)).to.be.revertedWith(
-          'Amount is smaller than minimum requirement'
+          'Minimal amount is 1 CELR'
         );
       });
 
@@ -210,12 +194,12 @@ describe('Basic Tests', function () {
           it('should fail withdrawFromUnbondedCandidate', async function () {
             await expect(
               dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, consts.DELEGATOR_STAKE)
-            ).to.be.revertedWith('invalid status');
+            ).to.be.revertedWith('invalid candidate status');
           });
 
           it('should fail to intendWithdraw with amount smaller than 1 CELR', async function () {
             await expect(dpos.connect(delegator).intendWithdraw(candidate.address, 1000)).to.be.revertedWith(
-              'Amount is smaller than minimum requirement'
+              'Minimal amount is 1 CELR'
             );
           });
 
@@ -325,8 +309,7 @@ describe('Basic Tests', function () {
 
             it('should pass with multiple withdrawal intents', async function () {
               const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
-              await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
-              const request = await getPenaltyRequestBytes(
+              const request = await getPenaltyRequest(
                 1,
                 1000000,
                 candidate.address,
@@ -336,7 +319,7 @@ describe('Basic Tests', function () {
                 [slashAmt],
                 [candidate]
               );
-              await dpos.slash(request);
+              await dpos.slash(request.penaltyBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
@@ -345,8 +328,7 @@ describe('Basic Tests', function () {
             });
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
-              await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
-              const request = await getPenaltyRequestBytes(
+              const request = await getPenaltyRequest(
                 1,
                 1000000,
                 candidate.address,
@@ -356,7 +338,7 @@ describe('Basic Tests', function () {
                 [consts.DELEGATOR_STAKE],
                 [candidate]
               );
-              await dpos.slash(request);
+              await dpos.slash(request.penaltyBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))

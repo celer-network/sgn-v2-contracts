@@ -33,11 +33,9 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
     consts.GOVERN_PROPOSAL_DEPOSIT,
     consts.GOVERN_VOTE_TIMEOUT,
     consts.SLASH_TIMEOUT,
-    consts.MIN_VALIDATOR_NUM,
     consts.MAX_VALIDATOR_NUM,
     consts.MIN_STAKING_POOL,
-    consts.ADVANCE_NOTICE_PERIOD,
-    consts.DPOS_GO_LIVE_TIMEOUT
+    consts.ADVANCE_NOTICE_PERIOD
   );
   await dpos.deployed();
 
@@ -60,6 +58,7 @@ export async function getAccounts(admin: Wallet, assets: TestERC20[], num: numbe
       await assets[j].transfer(accounts[i].address, parseUnits('1000'));
     }
   }
+  accounts.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
   return accounts;
 }
 

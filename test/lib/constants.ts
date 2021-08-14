@@ -3,18 +3,15 @@ import { parseUnits } from '@ethersproject/units';
 export const GOVERN_PROPOSAL_DEPOSIT = 100;
 export const GOVERN_VOTE_TIMEOUT = 20;
 export const SLASH_TIMEOUT = 50;
-export const MIN_VALIDATOR_NUM = 1;
 export const MAX_VALIDATOR_NUM = 21;
 export const MIN_STAKING_POOL = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
-export const DPOS_GO_LIVE_TIMEOUT = 20;
 
 export const MIN_SELF_STAKE = parseUnits('2');
 export const CANDIDATE_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL for testing purpose
 export const DELEGATOR_STAKE = parseUnits('6');
 
 export const COMMISSION_RATE = 100;
-export const RATE_LOCK_END_TIME = 2;
 
 export const TYPE_VALIDATOR_ADD = 0;
 export const TYPE_VALIDATOR_REMOVAL = 1;
@@ -22,11 +19,9 @@ export const TYPE_VALIDATOR_REMOVAL = 1;
 export const ENUM_PROPOSAL_DEPOSIT = 0;
 export const ENUM_GOVERN_VOTE_TIMEOUT = 1;
 export const ENUM_SLASH_TIMEOUT = 2;
-export const ENUM_MIN_VALIDATOR_NUM = 3;
 export const ENUM_MAX_VALIDATOR_NUM = 4;
 export const ENUM_MIN_STAKE_IN_POOL = 5;
 export const ENUM_ADVANCE_NOTICE_PEROID = 6;
-export const ENUM_MIGRATION_TIME = 7;
 
 export const ENUM_VOTE_TYPE_UNVOTED = 0;
 export const ENUM_VOTE_TYPE_YES = 1;

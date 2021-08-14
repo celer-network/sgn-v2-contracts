@@ -7,8 +7,6 @@ import protobuf from 'protobufjs';
 protobuf.common('google/protobuf/descriptor.proto', {});
 
 interface Proto {
-  PenaltyRequest: protobuf.Type;
-  RewardRequest: protobuf.Type;
   Penalty: protobuf.Type;
   Reward: protobuf.Type;
   AccountAmtPair: protobuf.Type;
@@ -17,15 +15,11 @@ interface Proto {
 async function getProtos(): Promise<Proto> {
   const sgn = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/sgn.proto`);
 
-  const PenaltyRequest = sgn.lookupType('sgn.PenaltyRequest');
-  const RewardRequest = sgn.lookupType('sgn.RewardRequest');
   const Penalty = sgn.lookupType('sgn.Penalty');
   const Reward = sgn.lookupType('sgn.Reward');
   const AccountAmtPair = sgn.lookupType('sgn.AccountAmtPair');
 
   return {
-    PenaltyRequest,
-    RewardRequest,
     Penalty,
     Reward,
     AccountAmtPair
@@ -74,7 +68,22 @@ async function calculateSignatures(signers: Wallet[], hash: number[]) {
   return sigs;
 }
 
-export async function getPenaltyRequestBytes(
+export async function getRewardRequest(recipient: string, cumulativeReward: BigNumber, signers: Wallet[]) {
+  const { Reward } = await getProtos();
+  const reward = {
+    recipient: hex2Bytes(recipient),
+    cumulativeReward: uint2Bytes(cumulativeReward)
+  };
+  const rewardProto = Reward.create(reward);
+  const rewardBytes = Reward.encode(rewardProto).finish();
+
+  const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
+
+  return { rewardBytes, sigs };
+}
+
+export async function getPenaltyRequest(
   nonce: number,
   expireTime: number,
   validatorAddr: string,
@@ -84,7 +93,7 @@ export async function getPenaltyRequestBytes(
   beneficiaryAmts: BigNumber[],
   signers: Wallet[]
 ) {
-  const { Penalty, PenaltyRequest } = await getProtos();
+  const { Penalty } = await getProtos();
 
   const penalizedDelegators = await getAccountAmtPairs(delegatorAddrs, delegatorAmts);
   const beneficiaries = await getAccountAmtPairs(beneficiaryAddrs, beneficiaryAmts);
@@ -100,39 +109,6 @@ export async function getPenaltyRequestBytes(
 
   const penaltyBytesHash = keccak256(['bytes'], [penaltyBytes]);
   const sigs = await calculateSignatures(signers, hex2Bytes(penaltyBytesHash));
-  const penaltyRequest = {
-    penalty: penaltyBytes,
-    sigs: sigs
-  };
-  const penaltyRequestProto = PenaltyRequest.create(penaltyRequest);
-  const penaltyRequestBytes = PenaltyRequest.encode(penaltyRequestProto).finish();
 
-  return penaltyRequestBytes;
-}
-
-export async function getRewardRequestBytes(
-  receiver: string,
-  cumulativeMiningReward: BigNumber,
-  cumulativeServiceReward: BigNumber,
-  signers: Wallet[]
-) {
-  const { Reward, RewardRequest } = await getProtos();
-  const reward = {
-    receiver: hex2Bytes(receiver),
-    cumulativeMiningReward: uint2Bytes(cumulativeMiningReward),
-    cumulativeServiceReward: uint2Bytes(cumulativeServiceReward)
-  };
-  const rewardProto = Reward.create(reward);
-  const rewardBytes = Reward.encode(rewardProto).finish();
-
-  const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
-  const rewardRequest = {
-    reward: rewardBytes,
-    sigs: sigs
-  };
-  const rewardRequestProto = RewardRequest.create(rewardRequest);
-  const rewardRequestBytes = RewardRequest.encode(rewardRequestProto).finish();
-
-  return rewardRequestBytes;
+  return { penaltyBytes, sigs };
 }

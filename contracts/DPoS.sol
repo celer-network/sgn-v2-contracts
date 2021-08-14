@@ -136,14 +136,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     {}
 
     /**
-     * @notice Throws if amount is smaller than minimum
-     */
-    modifier minAmount(uint256 _amount, uint256 _min) {
-        require(_amount >= _min, "Amount is smaller than minimum requirement");
-        _;
-    }
-
-    /**
      * @notice Throws if sender is not validator
      */
     modifier onlyValidator() {
@@ -281,7 +273,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr candidate to delegate
      * @param _amount the amount of delegated CELR tokens
      */
-    function delegate(address _candidateAddr, uint256 _amount) public whenNotPaused minAmount(_amount, CELR_DECIMAL) {
+    function delegate(address _candidateAddr, uint256 _amount) public whenNotPaused {
+        require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         address msgSender = msg.sender;
@@ -348,10 +341,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
-    function withdrawFromUnbondedCandidate(address _candidateAddr, uint256 _amount)
-        external
-        minAmount(_amount, CELR_DECIMAL)
-    {
+    function withdrawFromUnbondedCandidate(address _candidateAddr, uint256 _amount) external {
+        require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status == CandidateStatus.Unbonded, "invalid candidate status");
 
@@ -368,9 +359,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
-    function intendWithdraw(address _candidateAddr, uint256 _amount) external minAmount(_amount, CELR_DECIMAL) {
+    function intendWithdraw(address _candidateAddr, uint256 _amount) external {
         address msgSender = msg.sender;
-
+        require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         Delegator storage delegator = candidate.delegatorProfiles[msgSender];

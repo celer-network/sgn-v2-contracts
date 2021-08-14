@@ -134,7 +134,7 @@ describe('Basic Tests', function () {
 
       it('should fail to withdrawFromUnbondedCandidate with amount smaller than 1 CELR', async function () {
         await expect(dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, 1000)).to.be.revertedWith(
-          'Amount is smaller than minimum requirement'
+          'Minimal amount is 1 CELR'
         );
       });
 
@@ -199,7 +199,7 @@ describe('Basic Tests', function () {
 
           it('should fail to intendWithdraw with amount smaller than 1 CELR', async function () {
             await expect(dpos.connect(delegator).intendWithdraw(candidate.address, 1000)).to.be.revertedWith(
-              'Amount is smaller than minimum requirement'
+              'Minimal amount is 1 CELR'
             );
           });
 

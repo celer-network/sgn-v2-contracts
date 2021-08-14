@@ -150,14 +150,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Throws if contract in migrating state
-     */
-    modifier onlyNotMigrating() {
-        require(!isMigrating(), "contract migrating");
-        _;
-    }
-
-    /**
      * @notice Throws if amount is smaller than minimum
      */
     modifier minAmount(uint256 _amount, uint256 _min) {
@@ -378,7 +370,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         minAmount(_amount, CELR_DECIMAL)
     {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.status == CandidateStatus.Unbonded || isMigrating(), "invalid status");
+        require(candidate.status == CandidateStatus.Unbonded, "invalid candidate status");
 
         address msgSender = msg.sender;
         _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
@@ -466,7 +458,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         external
         whenNotPaused
         onlyValidDPoS
-        onlyNotMigrating
     {
         require(slashEnabled, "Slash is disabled");
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
@@ -707,15 +698,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function isValidator(address _addr) public view returns (bool) {
         return candidateProfiles[_addr].status == CandidateStatus.Bonded;
-    }
-
-    /**
-     * @notice Check if the contract is in migrating state
-     * @return contract in migrating state or not
-     */
-    function isMigrating() public view returns (bool) {
-        uint256 migrationTime = getUIntValue(uint256(ParamNames.MigrationTime));
-        return migrationTime != 0 && block.number >= migrationTime;
     }
 
     /**

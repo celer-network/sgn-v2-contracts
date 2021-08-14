@@ -22,8 +22,7 @@ contract Govern is Ownable {
         MinValidatorNum,
         MaxValidatorNum,
         MinStakeInPool,
-        AdvanceNoticePeriod,
-        MigrationTime
+        AdvanceNoticePeriod
     }
 
     enum ProposalStatus {

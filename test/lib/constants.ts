@@ -25,7 +25,6 @@ export const ENUM_MIN_VALIDATOR_NUM = 3;
 export const ENUM_MAX_VALIDATOR_NUM = 4;
 export const ENUM_MIN_STAKE_IN_POOL = 5;
 export const ENUM_ADVANCE_NOTICE_PEROID = 6;
-export const ENUM_MIGRATION_TIME = 7;
 
 export const ENUM_VOTE_TYPE_UNVOTED = 0;
 export const ENUM_VOTE_TYPE_YES = 1;

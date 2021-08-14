@@ -194,7 +194,7 @@ describe('Basic Tests', function () {
           it('should fail withdrawFromUnbondedCandidate', async function () {
             await expect(
               dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, consts.DELEGATOR_STAKE)
-            ).to.be.revertedWith('invalid status');
+            ).to.be.revertedWith('invalid candidate status');
           });
 
           it('should fail to intendWithdraw with amount smaller than 1 CELR', async function () {

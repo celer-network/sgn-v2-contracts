@@ -14,7 +14,6 @@ export const CANDIDATE_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL
 export const DELEGATOR_STAKE = parseUnits('6');
 
 export const COMMISSION_RATE = 100;
-export const RATE_LOCK_END_TIME = 2;
 
 export const TYPE_VALIDATOR_ADD = 0;
 export const TYPE_VALIDATOR_REMOVAL = 1;

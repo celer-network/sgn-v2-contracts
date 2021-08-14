@@ -61,19 +61,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         CandidateStatus status;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
-        uint256 rateLockEndTime; // must be monotonic increasing. Use block number
-        // for the announcement of increasing commission rate
-        uint256 announcedRate;
-        uint256 announcedLockEndTime;
-        uint256 announcementTime;
         // for decreasing minSelfStake
         uint256 earliestBondTime;
     }
 
     mapping(uint256 => address) public validatorSet;
     mapping(uint256 => bool) public usedPenaltyNonce;
-    // struct ValidatorCandidate includes a mapping and therefore candidateProfiles can't be public
-    mapping(address => ValidatorCandidate) private candidateProfiles;
+    mapping(address => ValidatorCandidate) public candidateProfiles;
     mapping(address => uint256) public claimedReward;
 
     uint256 public dposGoLiveTime; // used when bootstrapping initial validators
@@ -82,14 +76,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /* Events */
     // TODO: remove unnecessary event index
-    event InitializeCandidate(
-        address indexed candidate,
-        uint256 minSelfStake,
-        uint256 commissionRate,
-        uint256 rateLockEndTime
-    );
-    event CommissionRateAnnouncement(address indexed candidate, uint256 announcedRate, uint256 announcedLockEndTime);
-    event UpdateCommissionRate(address indexed candidate, uint256 newRate, uint256 newLockEndTime);
+    event InitializeCandidate(address indexed candidate, uint256 minSelfStake, uint256 commissionRate);
+    event UpdateCommissionRate(address indexed candidate, uint256 newRate);
     event UpdateMinSelfStake(address indexed candidate, uint256 minSelfStake);
     event Delegate(address indexed delegator, address indexed candidate, uint256 newStake, uint256 stakingPool);
     event ValidatorChange(address indexed ethAddr, ValidatorChangeType indexed changeType);
@@ -277,13 +265,12 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @dev every validator must become a candidate first
      * @param _minSelfStake minimal amount of tokens staked by the validator itself
      * @param _commissionRate the self-declaimed commission rate
-     * @param _rateLockEndTime the lock end time of initial commission rate
      */
-    function initializeCandidate(
-        uint256 _minSelfStake,
-        uint256 _commissionRate,
-        uint256 _rateLockEndTime
-    ) external whenNotPaused onlyWhitelisted {
+    function initializeCandidate(uint256 _minSelfStake, uint256 _commissionRate)
+        external
+        whenNotPaused
+        onlyWhitelisted
+    {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
         require(!candidate.initialized, "Candidate is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
@@ -291,56 +278,19 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         candidate.initialized = true;
         candidate.minSelfStake = _minSelfStake;
         candidate.commissionRate = _commissionRate;
-        candidate.rateLockEndTime = _rateLockEndTime;
 
-        emit InitializeCandidate(msg.sender, _minSelfStake, _commissionRate, _rateLockEndTime);
+        emit InitializeCandidate(msg.sender, _minSelfStake, _commissionRate);
     }
 
     /**
-     * @notice Apply non-increase-commission-rate changes to commission rate or lock end time,
-     *   including decreasing commission rate and/or changing lock end time
-     * @dev It can increase lock end time immediately without waiting
+     * @notice Update commission rate
      * @param _newRate new commission rate
-     * @param _newLockEndTime new lock end time
      */
-    function nonIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime) external isCandidateInitialized {
+    function updateCommissionRate(uint256 _newRate) external isCandidateInitialized {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(_newRate <= candidate.commissionRate, "Invalid new rate");
-
-        _updateCommissionRate(candidate, _newRate, _newLockEndTime);
-    }
-
-    /**
-     * @notice Announce the intent of increasing the commission rate
-     * @param _newRate new commission rate
-     * @param _newLockEndTime new lock end time
-     */
-    function announceIncreaseCommissionRate(uint256 _newRate, uint256 _newLockEndTime) external isCandidateInitialized {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(candidate.commissionRate < _newRate, "Invalid new rate");
-
-        candidate.announcedRate = _newRate;
-        candidate.announcedLockEndTime = _newLockEndTime;
-        candidate.announcementTime = block.number;
-
-        emit CommissionRateAnnouncement(msg.sender, _newRate, _newLockEndTime);
-    }
-
-    /**
-     * @notice Confirm the intent of increasing the commission rate
-     */
-    function confirmIncreaseCommissionRate() external isCandidateInitialized {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(
-            block.number > candidate.announcementTime + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod)),
-            "Still in notice period"
-        );
-
-        _updateCommissionRate(candidate, candidate.announcedRate, candidate.announcedLockEndTime);
-
-        delete candidate.announcedRate;
-        delete candidate.announcedLockEndTime;
-        delete candidate.announcementTime;
+        require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
+        candidate.commissionRate = _newRate;
+        emit UpdateCommissionRate(msg.sender, _newRate);
     }
 
     /**
@@ -702,7 +652,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @return status candidate status
      * @return unbondTime unbond time
      * @return commissionRate commission rate
-     * @return rateLockEndTime commission rate lock end time
      */
     function getCandidateInfo(address _candidateAddr)
         external
@@ -713,8 +662,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             uint256 stakingPool,
             uint256 status,
             uint256 unbondTime,
-            uint256 commissionRate,
-            uint256 rateLockEndTime
+            uint256 commissionRate
         )
     {
         ValidatorCandidate storage c = candidateProfiles[_candidateAddr];
@@ -725,7 +673,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         status = uint256(c.status);
         unbondTime = c.unbondTime;
         commissionRate = c.commissionRate;
-        rateLockEndTime = c.rateLockEndTime;
     }
 
     /**
@@ -829,32 +776,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /*********************
      * Private Functions *
      *********************/
-
-    /**
-     * @notice Update the commission rate of a candidate
-     * @param _candidate the candidate to update
-     * @param _newRate new commission rate
-     * @param _newLockEndTime new lock end time
-     */
-    function _updateCommissionRate(
-        ValidatorCandidate storage _candidate,
-        uint256 _newRate,
-        uint256 _newLockEndTime
-    ) private {
-        require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
-        require(_newLockEndTime >= block.number, "Outdated new lock end time");
-
-        if (_newRate <= _candidate.commissionRate) {
-            require(_newLockEndTime >= _candidate.rateLockEndTime, "Invalid new lock end time");
-        } else {
-            require(block.number > _candidate.rateLockEndTime, "Commission rate is locked");
-        }
-
-        _candidate.commissionRate = _newRate;
-        _candidate.rateLockEndTime = _newLockEndTime;
-
-        emit UpdateCommissionRate(msg.sender, _newRate, _newLockEndTime);
-    }
 
     /**
      * @notice Add the delegated stake of a delegator to an candidate

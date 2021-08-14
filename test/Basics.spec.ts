@@ -45,41 +45,29 @@ describe('Basic Tests', function () {
   it('should fail to initialize a candidate when paused', async function () {
     await dpos.pause();
     await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
+      dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
     ).to.be.revertedWith('Pausable: paused');
   });
 
   it('should fail to initialize a non-whitelisted candidate when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
+      dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
     ).to.be.revertedWith('caller is not whitelisted');
   });
 
   it('should initialize a whitelisted candidate successfully when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await dpos.addWhitelisted(candidate.address);
-    await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
-    )
+    await expect(dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
       .to.emit(dpos, 'InitializeCandidate')
-      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);
+      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
   });
 
   it('should initialize a candidate and update sidechain address successfully', async function () {
-    await expect(
-      dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
-    )
+    await expect(dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
       .to.emit(dpos, 'InitializeCandidate')
-      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);
+      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
 
     const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
     await expect(sgn.connect(candidate).updateSidechainAddr(sidechainAddr))
@@ -90,17 +78,13 @@ describe('Basic Tests', function () {
   describe('after one candidate finishes initialization', async () => {
     const sidechainAddr = keccak256(['string'], ['sgnaddr']);
     beforeEach(async () => {
-      await dpos
-        .connect(candidate)
-        .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);
+      await dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
       await sgn.connect(candidate).updateSidechainAddr(sidechainAddr);
     });
 
     it('should fail to initialize the same candidate twice', async function () {
       await expect(
-        dpos
-          .connect(candidate)
-          .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME)
+        dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
       ).to.be.revertedWith('Candidate is initialized');
     });
 

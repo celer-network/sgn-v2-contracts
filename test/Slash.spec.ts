@@ -33,7 +33,6 @@ describe('Slash Tests', function () {
       await dpos.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await dpos.connect(validators[i]).claimValidator();
     }
-    await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
   });
 
   it('should fail to slash when paused', async function () {

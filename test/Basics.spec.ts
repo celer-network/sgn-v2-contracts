@@ -309,7 +309,6 @@ describe('Basic Tests', function () {
 
             it('should pass with multiple withdrawal intents', async function () {
               const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
-              await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
               const request = await getPenaltyRequest(
                 1,
                 1000000,
@@ -329,7 +328,6 @@ describe('Basic Tests', function () {
             });
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
-              await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
               const request = await getPenaltyRequest(
                 1,
                 1000000,

@@ -36,8 +36,7 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
     consts.MIN_VALIDATOR_NUM,
     consts.MAX_VALIDATOR_NUM,
     consts.MIN_STAKING_POOL,
-    consts.ADVANCE_NOTICE_PERIOD,
-    consts.DPOS_GO_LIVE_TIMEOUT
+    consts.ADVANCE_NOTICE_PERIOD
   );
   await dpos.deployed();
 

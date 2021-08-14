@@ -7,7 +7,6 @@ export const MIN_VALIDATOR_NUM = 1;
 export const MAX_VALIDATOR_NUM = 21;
 export const MIN_STAKING_POOL = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
-export const DPOS_GO_LIVE_TIMEOUT = 20;
 
 export const MIN_SELF_STAKE = parseUnits('2');
 export const CANDIDATE_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL for testing purpose

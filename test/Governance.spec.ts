@@ -32,7 +32,6 @@ describe('Governance Tests', function () {
       await dpos.connect(validators[i]).claimValidator();
     }
     await celr.approve(dpos.address, parseUnits('100'));
-    await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
   });
 
   it('should createParamProposal successfully', async function () {

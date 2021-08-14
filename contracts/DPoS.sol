@@ -70,7 +70,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     mapping(address => ValidatorCandidate) public candidateProfiles;
     mapping(address => uint256) public claimedReward;
 
-    uint256 public dposGoLiveTime; // used when bootstrapping initial validators
     uint256 public rewardPool;
     bool public slashEnabled;
 
@@ -112,7 +111,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _maxValidatorNum the maximum number of validators
      * @param _minStakeInPool the global minimum requirement of staking pool for each validator
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
-     * @param _dposGoLiveTimeout the timeout for DPoS to go live after contract creation
      */
     constructor(
         address _celerTokenAddress,
@@ -122,8 +120,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _minValidatorNum,
         uint256 _maxValidatorNum,
         uint256 _minStakeInPool,
-        uint256 _advanceNoticePeriod,
-        uint256 _dposGoLiveTimeout
+        uint256 _advanceNoticePeriod
     )
         Govern(
             _celerTokenAddress,
@@ -136,7 +133,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _advanceNoticePeriod
         )
     {
-        dposGoLiveTime = block.number + _dposGoLiveTimeout;
         slashEnabled = true;
     }
 
@@ -292,11 +288,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr candidate to delegate
      * @param _amount the amount of delegated CELR tokens
      */
-    function delegate(address _candidateAddr, uint256 _amount)
-        external
-        whenNotPaused
-        minAmount(_amount, CELR_DECIMAL)
-    {
+    function delegate(address _candidateAddr, uint256 _amount) external whenNotPaused minAmount(_amount, CELR_DECIMAL) {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
 
@@ -385,10 +377,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
-    function intendWithdraw(address _candidateAddr, uint256 _amount)
-        external
-        minAmount(_amount, CELR_DECIMAL)
-    {
+    function intendWithdraw(address _candidateAddr, uint256 _amount) external minAmount(_amount, CELR_DECIMAL) {
         address msgSender = msg.sender;
 
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
@@ -454,11 +443,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _penaltyRequest penalty request bytes coded in protobuf
      * @param _sigs list of validator signatures
      */
-    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs)
-        external
-        whenNotPaused
-        onlyValidDPoS
-    {
+    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs) external whenNotPaused onlyValidDPoS {
         require(slashEnabled, "Slash is disabled");
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
         verifySignatures(_penaltyRequest, _sigs);
@@ -688,7 +673,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @return DPoS is valid or not
      */
     function isValidDPoS() public view returns (bool) {
-        return block.number >= dposGoLiveTime && getValidatorNum() >= getUIntValue(uint256(ParamNames.MinValidatorNum));
+        return getValidatorNum() >= getUIntValue(uint256(ParamNames.MinValidatorNum));
     }
 
     /**

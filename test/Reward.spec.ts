@@ -50,14 +50,13 @@ describe('Reward Tests', function () {
       .withArgs(validators[0].address, newRate);
   });
 
-  describe('after candidate is bonded and DPoS goes live', async () => {
+  describe('after candidate is bonded', async () => {
     beforeEach(async () => {
       for (let i = 0; i < 4; i++) {
         await dpos.connect(validators[i]).delegate(validators[i].address, consts.MIN_STAKING_POOL);
         await dpos.connect(validators[i]).claimValidator();
       }
       await dpos.connect(validators[0]).contributeToMiningPool(100);
-      await advanceBlockNumber(consts.DPOS_GO_LIVE_TIMEOUT);
     });
 
     it('should fail to claim reward when paused', async function () {

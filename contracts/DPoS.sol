@@ -177,14 +177,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Throws if msg.sender is not a registered sidechain
-     */
-    modifier onlyRegisteredSidechains() {
-        require(isSidechainRegistered(msg.sender), "Sidechain not registered");
-        _;
-    }
-
-    /**
      * @notice Throws if contract in migrating state
      */
     modifier onlyNotMigrating() {
@@ -254,37 +246,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Vote for a sidechain proposal with a specific type of vote
-     * @param _proposalId the id of the sidechain proposal
-     * @param _vote the type of vote
-     */
-    function voteSidechain(uint256 _proposalId, VoteType _vote) external onlyValidator {
-        internalVoteSidechain(_proposalId, msg.sender, _vote);
-    }
-
-    /**
-     * @notice Confirm a sidechain proposal
-     * @param _proposalId the id of the sidechain proposal
-     */
-    function confirmSidechainProposal(uint256 _proposalId) external {
-        uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
-
-        // check Yes votes only now
-        uint256 yesVoteStakes;
-        for (uint256 i = 0; i < maxValidatorNum; i++) {
-            if (getSidechainProposalVote(_proposalId, validatorSet[i]) == VoteType.Yes) {
-                yesVoteStakes = yesVoteStakes + candidateProfiles[validatorSet[i]].stakingPool;
-            }
-        }
-
-        bool passed = yesVoteStakes >= getMinQuorumStakingPool();
-        if (!passed) {
-            miningPool = miningPool + sidechainProposals[_proposalId].deposit;
-        }
-        internalConfirmSidechainProposal(_proposalId, passed);
-    }
-
-    /**
      * @notice Contribute CELR tokens to the mining pool
      * @param _amount the amount of CELR tokens to contribute
      */
@@ -306,7 +267,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function redeemMiningReward(address _receiver, uint256 _cumulativeReward)
         external
         whenNotPaused
-        onlyRegisteredSidechains
     {
         uint256 newReward = _cumulativeReward - redeemedMiningReward[_receiver];
         require(miningPool >= newReward, "Mining pool is smaller than new reward");
@@ -635,7 +595,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _request a multi-signed message bytes coded in protobuf
      * @return passed the validation or not
      */
-    function validateMultiSigMessage(bytes calldata _request) external onlyRegisteredSidechains returns (bool) {
+    function validateMultiSigMessage(bytes calldata _request) external returns (bool) {
         PbSgn.MultiSigMessage memory request = PbSgn.decMultiSigMessage(_request);
         bytes32 h = keccak256(request.msg);
 

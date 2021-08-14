@@ -37,7 +37,6 @@ describe('Reward Tests', function () {
     subscriber = accounts[1];
     receiver = accounts[2];
 
-    await dpos.registerSidechain(sgn.address);
     await dpos
       .connect(candidate)
       .initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE, consts.RATE_LOCK_END_TIME);

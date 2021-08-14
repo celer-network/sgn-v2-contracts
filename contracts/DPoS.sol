@@ -39,11 +39,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Removal
     }
 
-    enum MathOperation {
-        Add,
-        Sub
-    }
-
     struct WithdrawIntent {
         uint256 amount;
         uint256 proposedTime;
@@ -377,7 +372,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(candidate.initialized, "Candidate is not initialized");
 
         address msgSender = msg.sender;
-        _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Add);
+        _addDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
 
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
 
@@ -450,7 +445,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(candidate.status == CandidateStatus.Unbonded || isMigrating(), "invalid status");
 
         address msgSender = msg.sender;
-        _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Sub);
+        _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
         celerToken.safeTransfer(msgSender, _amount);
 
         emit WithdrawFromUnbondedCandidate(msgSender, _candidateAddr, _amount);
@@ -472,7 +467,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         Delegator storage delegator = candidate.delegatorProfiles[msgSender];
 
-        _updateDelegatedStake(candidate, _candidateAddr, msgSender, _amount, MathOperation.Sub);
+        _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
         delegator.undelegatingStake = delegator.undelegatingStake + _amount;
         _validateValidator(_candidateAddr);
 
@@ -560,13 +555,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
                 delegator.undelegatingStake = delegator.undelegatingStake - remainingAmt;
                 _amt = delegator.delegatedStake;
             }
-            _updateDelegatedStake(
-                validator,
-                penalty.validatorAddress,
-                penalizedDelegator.account,
-                _amt,
-                MathOperation.Sub
-            );
+            _removeDelegatedStake(validator, penalty.validatorAddress, penalizedDelegator.account, _amt);
         }
         _validateValidator(penalty.validatorAddress);
 
@@ -868,30 +857,38 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Update the delegated stake of a delegator to an candidate
+     * @notice Add the delegated stake of a delegator to an candidate
      * @param _candidate the candidate
      * @param _delegatorAddr the delegator address
      * @param _amount update amount
-     * @param _op update operation
      */
-    function _updateDelegatedStake(
+    function _addDelegatedStake(
         ValidatorCandidate storage _candidate,
         address _candidateAddr,
         address _delegatorAddr,
-        uint256 _amount,
-        MathOperation _op
+        uint256 _amount
     ) private {
         Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
+        _candidate.stakingPool = _candidate.stakingPool + _amount;
+        delegator.delegatedStake = delegator.delegatedStake + _amount;
+        emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
+    }
 
-        if (_op == MathOperation.Add) {
-            _candidate.stakingPool = _candidate.stakingPool + _amount;
-            delegator.delegatedStake = delegator.delegatedStake + _amount;
-        } else if (_op == MathOperation.Sub) {
-            _candidate.stakingPool = _candidate.stakingPool - _amount;
-            delegator.delegatedStake = delegator.delegatedStake - _amount;
-        } else {
-            assert(false);
-        }
+    /**
+     * @notice Add the delegated stake of a delegator to an candidate
+     * @param _candidate the candidate
+     * @param _delegatorAddr the delegator address
+     * @param _amount update amount
+     */
+    function _removeDelegatedStake(
+        ValidatorCandidate storage _candidate,
+        address _candidateAddr,
+        address _delegatorAddr,
+        uint256 _amount
+    ) private {
+        Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
+        _candidate.stakingPool = _candidate.stakingPool - _amount;
+        delegator.delegatedStake = delegator.delegatedStake - _amount;
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 

@@ -16,7 +16,7 @@ import "./Whitelist.sol";
  * @notice This contract holds the basic logic of DPoS in Celer's coherent sidechain system
  */
 contract DPoS is Ownable, Pausable, Whitelist, Govern {
-    uint256 constant DECIMALS_MULTIPLIER = 10**18;
+    uint256 constant CELR_DECIMAL = 10**18;
     uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
 
     using SafeERC20 for IERC20;
@@ -29,6 +29,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     //   validator but is still responsible for any misbehaviour done during being validator.
     //   Delegators should wait until candidate's unbondTime to freely withdraw stakes.
     enum CandidateStatus {
+        Null,
         Unbonded,
         Bonded,
         Unbonding
@@ -54,11 +55,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     struct ValidatorCandidate {
-        bool initialized;
+        CandidateStatus status;
         uint256 minSelfStake;
         uint256 stakingPool; // sum of all delegations to this candidate
         mapping(address => Delegator) delegatorProfiles;
-        CandidateStatus status;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
         // for decreasing minSelfStake
@@ -141,15 +141,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Throws if given address is zero address
-     * @param _addr address to be checked
-     */
-    modifier onlyNonZeroAddr(address _addr) {
-        require(_addr != address(0), "0 address");
-        _;
-    }
-
-    /**
      * @notice Throws if DPoS is not valid
      * @dev Need to be checked before DPoS's operations
      */
@@ -179,14 +170,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     modifier onlyValidator() {
         require(isValidator(msg.sender), "caller is not a validator");
-        _;
-    }
-
-    /**
-     * @notice Throws if candidate is not initialized
-     */
-    modifier isCandidateInitialized() {
-        require(candidateProfiles[msg.sender].initialized, "Candidate is not initialized");
         _;
     }
 
@@ -272,10 +255,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         onlyWhitelisted
     {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
-        require(!candidate.initialized, "Candidate is initialized");
+        require(candidate.status == CandidateStatus.Null, "Candidate is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
+        require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
 
-        candidate.initialized = true;
+        candidate.status = CandidateStatus.Unbonded;
         candidate.minSelfStake = _minSelfStake;
         candidate.commissionRate = _commissionRate;
 
@@ -286,8 +270,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Update commission rate
      * @param _newRate new commission rate
      */
-    function updateCommissionRate(uint256 _newRate) external isCandidateInitialized {
+    function updateCommissionRate(uint256 _newRate) external {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         candidate.commissionRate = _newRate;
         emit UpdateCommissionRate(msg.sender, _newRate);
@@ -297,8 +282,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice update minimal self stake value
      * @param _minSelfStake minimal amount of tokens staked by the validator itself
      */
-    function updateMinSelfStake(uint256 _minSelfStake) external isCandidateInitialized {
+    function updateMinSelfStake(uint256 _minSelfStake) external {
         ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
+        require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
         if (_minSelfStake < candidate.minSelfStake) {
             require(candidate.status != CandidateStatus.Bonded, "Candidate is bonded");
             candidate.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
@@ -309,17 +296,17 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Delegate CELR tokens to a candidate
+     * @dev Minimal amount per delegate operation is 1 CELR
      * @param _candidateAddr candidate to delegate
      * @param _amount the amount of delegated CELR tokens
      */
     function delegate(address _candidateAddr, uint256 _amount)
         external
         whenNotPaused
-        onlyNonZeroAddr(_candidateAddr)
-        minAmount(_amount, 1 * DECIMALS_MULTIPLIER) // minimal amount per delegate operation is 1 CELR
+        minAmount(_amount, CELR_DECIMAL)
     {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
-        require(candidate.initialized, "Candidate is not initialized");
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
 
         address msgSender = msg.sender;
         _addDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
@@ -332,7 +319,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Candidate claims to become a validator
      */
-    function claimValidator() external isCandidateInitialized {
+    function claimValidator() external {
         address msgSender = msg.sender;
         ValidatorCandidate storage candidate = candidateProfiles[msgSender];
         require(
@@ -382,14 +369,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Withdraw delegated stakes from an unbonded candidate
-     * @dev note that the stakes are delegated by the msgSender to the candidate
+     * @dev Stakes are delegated by the msgSender to the candidate
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
     function withdrawFromUnbondedCandidate(address _candidateAddr, uint256 _amount)
         external
-        onlyNonZeroAddr(_candidateAddr)
-        minAmount(_amount, 1 * DECIMALS_MULTIPLIER)
+        minAmount(_amount, CELR_DECIMAL)
     {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status == CandidateStatus.Unbonded || isMigrating(), "invalid status");
@@ -403,18 +389,18 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Intend to withdraw delegated stakes from a candidate
-     * @dev note that the stakes are delegated by the msgSender to the candidate
+     * @dev Stakes are delegated by the msgSender to the candidate
      * @param _candidateAddr the address of the candidate
      * @param _amount withdrawn amount
      */
     function intendWithdraw(address _candidateAddr, uint256 _amount)
         external
-        onlyNonZeroAddr(_candidateAddr)
-        minAmount(_amount, 1 * DECIMALS_MULTIPLIER)
+        minAmount(_amount, CELR_DECIMAL)
     {
         address msgSender = msg.sender;
 
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         Delegator storage delegator = candidate.delegatorProfiles[msgSender];
 
         _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
@@ -434,12 +420,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @dev note that the stakes are delegated by the msgSender to the candidate
      * @param _candidateAddr the address of the candidate
      */
-    function confirmWithdraw(address _candidateAddr) external onlyNonZeroAddr(_candidateAddr) {
+    function confirmWithdraw(address _candidateAddr) external {
         address msgSender = msg.sender;
-        Delegator storage delegator = candidateProfiles[_candidateAddr].delegatorProfiles[msgSender];
+        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
+        Delegator storage delegator = candidate.delegatorProfiles[msgSender];
 
         uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
-        bool isUnbonded = candidateProfiles[_candidateAddr].status == CandidateStatus.Unbonded;
+        bool isUnbonded = candidate.status == CandidateStatus.Unbonded;
         // for all undelegated withdraw intents
         uint256 i;
         for (i = delegator.intentStartIndex; i < delegator.intentEndIndex; i++) {
@@ -646,10 +634,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Get candidate info
      * @param _candidateAddr the address of the candidate
-     * @return initialized whether initialized or not
+     * @return status candidate status
      * @return minSelfStake minimum self stakes
      * @return stakingPool staking pool
-     * @return status candidate status
      * @return unbondTime unbond time
      * @return commissionRate commission rate
      */
@@ -657,20 +644,17 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         external
         view
         returns (
-            bool initialized,
+            uint256 status,
             uint256 minSelfStake,
             uint256 stakingPool,
-            uint256 status,
             uint256 unbondTime,
             uint256 commissionRate
         )
     {
         ValidatorCandidate storage c = candidateProfiles[_candidateAddr];
-
-        initialized = c.initialized;
+        status = uint256(c.status);
         minSelfStake = c.minSelfStake;
         stakingPool = c.stakingPool;
-        status = uint256(c.status);
         unbondTime = c.unbondTime;
         commissionRate = c.commissionRate;
     }
@@ -808,8 +792,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _amount
     ) private {
         Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
-        _candidate.stakingPool = _candidate.stakingPool - _amount;
         delegator.delegatedStake = delegator.delegatedStake - _amount;
+        _candidate.stakingPool = _candidate.stakingPool - _amount;
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 

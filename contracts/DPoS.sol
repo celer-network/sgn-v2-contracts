@@ -22,12 +22,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
-    // Unbonded: not a validator and not responsible for previous validator behaviors if any.
-    //   Delegators now are free to withdraw stakes (directly).
-    // Bonded: active validator. Delegators have to wait for slashTimeout to withdraw stakes.
-    // Unbonding: transitional status from Bonded to Unbonded. Candidate has lost the right of
-    //   validator but is still responsible for any misbehaviour done during being validator.
-    //   Delegators should wait until candidate's unbondTime to freely withdraw stakes.
     enum CandidateStatus {
         Null,
         Unbonded,
@@ -54,6 +48,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 intentEndIndex;
     }
 
+    // used for external delegator view output
+    struct DelegatorInfo {
+        address candidate;
+        uint256 delegatedStake;
+        uint256 undelegatingStake;
+        uint256[] intentAmounts;
+        uint256[] intentProposedTimes;
+    }
+
     struct ValidatorCandidate {
         CandidateStatus status;
         uint256 minSelfStake;
@@ -66,8 +69,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     uint256 public rewardPool;
-    mapping(uint256 => address) public validatorSet;
+    address[] public candidates;
     mapping(address => ValidatorCandidate) public candidateProfiles;
+    mapping(uint256 => address) public validatorSet;
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
@@ -249,6 +253,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         candidate.minSelfStake = _minSelfStake;
         candidate.commissionRate = _commissionRate;
 
+        candidates.push(msg.sender);
+
+        // TODO: auto self delegate when initialized?
         emit InitializeCandidate(msg.sender, _minSelfStake, _commissionRate);
     }
 
@@ -286,7 +293,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr candidate to delegate
      * @param _amount the amount of delegated CELR tokens
      */
-    function delegate(address _candidateAddr, uint256 _amount) external whenNotPaused minAmount(_amount, CELR_DECIMAL) {
+    function delegate(address _candidateAddr, uint256 _amount) public whenNotPaused minAmount(_amount, CELR_DECIMAL) {
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
 
@@ -637,33 +644,53 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Get the delegator info of a specific candidate
      * @param _candidateAddr the address of the candidate
      * @param _delegatorAddr the address of the delegator
-     * @return delegatedStake delegated stake to this candidate
-     * @return undelegatingStake undelegating stakes
-     * @return intentAmounts the amounts of withdraw intents
-     * @return intentProposedTimes the proposed times of withdraw intents
+     * @return DelegatorInfo from the given candidate
      */
     function getDelegatorInfo(address _candidateAddr, address _delegatorAddr)
-        external
+        public
         view
-        returns (
-            uint256 delegatedStake,
-            uint256 undelegatingStake,
-            uint256[] memory intentAmounts,
-            uint256[] memory intentProposedTimes
-        )
+        returns (DelegatorInfo memory)
     {
         Delegator storage d = candidateProfiles[_candidateAddr].delegatorProfiles[_delegatorAddr];
 
         uint256 len = d.intentEndIndex - d.intentStartIndex;
-        intentAmounts = new uint256[](len);
-        intentProposedTimes = new uint256[](len);
+        uint256[] memory intentAmounts = new uint256[](len);
+        uint256[] memory intentProposedTimes = new uint256[](len);
         for (uint256 i = 0; i < len; i++) {
             intentAmounts[i] = d.withdrawIntents[i + d.intentStartIndex].amount;
             intentProposedTimes[i] = d.withdrawIntents[i + d.intentStartIndex].proposedTime;
         }
 
-        delegatedStake = d.delegatedStake;
-        undelegatingStake = d.undelegatingStake;
+        return
+            DelegatorInfo({
+                candidate: _candidateAddr,
+                delegatedStake: d.delegatedStake,
+                undelegatingStake: d.undelegatingStake,
+                intentAmounts: intentAmounts,
+                intentProposedTimes: intentProposedTimes
+            });
+    }
+
+    /**
+     * @notice Get the delegator info of a specific candidate
+     * @param _delegatorAddr the address of the delegator
+     * @return DelegatorInfo from all related candidates
+     */
+    function getDelegatorInfos(address _delegatorAddr) external view returns (DelegatorInfo[] memory) {
+        DelegatorInfo[] memory infos = new DelegatorInfo[](candidates.length);
+        uint32 num = 0;
+        for (uint32 i = 0; i < candidates.length; i++) {
+            Delegator storage d = candidateProfiles[candidates[i]].delegatorProfiles[_delegatorAddr];
+            if (d.delegatedStake == 0 && d.undelegatingStake == 0 && d.intentEndIndex == d.intentStartIndex) {
+                infos[i] = getDelegatorInfo(candidates[i], _delegatorAddr);
+                num++;
+            }
+        }
+        DelegatorInfo[] memory delegatorInfos = new DelegatorInfo[](num);
+        for (uint32 i = 0; i < num; i++) {
+            delegatorInfos[i] = infos[i];
+        }
+        return delegatorInfos;
     }
 
     /**

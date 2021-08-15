@@ -56,8 +56,8 @@ contract SGN is Ownable, Pausable {
     function updateSidechainAddr(bytes calldata _sidechainAddr) external {
         address msgSender = msg.sender;
 
-        (uint256 status, , , , ) = dpos.getCandidateInfo(msgSender);
-        require(status == uint256(DPoS.CandidateStatus.Unbonded), "msg.sender is not unbonded");
+        DPoS.CandidateInfo memory info = dpos.getCandidateInfo(msgSender);
+        require(info.status == DPoS.CandidateStatus.Unbonded, "msg.sender is not unbonded");
 
         bytes memory oldSidechainAddr = sidechainAddrMap[msgSender];
         sidechainAddrMap[msgSender] = _sidechainAddr;

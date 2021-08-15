@@ -69,6 +69,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 earliestBondTime;
     }
 
+    // used for external candidate view output
+    struct CandidateInfo {
+        CandidateStatus status;
+        uint256 minSelfStake;
+        uint256 stakingPool;
+        uint256 unbondTime;
+        uint256 commissionRate;
+    }
+
     uint256 public rewardPool;
     uint256 public totalValidatorStake;
     address[] public candidates;
@@ -277,7 +286,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Candidate claims to become a validator
+     * @notice Candidate claims to become a bonded validator
      */
     function claimValidator() external {
         address msgSender = msg.sender;
@@ -581,29 +590,19 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Get candidate info
      * @param _candidateAddr the address of the candidate
-     * @return status candidate status
-     * @return minSelfStake minimum self stakes
-     * @return stakingPool staking pool
-     * @return unbondTime unbond time
-     * @return commissionRate commission rate
+     * @return CandidateInfo from the given candidate
+
      */
-    function getCandidateInfo(address _candidateAddr)
-        external
-        view
-        returns (
-            uint256 status,
-            uint256 minSelfStake,
-            uint256 stakingPool,
-            uint256 unbondTime,
-            uint256 commissionRate
-        )
-    {
+    function getCandidateInfo(address _candidateAddr) external view returns (CandidateInfo memory) {
         ValidatorCandidate storage c = candidateProfiles[_candidateAddr];
-        status = uint256(c.status);
-        minSelfStake = c.minSelfStake;
-        stakingPool = c.stakingPool;
-        unbondTime = c.unbondTime;
-        commissionRate = c.commissionRate;
+        return
+            CandidateInfo({
+                status: c.status,
+                minSelfStake: c.minSelfStake,
+                stakingPool: c.stakingPool,
+                unbondTime: c.unbondTime,
+                commissionRate: c.commissionRate
+            });
     }
 
     /**
@@ -730,7 +729,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
-    function _bondValidator(address _vaddr) private {
+    function _claimValidator(address _vaddr) private {
         ValidatorCandidate storage validator = candidateProfiles[_vaddr];
         validator.status = CandidateStatus.Bonded;
         delete validator.unbondTime;
@@ -738,7 +737,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit ValidatorChange(_vaddr, ValidatorChangeType.Add);
     }
 
-    function _unbondValidator(address _vaddr) private {
+    function _unclaimValidator(address _vaddr) private {
         ValidatorCandidate storage validator = candidateProfiles[_vaddr];
         validator.status = CandidateStatus.Unbonding;
         validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
@@ -752,7 +751,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function _addValidator(address _vaddr) private {
         validators.push(_vaddr);
-        _bondValidator(_vaddr);
+        _claimValidator(_vaddr);
     }
 
     /**
@@ -761,9 +760,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _index the index of the validator to be replaced
      */
     function _replaceValidator(address _vaddr, uint256 _index) private {
-        _unbondValidator(validators[_index]);
+        _unclaimValidator(validators[_index]);
         validators[_index] = _vaddr;
-        _bondValidator(_vaddr);
+        _claimValidator(_vaddr);
     }
 
     /**
@@ -778,7 +777,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
                     validators[i] = validators[lastIndex];
                 }
                 validators.pop();
-                _unbondValidator(_vaddr);
+                _unclaimValidator(_vaddr);
                 return;
             }
         }

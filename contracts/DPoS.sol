@@ -62,7 +62,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         CandidateStatus status;
         uint256 minSelfStake;
         uint256 stakingPool; // sum of all delegations to this candidate
-        mapping(address => Delegator) delegatorProfiles;
+        mapping(address => Delegator) delegators;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
         // for decreasing minSelfStake
@@ -288,10 +288,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         );
         require(block.number >= candidate.earliestBondTime, "Not earliest bond time yet");
         require(candidate.stakingPool >= getUIntValue(uint256(ParamNames.MinStakeInPool)), "Insufficient staking pool");
-        require(
-            candidate.delegatorProfiles[msgSender].delegatedStake >= candidate.minSelfStake,
-            "Not enough self stake"
-        );
+        require(candidate.delegators[msgSender].delegatedStake >= candidate.minSelfStake, "Not enough self stake");
 
         uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
         // if the number of validators has not reached the max_validator_num,
@@ -359,7 +356,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
-        Delegator storage delegator = candidate.delegatorProfiles[msgSender];
+        Delegator storage delegator = candidate.delegators[msgSender];
 
         _removeDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
         delegator.undelegatingStake += _amount;
@@ -382,7 +379,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address msgSender = msg.sender;
         ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
-        Delegator storage delegator = candidate.delegatorProfiles[msgSender];
+        Delegator storage delegator = candidate.delegators[msgSender];
 
         uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
         bool isUnbonded = candidate.status == CandidateStatus.Unbonded;
@@ -437,7 +434,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             totalSubAmt += penalizedDelegator.amt;
             emit Slash(penalty.validatorAddress, penalizedDelegator.account, penalizedDelegator.amt);
 
-            Delegator storage delegator = validator.delegatorProfiles[penalizedDelegator.account];
+            Delegator storage delegator = validator.delegators[penalizedDelegator.account];
             uint256 _amt;
             if (delegator.delegatedStake >= penalizedDelegator.amt) {
                 _amt = penalizedDelegator.amt;
@@ -620,7 +617,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         view
         returns (DelegatorInfo memory)
     {
-        Delegator storage d = candidateProfiles[_candidateAddr].delegatorProfiles[_delegatorAddr];
+        Delegator storage d = candidateProfiles[_candidateAddr].delegators[_delegatorAddr];
 
         uint256 len = d.intentEndIndex - d.intentStartIndex;
         uint256[] memory intentAmounts = new uint256[](len);
@@ -649,7 +646,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         DelegatorInfo[] memory infos = new DelegatorInfo[](candidates.length);
         uint32 num = 0;
         for (uint32 i = 0; i < candidates.length; i++) {
-            Delegator storage d = candidateProfiles[candidates[i]].delegatorProfiles[_delegatorAddr];
+            Delegator storage d = candidateProfiles[candidates[i]].delegators[_delegatorAddr];
             if (d.delegatedStake == 0 && d.undelegatingStake == 0 && d.intentEndIndex == d.intentStartIndex) {
                 infos[i] = getDelegatorInfo(candidates[i], _delegatorAddr);
                 num++;
@@ -703,7 +700,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address _delegatorAddr,
         uint256 _amount
     ) private {
-        Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
+        Delegator storage delegator = _candidate.delegators[_delegatorAddr];
         _candidate.stakingPool += _amount;
         delegator.delegatedStake += _amount;
         if (_candidate.status == CandidateStatus.Bonded) {
@@ -724,7 +721,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address _delegatorAddr,
         uint256 _amount
     ) private {
-        Delegator storage delegator = _candidate.delegatorProfiles[_delegatorAddr];
+        Delegator storage delegator = _candidate.delegators[_delegatorAddr];
         delegator.delegatedStake -= _amount;
         _candidate.stakingPool -= _amount;
         if (_candidate.status == CandidateStatus.Bonded) {
@@ -799,7 +796,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             // no need to validate the stake of a non-validator
             return;
         }
-        bool lowSelfStake = v.delegatorProfiles[_validatorAddr].delegatedStake < v.minSelfStake;
+        bool lowSelfStake = v.delegators[_validatorAddr].delegatedStake < v.minSelfStake;
         bool lowStakingPool = v.stakingPool < getUIntValue(uint256(ParamNames.MinStakeInPool));
         if (lowSelfStake || lowStakingPool) {
             _removeValidator(_validatorAddr);

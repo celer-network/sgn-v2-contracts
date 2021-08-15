@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
+import { deployContracts, getAccounts, loadFixture } from './lib/common';
 import { getPenaltyRequest } from './lib/proto';
 import * as consts from './lib/constants';
 import { DPoS, TestERC20 } from '../typechain';

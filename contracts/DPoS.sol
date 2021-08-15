@@ -329,7 +329,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function confirmUnbondedCandidate(address _candidateAddr) external {
         ValidatorCandidate storage candidate = vcProfiles[_candidateAddr];
         require(candidate.status == CandidateStatus.Unbonding, "Candidate not unbonding");
-        require(block.number >= candidate.unbondTime, "Unbonding time not reached");
+        require(block.number >= candidate.unbondTime, "Unbond time not reached");
 
         candidate.status = CandidateStatus.Unbonded;
         delete candidate.unbondTime;
@@ -727,7 +727,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
-    function _claimValidator(address _validatorAddr) private {
+    function _bondValidator(address _validatorAddr) private {
         ValidatorCandidate storage validator = vcProfiles[_validatorAddr];
         validator.status = CandidateStatus.Bonded;
         delete validator.unbondTime;
@@ -735,7 +735,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit ValidatorChange(_validatorAddr, ValidatorChangeType.Add);
     }
 
-    function _unclaimValidator(address _validatorAddr) private {
+    function _unbondValidator(address _validatorAddr) private {
         ValidatorCandidate storage validator = vcProfiles[_validatorAddr];
         validator.status = CandidateStatus.Unbonding;
         validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
@@ -749,7 +749,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function _addValidator(address _validatorAddr) private {
         validators.push(_validatorAddr);
-        _claimValidator(_validatorAddr);
+        _bondValidator(_validatorAddr);
     }
 
     /**
@@ -758,9 +758,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _index the index of the validator to be replaced
      */
     function _replaceValidator(address _validatorAddr, uint256 _index) private {
-        _unclaimValidator(validators[_index]);
+        _unbondValidator(validators[_index]);
         validators[_index] = _validatorAddr;
-        _claimValidator(_validatorAddr);
+        _bondValidator(_validatorAddr);
     }
 
     /**
@@ -775,7 +775,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
                     validators[i] = validators[lastIndex];
                 }
                 validators.pop();
-                _unclaimValidator(_validatorAddr);
+                _unbondValidator(_validatorAddr);
                 return;
             }
         }

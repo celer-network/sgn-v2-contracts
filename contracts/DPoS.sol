@@ -49,7 +49,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 intentEndIndex;
     }
 
-    // used for external delegator view output
+    // used for external view output
     struct DelegatorInfo {
         address candidate;
         uint256 delegatedStake;
@@ -69,7 +69,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 earliestBondTime;
     }
 
-    // used for external candidate view output
+    // used for external view output
     struct CandidateInfo {
         CandidateStatus status;
         uint256 minSelfStake;
@@ -82,7 +82,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 public totalValidatorStake;
     address[] public candidates;
     address[] public validators; // TODO: deal with set size reduction
-    mapping(address => ValidatorCandidate) public candidateProfiles;
+    mapping(address => ValidatorCandidate) public vcProfiles;
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
@@ -172,7 +172,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 yesVoteStakes;
         for (uint32 i = 0; i < validators.length; i++) {
             if (getParamProposalVote(_proposalId, validators[i]) == VoteType.Yes) {
-                yesVoteStakes += candidateProfiles[validators[i]].stakingPool;
+                yesVoteStakes += vcProfiles[validators[i]].stakingPool;
             }
         }
 
@@ -227,7 +227,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         whenNotPaused
         onlyWhitelisted
     {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
+        ValidatorCandidate storage candidate = vcProfiles[msg.sender];
         require(candidate.status == CandidateStatus.Null, "Candidate is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
         require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
@@ -247,7 +247,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _newRate new commission rate
      */
     function updateCommissionRate(uint256 _newRate) external {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
+        ValidatorCandidate storage candidate = vcProfiles[msg.sender];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         candidate.commissionRate = _newRate;
@@ -259,7 +259,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _minSelfStake minimal amount of tokens staked by the validator itself
      */
     function updateMinSelfStake(uint256 _minSelfStake) external {
-        ValidatorCandidate storage candidate = candidateProfiles[msg.sender];
+        ValidatorCandidate storage candidate = vcProfiles[msg.sender];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
         if (_minSelfStake < candidate.minSelfStake) {
@@ -278,7 +278,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function delegate(address _candidateAddr, uint256 _amount) public whenNotPaused {
         require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
-        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        ValidatorCandidate storage candidate = vcProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         address msgSender = msg.sender;
         _addDelegatedStake(candidate, _candidateAddr, msgSender, _amount);
@@ -290,7 +290,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function claimValidator() external {
         address msgSender = msg.sender;
-        ValidatorCandidate storage candidate = candidateProfiles[msgSender];
+        ValidatorCandidate storage candidate = vcProfiles[msgSender];
         require(
             candidate.status == CandidateStatus.Unbonded || candidate.status == CandidateStatus.Unbonding,
             "Invalid candidate status"
@@ -310,9 +310,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 minStakingPool = MAX_INT;
         uint256 minStakingPoolIndex;
         for (uint256 i = 0; i < maxValidatorNum; i++) {
-            if (candidateProfiles[validators[i]].stakingPool < minStakingPool) {
+            if (vcProfiles[validators[i]].stakingPool < minStakingPool) {
                 minStakingPoolIndex = i;
-                minStakingPool = candidateProfiles[validators[i]].stakingPool;
+                minStakingPool = vcProfiles[validators[i]].stakingPool;
                 if (minStakingPool == 0) {
                     break;
                 }
@@ -327,7 +327,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _candidateAddr the address of the candidate
      */
     function confirmUnbondedCandidate(address _candidateAddr) external {
-        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        ValidatorCandidate storage candidate = vcProfiles[_candidateAddr];
         require(candidate.status == CandidateStatus.Unbonding, "Candidate not unbonding");
         require(block.number >= candidate.unbondTime, "Unbonding time not reached");
 
@@ -344,7 +344,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function withdrawFromUnbondedCandidate(address _candidateAddr, uint256 _amount) external {
         require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
-        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        ValidatorCandidate storage candidate = vcProfiles[_candidateAddr];
         require(candidate.status == CandidateStatus.Unbonded, "invalid candidate status");
 
         address msgSender = msg.sender;
@@ -363,7 +363,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function intendWithdraw(address _candidateAddr, uint256 _amount) external {
         address msgSender = msg.sender;
         require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
-        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        ValidatorCandidate storage candidate = vcProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         Delegator storage delegator = candidate.delegators[msgSender];
 
@@ -386,7 +386,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function confirmWithdraw(address _candidateAddr) external {
         address msgSender = msg.sender;
-        ValidatorCandidate storage candidate = candidateProfiles[_candidateAddr];
+        ValidatorCandidate storage candidate = vcProfiles[_candidateAddr];
         require(candidate.status != CandidateStatus.Null, "Candidate is not initialized");
         Delegator storage delegator = candidate.delegators[msgSender];
 
@@ -434,7 +434,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
         usedPenaltyNonce[penalty.nonce] = true;
 
-        ValidatorCandidate storage validator = candidateProfiles[penalty.validatorAddress];
+        ValidatorCandidate storage validator = vcProfiles[penalty.validatorAddress];
         require(validator.status != CandidateStatus.Unbonded, "Validator unbounded");
 
         uint256 totalSubAmt;
@@ -475,31 +475,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
 
         require(totalSubAmt == totalAddAmt, "Amount not match");
-    }
-
-    /**
-     * @notice Validate multi-signed message
-     * @param _msg signed message
-     * @param _sigs list of validator signatures
-     * @return passed the validation or not
-     */
-    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
-        bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
-        address[] memory signers = new address[](_sigs.length);
-        uint256 signedStake;
-        address prev = address(0);
-        for (uint256 i = 0; i < _sigs.length; i++) {
-            signers[i] = hash.recover(_sigs[i]);
-            require(signers[i] > prev, "Signers not in ascending order");
-            prev = signers[i];
-            if (candidateProfiles[signers[i]].status != CandidateStatus.Bonded) {
-                continue;
-            }
-            signedStake += candidateProfiles[signers[i]].stakingPool;
-        }
-
-        require(signedStake >= getQuorumStake(), "Not enough signatures");
-        return true;
     }
 
     /**
@@ -570,20 +545,44 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
+     * @notice Validate multi-signed message
+     * @param _msg signed message
+     * @param _sigs list of validator signatures
+     * @return passed the validation or not
+     */
+    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
+        bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
+        address[] memory signers = new address[](_sigs.length);
+        uint256 signedStake;
+        address prev = address(0);
+        for (uint256 i = 0; i < _sigs.length; i++) {
+            signers[i] = hash.recover(_sigs[i]);
+            require(signers[i] > prev, "Signers not in ascending order");
+            prev = signers[i];
+            if (vcProfiles[signers[i]].status != CandidateStatus.Bonded) {
+                continue;
+            }
+            signedStake += vcProfiles[signers[i]].stakingPool;
+        }
+
+        require(signedStake >= getQuorumStake(), "Not enough signatures");
+        return true;
+    }
+
+    /**
      * @notice Get the minimum staking pool of all validators
      * @return the minimum staking pool of all validators
      */
-    function getMinStakingPool() external view returns (uint256) {
-        uint256 minStakingPool = candidateProfiles[validators[0]].stakingPool;
+    function getMinStakingPool() public view returns (uint256) {
+        uint256 minStakingPool = vcProfiles[validators[0]].stakingPool;
         for (uint256 i = 0; i < validators.length; i++) {
-            if (candidateProfiles[validators[i]].stakingPool < minStakingPool) {
-                minStakingPool = candidateProfiles[validators[i]].stakingPool;
+            if (vcProfiles[validators[i]].stakingPool < minStakingPool) {
+                minStakingPool = vcProfiles[validators[i]].stakingPool;
                 if (minStakingPool == 0) {
                     return 0;
                 }
             }
         }
-
         return minStakingPool;
     }
 
@@ -591,10 +590,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Get candidate info
      * @param _candidateAddr the address of the candidate
      * @return CandidateInfo from the given candidate
-
      */
-    function getCandidateInfo(address _candidateAddr) external view returns (CandidateInfo memory) {
-        ValidatorCandidate storage c = candidateProfiles[_candidateAddr];
+    function getCandidateInfo(address _candidateAddr) public view returns (CandidateInfo memory) {
+        ValidatorCandidate storage c = vcProfiles[_candidateAddr];
         return
             CandidateInfo({
                 status: c.status,
@@ -616,7 +614,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         view
         returns (DelegatorInfo memory)
     {
-        Delegator storage d = candidateProfiles[_candidateAddr].delegators[_delegatorAddr];
+        Delegator storage d = vcProfiles[_candidateAddr].delegators[_delegatorAddr];
 
         uint256 len = d.intentEndIndex - d.intentStartIndex;
         uint256[] memory intentAmounts = new uint256[](len);
@@ -641,11 +639,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _delegatorAddr the address of the delegator
      * @return DelegatorInfo from all related candidates
      */
-    function getDelegatorInfos(address _delegatorAddr) external view returns (DelegatorInfo[] memory) {
+    function getDelegatorInfos(address _delegatorAddr) public view returns (DelegatorInfo[] memory) {
         DelegatorInfo[] memory infos = new DelegatorInfo[](candidates.length);
         uint32 num = 0;
         for (uint32 i = 0; i < candidates.length; i++) {
-            Delegator storage d = candidateProfiles[candidates[i]].delegators[_delegatorAddr];
+            Delegator storage d = vcProfiles[candidates[i]].delegators[_delegatorAddr];
             if (d.delegatedStake == 0 && d.undelegatingStake == 0 && d.intentEndIndex == d.intentStartIndex) {
                 infos[i] = getDelegatorInfo(candidates[i], _delegatorAddr);
                 num++;
@@ -664,14 +662,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @return the given address is a validator or not
      */
     function isValidator(address _addr) public view returns (bool) {
-        return candidateProfiles[_addr].status == CandidateStatus.Bonded;
+        return vcProfiles[_addr].status == CandidateStatus.Bonded;
     }
 
     /**
      * @notice Get the number of validators
      * @return the number of validators
      */
-    function getValidatorNum() external view returns (uint256) {
+    function getValidatorNum() public view returns (uint256) {
         return validators.length;
     }
 
@@ -729,55 +727,55 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit UpdateDelegatedStake(_delegatorAddr, _candidateAddr, delegator.delegatedStake, _candidate.stakingPool);
     }
 
-    function _claimValidator(address _vaddr) private {
-        ValidatorCandidate storage validator = candidateProfiles[_vaddr];
+    function _claimValidator(address _validatorAddr) private {
+        ValidatorCandidate storage validator = vcProfiles[_validatorAddr];
         validator.status = CandidateStatus.Bonded;
         delete validator.unbondTime;
         totalValidatorStake += validator.stakingPool;
-        emit ValidatorChange(_vaddr, ValidatorChangeType.Add);
+        emit ValidatorChange(_validatorAddr, ValidatorChangeType.Add);
     }
 
-    function _unclaimValidator(address _vaddr) private {
-        ValidatorCandidate storage validator = candidateProfiles[_vaddr];
+    function _unclaimValidator(address _validatorAddr) private {
+        ValidatorCandidate storage validator = vcProfiles[_validatorAddr];
         validator.status = CandidateStatus.Unbonding;
         validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
         totalValidatorStake -= validator.stakingPool;
-        emit ValidatorChange(_vaddr, ValidatorChangeType.Removal);
+        emit ValidatorChange(_validatorAddr, ValidatorChangeType.Removal);
     }
 
     /**
      * @notice Add a validator
-     * @param _vaddr the address of the validator
+     * @param _validatorAddr the address of the validator
      */
-    function _addValidator(address _vaddr) private {
-        validators.push(_vaddr);
-        _claimValidator(_vaddr);
+    function _addValidator(address _validatorAddr) private {
+        validators.push(_validatorAddr);
+        _claimValidator(_validatorAddr);
     }
 
     /**
      * @notice Add a validator
-     * @param _vaddr the address of the new validator
+     * @param _validatorAddr the address of the new validator
      * @param _index the index of the validator to be replaced
      */
-    function _replaceValidator(address _vaddr, uint256 _index) private {
+    function _replaceValidator(address _validatorAddr, uint256 _index) private {
         _unclaimValidator(validators[_index]);
-        validators[_index] = _vaddr;
-        _claimValidator(_vaddr);
+        validators[_index] = _validatorAddr;
+        _claimValidator(_validatorAddr);
     }
 
     /**
      * @notice Remove a validator
-     * @param _vaddr validator to be removed
+     * @param _validatorAddr validator to be removed
      */
-    function _removeValidator(address _vaddr) private {
+    function _removeValidator(address _validatorAddr) private {
         uint256 lastIndex = validators.length - 1;
         for (uint256 i = 0; i < validators.length; i++) {
-            if (validators[i] == _vaddr) {
+            if (validators[i] == _validatorAddr) {
                 if (i < lastIndex) {
                     validators[i] = validators[lastIndex];
                 }
                 validators.pop();
-                _unclaimValidator(_vaddr);
+                _unclaimValidator(_validatorAddr);
                 return;
             }
         }
@@ -790,7 +788,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _validatorAddr the validator address
      */
     function _validateValidator(address _validatorAddr) private {
-        ValidatorCandidate storage v = candidateProfiles[_validatorAddr];
+        ValidatorCandidate storage v = vcProfiles[_validatorAddr];
         if (v.status != CandidateStatus.Bonded) {
             // no need to validate the stake of a non-validator
             return;

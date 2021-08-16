@@ -36,29 +36,29 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     struct Undelegations {
+        uint256 sum;
         mapping(uint256 => Undelegation) queue;
         uint32 head;
         uint32 tail;
     }
 
     struct Delegator {
-        uint256 delegatedStake;
-        uint256 undelegatingStake;
+        uint256 shares;
         Undelegations undelegations;
     }
 
     struct Validator {
         ValidatorStatus status;
-        uint256 minSelfStake;
-        uint256 stakingPool; // sum of all delegations to this validator
+        uint256 tokens; // sum of all delegations to this validator
         mapping(address => Delegator) delegators;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
+        uint256 minSelfDelegation;
         uint256 earliestBondTime;
     }
 
     uint256 public rewardPool;
-    uint256 public totalValidatorStake;
+    uint256 public totalBondedTokens;
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
     mapping(address => Validator) public validators;
@@ -69,18 +69,18 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /* Events */
     // TODO: remove unnecessary event index
-    event InitializeValidatorCandidate(address indexed valAddr, uint256 minSelfStake, uint256 commissionRate);
-    event UpdateCommissionRate(address indexed valAddr, uint256 newRate);
-    event UpdateMinSelfStake(address indexed valAddr, uint256 minSelfStake);
+    event InitializeValidatorCandidate(address indexed valAddr, uint256 minSelfDelegation, uint256 commissionRate);
+    event CommissionRateUpdate(address indexed valAddr, uint256 newRate);
+    event MinSelfDelegationUpdate(address indexed valAddr, uint256 minSelfDelegation);
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event Undelegate(address indexed delAddr, address indexed valAddr, uint256 amount, uint256 creationBlock);
     event UndelegateCompleted(address indexed delAddr, address indexed valAddr, uint256 amount);
     event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
-    event UpdateDelegatedStake(
+    event DelegationUpdate(
         address indexed delAddr,
         address indexed valAddr,
-        uint256 delegatorStake,
-        uint256 validatorPool
+        uint256 delegatorShares,
+        uint256 validatoTokens
     );
     event Compensate(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
@@ -94,7 +94,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
      * @param _maxBondedValidators the maximum number of bonded validators
-     * @param _minStakeInPool the global minimum requirement of staking pool for each validator
+     * @param _minValidatorTokens the global minimum token amout requirement for bonded validator
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
      */
     constructor(
@@ -103,7 +103,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _governVoteTimeout,
         uint256 _slashTimeout,
         uint256 _maxBondedValidators,
-        uint256 _minStakeInPool,
+        uint256 _minValidatorTokens,
         uint256 _advanceNoticePeriod
     )
         Govern(
@@ -112,7 +112,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _governVoteTimeout,
             _slashTimeout,
             _maxBondedValidators,
-            _minStakeInPool,
+            _minValidatorTokens,
             _advanceNoticePeriod
         )
     {}
@@ -126,10 +126,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     /**
      * @notice Initialize a validator candidate
      * @dev every validator must become a candidate first
-     * @param _minSelfStake minimal amount of tokens staked by the validator itself
+     * @param _minSelfDelegation minimal amount of tokens staked by the validator itself
      * @param _commissionRate the self-declaimed commission rate
      */
-    function initializeValidatorCandidate(uint256 _minSelfStake, uint256 _commissionRate)
+    function initializeValidatorCandidate(uint256 _minSelfDelegation, uint256 _commissionRate)
         external
         whenNotPaused
         onlyWhitelisted
@@ -137,16 +137,16 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[msg.sender];
         require(validator.status == ValidatorStatus.Null, "Validator is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
-        require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
+        require(_minSelfDelegation >= CELR_DECIMAL, "Invalid min self delegation");
 
         validator.status = ValidatorStatus.Unbonded;
-        validator.minSelfStake = _minSelfStake;
+        validator.minSelfDelegation = _minSelfDelegation;
         validator.commissionRate = _commissionRate;
 
         valAddrs.push(msg.sender);
 
         // TODO: auto self delegate when initialized?
-        emit InitializeValidatorCandidate(msg.sender, _minSelfStake, _commissionRate);
+        emit InitializeValidatorCandidate(msg.sender, _minSelfDelegation, _commissionRate);
     }
 
     /**
@@ -160,8 +160,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             "Invalid validator status"
         );
         require(block.number >= validator.earliestBondTime, "Not earliest bond time yet");
-        require(validator.stakingPool >= getUIntValue(uint256(ParamNames.MinStakeInPool)), "Insufficient staking pool");
-        require(validator.delegators[msgSender].delegatedStake >= validator.minSelfStake, "Not enough self stake");
+        require(validator.tokens >= getUIntValue(uint256(ParamNames.MinValidatorTokens)), "Need min required tokens");
+        require(validator.delegators[msgSender].shares >= validator.minSelfDelegation, "Insufficient self delegation");
 
         uint256 maxBondedValidators = getUIntValue(uint256(ParamNames.MaxBondedValidators));
         // if the number of validators has not reached the max_validator_num,
@@ -170,20 +170,20 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             return _bondValidator(msgSender);
         }
         // if the number of validators has alrady reached the max_validator_num,
-        // add validator only if its pool size is greater than the current smallest validator staking pool
-        uint256 minStakingPool = MAX_INT;
-        uint256 minStakingPoolIndex;
+        // add validator only if its tokens is more than the current least bonded validator tokens
+        uint256 minTokens = MAX_INT;
+        uint256 minTokensIndex;
         for (uint256 i = 0; i < maxBondedValidators; i++) {
-            if (validators[bondedValAddrs[i]].stakingPool < minStakingPool) {
-                minStakingPoolIndex = i;
-                minStakingPool = validators[bondedValAddrs[i]].stakingPool;
-                if (minStakingPool == 0) {
+            if (validators[bondedValAddrs[i]].tokens < minTokens) {
+                minTokensIndex = i;
+                minTokens = validators[bondedValAddrs[i]].tokens;
+                if (minTokens == 0) {
                     break;
                 }
             }
         }
-        require(validator.stakingPool > minStakingPool, "Not larger than smallest pool");
-        _replaceBondedValidator(msgSender, minStakingPoolIndex);
+        require(validator.tokens > minTokens, "Insufficient tokens");
+        _replaceBondedValidator(msgSender, minTokensIndex);
     }
 
     /**
@@ -211,13 +211,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[_valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         address msgSender = msg.sender;
-        _addDelegatedStake(validator, _valAddr, msgSender, _amount);
+        _addDelegation(validator, _valAddr, msgSender, _amount);
         celerToken.safeTransferFrom(msgSender, address(this), _amount);
     }
 
     /**
-     * @notice Undelegated stakes from a validator
-     * @dev Stakes are delegated by the msgSender to the validator
+     * @notice Undelegated tokens from a validator
+     * @dev Tokens are delegated by the msgSender to the validator
      * @param _valAddr the address of the validator
      * @param _amount undelegate amount
      */
@@ -226,7 +226,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(_amount >= CELR_DECIMAL, "Minimal amount is 1 CELR");
         Validator storage validator = validators[_valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
-        _removeDelegatedStake(validator, _valAddr, msgSender, _amount);
+        _removeDelegation(validator, _valAddr, msgSender, _amount);
         if (validator.status == ValidatorStatus.Unbonded) {
             celerToken.safeTransfer(msgSender, _amount);
             emit UndelegateCompleted(msgSender, _valAddr, _amount);
@@ -234,7 +234,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
 
         Delegator storage delegator = validator.delegators[msgSender];
-        delegator.undelegatingStake += _amount;
+        delegator.undelegations.sum += _amount;
         _validateValidator(_valAddr);
 
         Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
@@ -247,7 +247,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Complete pending undelegations from a validator
-     * @dev note that the stakes are delegated by the msgSender to the validator
      * @param _valAddr the address of the validator
      */
     function completeUndelegate(address _valAddr) external {
@@ -271,15 +270,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
         delegator.undelegations.head = i;
         // for all pending undelegations
-        uint256 undelegatingStakeWithoutSlash;
+        uint256 undelegatingTokensWithoutSlash;
         for (; i < delegator.undelegations.tail; i++) {
-            undelegatingStakeWithoutSlash += delegator.undelegations.queue[i].amount;
+            undelegatingTokensWithoutSlash += delegator.undelegations.queue[i].amount;
         }
 
         uint256 undelegateAmt;
-        if (delegator.undelegatingStake > undelegatingStakeWithoutSlash) {
-            undelegateAmt = delegator.undelegatingStake - undelegatingStakeWithoutSlash;
-            delegator.undelegatingStake = undelegatingStakeWithoutSlash;
+        if (delegator.undelegations.sum > undelegatingTokensWithoutSlash) {
+            undelegateAmt = delegator.undelegations.sum - undelegatingTokensWithoutSlash;
+            delegator.undelegations.sum = undelegatingTokensWithoutSlash;
 
             celerToken.safeTransfer(msgSender, undelegateAmt);
         }
@@ -317,23 +316,23 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         validator.commissionRate = _newRate;
-        emit UpdateCommissionRate(msg.sender, _newRate);
+        emit CommissionRateUpdate(msg.sender, _newRate);
     }
 
     /**
-     * @notice update minimal self stake value
-     * @param _minSelfStake minimal amount of tokens staked by the validator itself
+     * @notice update minimal self delegation value
+     * @param _minSelfDelegation minimal amount of tokens staked by the validator itself
      */
-    function updateMinSelfStake(uint256 _minSelfStake) external {
+    function updateMinSelfDelegation(uint256 _minSelfDelegation) external {
         Validator storage validator = validators[msg.sender];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
-        require(_minSelfStake >= CELR_DECIMAL, "Invalid minimal self stake");
-        if (_minSelfStake < validator.minSelfStake) {
+        require(_minSelfDelegation >= CELR_DECIMAL, "Invalid min self delegation");
+        if (_minSelfDelegation < validator.minSelfDelegation) {
             require(validator.status != ValidatorStatus.Bonded, "Validator is bonded");
             validator.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
         }
-        validator.minSelfStake = _minSelfStake;
-        emit UpdateMinSelfStake(msg.sender, _minSelfStake);
+        validator.minSelfDelegation = _minSelfDelegation;
+        emit MinSelfDelegationUpdate(msg.sender, _minSelfDelegation);
     }
 
     /**
@@ -360,14 +359,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
             Delegator storage delegator = validator.delegators[penalizedDelegator.account];
             uint256 _amt;
-            if (delegator.delegatedStake >= penalizedDelegator.amt) {
+            if (delegator.shares >= penalizedDelegator.amt) {
                 _amt = penalizedDelegator.amt;
             } else {
-                uint256 remainingAmt = penalizedDelegator.amt - delegator.delegatedStake;
-                delegator.undelegatingStake -= remainingAmt;
-                _amt = delegator.delegatedStake;
+                uint256 remainingAmt = penalizedDelegator.amt - delegator.shares;
+                delegator.undelegations.sum -= remainingAmt;
+                _amt = delegator.shares;
             }
-            _removeDelegatedStake(validator, penalty.validatorAddress, penalizedDelegator.account, _amt);
+            _removeDelegation(validator, penalty.validatorAddress, penalizedDelegator.account, _amt);
         }
         _validateValidator(penalty.validatorAddress);
 
@@ -408,14 +407,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function confirmParamProposal(uint256 _proposalId) external {
         // check Yes votes only for now
-        uint256 yesVoteStakes;
+        uint256 yesVotes;
         for (uint32 i = 0; i < bondedValAddrs.length; i++) {
             if (getParamProposalVote(_proposalId, bondedValAddrs[i]) == VoteType.Yes) {
-                yesVoteStakes += validators[bondedValAddrs[i]].stakingPool;
+                yesVotes += validators[bondedValAddrs[i]].tokens;
             }
         }
 
-        bool passed = yesVoteStakes >= getQuorumStake();
+        bool passed = yesVotes >= getQuorumTokens();
         if (!passed) {
             rewardPool += paramProposals[_proposalId].deposit;
         }
@@ -514,7 +513,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
         address[] memory signers = new address[](_sigs.length);
-        uint256 signedStake;
+        uint256 signedTokens;
         address prev = address(0);
         for (uint256 i = 0; i < _sigs.length; i++) {
             signers[i] = hash.recover(_sigs[i]);
@@ -523,28 +522,28 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             if (validators[signers[i]].status != ValidatorStatus.Bonded) {
                 continue;
             }
-            signedStake += validators[signers[i]].stakingPool;
+            signedTokens += validators[signers[i]].tokens;
         }
 
-        require(signedStake >= getQuorumStake(), "Not enough signatures");
+        require(signedTokens >= getQuorumTokens(), "Not enough signatures");
         return true;
     }
 
     /**
-     * @notice Get quorum amount of stakes
+     * @notice Get quorum amount of tokens
      * @return the quorum amount
      */
-    function getQuorumStake() public view returns (uint256) {
-        return (totalValidatorStake * 2) / 3 + 1;
+    function getQuorumTokens() public view returns (uint256) {
+        return (totalBondedTokens * 2) / 3 + 1;
     }
 
     /**
      * @notice Get validator info
      * @param _valAddr the address of the validator
-     * @return Validator staking pool size
+     * @return Validator token amount
      */
-    function getValidatorStake(address _valAddr) public view returns (uint256) {
-        return validators[_valAddr].stakingPool;
+    function getValidatorTokens(address _valAddr) public view returns (uint256) {
+        return validators[_valAddr].tokens;
     }
 
     /**
@@ -560,24 +559,24 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @notice Get the minimum staking pool of all bonded validators
      * @return the minimum staking pool of all bonded validators
      */
-    function getMinStakingPool() public view returns (uint256) {
-        uint256 minStakingPool = validators[bondedValAddrs[0]].stakingPool;
+    function getMinValidatorTokens() public view returns (uint256) {
+        uint256 minTokens = validators[bondedValAddrs[0]].tokens;
         for (uint256 i = 1; i < bondedValAddrs.length; i++) {
-            if (validators[bondedValAddrs[i]].stakingPool < minStakingPool) {
-                minStakingPool = validators[bondedValAddrs[i]].stakingPool;
-                if (minStakingPool == 0) {
+            if (validators[bondedValAddrs[i]].tokens < minTokens) {
+                minTokens = validators[bondedValAddrs[i]].tokens;
+                if (minTokens == 0) {
                     return 0;
                 }
             }
         }
-        return minStakingPool;
+        return minTokens;
     }
 
     // used for delegator external view output
     struct DelegatorInfo {
         address valAddr;
-        uint256 delegatedStake;
-        uint256 undelegatingStake;
+        uint256 shares;
+        uint256 undelegatingTokens;
         Undelegation[] undelegations;
     }
 
@@ -599,8 +598,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         return
             DelegatorInfo({
                 valAddr: _valAddr,
-                delegatedStake: d.delegatedStake,
-                undelegatingStake: d.undelegatingStake,
+                shares: d.shares,
+                undelegatingTokens: d.undelegations.sum,
                 undelegations: undelegations
             });
     }
@@ -615,7 +614,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint32 num = 0;
         for (uint32 i = 0; i < valAddrs.length; i++) {
             Delegator storage d = validators[valAddrs[i]].delegators[_delAddr];
-            if (d.delegatedStake == 0 && d.undelegatingStake == 0) {
+            if (d.shares == 0 && d.undelegations.sum == 0) {
                 infos[i] = getDelegatorInfo(valAddrs[i], _delAddr);
                 num++;
             }
@@ -657,52 +656,52 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      *********************/
 
     /**
-     * @notice Add the delegated stake of a delegator to an validator
+     * @notice Add the delegated tokens of a delegator to an validator
      * @param _validator the validator
      * @param _delAddr the delegator address
      * @param _amount update amount
      */
-    function _addDelegatedStake(
+    function _addDelegation(
         Validator storage _validator,
         address _valAddr,
         address _delAddr,
         uint256 _amount
     ) private {
         Delegator storage delegator = _validator.delegators[_delAddr];
-        _validator.stakingPool += _amount;
-        delegator.delegatedStake += _amount;
+        _validator.tokens += _amount;
+        delegator.shares += _amount;
         if (_validator.status == ValidatorStatus.Bonded) {
-            totalValidatorStake += _amount;
+            totalBondedTokens += _amount;
         }
-        emit UpdateDelegatedStake(_delAddr, _valAddr, delegator.delegatedStake, _validator.stakingPool);
+        emit DelegationUpdate(_delAddr, _valAddr, delegator.shares, _validator.tokens);
     }
 
     /**
-     * @notice Add the delegated stake of a delegator to an validator
+     * @notice Add the delegated tokens of a delegator to an validator
      * @param _validator the validator
      * @param _delAddr the delegator address
      * @param _amount update amount
      */
-    function _removeDelegatedStake(
+    function _removeDelegation(
         Validator storage _validator,
         address _valAddr,
         address _delAddr,
         uint256 _amount
     ) private {
         Delegator storage delegator = _validator.delegators[_delAddr];
-        delegator.delegatedStake -= _amount;
-        _validator.stakingPool -= _amount;
+        delegator.shares -= _amount;
+        _validator.tokens -= _amount;
         if (_validator.status == ValidatorStatus.Bonded) {
-            totalValidatorStake -= _amount;
+            totalBondedTokens -= _amount;
         }
-        emit UpdateDelegatedStake(_delAddr, _valAddr, delegator.delegatedStake, _validator.stakingPool);
+        emit DelegationUpdate(_delAddr, _valAddr, delegator.shares, _validator.tokens);
     }
 
     function _setBondedValidator(address _valAddr) private {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Bonded;
         delete validator.unbondTime;
-        totalValidatorStake += validator.stakingPool;
+        totalBondedTokens += validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Bonded);
     }
 
@@ -710,7 +709,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Unbonding;
         validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
-        totalValidatorStake -= validator.stakingPool;
+        totalBondedTokens -= validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonding);
     }
 
@@ -754,19 +753,20 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Validate a validator status after stakes change
+     * @notice Validate a validator status after delegation change
      * @dev remove this validator if it doesn't meet the requirement of being a validator
      * @param _valAddr the validator address
      */
     function _validateValidator(address _valAddr) private {
         Validator storage v = validators[_valAddr];
         if (v.status != ValidatorStatus.Bonded) {
-            // no need to validate the stake of a non-validator
+            // no need to validate the tokens of a non-validator
             return;
         }
-        bool lowSelfStake = v.delegators[_valAddr].delegatedStake < v.minSelfStake;
-        bool lowStakingPool = v.stakingPool < getUIntValue(uint256(ParamNames.MinStakeInPool));
-        if (lowSelfStake || lowStakingPool) {
+        if (
+            v.delegators[_valAddr].shares < v.minSelfDelegation ||
+            v.tokens < getUIntValue(uint256(ParamNames.MinValidatorTokens))
+        ) {
             _unbondValidator(_valAddr);
         }
     }

@@ -7,7 +7,7 @@ export const MAX_VALIDATOR_NUM = 7;
 export const MIN_STAKING_POOL = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
 
-export const MIN_SELF_STAKE = parseUnits('2');
+export const MIN_SELF_DELEGATION = parseUnits('2');
 export const VALIDATOR_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL for testing purpose
 export const DELEGATOR_STAKE = parseUnits('6');
 
@@ -21,7 +21,7 @@ export const ENUM_PROPOSAL_DEPOSIT = 0;
 export const ENUM_GOVERN_VOTE_TIMEOUT = 1;
 export const ENUM_SLASH_TIMEOUT = 2;
 export const ENUM_MAX_VALIDATOR_NUM = 4;
-export const ENUM_MIN_STAKE_IN_POOL = 5;
+export const ENUM_MIN_VALIDATOR_TOKENS = 5;
 export const ENUM_ADVANCE_NOTICE_PEROID = 6;
 
 export const ENUM_VOTE_TYPE_UNVOTED = 0;

@@ -25,7 +25,9 @@ describe('Reward Tests', function () {
     validators = await getAccounts(res.admin, [celr], 4);
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos.connect(validators[i]).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
+      await dpos
+        .connect(validators[i])
+        .initializeValidatorCandidate(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.connect(validators[i]).delegate(validators[i].address, consts.MIN_STAKING_POOL);
       await dpos.connect(validators[i]).bondValidator();
     }
@@ -46,7 +48,7 @@ describe('Reward Tests', function () {
   it('should update the commission rate lock successfully', async function () {
     let newRate = consts.COMMISSION_RATE + 10;
     await expect(dpos.connect(validators[0]).updateCommissionRate(newRate))
-      .to.emit(dpos, 'UpdateCommissionRate')
+      .to.emit(dpos, 'CommissionRateUpdate')
       .withArgs(validators[0].address, newRate);
   });
 

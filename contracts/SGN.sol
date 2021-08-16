@@ -23,11 +23,7 @@ contract SGN is Ownable, Pausable {
     mapping(address => bytes) public sidechainAddrMap;
 
     /* Events */
-    event UpdateSidechainAddr(
-        address indexed candidate,
-        bytes indexed oldSidechainAddr,
-        bytes indexed newSidechainAddr
-    );
+    event UpdateSidechainAddr(address indexed valAddr, bytes indexed oldSidechainAddr, bytes indexed newSidechainAddr);
     event AddSubscriptionBalance(address indexed consumer, uint256 amount);
     event RedeemReward(
         address indexed receiver,
@@ -56,8 +52,8 @@ contract SGN is Ownable, Pausable {
     function updateSidechainAddr(bytes calldata _sidechainAddr) external {
         address msgSender = msg.sender;
 
-        DPoS.CandidateInfo memory info = dpos.getCandidateInfo(msgSender);
-        require(info.status == DPoS.CandidateStatus.Unbonded, "msg.sender is not unbonded");
+        DPoS.ValidatorInfo memory info = dpos.getValidatorInfo(msgSender);
+        require(info.status == DPoS.ValidatorStatus.Unbonded, "msg.sender is not unbonded");
 
         bytes memory oldSidechainAddr = sidechainAddrMap[msgSender];
         sidechainAddrMap[msgSender] = _sidechainAddr;

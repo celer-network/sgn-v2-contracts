@@ -8,7 +8,7 @@ export const MIN_STAKING_POOL = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
 
 export const MIN_SELF_STAKE = parseUnits('2');
-export const CANDIDATE_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL for testing purpose
+export const VALIDATOR_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL for testing purpose
 export const DELEGATOR_STAKE = parseUnits('6');
 
 export const COMMISSION_RATE = 100;
@@ -17,8 +17,8 @@ export const STATUS_UNBONDED = 1;
 export const STATUS_BONDED = 2;
 export const STATUS_UNBONDING = 3;
 
-export const TYPE_VALIDATOR_ADD = 0;
-export const TYPE_VALIDATOR_REMOVAL = 1;
+export const TYPE_VALIDATOR_BOND = 0;
+export const TYPE_VALIDATOR_UNBOND = 1;
 
 export const ENUM_PROPOSAL_DEPOSIT = 0;
 export const ENUM_GOVERN_VOTE_TIMEOUT = 1;

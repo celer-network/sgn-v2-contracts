@@ -334,16 +334,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(!slashDisabled, "Slash is disabled");
         PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
         verifySignatures(_penaltyRequest, _sigs);
-        require(block.number < penalty.expireTime, "Penalty expired");
+        require(block.number < penalty.infractionBlock + penalty.timeout, "Penalty expired");
         require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
         usedPenaltyNonce[penalty.nonce] = true;
 
-        Validator storage validator = validators[penalty.validatorAddress];
+        Validator storage validator = validators[penalty.validatorAddr];
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
-        uint256 totalSubAmt;
-        for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {}
-        _validateValidator(penalty.validatorAddress);
+        uint256 totalSubAmt; // TODO: compute slash logic
+        _validateValidator(penalty.validatorAddr);
 
         uint256 totalAddAmt;
         for (uint256 i = 0; i < penalty.beneficiaries.length; i++) {

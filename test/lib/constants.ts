@@ -17,9 +17,6 @@ export const STATUS_UNBONDED = 1;
 export const STATUS_BONDED = 2;
 export const STATUS_UNBONDING = 3;
 
-export const TYPE_VALIDATOR_BOND = 0;
-export const TYPE_VALIDATOR_UNBOND = 1;
-
 export const ENUM_PROPOSAL_DEPOSIT = 0;
 export const ENUM_GOVERN_VOTE_TIMEOUT = 1;
 export const ENUM_SLASH_TIMEOUT = 2;

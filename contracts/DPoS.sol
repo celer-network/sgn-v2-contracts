@@ -30,11 +30,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Unbonding
     }
 
-    enum ValidatorChangeType {
-        Bond,
-        Unbond
-    }
-
     struct Undelegation {
         uint256 amount;
         uint256 creationBlock;
@@ -77,7 +72,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     event InitializeValidatorCandidate(address indexed valAddr, uint256 minSelfStake, uint256 commissionRate);
     event UpdateCommissionRate(address indexed valAddr, uint256 newRate);
     event UpdateMinSelfStake(address indexed valAddr, uint256 minSelfStake);
-    event ValidatorChange(address indexed valAddr, ValidatorChangeType indexed changeType);
+    event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event Undelegate(address indexed delAddr, address indexed valAddr, uint256 amount, uint256 creationBlock);
     event UndelegateCompleted(address indexed delAddr, address indexed valAddr, uint256 amount);
     event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
@@ -88,7 +83,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 validatorPool
     );
     event Compensate(address indexed recipient, uint256 amount);
-    event ValidatorUnbonded(address indexed valAddr);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
@@ -203,7 +197,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         validator.status = ValidatorStatus.Unbonded;
         delete validator.unbondTime;
-        emit ValidatorUnbonded(_valAddr);
+        emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonded);
     }
 
     /**
@@ -709,7 +703,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.status = ValidatorStatus.Bonded;
         delete validator.unbondTime;
         totalValidatorStake += validator.stakingPool;
-        emit ValidatorChange(_valAddr, ValidatorChangeType.Bond);
+        emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Bonded);
     }
 
     function _setUnbondingValidator(address _valAddr) private {
@@ -717,7 +711,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.status = ValidatorStatus.Unbonding;
         validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
         totalValidatorStake -= validator.stakingPool;
-        emit ValidatorChange(_valAddr, ValidatorChangeType.Unbond);
+        emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonding);
     }
 
     /**

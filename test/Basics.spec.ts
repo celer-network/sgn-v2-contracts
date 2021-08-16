@@ -157,8 +157,8 @@ describe('Basic Tests', function () {
 
         it('should bondValidator successfully', async function () {
           await expect(dpos.connect(validator).bondValidator())
-            .to.emit(dpos, 'ValidatorChange')
-            .withArgs(validator.address, consts.TYPE_VALIDATOR_BOND);
+            .to.emit(dpos, 'ValidatorStatusUpdate')
+            .withArgs(validator.address, consts.STATUS_BONDED);
         });
 
         it('should increase min self stake and bondValidator successfully', async function () {
@@ -168,8 +168,8 @@ describe('Basic Tests', function () {
             .withArgs(validator.address, higherMinSelfStake);
 
           await expect(dpos.connect(validator).bondValidator())
-            .to.emit(dpos, 'ValidatorChange')
-            .withArgs(validator.address, consts.TYPE_VALIDATOR_BOND);
+            .to.emit(dpos, 'ValidatorStatusUpdate')
+            .withArgs(validator.address, consts.STATUS_BONDED);
         });
 
         it('should decrease min self stake and only able to bondValidator after notice period', async function () {
@@ -182,8 +182,8 @@ describe('Basic Tests', function () {
 
           await advanceBlockNumber(consts.ADVANCE_NOTICE_PERIOD);
           await expect(dpos.connect(validator).bondValidator())
-            .to.emit(dpos, 'ValidatorChange')
-            .withArgs(validator.address, consts.TYPE_VALIDATOR_BOND);
+            .to.emit(dpos, 'ValidatorStatusUpdate')
+            .withArgs(validator.address, consts.STATUS_BONDED);
         });
 
         describe('after one validator bondValidator', async () => {
@@ -207,8 +207,8 @@ describe('Basic Tests', function () {
             const withdrawAmt = consts.VALIDATOR_STAKE.sub(consts.MIN_SELF_STAKE).add(1000);
             const blockNumber = await ethers.provider.getBlockNumber();
             await expect(dpos.connect(validator).undelegate(validator.address, withdrawAmt))
-              .to.emit(dpos, 'ValidatorChange')
-              .withArgs(validator.address, consts.TYPE_VALIDATOR_UNBOND)
+              .to.emit(dpos, 'ValidatorStatusUpdate')
+              .withArgs(validator.address, consts.STATUS_UNBONDING)
               .to.emit(dpos, 'Undelegate')
               .withArgs(validator.address, validator.address, withdrawAmt, blockNumber + 1);
           });
@@ -216,8 +216,8 @@ describe('Basic Tests', function () {
           it('should remove the validator after delegator undelegate to become under minStakingPool', async function () {
             const blockNumber = await ethers.provider.getBlockNumber();
             await expect(dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
-              .to.emit(dpos, 'ValidatorChange')
-              .withArgs(validator.address, consts.TYPE_VALIDATOR_UNBOND)
+              .to.emit(dpos, 'ValidatorStatusUpdate')
+              .withArgs(validator.address, consts.STATUS_UNBONDING)
               .to.emit(dpos, 'Undelegate')
               .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE, blockNumber + 1);
           });

@@ -36,7 +36,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     struct Undelegations {
-        uint256 sum;
         mapping(uint256 => Undelegation) queue;
         uint32 head;
         uint32 tail;
@@ -50,6 +49,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     struct Validator {
         ValidatorStatus status;
         uint256 tokens; // sum of all delegations to this validator
+        uint256 totalShares; // sum of all delegation shares
         mapping(address => Delegator) delegators;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
@@ -58,7 +58,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     uint256 public rewardPool;
-    uint256 public totalBondedTokens;
+    uint256 public bondedValTokens;
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
     mapping(address => Validator) public validators;
@@ -234,7 +234,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
 
         Delegator storage delegator = validator.delegators[msgSender];
-        delegator.undelegations.sum += _amount;
         _validateValidator(_valAddr);
 
         Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
@@ -259,30 +258,21 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         bool isUnbonded = validator.status == ValidatorStatus.Unbonded;
         // for all pending undelegations
         uint32 i;
+        uint256 undelegateAmt;
         for (i = delegator.undelegations.head; i < delegator.undelegations.tail; i++) {
             if (isUnbonded || delegator.undelegations.queue[i].creationBlock + slashTimeout <= block.number) {
                 // complete undelegation when the validator becomes unbonded or
                 // the slashTimeout for the pending undelegation is up.
+                undelegateAmt += delegator.undelegations.queue[i].amount;
                 delete delegator.undelegations.queue[i];
                 continue;
             }
             break;
         }
         delegator.undelegations.head = i;
-        // for all pending undelegations
-        uint256 undelegatingTokensWithoutSlash;
-        for (; i < delegator.undelegations.tail; i++) {
-            undelegatingTokensWithoutSlash += delegator.undelegations.queue[i].amount;
-        }
 
-        uint256 undelegateAmt;
-        if (delegator.undelegations.sum > undelegatingTokensWithoutSlash) {
-            undelegateAmt = delegator.undelegations.sum - undelegatingTokensWithoutSlash;
-            delegator.undelegations.sum = undelegatingTokensWithoutSlash;
-
-            celerToken.safeTransfer(msgSender, undelegateAmt);
-        }
-
+        require(undelegateAmt > 0, "no undelegation ready to be completed");
+        celerToken.safeTransfer(msgSender, undelegateAmt);
         emit UndelegateCompleted(msgSender, _valAddr, undelegateAmt);
     }
 
@@ -352,22 +342,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
         uint256 totalSubAmt;
-        for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {
-            PbSgn.AccountAmtPair memory penalizedDelegator = penalty.penalizedDelegators[i];
-            totalSubAmt += penalizedDelegator.amt;
-            emit Slash(penalty.validatorAddress, penalizedDelegator.account, penalizedDelegator.amt);
-
-            Delegator storage delegator = validator.delegators[penalizedDelegator.account];
-            uint256 _amt;
-            if (delegator.shares >= penalizedDelegator.amt) {
-                _amt = penalizedDelegator.amt;
-            } else {
-                uint256 remainingAmt = penalizedDelegator.amt - delegator.shares;
-                delegator.undelegations.sum -= remainingAmt;
-                _amt = delegator.shares;
-            }
-            _removeDelegation(validator, penalty.validatorAddress, penalizedDelegator.account, _amt);
-        }
+        for (uint256 i = 0; i < penalty.penalizedDelegators.length; i++) {}
         _validateValidator(penalty.validatorAddress);
 
         uint256 totalAddAmt;
@@ -534,7 +509,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @return the quorum amount
      */
     function getQuorumTokens() public view returns (uint256) {
-        return (totalBondedTokens * 2) / 3 + 1;
+        return (bondedValTokens * 2) / 3 + 1;
     }
 
     /**
@@ -594,12 +569,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             undelegations[i] = d.undelegations.queue[i + d.undelegations.head];
         }
 
-        return
-            DelegatorInfo({
-                valAddr: _valAddr,
-                shares: d.shares,
-                undelegations: undelegations
-            });
+        return DelegatorInfo({valAddr: _valAddr, shares: d.shares, undelegations: undelegations});
     }
 
     /**
@@ -612,7 +582,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint32 num = 0;
         for (uint32 i = 0; i < valAddrs.length; i++) {
             Delegator storage d = validators[valAddrs[i]].delegators[_delAddr];
-            if (d.shares == 0 && d.undelegations.sum == 0) {
+            if (d.shares == 0 && d.undelegations.head == d.undelegations.tail) {
                 infos[i] = getDelegatorInfo(valAddrs[i], _delAddr);
                 num++;
             }
@@ -669,7 +639,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         _validator.tokens += _amount;
         delegator.shares += _amount;
         if (_validator.status == ValidatorStatus.Bonded) {
-            totalBondedTokens += _amount;
+            bondedValTokens += _amount;
         }
         emit DelegationUpdate(_delAddr, _valAddr, delegator.shares, _validator.tokens);
     }
@@ -690,7 +660,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         delegator.shares -= _amount;
         _validator.tokens -= _amount;
         if (_validator.status == ValidatorStatus.Bonded) {
-            totalBondedTokens -= _amount;
+            bondedValTokens -= _amount;
         }
         emit DelegationUpdate(_delAddr, _valAddr, delegator.shares, _validator.tokens);
     }
@@ -699,7 +669,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Bonded;
         delete validator.unbondTime;
-        totalBondedTokens += validator.tokens;
+        bondedValTokens += validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Bonded);
     }
 
@@ -707,7 +677,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Unbonding;
         validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
-        totalBondedTokens -= validator.tokens;
+        bondedValTokens -= validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonding);
     }
 

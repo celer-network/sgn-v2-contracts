@@ -32,6 +32,47 @@ library PbSgn {
         }
     } // end decoder Reward
 
+    struct Slash {
+        address validatorAddr; // tag: 1
+        uint64 nonce; // tag: 2
+        uint64 expireTime; // tag: 3
+        uint64 infractionBlock; // tag: 4
+        uint64 fractionFactor; // tag: 5
+        AccountAmtPair[] beneficiaries; // tag: 6
+    } // end struct Slash
+
+    function decSlash(bytes memory raw) internal pure returns (Slash memory m) {
+        Pb.Buffer memory buf = Pb.fromBytes(raw);
+
+        uint256[] memory cnts = buf.cntTags(6);
+        m.beneficiaries = new AccountAmtPair[](cnts[6]);
+        cnts[6] = 0; // reset counter for later use
+
+        uint256 tag;
+        Pb.WireType wire;
+        while (buf.hasMore()) {
+            (tag, wire) = buf.decKey();
+            if (false) {}
+            // solidity has no switch/case
+            else if (tag == 1) {
+                m.validatorAddr = Pb._address(buf.decBytes());
+            } else if (tag == 2) {
+                m.nonce = uint64(buf.decVarint());
+            } else if (tag == 3) {
+                m.expireTime = uint64(buf.decVarint());
+            } else if (tag == 4) {
+                m.infractionBlock = uint64(buf.decVarint());
+            } else if (tag == 5) {
+                m.fractionFactor = uint64(buf.decVarint());
+            } else if (tag == 6) {
+                m.beneficiaries[cnts[6]] = decAccountAmtPair(buf.decBytes());
+                cnts[6]++;
+            } else {
+                buf.skipValue(wire);
+            } // skip value of unknown tag
+        }
+    } // end decoder Slash
+
     struct Penalty {
         uint64 nonce; // tag: 1
         uint64 expireTime; // tag: 2

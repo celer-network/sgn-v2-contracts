@@ -253,9 +253,9 @@ describe('Basic Tests', function () {
 
             it('should completeUndelegate succesfully', async function () {
               // before withdrawTimeout
-              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
-                .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, 0);
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
+                'no undelegation ready to be completed'
+              );
 
               // after withdrawTimeout
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
@@ -265,9 +265,9 @@ describe('Basic Tests', function () {
                 .withArgs(delegator.address, validator.address, parseUnits('2'));
 
               // second completeUndelegate
-              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
-                .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, 0);
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
+                'no undelegation ready to be completed'
+              );
             });
 
             it('should pass with multiple undelegations', async function () {
@@ -289,9 +289,9 @@ describe('Basic Tests', function () {
               expect(res.shares).to.equal(parseUnits('2'));
               expect(res.undelegations[0].amount).to.equal(parseUnits('1'));
 
-              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
-                .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, 0);
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
+                'no undelegation ready to be completed'
+              );
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
@@ -302,8 +302,8 @@ describe('Basic Tests', function () {
               expect(res.shares).to.equal(parseUnits('2'));
               expect(res.undelegations.length).to.equal(0);
             });
-
-            it('should pass with multiple undelegations', async function () {
+            /*
+            it('should only confirm withdrawal partial amount due to slash', async function () {
               const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
               const request = await getPenaltyRequest(
                 1,
@@ -338,9 +338,9 @@ describe('Basic Tests', function () {
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
-                .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, 0);
+                .to.be.revertedWith('no undelegation ready to be completed');
             });
+            */
           });
         });
       });

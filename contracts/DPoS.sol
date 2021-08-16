@@ -99,7 +99,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _governProposalDeposit required deposit amount for a governance proposal
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
-     * @param _maxValidatorNum the maximum number of validators
+     * @param _maxBondedValidators the maximum number of bonded validators
      * @param _minStakeInPool the global minimum requirement of staking pool for each validator
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
      */
@@ -108,7 +108,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _governProposalDeposit,
         uint256 _governVoteTimeout,
         uint256 _slashTimeout,
-        uint256 _maxValidatorNum,
+        uint256 _maxBondedValidators,
         uint256 _minStakeInPool,
         uint256 _advanceNoticePeriod
     )
@@ -117,7 +117,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _governProposalDeposit,
             _governVoteTimeout,
             _slashTimeout,
-            _maxValidatorNum,
+            _maxBondedValidators,
             _minStakeInPool,
             _advanceNoticePeriod
         )
@@ -169,17 +169,17 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(validator.stakingPool >= getUIntValue(uint256(ParamNames.MinStakeInPool)), "Insufficient staking pool");
         require(validator.delegators[msgSender].delegatedStake >= validator.minSelfStake, "Not enough self stake");
 
-        uint256 maxValidatorNum = getUIntValue(uint256(ParamNames.MaxValidatorNum));
+        uint256 maxBondedValidators = getUIntValue(uint256(ParamNames.MaxBondedValidators));
         // if the number of validators has not reached the max_validator_num,
         // add validator directly
-        if (bondedValAddrs.length < maxValidatorNum) {
+        if (bondedValAddrs.length < maxBondedValidators) {
             return _bondValidator(msgSender);
         }
         // if the number of validators has alrady reached the max_validator_num,
         // add validator only if its pool size is greater than the current smallest validator staking pool
         uint256 minStakingPool = MAX_INT;
         uint256 minStakingPoolIndex;
-        for (uint256 i = 0; i < maxValidatorNum; i++) {
+        for (uint256 i = 0; i < maxBondedValidators; i++) {
             if (validators[bondedValAddrs[i]].stakingPool < minStakingPool) {
                 minStakingPoolIndex = i;
                 minStakingPool = validators[bondedValAddrs[i]].stakingPool;
@@ -537,12 +537,38 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Get the minimum staking pool of all validators
-     * @return the minimum staking pool of all validators
+     * @notice Get quorum amount of stakes
+     * @return the quorum amount
+     */
+    function getQuorumStake() public view returns (uint256) {
+        return (totalValidatorStake * 2) / 3 + 1;
+    }
+
+    /**
+     * @notice Get validator info
+     * @param _valAddr the address of the validator
+     * @return Validator staking pool size
+     */
+    function getValidatorStake(address _valAddr) public view returns (uint256) {
+        return validators[_valAddr].stakingPool;
+    }
+
+    /**
+     * @notice Get validator info
+     * @param _valAddr the address of the validator
+     * @return Validator status
+     */
+    function getValidatorStatus(address _valAddr) public view returns (ValidatorStatus) {
+        return validators[_valAddr].status;
+    }
+
+    /**
+     * @notice Get the minimum staking pool of all bonded validators
+     * @return the minimum staking pool of all bonded validators
      */
     function getMinStakingPool() public view returns (uint256) {
         uint256 minStakingPool = validators[bondedValAddrs[0]].stakingPool;
-        for (uint256 i = 0; i < bondedValAddrs.length; i++) {
+        for (uint256 i = 1; i < bondedValAddrs.length; i++) {
             if (validators[bondedValAddrs[i]].stakingPool < minStakingPool) {
                 minStakingPool = validators[bondedValAddrs[i]].stakingPool;
                 if (minStakingPool == 0) {
@@ -551,15 +577,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             }
         }
         return minStakingPool;
-    }
-
-    /**
-     * @notice Get validator info
-     * @param _valAddr the address of the validator
-     * @return ValidatorInfo from the given validator
-     */
-    function getValidatorStatus(address _valAddr) public view returns (ValidatorStatus) {
-        return validators[_valAddr].status;
     }
 
     // used for delegator external view output
@@ -630,15 +647,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @return the number of validators
      */
     function getValidatorNum() public view returns (uint256) {
-        return bondedValAddrs.length;
+        return valAddrs.length;
     }
 
     /**
-     * @notice Get quorum amount of stakes
-     * @return the quorum amount
+     * @notice Get the number of bonded validators
+     * @return the number of bonded validators
      */
-    function getQuorumStake() public view returns (uint256) {
-        return (totalValidatorStake * 2) / 3 + 1;
+    function getBondedValidatorNum() public view returns (uint256) {
+        return bondedValAddrs.length;
     }
 
     /*********************

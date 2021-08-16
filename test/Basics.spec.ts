@@ -275,7 +275,6 @@ describe('Basic Tests', function () {
 
               let res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('3'));
-              expect(res.undelegatingTokens).to.equal(parseUnits('3'));
               expect(res.undelegations[0].amount).to.equal(parseUnits('2'));
               expect(res.undelegations[1].amount).to.equal(parseUnits('1'));
 
@@ -288,7 +287,6 @@ describe('Basic Tests', function () {
 
               res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('2'));
-              expect(res.undelegatingTokens).to.equal(parseUnits('1'));
               expect(res.undelegations[0].amount).to.equal(parseUnits('1'));
 
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
@@ -302,7 +300,7 @@ describe('Basic Tests', function () {
 
               res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('2'));
-              expect(res.undelegatingTokens).to.equal(0);
+              expect(res.undelegations.length).to.equal(0);
             });
 
             it('should pass with multiple undelegations', async function () {

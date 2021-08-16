@@ -75,13 +75,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event Undelegate(address indexed delAddr, address indexed valAddr, uint256 amount, uint256 creationBlock);
     event UndelegateCompleted(address indexed delAddr, address indexed valAddr, uint256 amount);
-    event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
     event DelegationUpdate(
         address indexed delAddr,
         address indexed valAddr,
         uint256 delegatorShares,
         uint256 validatoTokens
     );
+    event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Compensate(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
@@ -576,7 +576,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     struct DelegatorInfo {
         address valAddr;
         uint256 shares;
-        uint256 undelegatingTokens;
         Undelegation[] undelegations;
     }
 
@@ -599,7 +598,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             DelegatorInfo({
                 valAddr: _valAddr,
                 shares: d.shares,
-                undelegatingTokens: d.undelegations.sum,
                 undelegations: undelegations
             });
     }

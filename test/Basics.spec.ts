@@ -20,7 +20,7 @@ describe('Basic Tests', function () {
   let sgn: SGN;
   let celr: TestERC20;
   let admin: Wallet;
-  let candidate: Wallet;
+  let validator: Wallet;
   let delegator: Wallet;
 
   beforeEach(async () => {
@@ -30,110 +30,110 @@ describe('Basic Tests', function () {
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 2);
-    candidate = accounts[0];
+    validator = accounts[0];
     delegator = accounts[1];
-    await celr.connect(candidate).approve(dpos.address, parseUnits('100'));
+    await celr.connect(validator).approve(dpos.address, parseUnits('100'));
     await celr.connect(delegator).approve(dpos.address, parseUnits('100'));
   });
 
-  it('should fail to delegate to an uninitialized candidate', async function () {
-    await expect(dpos.delegate(candidate.address, consts.DELEGATOR_STAKE)).to.be.revertedWith(
-      'Candidate is not initialized'
+  it('should fail to delegate to an uninitialized validator', async function () {
+    await expect(dpos.delegate(validator.address, consts.DELEGATOR_STAKE)).to.be.revertedWith(
+      'Validator is not initialized'
     );
   });
 
-  it('should fail to initialize a candidate when paused', async function () {
+  it('should fail to initialize a validator when paused', async function () {
     await dpos.pause();
     await expect(
-      dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
+      dpos.connect(validator).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
     ).to.be.revertedWith('Pausable: paused');
   });
 
-  it('should fail to initialize a non-whitelisted candidate when whitelist is enabled', async function () {
+  it('should fail to initialize a non-whitelisted validator when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await expect(
-      dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
+      dpos.connect(validator).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
     ).to.be.revertedWith('caller is not whitelisted');
   });
 
-  it('should initialize a whitelisted candidate successfully when whitelist is enabled', async function () {
+  it('should initialize a whitelisted validator successfully when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
-    await dpos.addWhitelisted(candidate.address);
-    await expect(dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
-      .to.emit(dpos, 'InitializeCandidate')
-      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
+    await dpos.addWhitelisted(validator.address);
+    await expect(dpos.connect(validator).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
+      .to.emit(dpos, 'InitializeValidatorCandidate')
+      .withArgs(validator.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
   });
 
-  it('should initialize a candidate and update sidechain address successfully', async function () {
-    await expect(dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
-      .to.emit(dpos, 'InitializeCandidate')
-      .withArgs(candidate.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
+  it('should initialize a validator and update sidechain address successfully', async function () {
+    await expect(dpos.connect(validator).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE))
+      .to.emit(dpos, 'InitializeValidatorCandidate')
+      .withArgs(validator.address, consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
 
     const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
-    await expect(sgn.connect(candidate).updateSidechainAddr(sidechainAddr))
+    await expect(sgn.connect(validator).updateSidechainAddr(sidechainAddr))
       .to.emit(sgn, 'UpdateSidechainAddr')
-      .withArgs(candidate.address, consts.HASHED_NULL, sidechainAddr);
+      .withArgs(validator.address, consts.HASHED_NULL, sidechainAddr);
   });
 
-  describe('after one candidate finishes initialization', async () => {
+  describe('after one validator finishes initialization', async () => {
     const sidechainAddr = keccak256(['string'], ['sgnaddr']);
     beforeEach(async () => {
-      await dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
-      await sgn.connect(candidate).updateSidechainAddr(sidechainAddr);
+      await dpos.connect(validator).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
+      await sgn.connect(validator).updateSidechainAddr(sidechainAddr);
     });
 
-    it('should fail to initialize the same candidate twice', async function () {
+    it('should fail to initialize the same validator twice', async function () {
       await expect(
-        dpos.connect(candidate).initializeCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
-      ).to.be.revertedWith('Candidate is initialized');
+        dpos.connect(validator).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE)
+      ).to.be.revertedWith('Validator is initialized');
     });
 
-    it('should update sidechain address by candidate successfully', async function () {
+    it('should update sidechain address by validator successfully', async function () {
       const newSidechainAddr = keccak256(['string'], ['sgnaddr_new']);
-      await expect(sgn.connect(candidate).updateSidechainAddr(newSidechainAddr))
+      await expect(sgn.connect(validator).updateSidechainAddr(newSidechainAddr))
         .to.emit(sgn, 'UpdateSidechainAddr')
-        .withArgs(candidate.address, sidechainAddr, newSidechainAddr);
+        .withArgs(validator.address, sidechainAddr, newSidechainAddr);
     });
 
     it('should fail to delegate when paused', async function () {
       await dpos.pause();
-      await expect(dpos.delegate(candidate.address, consts.DELEGATOR_STAKE)).to.be.revertedWith('Pausable: paused');
+      await expect(dpos.delegate(validator.address, consts.DELEGATOR_STAKE)).to.be.revertedWith('Pausable: paused');
     });
 
-    it('should delegate to candidate by a delegator successfully', async function () {
-      await expect(dpos.connect(delegator).delegate(candidate.address, consts.DELEGATOR_STAKE))
+    it('should delegate to validator by a delegator successfully', async function () {
+      await expect(dpos.connect(delegator).delegate(validator.address, consts.DELEGATOR_STAKE))
         .to.emit(dpos, 'UpdateDelegatedStake')
-        .withArgs(delegator.address, candidate.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
+        .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
     });
 
-    it('should fail to claimValidator before delegating enough stake', async function () {
-      await dpos.connect(delegator).delegate(candidate.address, consts.MIN_STAKING_POOL.sub(1000));
-      await expect(dpos.connect(candidate).claimValidator()).to.be.revertedWith('Insufficient staking pool');
+    it('should fail to bondValidator before delegating enough stake', async function () {
+      await dpos.connect(delegator).delegate(validator.address, consts.MIN_STAKING_POOL.sub(1000));
+      await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Insufficient staking pool');
     });
 
-    describe('after one delegator delegates enough stake to the candidate', async () => {
+    describe('after one delegator delegates enough stake to the validator', async () => {
       beforeEach(async () => {
-        await dpos.connect(delegator).delegate(candidate.address, consts.DELEGATOR_STAKE);
+        await dpos.connect(delegator).delegate(validator.address, consts.DELEGATOR_STAKE);
       });
 
-      it('should fail to claimValidator before self delegating minSelfStake', async function () {
-        await expect(dpos.connect(candidate).claimValidator()).to.be.revertedWith('Not enough self stake');
+      it('should fail to bondValidator before self delegating minSelfStake', async function () {
+        await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not enough self stake');
       });
 
-      it('should withdrawFromUnbondedCandidate by delegator successfully', async function () {
-        await expect(dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, consts.DELEGATOR_STAKE))
-          .to.emit(dpos, 'WithdrawFromUnbondedCandidate')
-          .withArgs(delegator.address, candidate.address, consts.DELEGATOR_STAKE);
+      it('should undelegate from unbonded validator by delegator successfully', async function () {
+        await expect(dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
+          .to.emit(dpos, 'UndelegateCompleted')
+          .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE);
       });
 
-      it('should fail to withdrawFromUnbondedCandidate more than it delegated', async function () {
+      it('should fail to undelegate from unbonded validator more than it delegated', async function () {
         await expect(
-          dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, consts.DELEGATOR_STAKE.add(1000))
+          dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))
         ).to.be.revertedWith('reverted with panic code 0x11');
       });
 
-      it('should fail to withdrawFromUnbondedCandidate with amount smaller than 1 CELR', async function () {
-        await expect(dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, 1000)).to.be.revertedWith(
+      it('should fail to undelegate from unbonded validator with amount smaller than 1 CELR', async function () {
+        await expect(dpos.connect(delegator).undelegate(validator.address, 1000)).to.be.revertedWith(
           'Minimal amount is 1 CELR'
         );
       });
@@ -150,159 +150,153 @@ describe('Basic Tests', function () {
         expect(balanceAfter.sub(balanceBefore)).to.equal(consts.DELEGATOR_STAKE);
       });
 
-      describe('after one delegator delegates enough stake to the candidate', async () => {
+      describe('after one delegator delegates enough stake to the validator', async () => {
         beforeEach(async () => {
-          await dpos.connect(candidate).delegate(candidate.address, consts.CANDIDATE_STAKE);
+          await dpos.connect(validator).delegate(validator.address, consts.VALIDATOR_STAKE);
         });
 
-        it('should claimValidator successfully', async function () {
-          await expect(dpos.connect(candidate).claimValidator())
+        it('should bondValidator successfully', async function () {
+          await expect(dpos.connect(validator).bondValidator())
             .to.emit(dpos, 'ValidatorChange')
-            .withArgs(candidate.address, consts.TYPE_VALIDATOR_ADD);
+            .withArgs(validator.address, consts.TYPE_VALIDATOR_BOND);
         });
 
-        it('should increase min self stake and claimValidator successfully', async function () {
+        it('should increase min self stake and bondValidator successfully', async function () {
           const higherMinSelfStake = consts.MIN_SELF_STAKE.add(1000000);
-          await expect(dpos.connect(candidate).updateMinSelfStake(higherMinSelfStake))
+          await expect(dpos.connect(validator).updateMinSelfStake(higherMinSelfStake))
             .to.emit(dpos, 'UpdateMinSelfStake')
-            .withArgs(candidate.address, higherMinSelfStake);
+            .withArgs(validator.address, higherMinSelfStake);
 
-          await expect(dpos.connect(candidate).claimValidator())
+          await expect(dpos.connect(validator).bondValidator())
             .to.emit(dpos, 'ValidatorChange')
-            .withArgs(candidate.address, consts.TYPE_VALIDATOR_ADD);
+            .withArgs(validator.address, consts.TYPE_VALIDATOR_BOND);
         });
 
-        it('should decrease min self stake and only able to claimValidator after notice period', async function () {
+        it('should decrease min self stake and only able to bondValidator after notice period', async function () {
           const lowerMinSelfStake = consts.MIN_SELF_STAKE.sub(1000000);
-          await expect(dpos.connect(candidate).updateMinSelfStake(lowerMinSelfStake))
+          await expect(dpos.connect(validator).updateMinSelfStake(lowerMinSelfStake))
             .to.emit(dpos, 'UpdateMinSelfStake')
-            .withArgs(candidate.address, lowerMinSelfStake);
+            .withArgs(validator.address, lowerMinSelfStake);
 
-          await expect(dpos.connect(candidate).claimValidator()).to.be.revertedWith('Not earliest bond time yet');
+          await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not earliest bond time yet');
 
           await advanceBlockNumber(consts.ADVANCE_NOTICE_PERIOD);
-          await expect(dpos.connect(candidate).claimValidator())
+          await expect(dpos.connect(validator).bondValidator())
             .to.emit(dpos, 'ValidatorChange')
-            .withArgs(candidate.address, consts.TYPE_VALIDATOR_ADD);
+            .withArgs(validator.address, consts.TYPE_VALIDATOR_BOND);
         });
 
-        describe('after one candidate claimValidator', async () => {
+        describe('after one validator bondValidator', async () => {
           beforeEach(async () => {
-            await dpos.connect(candidate).claimValidator();
+            await dpos.connect(validator).bondValidator();
           });
 
-          it('should fail withdrawFromUnbondedCandidate', async function () {
-            await expect(
-              dpos.connect(delegator).withdrawFromUnbondedCandidate(candidate.address, consts.DELEGATOR_STAKE)
-            ).to.be.revertedWith('invalid candidate status');
-          });
-
-          it('should fail to intendWithdraw with amount smaller than 1 CELR', async function () {
-            await expect(dpos.connect(delegator).intendWithdraw(candidate.address, 1000)).to.be.revertedWith(
+          it('should fail to undelegate with amount smaller than 1 CELR', async function () {
+            await expect(dpos.connect(delegator).undelegate(validator.address, 1000)).to.be.revertedWith(
               'Minimal amount is 1 CELR'
             );
           });
 
-          it('should fail to intendWithdraw more than it delegated', async function () {
+          it('should fail to undelegate more than it delegated', async function () {
             await expect(
-              dpos.connect(delegator).intendWithdraw(candidate.address, consts.DELEGATOR_STAKE.add(1000))
+              dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))
             ).to.be.revertedWith('reverted with panic code 0x11');
           });
 
-          it('should remove the validator after validator intendWithdraw to become under minSelfStake', async function () {
-            const withdrawAmt = consts.CANDIDATE_STAKE.sub(consts.MIN_SELF_STAKE).add(1000);
+          it('should remove the validator after validator undelegate to become under minSelfStake', async function () {
+            const withdrawAmt = consts.VALIDATOR_STAKE.sub(consts.MIN_SELF_STAKE).add(1000);
             const blockNumber = await ethers.provider.getBlockNumber();
-            await expect(dpos.connect(candidate).intendWithdraw(candidate.address, withdrawAmt))
+            await expect(dpos.connect(validator).undelegate(validator.address, withdrawAmt))
               .to.emit(dpos, 'ValidatorChange')
-              .withArgs(candidate.address, consts.TYPE_VALIDATOR_REMOVAL)
-              .to.emit(dpos, 'IntendWithdraw')
-              .withArgs(candidate.address, candidate.address, withdrawAmt, blockNumber + 1);
+              .withArgs(validator.address, consts.TYPE_VALIDATOR_UNBOND)
+              .to.emit(dpos, 'Undelegate')
+              .withArgs(validator.address, validator.address, withdrawAmt, blockNumber + 1);
           });
 
-          it('should remove the validator after delegator intendWithdraw to become under minStakingPool', async function () {
+          it('should remove the validator after delegator undelegate to become under minStakingPool', async function () {
             const blockNumber = await ethers.provider.getBlockNumber();
-            await expect(dpos.connect(delegator).intendWithdraw(candidate.address, consts.DELEGATOR_STAKE))
+            await expect(dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
               .to.emit(dpos, 'ValidatorChange')
-              .withArgs(candidate.address, consts.TYPE_VALIDATOR_REMOVAL)
-              .to.emit(dpos, 'IntendWithdraw')
-              .withArgs(delegator.address, candidate.address, consts.DELEGATOR_STAKE, blockNumber + 1);
+              .withArgs(validator.address, consts.TYPE_VALIDATOR_UNBOND)
+              .to.emit(dpos, 'Undelegate')
+              .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE, blockNumber + 1);
           });
 
           it('should increase min self stake successfully', async function () {
             const higherMinSelfStake = consts.MIN_SELF_STAKE.add(1000000);
-            await expect(dpos.connect(candidate).updateMinSelfStake(higherMinSelfStake))
+            await expect(dpos.connect(validator).updateMinSelfStake(higherMinSelfStake))
               .to.emit(dpos, 'UpdateMinSelfStake')
-              .withArgs(candidate.address, higherMinSelfStake);
+              .withArgs(validator.address, higherMinSelfStake);
           });
 
           it('should fail to decrease min self stake', async function () {
             const lowerMinSelfStake = consts.MIN_SELF_STAKE.sub(1000000);
-            await expect(dpos.connect(candidate).updateMinSelfStake(lowerMinSelfStake)).to.be.revertedWith(
-              'Candidate is bonded'
+            await expect(dpos.connect(validator).updateMinSelfStake(lowerMinSelfStake)).to.be.revertedWith(
+              'Validator is bonded'
             );
           });
 
-          describe('after a delegator intendWithdraw', async () => {
+          describe('after a delegator undelegate', async () => {
             beforeEach(async () => {
-              await dpos.connect(delegator).intendWithdraw(candidate.address, parseUnits('2'));
+              await dpos.connect(delegator).undelegate(validator.address, parseUnits('2'));
             });
 
-            it('should fail to intendWithdraw with a total more than it delegated', async function () {
+            it('should fail to undelegate with a total more than it delegated', async function () {
               await expect(
-                dpos.connect(delegator).intendWithdraw(candidate.address, consts.DELEGATOR_STAKE)
+                dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE)
               ).to.be.revertedWith('reverted with panic code 0x11');
             });
 
-            it('should confirmWithdraw succesfully', async function () {
+            it('should completeUndelegate succesfully', async function () {
               // before withdrawTimeout
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, 0);
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, 0);
 
               // after withdrawTimeout
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              // first confirmWithdraw
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseUnits('2'));
+              // first completeUndelegate
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, parseUnits('2'));
 
-              // second confirmWithdraw
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, 0);
+              // second completeUndelegate
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, 0);
             });
 
             it('should pass with multiple withdrawal intents', async function () {
-              await dpos.connect(delegator).intendWithdraw(candidate.address, parseUnits('1'));
+              await dpos.connect(delegator).undelegate(validator.address, parseUnits('1'));
 
-              let res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
+              let res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.delegatedStake).to.equal(parseUnits('3'));
               expect(res.undelegatingStake).to.equal(parseUnits('3'));
-              expect(res.intentAmounts[0]).to.equal(parseUnits('2'));
-              expect(res.intentAmounts[1]).to.equal(parseUnits('1'));
+              expect(res.undelegations[0].amount).to.equal(parseUnits('2'));
+              expect(res.undelegations[1].amount).to.equal(parseUnits('1'));
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await dpos.connect(delegator).intendWithdraw(candidate.address, parseUnits('1'));
+              await dpos.connect(delegator).undelegate(validator.address, parseUnits('1'));
 
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseUnits('3'));
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, parseUnits('3'));
 
-              res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
+              res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.delegatedStake).to.equal(parseUnits('2'));
               expect(res.undelegatingStake).to.equal(parseUnits('1'));
-              expect(res.intentAmounts[0]).to.equal(parseUnits('1'));
+              expect(res.undelegations[0].amount).to.equal(parseUnits('1'));
 
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, 0);
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, 0);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseUnits('1'));
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, parseUnits('1'));
 
-              res = await dpos.getDelegatorInfo(candidate.address, delegator.address);
+              res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.delegatedStake).to.equal(parseUnits('2'));
               expect(res.undelegatingStake).to.equal(0);
             });
@@ -312,38 +306,38 @@ describe('Basic Tests', function () {
               const request = await getPenaltyRequest(
                 1,
                 1000000,
-                candidate.address,
+                validator.address,
                 [delegator.address],
                 [slashAmt],
                 [consts.ZERO_ADDR],
                 [slashAmt],
-                [candidate]
+                [validator]
               );
               await dpos.slash(request.penaltyBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, parseUnits('1'));
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, parseUnits('1'));
             });
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
               const request = await getPenaltyRequest(
                 1,
                 1000000,
-                candidate.address,
+                validator.address,
                 [delegator.address],
                 [consts.DELEGATOR_STAKE],
                 [consts.ZERO_ADDR],
                 [consts.DELEGATOR_STAKE],
-                [candidate]
+                [validator]
               );
               await dpos.slash(request.penaltyBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await expect(dpos.connect(delegator).confirmWithdraw(candidate.address))
-                .to.emit(dpos, 'ConfirmWithdraw')
-                .withArgs(delegator.address, candidate.address, 0);
+              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
+                .to.emit(dpos, 'UndelegateCompleted')
+                .withArgs(delegator.address, validator.address, 0);
             });
           });
         });

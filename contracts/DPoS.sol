@@ -40,13 +40,16 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 creationBlock;
     }
 
+    struct Undelegations {
+        mapping(uint256 => Undelegation) queue;
+        uint32 head;
+        uint32 tail;
+    }
+
     struct Delegator {
         uint256 delegatedStake;
         uint256 undelegatingStake;
-        mapping(uint256 => Undelegation) undelegations;
-        // valid undelegation range is [undelStartIndex, undelEndIndex)
-        uint256 undelStartIndex;
-        uint256 undelEndIndex;
+        Undelegations undelegations;
     }
 
     struct Validator {
@@ -266,10 +269,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         delegator.undelegatingStake += _amount;
         _validateValidator(_valAddr);
 
-        Undelegation storage undelegation = delegator.undelegations[delegator.undelEndIndex];
+        Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
         undelegation.amount = _amount;
         undelegation.creationBlock = block.number;
-        delegator.undelEndIndex++;
+        delegator.undelegations.tail++;
 
         emit Undelegate(msgSender, _valAddr, _amount, undelegation.creationBlock);
     }
@@ -288,21 +291,21 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
         bool isUnbonded = validator.status == ValidatorStatus.Unbonded;
         // for all pending undelegations
-        uint256 i;
-        for (i = delegator.undelStartIndex; i < delegator.undelEndIndex; i++) {
-            if (isUnbonded || delegator.undelegations[i].creationBlock + slashTimeout <= block.number) {
+        uint32 i;
+        for (i = delegator.undelegations.head; i < delegator.undelegations.tail; i++) {
+            if (isUnbonded || delegator.undelegations.queue[i].creationBlock + slashTimeout <= block.number) {
                 // complete undelegation when the validator becomes unbonded or
                 // the slashTimeout for the pending undelegation is up.
-                delete delegator.undelegations[i];
+                delete delegator.undelegations.queue[i];
                 continue;
             }
             break;
         }
-        delegator.undelStartIndex = i;
+        delegator.undelegations.head = i;
         // for all pending undelegations
         uint256 undelegatingStakeWithoutSlash;
-        for (; i < delegator.undelEndIndex; i++) {
-            undelegatingStakeWithoutSlash += delegator.undelegations[i].amount;
+        for (; i < delegator.undelegations.tail; i++) {
+            undelegatingStakeWithoutSlash += delegator.undelegations.queue[i].amount;
         }
 
         uint256 undelegateAmt;
@@ -602,10 +605,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function getDelegatorInfo(address _valAddr, address _delAddr) public view returns (DelegatorInfo memory) {
         Delegator storage d = validators[_valAddr].delegators[_delAddr];
 
-        uint256 len = d.undelEndIndex - d.undelStartIndex;
+        uint256 len = d.undelegations.tail - d.undelegations.head;
         Undelegation[] memory undelegations = new Undelegation[](len);
         for (uint256 i = 0; i < len; i++) {
-            undelegations[i] = d.undelegations[i + d.undelStartIndex];
+            undelegations[i] = d.undelegations.queue[i + d.undelegations.head];
         }
 
         return
@@ -627,7 +630,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint32 num = 0;
         for (uint32 i = 0; i < valAddrs.length; i++) {
             Delegator storage d = validators[valAddrs[i]].delegators[_delAddr];
-            if (d.delegatedStake == 0 && d.undelegatingStake == 0 && d.undelEndIndex == d.undelStartIndex) {
+            if (d.delegatedStake == 0 && d.undelegatingStake == 0) {
                 infos[i] = getDelegatorInfo(valAddrs[i], _delAddr);
                 num++;
             }

@@ -20,7 +20,7 @@ contract Govern is Ownable {
         GovernVoteTimeout,
         SlashTimeout,
         MaxBondedValidators,
-        MinStakeInPool,
+        MinValidatorTokens,
         AdvanceNoticePeriod
     }
 
@@ -74,7 +74,7 @@ contract Govern is Ownable {
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
      * @param _maxBondedValidators the maximum number of bonded validators
-     * @param _minStakeInPool the global minimum requirement of staking pool for each validator
+     * @param _minValidatorTokens the global minimum token amout requirement for bonded validator
      * @param _advanceNoticePeriod the time after the announcement and prior to the effective time of an update
      */
     constructor(
@@ -83,7 +83,7 @@ contract Govern is Ownable {
         uint256 _governVoteTimeout,
         uint256 _slashTimeout,
         uint256 _maxBondedValidators,
-        uint256 _minStakeInPool,
+        uint256 _minValidatorTokens,
         uint256 _advanceNoticePeriod
     ) {
         celerToken = IERC20(_celerTokenAddress);
@@ -92,7 +92,7 @@ contract Govern is Ownable {
         UIntStorage[uint256(ParamNames.GovernVoteTimeout)] = _governVoteTimeout;
         UIntStorage[uint256(ParamNames.SlashTimeout)] = _slashTimeout;
         UIntStorage[uint256(ParamNames.MaxBondedValidators)] = _maxBondedValidators;
-        UIntStorage[uint256(ParamNames.MinStakeInPool)] = _minStakeInPool;
+        UIntStorage[uint256(ParamNames.MinValidatorTokens)] = _minValidatorTokens;
         UIntStorage[uint256(ParamNames.AdvanceNoticePeriod)] = _advanceNoticePeriod;
     }
 

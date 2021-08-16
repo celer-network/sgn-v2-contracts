@@ -33,7 +33,9 @@ describe('Multiple validators Tests', function () {
     ];
     for (let i = 0; i < 8; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos.connect(validators[i]).initializeValidatorCandidate(consts.MIN_SELF_STAKE, consts.COMMISSION_RATE);
+      await dpos
+        .connect(validators[i])
+        .initializeValidatorCandidate(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       if (i < 7) {
         await dpos.connect(validators[i]).delegate(validators[i].address, consts.VALIDATOR_STAKE);
         await dpos.delegate(validators[i].address, stakes[i]);
@@ -42,14 +44,14 @@ describe('Multiple validators Tests', function () {
     }
   });
 
-  it('should getQuorumStake successfully', async function () {
-    const quorum = await dpos.getQuorumStake();
+  it('should getQuorumTokens successfully', async function () {
+    const quorum = await dpos.getQuorumTokens();
     expect(quorum).to.equal(parseUnits('42').add(1));
   });
 
   it('should fail to bondValidator before delegating enough stake', async function () {
     await dpos.connect(validators[7]).delegate(validators[7].address, consts.MIN_STAKING_POOL);
-    await expect(dpos.connect(validators[7]).bondValidator()).to.be.revertedWith('Not larger than smallest pool');
+    await expect(dpos.connect(validators[7]).bondValidator()).to.be.revertedWith('Insufficient tokens');
   });
 
   it('should replace a current validator by calling bondValidator with enough stake', async function () {
@@ -60,7 +62,7 @@ describe('Multiple validators Tests', function () {
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[7].address, consts.STATUS_BONDED);
 
-    const quorum = await dpos.getQuorumStake();
+    const quorum = await dpos.getQuorumTokens();
     expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
   });
 
@@ -68,14 +70,14 @@ describe('Multiple validators Tests', function () {
     await expect(dpos.connect(validators[1]).undelegate(validators[1].address, parseUnits('2')))
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[1].address, consts.STATUS_UNBONDING);
-    let quorum = await dpos.getQuorumStake();
+    let quorum = await dpos.getQuorumTokens();
     expect(quorum).to.equal(parseUnits('58').mul(2).div(3).add(1));
 
     await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('10'));
     await expect(dpos.connect(validators[7]).bondValidator())
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[7].address, consts.STATUS_BONDED);
-    quorum = await dpos.getQuorumStake();
+    quorum = await dpos.getQuorumTokens();
     expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
   });
 
@@ -107,7 +109,7 @@ describe('Multiple validators Tests', function () {
 
       await dpos.delegate(validators[1].address, parseUnits('5'));
       await dpos.delegate(validators[5].address, parseUnits('3'));
-      const quorum = await dpos.getQuorumStake();
+      const quorum = await dpos.getQuorumTokens();
       expect(quorum).to.equal(parseUnits('77').mul(2).div(3).add(1));
     });
   });

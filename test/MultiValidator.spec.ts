@@ -86,7 +86,7 @@ describe('Multiple validators Tests', function () {
     });
 
     it('should confirmUnbondedValidator only after unbondTime', async function () {
-      const res = await dpos.getValidatorInfo(validators[1].address);
+      const res = await dpos.validators(validators[1].address);
       expect(res.status).to.equal(consts.STATUS_UNBONDING);
 
       await expect(dpos.confirmUnbondedValidator(validators[1].address)).to.be.revertedWith('Unbond time not reached');

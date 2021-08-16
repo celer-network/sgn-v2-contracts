@@ -266,7 +266,7 @@ describe('Basic Tests', function () {
                 .withArgs(delegator.address, validator.address, 0);
             });
 
-            it('should pass with multiple withdrawal intents', async function () {
+            it('should pass with multiple undelegations', async function () {
               await dpos.connect(delegator).undelegate(validator.address, parseUnits('1'));
 
               let res = await dpos.getDelegatorInfo(validator.address, delegator.address);
@@ -301,7 +301,7 @@ describe('Basic Tests', function () {
               expect(res.undelegatingStake).to.equal(0);
             });
 
-            it('should pass with multiple withdrawal intents', async function () {
+            it('should pass with multiple undelegations', async function () {
               const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
               const request = await getPenaltyRequest(
                 1,

@@ -62,24 +62,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 earliestBondTime;
     }
 
-    // used for delegator external view output
-    struct DelegatorInfo {
-        address valAddr;
-        uint256 delegatedStake;
-        uint256 undelegatingStake;
-        Undelegation[] undelegations;
-    }
-
-    // used for validator external view output
-    struct ValidatorInfo {
-        ValidatorStatus status;
-        uint256 minSelfStake;
-        uint256 stakingPool;
-        uint256 unbondTime;
-        uint256 commissionRate;
-        uint256 earliestBondTime;
-    }
-
     uint256 public rewardPool;
     uint256 public totalValidatorStake;
     address[] public valAddrs;
@@ -140,14 +122,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _advanceNoticePeriod
         )
     {}
-
-    /**
-     * @notice Throws if sender is not validator
-     */
-    modifier onlyValidator() {
-        require(isValidator(msg.sender), "caller is not a validator");
-        _;
-    }
 
     receive() external payable {}
 
@@ -429,7 +403,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _proposalId the id of the parameter proposal
      * @param _vote the type of vote
      */
-    function voteParam(uint256 _proposalId, VoteType _vote) external onlyValidator {
+    function voteParam(uint256 _proposalId, VoteType _vote) external {
+        require(validators[msg.sender].status == ValidatorStatus.Bonded, "Caller is not a bonded validator");
         internalVoteParam(_proposalId, msg.sender, _vote);
     }
 
@@ -438,7 +413,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _proposalId the id of the parameter proposal
      */
     function confirmParamProposal(uint256 _proposalId) external {
-        // check Yes votes only now
+        // check Yes votes only for now
         uint256 yesVoteStakes;
         for (uint32 i = 0; i < bondedValAddrs.length; i++) {
             if (getParamProposalVote(_proposalId, bondedValAddrs[i]) == VoteType.Yes) {
@@ -583,17 +558,16 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _valAddr the address of the validator
      * @return ValidatorInfo from the given validator
      */
-    function getValidatorInfo(address _valAddr) public view returns (ValidatorInfo memory) {
-        Validator storage c = validators[_valAddr];
-        return
-            ValidatorInfo({
-                status: c.status,
-                minSelfStake: c.minSelfStake,
-                stakingPool: c.stakingPool,
-                unbondTime: c.unbondTime,
-                commissionRate: c.commissionRate,
-                earliestBondTime: c.earliestBondTime
-            });
+    function getValidatorStatus(address _valAddr) public view returns (ValidatorStatus) {
+        return validators[_valAddr].status;
+    }
+
+    // used for delegator external view output
+    struct DelegatorInfo {
+        address valAddr;
+        uint256 delegatedStake;
+        uint256 undelegatingStake;
+        Undelegation[] undelegations;
     }
 
     /**
@@ -647,7 +621,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _addr the address to check
      * @return the given address is a validator or not
      */
-    function isValidator(address _addr) public view returns (bool) {
+    function isBondedValidator(address _addr) public view returns (bool) {
         return validators[_addr].status == ValidatorStatus.Bonded;
     }
 

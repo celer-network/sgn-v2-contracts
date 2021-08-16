@@ -60,7 +60,7 @@ describe('Governance Tests', function () {
 
     it('should fail to voteParam if not validator', async function () {
       await expect(dpos.voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-        'caller is not a validator'
+        'Caller is not a bonded validator'
       );
     });
 

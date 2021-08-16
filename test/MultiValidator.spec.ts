@@ -55,10 +55,10 @@ describe('Multiple validators Tests', function () {
   it('should replace a current validator by calling bondValidator with enough stake', async function () {
     await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('10'));
     await expect(dpos.connect(validators[7]).bondValidator())
-      .to.emit(dpos, 'ValidatorChange')
-      .withArgs(validators[1].address, consts.TYPE_VALIDATOR_UNBOND)
-      .to.emit(dpos, 'ValidatorChange')
-      .withArgs(validators[7].address, consts.TYPE_VALIDATOR_BOND);
+      .to.emit(dpos, 'ValidatorStatusUpdate')
+      .withArgs(validators[1].address, consts.STATUS_UNBONDING)
+      .to.emit(dpos, 'ValidatorStatusUpdate')
+      .withArgs(validators[7].address, consts.STATUS_BONDED);
 
     const quorum = await dpos.getQuorumStake();
     expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
@@ -66,15 +66,15 @@ describe('Multiple validators Tests', function () {
 
   it('should remove validator due to withdrawal and add new validator successfully', async function () {
     await expect(dpos.connect(validators[1]).undelegate(validators[1].address, parseUnits('2')))
-      .to.emit(dpos, 'ValidatorChange')
-      .withArgs(validators[1].address, consts.TYPE_VALIDATOR_UNBOND);
+      .to.emit(dpos, 'ValidatorStatusUpdate')
+      .withArgs(validators[1].address, consts.STATUS_UNBONDING);
     let quorum = await dpos.getQuorumStake();
     expect(quorum).to.equal(parseUnits('58').mul(2).div(3).add(1));
 
     await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('10'));
     await expect(dpos.connect(validators[7]).bondValidator())
-      .to.emit(dpos, 'ValidatorChange')
-      .withArgs(validators[7].address, consts.TYPE_VALIDATOR_BOND);
+      .to.emit(dpos, 'ValidatorStatusUpdate')
+      .withArgs(validators[7].address, consts.STATUS_BONDED);
     quorum = await dpos.getQuorumStake();
     expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
   });
@@ -93,17 +93,17 @@ describe('Multiple validators Tests', function () {
 
       await advanceBlockNumber(consts.SLASH_TIMEOUT);
       await expect(dpos.confirmUnbondedValidator(validators[1].address))
-        .to.emit(dpos, 'ValidatorUnbonded')
-        .withArgs(validators[1].address);
+        .to.emit(dpos, 'ValidatorStatusUpdate')
+        .withArgs(validators[1].address, consts.STATUS_UNBONDED);
     });
 
     it('should replace current min stake validator with the unbonding validator', async function () {
       await dpos.connect(validators[1]).delegate(validators[1].address, parseUnits('5'));
       await expect(dpos.connect(validators[1]).bondValidator())
-        .to.emit(dpos, 'ValidatorChange')
-        .withArgs(validators[5].address, consts.TYPE_VALIDATOR_UNBOND)
-        .to.emit(dpos, 'ValidatorChange')
-        .withArgs(validators[1].address, consts.TYPE_VALIDATOR_BOND);
+        .to.emit(dpos, 'ValidatorStatusUpdate')
+        .withArgs(validators[5].address, consts.STATUS_UNBONDING)
+        .to.emit(dpos, 'ValidatorStatusUpdate')
+        .withArgs(validators[1].address, consts.STATUS_BONDED);
 
       await dpos.delegate(validators[1].address, parseUnits('5'));
       await dpos.delegate(validators[5].address, parseUnits('3'));

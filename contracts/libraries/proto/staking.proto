@@ -1,9 +1,9 @@
 syntax = "proto3";
-option go_package = "github.com/celer-network/sgn/proto/sgn";
+option go_package = "github.com/celer-network/sgn-v2/proto/staking";
 
 import "google/protobuf/descriptor.proto";
 
-package sgn;
+package staking;
 
 extend google.protobuf.FieldOptions { string soltype = 1004; }
 
@@ -12,7 +12,7 @@ message Reward {
   bytes cumulative_reward = 2 [ (soltype) = "uint256" ];
 }
 
-message Penalty {
+message Slash {
   bytes validator_addr = 1 [ (soltype) = "address" ];
   uint64 nonce = 2;
   uint64 slash_factor = 3;
@@ -26,4 +26,4 @@ message AccountAmtPair {
   bytes amt = 2 [ (soltype) = "uint256" ];
 }
 
-// from repo root: protoc --sol_out=importpb=true:contracts/libraries contracts/libraries/proto/sgn.proto
+// from repo root: protoc --sol_out=importpb=true:contracts/libraries contracts/libraries/proto/staking.proto

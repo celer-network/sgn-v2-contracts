@@ -1,26 +1,26 @@
 import { expect } from 'chai';
 import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
-import { BigNumber, BigNumberish } from '@ethersproject/bignumber';
+import { BigNumber } from '@ethersproject/bignumber';
 
 import protobuf from 'protobufjs';
 protobuf.common('google/protobuf/descriptor.proto', {});
 
 interface Proto {
-  Penalty: protobuf.Type;
+  Slash: protobuf.Type;
   Reward: protobuf.Type;
   AccountAmtPair: protobuf.Type;
 }
 
 async function getProtos(): Promise<Proto> {
-  const sgn = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/sgn.proto`);
+  const staking = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/staking.proto`);
 
-  const Penalty = sgn.lookupType('sgn.Penalty');
-  const Reward = sgn.lookupType('sgn.Reward');
-  const AccountAmtPair = sgn.lookupType('sgn.AccountAmtPair');
+  const Slash = staking.lookupType('staking.Slash');
+  const Reward = staking.lookupType('staking.Reward');
+  const AccountAmtPair = staking.lookupType('staking.AccountAmtPair');
 
   return {
-    Penalty,
+    Slash,
     Reward,
     AccountAmtPair
   };
@@ -83,7 +83,7 @@ export async function getRewardRequest(recipient: string, cumulativeReward: BigN
   return { rewardBytes, sigs };
 }
 
-export async function getPenaltyRequest(
+export async function getSlashRequest(
   validatorAddr: string,
   nonce: number,
   slashFactor: number,
@@ -93,10 +93,10 @@ export async function getPenaltyRequest(
   beneficiaryAmts: BigNumber[],
   signers: Wallet[]
 ) {
-  const { Penalty } = await getProtos();
+  const { Slash } = await getProtos();
 
   const beneficiaries = await getAccountAmtPairs(beneficiaryAddrs, beneficiaryAmts);
-  const penalty = {
+  const slash = {
     validatorAddr: hex2Bytes(validatorAddr),
     nonce: nonce,
     slashFactor: slashFactor,
@@ -104,11 +104,11 @@ export async function getPenaltyRequest(
     timeout: timeout,
     beneficiaries: beneficiaries
   };
-  const penaltyProto = Penalty.create(penalty);
-  const penaltyBytes = Penalty.encode(penaltyProto).finish();
+  const slashProto = Slash.create(slash);
+  const slashBytes = Slash.encode(slashProto).finish();
 
-  const penaltyBytesHash = keccak256(['bytes'], [penaltyBytes]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(penaltyBytesHash));
+  const slashBytesHash = keccak256(['bytes'], [slashBytes]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(slashBytesHash));
 
-  return { penaltyBytes, sigs };
+  return { slashBytes, sigs };
 }

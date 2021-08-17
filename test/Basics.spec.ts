@@ -107,7 +107,7 @@ describe('Basic Tests', function () {
     it('should delegate to validator by a delegator successfully', async function () {
       await expect(dpos.connect(delegator).delegate(validator.address, consts.DELEGATOR_STAKE))
         .to.emit(dpos, 'DelegationUpdate')
-        .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
+        .withArgs(validator.address, delegator.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
     });
 
     it('should fail to bondValidator before delegating enough stake', async function () {
@@ -127,7 +127,7 @@ describe('Basic Tests', function () {
       it('should undelegate from unbonded validator by delegator successfully', async function () {
         await expect(dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
           .to.emit(dpos, 'UndelegateCompleted')
-          .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE);
+          .withArgs(validator.address, delegator.address, consts.DELEGATOR_STAKE);
       });
 
       it('should fail to undelegate from unbonded validator more than it delegated', async function () {
@@ -136,9 +136,9 @@ describe('Basic Tests', function () {
         ).to.be.revertedWith('reverted with panic code 0x11');
       });
 
-      it('should fail to undelegate from unbonded validator with amount smaller than 1 CELR', async function () {
+      it('should fail to undelegate from unbonded validator with amount smaller than 1 share', async function () {
         await expect(dpos.connect(delegator).undelegate(validator.address, 1000)).to.be.revertedWith(
-          'Minimal amount is 1 CELR'
+          'Minimal amount is 1 share'
         );
       });
 
@@ -168,7 +168,7 @@ describe('Basic Tests', function () {
         it('should increase min self delegation and bondValidator successfully', async function () {
           const higherMinSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
           await expect(dpos.connect(validator).updateMinSelfDelegation(higherMinSelfDelegation))
-            .to.emit(dpos, 'MinSelfDelegationUpdate')
+            .to.emit(dpos, 'MinSelfDelegation')
             .withArgs(validator.address, higherMinSelfDelegation);
 
           await expect(dpos.connect(validator).bondValidator())
@@ -179,7 +179,7 @@ describe('Basic Tests', function () {
         it('should decrease min self delegation and only able to bondValidator after notice period', async function () {
           const lowerMinSelfDelegation = consts.MIN_SELF_DELEGATION.sub(1000000);
           await expect(dpos.connect(validator).updateMinSelfDelegation(lowerMinSelfDelegation))
-            .to.emit(dpos, 'MinSelfDelegationUpdate')
+            .to.emit(dpos, 'MinSelfDelegation')
             .withArgs(validator.address, lowerMinSelfDelegation);
 
           await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not earliest bond time yet');
@@ -195,9 +195,9 @@ describe('Basic Tests', function () {
             await dpos.connect(validator).bondValidator();
           });
 
-          it('should fail to undelegate with amount smaller than 1 CELR', async function () {
+          it('should fail to undelegate with amount smaller than 1 share', async function () {
             await expect(dpos.connect(delegator).undelegate(validator.address, 1000)).to.be.revertedWith(
-              'Minimal amount is 1 CELR'
+              'Minimal amount is 1 share'
             );
           });
 
@@ -212,24 +212,20 @@ describe('Basic Tests', function () {
             const blockNumber = await ethers.provider.getBlockNumber();
             await expect(dpos.connect(validator).undelegate(validator.address, withdrawAmt))
               .to.emit(dpos, 'ValidatorStatusUpdate')
-              .withArgs(validator.address, consts.STATUS_UNBONDING)
-              .to.emit(dpos, 'Undelegate')
-              .withArgs(validator.address, validator.address, withdrawAmt, blockNumber + 1);
+              .withArgs(validator.address, consts.STATUS_UNBONDING);
           });
 
           it('should remove the validator after delegator undelegate to become under minStakingPool', async function () {
             const blockNumber = await ethers.provider.getBlockNumber();
             await expect(dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
               .to.emit(dpos, 'ValidatorStatusUpdate')
-              .withArgs(validator.address, consts.STATUS_UNBONDING)
-              .to.emit(dpos, 'Undelegate')
-              .withArgs(delegator.address, validator.address, consts.DELEGATOR_STAKE, blockNumber + 1);
+              .withArgs(validator.address, consts.STATUS_UNBONDING);
           });
 
           it('should increase min self delegation successfully', async function () {
             const higherMinSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
             await expect(dpos.connect(validator).updateMinSelfDelegation(higherMinSelfDelegation))
-              .to.emit(dpos, 'MinSelfDelegationUpdate')
+              .to.emit(dpos, 'MinSelfDelegation')
               .withArgs(validator.address, higherMinSelfDelegation);
           });
 
@@ -262,7 +258,7 @@ describe('Basic Tests', function () {
               // first completeUndelegate
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, parseUnits('2'));
+                .withArgs(validator.address, delegator.address, parseUnits('2'));
 
               // second completeUndelegate
               await expect(dpos.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
@@ -283,7 +279,7 @@ describe('Basic Tests', function () {
 
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, parseUnits('3'));
+                .withArgs(validator.address, delegator.address, parseUnits('3'));
 
               res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('2'));
@@ -296,7 +292,7 @@ describe('Basic Tests', function () {
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, parseUnits('1'));
+                .withArgs(validator.address, delegator.address, parseUnits('1'));
 
               res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('2'));
@@ -320,7 +316,7 @@ describe('Basic Tests', function () {
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(dpos, 'UndelegateCompleted')
-                .withArgs(delegator.address, validator.address, parseUnits('1'));
+                .withArgs(validator.address, delegator.address, parseUnits('1'));
             });
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {

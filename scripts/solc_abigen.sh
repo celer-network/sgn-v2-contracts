@@ -74,7 +74,7 @@ no_openzeppelin() {
 run_abigen() {
   PR_COMMIT_ID=$(git rev-parse --short HEAD)
   git clone $GO_REPO
-  pushd layer2-finance-v2-go
+  pushd sgn-v2
   git fetch
   git checkout $BRANCH || git checkout -b $BRANCH
 

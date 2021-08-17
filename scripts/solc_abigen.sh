@@ -82,7 +82,7 @@ run_abigen() {
   abigen -combined-json ../$CNTRDIR/combined.json -pkg contracts -out contracts/combined.go
 
   pushd contracts
-  go build # make sure contracts pkg can build
+  #go build # make sure contracts pkg can build
   popd
 
   if [[ $(git status --porcelain) ]]; then

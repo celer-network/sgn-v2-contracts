@@ -6,7 +6,7 @@ on:
     paths:
       - '.github/workflows/abigen.yml'
       - 'contracts/**'
-      #- 'scripts/**'
+      - 'scripts/**'
 jobs:
   build:
     runs-on: ubuntu-20.04

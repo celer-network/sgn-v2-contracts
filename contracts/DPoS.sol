@@ -18,8 +18,10 @@ import "./Whitelist.sol";
 contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 1e18;
     uint256 constant MAX_INT = 2**256 - 1;
-    uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
-    uint256 public constant MAX_UNDELEGATION_ENTRIES = 7;
+    uint256 constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
+    uint256 constant MAX_UNDELEGATION_ENTRIES = 7;
+    uint256 constant SLASH_FACTOR_DECIMAL = 1e9;
+    uint256 constant MAX_SLASH_FACTOR = 1e8; // 10%
 
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
@@ -80,7 +82,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         int256 tokenDiff
     );
     event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
-    event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
+    event Slash(address indexed valAddr, uint64 nonce, uint256 slashAmt);
     event Compensate(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
@@ -247,7 +249,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= tokens;
-            _validateValidator(_valAddr);
+            _checkBondedValidator(_valAddr);
         }
         require(
             delegator.undelegations.tail - delegator.undelegations.head < MAX_UNDELEGATION_ENTRIES,
@@ -354,26 +356,45 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(!slashDisabled, "Slash is disabled");
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         verifySignatures(_slashRequest, _sigs);
-        require(block.number < request.infractionBlock + request.timeout, "Slash expired");
+
+        uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
+        uint256 currBlock = block.number;
+        uint256 infractionBlock = request.infractionBlock;
+        require(currBlock < infractionBlock + slashTimeout, "Slash expired");
+        require(request.slashFactor <= MAX_SLASH_FACTOR, "Invalid slash factor");
         require(!slashNonces[request.nonce], "Used slash nonce");
         slashNonces[request.nonce] = true;
 
-        Validator storage validator = validators[request.validator];
+        address valAddr = request.validator;
+        Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
-        uint256 totalSubAmt; // TODO: compute slash logic
-        _validateValidator(request.validator);
+        uint256 slashAmt = (validator.tokens * request.slashFactor) / SLASH_FACTOR_DECIMAL;
+        validator.tokens -= slashAmt;
+        if (validator.status == ValidatorStatus.Bonded) {
+            bondedValTokens -= slashAmt;
+            _checkBondedValidator(valAddr);
+        }
+        emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, int256(slashAmt));
 
-        uint256 totalAddAmt;
+        for (uint256 i = 0; i < request.undelegators.length; i++) {
+            Delegator storage delegator = validator.delegators[request.undelegators[i]];
+            for (i = delegator.undelegations.head; i < delegator.undelegations.tail; i++) {
+                Undelegation storage undelegation = delegator.undelegations.queue[i];
+                uint256 creationBlock = undelegation.creationBlock;
+                if (creationBlock < infractionBlock && creationBlock + slashTimeout <= currBlock) {
+                    uint256 s = (undelegation.amount * request.slashFactor) / SLASH_FACTOR_DECIMAL;
+                    undelegation.amount -= s;
+                    slashAmt += s;
+                }
+            }
+        }
+
+        uint256 collectAmt;
         for (uint256 i = 0; i < request.collectors.length; i++) {
             PbStaking.AcctAmtPair memory collector = request.collectors[i];
-            totalAddAmt += collector.amount;
-
+            collectAmt += collector.amount;
             if (collector.account == address(0)) {
-                // address(0) stands for rewardPool
-                rewardPool += collector.amount;
-            } else if (collector.account == address(1)) {
-                // address(1) means collector is msg sender
                 celerToken.safeTransfer(msg.sender, collector.amount);
                 emit Compensate(msg.sender, collector.amount);
             } else {
@@ -382,7 +403,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             }
         }
 
-        require(totalSubAmt == totalAddAmt, "Amount not match");
+        rewardPool = slashAmt - collectAmt + rewardPool;
+        emit Slash(valAddr, request.nonce, slashAmt);
     }
 
     /**
@@ -703,15 +725,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @dev remove this validator if it doesn't meet the requirement of being a validator
      * @param _valAddr the validator address
      */
-    function _validateValidator(address _valAddr) private {
+    function _checkBondedValidator(address _valAddr) private {
         Validator storage v = validators[_valAddr];
-        if (v.status != ValidatorStatus.Bonded) {
-            // no need to validate the tokens of a non-validator
-            return;
-        }
+        uint256 validatorTokens = v.tokens;
+        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, validatorTokens, v.totalShares);
         if (
-            v.delegators[_valAddr].shares < v.minSelfDelegation ||
-            v.tokens < getUIntValue(uint256(ParamNames.MinValidatorTokens))
+            validatorTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens)) ||
+            selfDelegation < v.minSelfDelegation
         ) {
             _unbondValidator(_valAddr);
         }

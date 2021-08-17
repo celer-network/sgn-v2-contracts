@@ -41,9 +41,8 @@ describe('Slash Tests', function () {
       validators[0].address,
       [],
       1,
-      0.1,
+      100000000,
       50,
-      100,
       [consts.ZERO_ADDR, validators[1].address],
       [parseUnits('0.7'), parseUnits('0.8')],
       validators

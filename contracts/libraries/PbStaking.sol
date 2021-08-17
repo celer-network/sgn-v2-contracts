@@ -38,18 +38,17 @@ library PbStaking {
         uint64 nonce; // tag: 3
         uint64 slashFactor; // tag: 4
         uint64 infractionBlock; // tag: 5
-        uint64 timeout; // tag: 6
-        AcctAmtPair[] collectors; // tag: 7
+        AcctAmtPair[] collectors; // tag: 6
     } // end struct Slash
 
     function decSlash(bytes memory raw) internal pure returns (Slash memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint256[] memory cnts = buf.cntTags(7);
+        uint256[] memory cnts = buf.cntTags(6);
         m.undelegators = new address[](cnts[2]);
         cnts[2] = 0; // reset counter for later use
-        m.collectors = new AcctAmtPair[](cnts[7]);
-        cnts[7] = 0; // reset counter for later use
+        m.collectors = new AcctAmtPair[](cnts[6]);
+        cnts[6] = 0; // reset counter for later use
 
         uint256 tag;
         Pb.WireType wire;
@@ -69,10 +68,8 @@ library PbStaking {
             } else if (tag == 5) {
                 m.infractionBlock = uint64(buf.decVarint());
             } else if (tag == 6) {
-                m.timeout = uint64(buf.decVarint());
-            } else if (tag == 7) {
-                m.collectors[cnts[7]] = decAcctAmtPair(buf.decBytes());
-                cnts[7]++;
+                m.collectors[cnts[6]] = decAcctAmtPair(buf.decBytes());
+                cnts[6]++;
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

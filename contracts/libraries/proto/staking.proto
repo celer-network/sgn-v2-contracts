@@ -18,8 +18,7 @@ message Slash {
   uint64 nonce = 3;
   uint64 slash_factor = 4;
   uint64 infraction_block = 5;
-  uint64 timeout = 6;
-  repeated AcctAmtPair collectors = 7;
+  repeated AcctAmtPair collectors = 6;
 }
 
 message AcctAmtPair {

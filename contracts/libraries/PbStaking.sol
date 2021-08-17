@@ -33,20 +33,23 @@ library PbStaking {
     } // end decoder Reward
 
     struct Slash {
-        address validatorAddr; // tag: 1
-        uint64 nonce; // tag: 2
-        uint64 slashFactor; // tag: 3
-        uint64 infractionBlock; // tag: 4
-        uint64 timeout; // tag: 5
-        AccountAmtPair[] beneficiaries; // tag: 6
+        address validator; // tag: 1
+        address[] undelegators; // tag: 2
+        uint64 nonce; // tag: 3
+        uint64 slashFactor; // tag: 4
+        uint64 infractionBlock; // tag: 5
+        uint64 timeout; // tag: 6
+        AccountAmtPair[] beneficiaries; // tag: 7
     } // end struct Slash
 
     function decSlash(bytes memory raw) internal pure returns (Slash memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint256[] memory cnts = buf.cntTags(6);
-        m.beneficiaries = new AccountAmtPair[](cnts[6]);
-        cnts[6] = 0; // reset counter for later use
+        uint256[] memory cnts = buf.cntTags(7);
+        m.undelegators = new address[](cnts[2]);
+        cnts[2] = 0; // reset counter for later use
+        m.beneficiaries = new AccountAmtPair[](cnts[7]);
+        cnts[7] = 0; // reset counter for later use
 
         uint256 tag;
         Pb.WireType wire;
@@ -55,18 +58,21 @@ library PbStaking {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.validatorAddr = Pb._address(buf.decBytes());
+                m.validator = Pb._address(buf.decBytes());
             } else if (tag == 2) {
-                m.nonce = uint64(buf.decVarint());
+                m.undelegators[cnts[2]] = Pb._address(buf.decBytes());
+                cnts[2]++;
             } else if (tag == 3) {
-                m.slashFactor = uint64(buf.decVarint());
+                m.nonce = uint64(buf.decVarint());
             } else if (tag == 4) {
-                m.infractionBlock = uint64(buf.decVarint());
+                m.slashFactor = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.timeout = uint64(buf.decVarint());
+                m.infractionBlock = uint64(buf.decVarint());
             } else if (tag == 6) {
-                m.beneficiaries[cnts[6]] = decAccountAmtPair(buf.decBytes());
-                cnts[6]++;
+                m.timeout = uint64(buf.decVarint());
+            } else if (tag == 7) {
+                m.beneficiaries[cnts[7]] = decAccountAmtPair(buf.decBytes());
+                cnts[7]++;
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

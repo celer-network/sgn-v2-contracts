@@ -66,7 +66,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
-    mapping(uint256 => bool) public usedSlashNonce;
+    mapping(uint256 => bool) public slashNonces;
 
     /* Events */
     // TODO: remove unnecessary event index
@@ -77,7 +77,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address indexed delAddr,
         uint256 valTokens,
         uint256 delShares,
-        int256 change
+        int256 tokenDiff
     );
     event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
@@ -355,14 +355,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         verifySignatures(_slashRequest, _sigs);
         require(block.number < request.infractionBlock + request.timeout, "Slash expired");
-        require(!usedSlashNonce[request.nonce], "Used slash nonce");
-        usedSlashNonce[request.nonce] = true;
+        require(!slashNonces[request.nonce], "Used slash nonce");
+        slashNonces[request.nonce] = true;
 
-        Validator storage validator = validators[request.validatorAddr];
+        Validator storage validator = validators[request.validator];
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
         uint256 totalSubAmt; // TODO: compute slash logic
-        _validateValidator(request.validatorAddr);
+        _validateValidator(request.validator);
 
         uint256 totalAddAmt;
         for (uint256 i = 0; i < request.beneficiaries.length; i++) {

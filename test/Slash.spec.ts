@@ -39,6 +39,7 @@ describe('Slash Tests', function () {
     await dpos.pause();
     const request = await getSlashRequest(
       validators[0].address,
+      [],
       1,
       0.1,
       50,

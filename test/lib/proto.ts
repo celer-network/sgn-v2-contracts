@@ -44,21 +44,6 @@ function uint2Bytes(x: BigNumber) {
   return hex2Bytes(x.toHexString());
 }
 
-async function getAccountAmtPairs(accounts: string[], amounts: BigNumber[]) {
-  const { AccountAmtPair } = await getProtos();
-  expect(accounts.length).to.equal(amounts.length);
-  const pairs = [];
-  for (let i = 0; i < accounts.length; i++) {
-    const pair = {
-      account: hex2Bytes(accounts[i]),
-      amt: uint2Bytes(amounts[i])
-    };
-    const pairProto = AccountAmtPair.create(pair);
-    pairs.push(pairProto);
-  }
-  return pairs;
-}
-
 async function calculateSignatures(signers: Wallet[], hash: number[]) {
   const sigs = [];
   for (let i = 0; i < signers.length; i++) {
@@ -85,6 +70,7 @@ export async function getRewardRequest(recipient: string, cumulativeReward: BigN
 
 export async function getSlashRequest(
   validatorAddr: string,
+  undelegatorAddrs: string[],
   nonce: number,
   slashFactor: number,
   infractionBlock: number,
@@ -96,8 +82,13 @@ export async function getSlashRequest(
   const { Slash } = await getProtos();
 
   const beneficiaries = await getAccountAmtPairs(beneficiaryAddrs, beneficiaryAmts);
+  const undelegators = [];
+  for (let i = 0; i < undelegatorAddrs.length; i++) {
+    undelegators.push(hex2Bytes(undelegatorAddrs[i]));
+  }
   const slash = {
-    validatorAddr: hex2Bytes(validatorAddr),
+    validator: hex2Bytes(validatorAddr),
+    undelegators: undelegators,
     nonce: nonce,
     slashFactor: slashFactor,
     infractionBlock: infractionBlock,
@@ -111,4 +102,19 @@ export async function getSlashRequest(
   const sigs = await calculateSignatures(signers, hex2Bytes(slashBytesHash));
 
   return { slashBytes, sigs };
+}
+
+async function getAccountAmtPairs(accounts: string[], amounts: BigNumber[]) {
+  const { AccountAmtPair } = await getProtos();
+  expect(accounts.length).to.equal(amounts.length);
+  const pairs = [];
+  for (let i = 0; i < accounts.length; i++) {
+    const pair = {
+      account: hex2Bytes(accounts[i]),
+      amt: uint2Bytes(amounts[i])
+    };
+    const pairProto = AccountAmtPair.create(pair);
+    pairs.push(pairProto);
+  }
+  return pairs;
 }

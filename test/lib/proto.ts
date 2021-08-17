@@ -9,7 +9,7 @@ protobuf.common('google/protobuf/descriptor.proto', {});
 interface Proto {
   Slash: protobuf.Type;
   Reward: protobuf.Type;
-  AccountAmtPair: protobuf.Type;
+  AcctAmtPair: protobuf.Type;
 }
 
 async function getProtos(): Promise<Proto> {
@@ -17,12 +17,12 @@ async function getProtos(): Promise<Proto> {
 
   const Slash = staking.lookupType('staking.Slash');
   const Reward = staking.lookupType('staking.Reward');
-  const AccountAmtPair = staking.lookupType('staking.AccountAmtPair');
+  const AcctAmtPair = staking.lookupType('staking.AcctAmtPair');
 
   return {
     Slash,
     Reward,
-    AccountAmtPair
+    AcctAmtPair
   };
 }
 
@@ -75,13 +75,13 @@ export async function getSlashRequest(
   slashFactor: number,
   infractionBlock: number,
   timeout: number,
-  beneficiaryAddrs: string[],
-  beneficiaryAmts: BigNumber[],
+  collectorAddrs: string[],
+  collectorAmts: BigNumber[],
   signers: Wallet[]
 ) {
   const { Slash } = await getProtos();
 
-  const beneficiaries = await getAccountAmtPairs(beneficiaryAddrs, beneficiaryAmts);
+  const collectors = await getAcctAmtPairs(collectorAddrs, collectorAmts);
   const undelegators = [];
   for (let i = 0; i < undelegatorAddrs.length; i++) {
     undelegators.push(hex2Bytes(undelegatorAddrs[i]));
@@ -93,7 +93,7 @@ export async function getSlashRequest(
     slashFactor: slashFactor,
     infractionBlock: infractionBlock,
     timeout: timeout,
-    beneficiaries: beneficiaries
+    collectors: collectors
   };
   const slashProto = Slash.create(slash);
   const slashBytes = Slash.encode(slashProto).finish();
@@ -104,16 +104,16 @@ export async function getSlashRequest(
   return { slashBytes, sigs };
 }
 
-async function getAccountAmtPairs(accounts: string[], amounts: BigNumber[]) {
-  const { AccountAmtPair } = await getProtos();
+async function getAcctAmtPairs(accounts: string[], amounts: BigNumber[]) {
+  const { AcctAmtPair } = await getProtos();
   expect(accounts.length).to.equal(amounts.length);
   const pairs = [];
   for (let i = 0; i < accounts.length; i++) {
     const pair = {
       account: hex2Bytes(accounts[i]),
-      amt: uint2Bytes(amounts[i])
+      amount: uint2Bytes(amounts[i])
     };
-    const pairProto = AccountAmtPair.create(pair);
+    const pairProto = AcctAmtPair.create(pair);
     pairs.push(pairProto);
   }
   return pairs;

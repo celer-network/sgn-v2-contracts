@@ -365,20 +365,20 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         _validateValidator(request.validator);
 
         uint256 totalAddAmt;
-        for (uint256 i = 0; i < request.beneficiaries.length; i++) {
-            PbStaking.AccountAmtPair memory beneficiary = request.beneficiaries[i];
-            totalAddAmt += beneficiary.amt;
+        for (uint256 i = 0; i < request.collectors.length; i++) {
+            PbStaking.AcctAmtPair memory collector = request.collectors[i];
+            totalAddAmt += collector.amount;
 
-            if (beneficiary.account == address(0)) {
+            if (collector.account == address(0)) {
                 // address(0) stands for rewardPool
-                rewardPool += beneficiary.amt;
-            } else if (beneficiary.account == address(1)) {
-                // address(1) means beneficiary is msg sender
-                celerToken.safeTransfer(msg.sender, beneficiary.amt);
-                emit Compensate(msg.sender, beneficiary.amt);
+                rewardPool += collector.amount;
+            } else if (collector.account == address(1)) {
+                // address(1) means collector is msg sender
+                celerToken.safeTransfer(msg.sender, collector.amount);
+                emit Compensate(msg.sender, collector.amount);
             } else {
-                celerToken.safeTransfer(beneficiary.account, beneficiary.amt);
-                emit Compensate(beneficiary.account, beneficiary.amt);
+                celerToken.safeTransfer(collector.account, collector.amount);
+                emit Compensate(collector.account, collector.amount);
             }
         }
 

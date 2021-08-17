@@ -39,7 +39,7 @@ library PbStaking {
         uint64 slashFactor; // tag: 4
         uint64 infractionBlock; // tag: 5
         uint64 timeout; // tag: 6
-        AccountAmtPair[] beneficiaries; // tag: 7
+        AcctAmtPair[] collectors; // tag: 7
     } // end struct Slash
 
     function decSlash(bytes memory raw) internal pure returns (Slash memory m) {
@@ -48,7 +48,7 @@ library PbStaking {
         uint256[] memory cnts = buf.cntTags(7);
         m.undelegators = new address[](cnts[2]);
         cnts[2] = 0; // reset counter for later use
-        m.beneficiaries = new AccountAmtPair[](cnts[7]);
+        m.collectors = new AcctAmtPair[](cnts[7]);
         cnts[7] = 0; // reset counter for later use
 
         uint256 tag;
@@ -71,7 +71,7 @@ library PbStaking {
             } else if (tag == 6) {
                 m.timeout = uint64(buf.decVarint());
             } else if (tag == 7) {
-                m.beneficiaries[cnts[7]] = decAccountAmtPair(buf.decBytes());
+                m.collectors[cnts[7]] = decAcctAmtPair(buf.decBytes());
                 cnts[7]++;
             } else {
                 buf.skipValue(wire);
@@ -79,12 +79,12 @@ library PbStaking {
         }
     } // end decoder Slash
 
-    struct AccountAmtPair {
+    struct AcctAmtPair {
         address account; // tag: 1
-        uint256 amt; // tag: 2
-    } // end struct AccountAmtPair
+        uint256 amount; // tag: 2
+    } // end struct AcctAmtPair
 
-    function decAccountAmtPair(bytes memory raw) internal pure returns (AccountAmtPair memory m) {
+    function decAcctAmtPair(bytes memory raw) internal pure returns (AcctAmtPair memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
         uint256 tag;
@@ -96,10 +96,10 @@ library PbStaking {
             else if (tag == 1) {
                 m.account = Pb._address(buf.decBytes());
             } else if (tag == 2) {
-                m.amt = Pb._uint256(buf.decBytes());
+                m.amount = Pb._uint256(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag
         }
-    } // end decoder AccountAmtPair
+    } // end decoder AcctAmtPair
 }

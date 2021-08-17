@@ -19,12 +19,13 @@ message Slash {
   uint64 slash_factor = 4;
   uint64 infraction_block = 5;
   uint64 timeout = 6;
-  repeated AccountAmtPair beneficiaries = 7;
+  repeated AcctAmtPair collectors = 7;
 }
 
-message AccountAmtPair {
+message AcctAmtPair {
   bytes account = 1 [ (soltype) = "address" ];
-  bytes amt = 2 [ (soltype) = "uint256" ];
+  bytes amount = 2 [ (soltype) = "uint256" ];
 }
 
-// from repo root: protoc --sol_out=importpb=true:contracts/libraries contracts/libraries/proto/staking.proto
+// generate solc proto from repo root:
+// protoc --sol_out=importpb=true:contracts/libraries contracts/libraries/proto/staking.proto

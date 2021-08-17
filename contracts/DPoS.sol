@@ -69,12 +69,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /* Events */
     // TODO: remove unnecessary event index
-    event InitializeValidatorCandidate(address indexed valAddr, uint256 minSelfDelegation, uint256 commissionRate);
-    event CommissionRateUpdate(address indexed valAddr, uint256 newRate);
-    event MinSelfDelegation(address indexed valAddr, uint256 minSelfDelegation);
+    event ValidatorParamsUpdate(address indexed valAddr, uint256 minSelfDelegation, uint256 commissionRate);
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
-    event UndelegateCompleted(address indexed valAddr, address indexed delAddr, uint256 amount);
     event DelegationUpdate(address indexed valAddr, address indexed delAddr, uint256 valTokens, uint256 delShares);
+    event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Compensate(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
@@ -119,11 +117,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Initialize a validator candidate
-     * @dev every validator must become a candidate first
      * @param _minSelfDelegation minimal amount of tokens staked by the validator itself
      * @param _commissionRate the self-declaimed commission rate
      */
-    function initializeValidatorCandidate(uint256 _minSelfDelegation, uint256 _commissionRate)
+    function initializeValidator(uint256 _minSelfDelegation, uint256 _commissionRate)
         external
         whenNotPaused
         onlyWhitelisted
@@ -140,7 +137,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         valAddrs.push(valAddr);
 
         // TODO: auto self delegate when initialized?
-        emit InitializeValidatorCandidate(valAddr, _minSelfDelegation, _commissionRate);
+        emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, _commissionRate);
     }
 
     /**
@@ -220,7 +217,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Undelegated tokens from a validator
+     * @notice Undelegate tokens from a validator
      * @dev Tokens are delegated by the msgSender to the validator
      * @param _valAddr the address of the validator
      * @param _shares undelegate shares
@@ -239,7 +236,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens -= tokens;
         if (validator.status == ValidatorStatus.Unbonded) {
             celerToken.safeTransfer(delAddr, tokens);
-            emit UndelegateCompleted(_valAddr, delAddr, tokens);
+            emit Undelegated(_valAddr, delAddr, tokens);
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= tokens;
@@ -283,7 +280,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         require(undelegateAmt > 0, "no undelegation ready to be completed");
         celerToken.safeTransfer(delAddr, undelegateAmt);
-        emit UndelegateCompleted(_valAddr, delAddr, undelegateAmt);
+        emit Undelegated(_valAddr, delAddr, undelegateAmt);
     }
 
     /**
@@ -317,7 +314,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         validator.commissionRate = _newRate;
-        emit CommissionRateUpdate(valAddr, _newRate);
+        emit ValidatorParamsUpdate(valAddr, validator.minSelfDelegation, _newRate);
     }
 
     /**
@@ -334,7 +331,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             validator.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
         }
         validator.minSelfDelegation = _minSelfDelegation;
-        emit MinSelfDelegation(valAddr, _minSelfDelegation);
+        emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, validator.commissionRate);
     }
 
     /**

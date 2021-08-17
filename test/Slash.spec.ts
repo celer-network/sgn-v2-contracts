@@ -28,9 +28,7 @@ describe('Slash Tests', function () {
     await celr.approve(dpos.address, parseUnits('100'));
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos
-        .connect(validators[i])
-        .initializeValidatorCandidate(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.connect(validators[i]).delegate(validators[i].address, consts.VALIDATOR_STAKE);
       await dpos.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await dpos.connect(validators[i]).bondValidator();

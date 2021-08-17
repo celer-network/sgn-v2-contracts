@@ -28,9 +28,7 @@ describe('Slash Tests', function () {
     await celr.approve(dpos.address, parseUnits('100'));
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos
-        .connect(validators[i])
-        .initializeValidatorCandidate(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.connect(validators[i]).delegate(validators[i].address, consts.VALIDATOR_STAKE);
       await dpos.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await dpos.connect(validators[i]).bondValidator();
@@ -40,11 +38,11 @@ describe('Slash Tests', function () {
   it('should fail to slash when paused', async function () {
     await dpos.pause();
     const request = await getPenaltyRequest(
-      1,
-      1000000,
       validators[0].address,
-      [validators[0].address, delegator.address],
-      [parseUnits('0.5'), parseUnits('1')],
+      1,
+      0.1,
+      50,
+      100,
       [consts.ZERO_ADDR, validators[1].address],
       [parseUnits('0.7'), parseUnits('0.8')],
       validators

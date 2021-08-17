@@ -33,21 +33,20 @@ library PbSgn {
     } // end decoder Reward
 
     struct Penalty {
-        uint64 nonce; // tag: 1
-        uint64 expireTime; // tag: 2
-        address validatorAddress; // tag: 3
-        AccountAmtPair[] penalizedDelegators; // tag: 4
-        AccountAmtPair[] beneficiaries; // tag: 5
+        address validatorAddr; // tag: 1
+        uint64 nonce; // tag: 2
+        uint64 slashFactor; // tag: 3
+        uint64 infractionBlock; // tag: 4
+        uint64 timeout; // tag: 5
+        AccountAmtPair[] beneficiaries; // tag: 6
     } // end struct Penalty
 
     function decPenalty(bytes memory raw) internal pure returns (Penalty memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint256[] memory cnts = buf.cntTags(5);
-        m.penalizedDelegators = new AccountAmtPair[](cnts[4]);
-        cnts[4] = 0; // reset counter for later use
-        m.beneficiaries = new AccountAmtPair[](cnts[5]);
-        cnts[5] = 0; // reset counter for later use
+        uint256[] memory cnts = buf.cntTags(6);
+        m.beneficiaries = new AccountAmtPair[](cnts[6]);
+        cnts[6] = 0; // reset counter for later use
 
         uint256 tag;
         Pb.WireType wire;
@@ -56,17 +55,18 @@ library PbSgn {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.nonce = uint64(buf.decVarint());
+                m.validatorAddr = Pb._address(buf.decBytes());
             } else if (tag == 2) {
-                m.expireTime = uint64(buf.decVarint());
+                m.nonce = uint64(buf.decVarint());
             } else if (tag == 3) {
-                m.validatorAddress = Pb._address(buf.decBytes());
+                m.slashFactor = uint64(buf.decVarint());
             } else if (tag == 4) {
-                m.penalizedDelegators[cnts[4]] = decAccountAmtPair(buf.decBytes());
-                cnts[4]++;
+                m.infractionBlock = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.beneficiaries[cnts[5]] = decAccountAmtPair(buf.decBytes());
-                cnts[5]++;
+                m.timeout = uint64(buf.decVarint());
+            } else if (tag == 6) {
+                m.beneficiaries[cnts[6]] = decAccountAmtPair(buf.decBytes());
+                cnts[6]++;
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

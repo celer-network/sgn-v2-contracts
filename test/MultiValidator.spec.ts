@@ -33,9 +33,7 @@ describe('Multiple validators Tests', function () {
     ];
     for (let i = 0; i < 8; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos
-        .connect(validators[i])
-        .initializeValidatorCandidate(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       if (i < 7) {
         await dpos.connect(validators[i]).delegate(validators[i].address, consts.VALIDATOR_STAKE);
         await dpos.delegate(validators[i].address, stakes[i]);
@@ -66,7 +64,7 @@ describe('Multiple validators Tests', function () {
     expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
   });
 
-  it('should remove validator due to withdrawal and add new validator successfully', async function () {
+  it('should remove validator due to undelegate and add new validator successfully', async function () {
     await expect(dpos.connect(validators[1]).undelegate(validators[1].address, parseUnits('2')))
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[1].address, consts.STATUS_UNBONDING);

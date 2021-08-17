@@ -6,8 +6,8 @@
 # GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
 SOLC_VER="v0.8.7+commit.e28d00a7"
-OPENZEPPELIN="openzeppelin-contracts-4.1.0"          # if change, also need to change the url in dld_solc
-GETH_VER="geth-alltools-linux-amd64-1.10.3-991384a7" # for abigen
+OPENZEPPELIN="openzeppelin-contracts-4.2.0"          # if change, also need to change the url in dld_solc
+GETH_VER="geth-alltools-linux-amd64-1.10.7-12f0ff40" # for abigen
 CNTRDIR="contracts"                                  # folder name for all contracts code
 GO_REPO=https://${GH_TOKEN}@github.com/celer-network/sgn-v2
 
@@ -21,7 +21,7 @@ dld_solc() {
   curl -L "https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-${SOLC_VER}" -o solc && chmod +x solc
   sudo mv solc /usr/local/bin/
   # only need oz's contracts subfolder, files will be at $CNTRDIR/$OPENZEPPELIN/contracts
-  curl -L "https://github.com/OpenZeppelin/openzeppelin-contracts/archive/v4.1.0.tar.gz" | tar -xz -C $CNTRDIR $OPENZEPPELIN/contracts/
+  curl -L "https://github.com/OpenZeppelin/openzeppelin-contracts/archive/v4.2.0.tar.gz" | tar -xz -C $CNTRDIR $OPENZEPPELIN/contracts/
 }
 
 dld_abigen() {
@@ -74,7 +74,7 @@ no_openzeppelin() {
 run_abigen() {
   PR_COMMIT_ID=$(git rev-parse --short HEAD)
   git clone $GO_REPO
-  pushd layer2-finance-v2-go
+  pushd sgn-v2
   git fetch
   git checkout $BRANCH || git checkout -b $BRANCH
 
@@ -82,7 +82,7 @@ run_abigen() {
   abigen -combined-json ../$CNTRDIR/combined.json -pkg contracts -out contracts/combined.go
 
   pushd contracts
-  go build # make sure contracts pkg can build
+  #go build # make sure contracts pkg can build
   popd
 
   if [[ $(git status --porcelain) ]]; then

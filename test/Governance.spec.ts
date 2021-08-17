@@ -27,9 +27,7 @@ describe('Governance Tests', function () {
     validators = await getAccounts(res.admin, [celr], 4);
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos
-        .connect(validators[i])
-        .initializeValidatorCandidate(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.connect(validators[i]).delegate(validators[i].address, parseUnits('6'));
       await dpos.connect(validators[i]).bondValidator();
     }

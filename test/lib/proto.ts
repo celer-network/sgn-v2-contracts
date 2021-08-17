@@ -84,24 +84,24 @@ export async function getRewardRequest(recipient: string, cumulativeReward: BigN
 }
 
 export async function getPenaltyRequest(
-  nonce: number,
-  expireTime: number,
   validatorAddr: string,
-  delegatorAddrs: string[],
-  delegatorAmts: BigNumber[],
+  nonce: number,
+  slashFactor: number,
+  infractionBlock: number,
+  timeout: number,
   beneficiaryAddrs: string[],
   beneficiaryAmts: BigNumber[],
   signers: Wallet[]
 ) {
   const { Penalty } = await getProtos();
 
-  const penalizedDelegators = await getAccountAmtPairs(delegatorAddrs, delegatorAmts);
   const beneficiaries = await getAccountAmtPairs(beneficiaryAddrs, beneficiaryAmts);
   const penalty = {
+    validatorAddr: hex2Bytes(validatorAddr),
     nonce: nonce,
-    expireTime: expireTime,
-    validatorAddress: hex2Bytes(validatorAddr),
-    penalizedDelegators: penalizedDelegators,
+    slashFactor: slashFactor,
+    infractionBlock: infractionBlock,
+    timeout: timeout,
     beneficiaries: beneficiaries
   };
   const penaltyProto = Penalty.create(penalty);

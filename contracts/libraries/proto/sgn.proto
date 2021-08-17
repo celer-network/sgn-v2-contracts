@@ -13,11 +13,12 @@ message Reward {
 }
 
 message Penalty {
-  uint64 nonce = 1;
-  uint64 expire_time = 2;
-  bytes validator_address = 3 [ (soltype) = "address" ];
-  repeated AccountAmtPair penalized_delegators = 4;
-  repeated AccountAmtPair beneficiaries = 5;
+  bytes validator_addr = 1 [ (soltype) = "address" ];
+  uint64 nonce = 2;
+  uint64 slash_factor = 3;
+  uint64 infraction_block = 4;
+  uint64 timeout = 5;
+  repeated AccountAmtPair beneficiaries = 6;
 }
 
 message AccountAmtPair {

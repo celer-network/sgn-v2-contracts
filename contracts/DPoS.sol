@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "./libraries/PbSgn.sol";
+import "./libraries/PbStaking.sol";
 import "./Govern.sol";
 import "./Whitelist.sol";
 
@@ -65,7 +65,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
-    mapping(uint256 => bool) public usedPenaltyNonce;
+    mapping(uint256 => bool) public usedSlashNonce;
 
     /* Events */
     // TODO: remove unnecessary event index
@@ -291,7 +291,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
         verifySignatures(_rewardRequest, _sigs);
-        PbSgn.Reward memory reward = PbSgn.decReward(_rewardRequest);
+        PbStaking.Reward memory reward = PbStaking.decReward(_rewardRequest);
 
         uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
         require(newReward > 0, "No new reward");
@@ -336,26 +336,26 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Slash a validator and its delegators
-     * @param _penaltyRequest penalty request bytes coded in protobuf
+     * @param _slashRequest slash request bytes coded in protobuf
      * @param _sigs list of validator signatures
      */
-    function slash(bytes calldata _penaltyRequest, bytes[] calldata _sigs) external whenNotPaused {
+    function slash(bytes calldata _slashRequest, bytes[] calldata _sigs) external whenNotPaused {
         require(!slashDisabled, "Slash is disabled");
-        PbSgn.Penalty memory penalty = PbSgn.decPenalty(_penaltyRequest);
-        verifySignatures(_penaltyRequest, _sigs);
-        require(block.number < penalty.infractionBlock + penalty.timeout, "Penalty expired");
-        require(!usedPenaltyNonce[penalty.nonce], "Used penalty nonce");
-        usedPenaltyNonce[penalty.nonce] = true;
+        PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
+        verifySignatures(_slashRequest, _sigs);
+        require(block.number < request.infractionBlock + request.timeout, "Slash expired");
+        require(!usedSlashNonce[request.nonce], "Used slash nonce");
+        usedSlashNonce[request.nonce] = true;
 
-        Validator storage validator = validators[penalty.validatorAddr];
+        Validator storage validator = validators[request.validatorAddr];
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
         uint256 totalSubAmt; // TODO: compute slash logic
-        _validateValidator(penalty.validatorAddr);
+        _validateValidator(request.validatorAddr);
 
         uint256 totalAddAmt;
-        for (uint256 i = 0; i < penalty.beneficiaries.length; i++) {
-            PbSgn.AccountAmtPair memory beneficiary = penalty.beneficiaries[i];
+        for (uint256 i = 0; i < request.beneficiaries.length; i++) {
+            PbStaking.AccountAmtPair memory beneficiary = request.beneficiaries[i];
             totalAddAmt += beneficiary.amt;
 
             if (beneficiary.account == address(0)) {

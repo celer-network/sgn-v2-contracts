@@ -6,7 +6,7 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getPenaltyRequest } from './lib/proto';
+import { getSlashRequest } from './lib/proto';
 import * as consts from './lib/constants';
 import { DPoS, SGN, TestERC20 } from '../typechain';
 
@@ -297,7 +297,7 @@ describe('Basic Tests', function () {
             /*
             it('should only confirm withdrawal partial amount due to slash', async function () {
               const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
-              const request = await getPenaltyRequest(
+              const request = await getSlashRequest(
                 1,
                 1000000,
                 validator.address,
@@ -307,7 +307,7 @@ describe('Basic Tests', function () {
                 [slashAmt],
                 [validator]
               );
-              await dpos.slash(request.penaltyBytes, request.sigs);
+              await dpos.slash(request.slashBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))
@@ -316,7 +316,7 @@ describe('Basic Tests', function () {
             });
 
             it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
-              const request = await getPenaltyRequest(
+              const request = await getSlashRequest(
                 1,
                 1000000,
                 validator.address,
@@ -326,7 +326,7 @@ describe('Basic Tests', function () {
                 [consts.DELEGATOR_STAKE],
                 [validator]
               );
-              await dpos.slash(request.penaltyBytes, request.sigs);
+              await dpos.slash(request.slashBytes, request.sigs);
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await expect(dpos.connect(delegator).completeUndelegate(validator.address))

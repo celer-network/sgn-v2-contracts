@@ -19,6 +19,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 1e18;
     uint256 constant MAX_INT = 2**256 - 1;
     uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
+    uint256 public constant MAX_UNDELEGATION_ENTRIES = 7;
 
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
@@ -71,7 +72,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     // TODO: remove unnecessary event index
     event ValidatorParamsUpdate(address indexed valAddr, uint256 minSelfDelegation, uint256 commissionRate);
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
-    event DelegationUpdate(address indexed valAddr, address indexed delAddr, uint256 valTokens, uint256 delShares);
+    event DelegationUpdate(
+        address indexed valAddr,
+        address indexed delAddr,
+        uint256 valTokens,
+        uint256 delShares,
+        int256 change
+    );
     event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Compensate(address indexed recipient, uint256 amount);
@@ -213,7 +220,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             bondedValTokens += _tokens;
         }
         celerToken.safeTransferFrom(delAddr, address(this), _tokens);
-        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares);
+        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, int256(_tokens));
     }
 
     /**
@@ -242,13 +249,17 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             bondedValTokens -= tokens;
             _validateValidator(_valAddr);
         }
+        require(
+            delegator.undelegations.tail - delegator.undelegations.head < MAX_UNDELEGATION_ENTRIES,
+            "Exceed max undelegation entries"
+        );
 
         Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
         undelegation.amount = tokens;
         undelegation.creationBlock = block.number;
         delegator.undelegations.tail++;
 
-        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares);
+        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, -int256(tokens));
     }
 
     /**

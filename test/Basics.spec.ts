@@ -103,7 +103,13 @@ describe('Basic Tests', function () {
     it('should delegate to validator by a delegator successfully', async function () {
       await expect(dpos.connect(delegator).delegate(validator.address, consts.DELEGATOR_STAKE))
         .to.emit(dpos, 'DelegationUpdate')
-        .withArgs(validator.address, delegator.address, consts.DELEGATOR_STAKE, consts.DELEGATOR_STAKE);
+        .withArgs(
+          validator.address,
+          delegator.address,
+          consts.DELEGATOR_STAKE,
+          consts.DELEGATOR_STAKE,
+          consts.DELEGATOR_STAKE
+        );
     });
 
     it('should fail to bondValidator before delegating enough stake', async function () {
@@ -204,18 +210,24 @@ describe('Basic Tests', function () {
           });
 
           it('should remove the validator after validator undelegate to become under minSelfDelegation', async function () {
-            const withdrawAmt = consts.VALIDATOR_STAKE.sub(consts.MIN_SELF_DELEGATION).add(1000);
-            const blockNumber = await ethers.provider.getBlockNumber();
-            await expect(dpos.connect(validator).undelegate(validator.address, withdrawAmt))
+            const undelegateAmt = consts.VALIDATOR_STAKE.sub(consts.MIN_SELF_DELEGATION).add(1000);
+            await expect(dpos.connect(validator).undelegate(validator.address, undelegateAmt))
               .to.emit(dpos, 'ValidatorStatusUpdate')
               .withArgs(validator.address, consts.STATUS_UNBONDING);
           });
 
           it('should remove the validator after delegator undelegate to become under minStakingPool', async function () {
-            const blockNumber = await ethers.provider.getBlockNumber();
             await expect(dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
               .to.emit(dpos, 'ValidatorStatusUpdate')
-              .withArgs(validator.address, consts.STATUS_UNBONDING);
+              .withArgs(validator.address, consts.STATUS_UNBONDING)
+              .to.emit(dpos, 'DelegationUpdate')
+              .withArgs(
+                validator.address,
+                delegator.address,
+                consts.VALIDATOR_STAKE,
+                0,
+                parseUnits('0').sub(consts.DELEGATOR_STAKE)
+              );
           });
 
           it('should increase min self delegation successfully', async function () {

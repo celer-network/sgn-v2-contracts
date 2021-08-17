@@ -70,8 +70,8 @@ describe('Basic Tests', function () {
       .withArgs(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
 
     const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
-    await expect(sgn.connect(validator).updateSidechainAddr(sidechainAddr))
-      .to.emit(sgn, 'UpdateSidechainAddr')
+    await expect(sgn.connect(validator).updateSgnAddr(sidechainAddr))
+      .to.emit(sgn, 'SgnAddrUpdate')
       .withArgs(validator.address, consts.HASHED_NULL, sidechainAddr);
   });
 
@@ -79,7 +79,7 @@ describe('Basic Tests', function () {
     const sidechainAddr = keccak256(['string'], ['sgnaddr']);
     beforeEach(async () => {
       await dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
-      await sgn.connect(validator).updateSidechainAddr(sidechainAddr);
+      await sgn.connect(validator).updateSgnAddr(sidechainAddr);
     });
 
     it('should fail to initialize the same validator twice', async function () {
@@ -90,8 +90,8 @@ describe('Basic Tests', function () {
 
     it('should update sidechain address by validator successfully', async function () {
       const newSidechainAddr = keccak256(['string'], ['sgnaddr_new']);
-      await expect(sgn.connect(validator).updateSidechainAddr(newSidechainAddr))
-        .to.emit(sgn, 'UpdateSidechainAddr')
+      await expect(sgn.connect(validator).updateSgnAddr(newSidechainAddr))
+        .to.emit(sgn, 'SgnAddrUpdate')
         .withArgs(validator.address, sidechainAddr, newSidechainAddr);
     });
 

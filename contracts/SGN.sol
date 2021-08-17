@@ -10,69 +10,56 @@ import "./DPoS.sol";
 
 /**
  * @title Sidechain contract of SGN
+ * TODO: complete implementation of reward and withdrawal
  */
 contract SGN is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable celr;
     DPoS public immutable dpos;
-    mapping(address => uint256) public subscriptionDeposits;
-    uint256 public servicePool;
-    mapping(address => uint256) public redeemedServiceReward;
-    mapping(address => bytes) public sidechainAddrMap;
+    mapping(address => uint256) public deposits;
+    mapping(address => bytes) public sgnAddrs;
 
     /* Events */
-    event UpdateSidechainAddr(address indexed valAddr, bytes indexed oldSidechainAddr, bytes indexed newSidechainAddr);
-    event AddSubscriptionBalance(address indexed consumer, uint256 amount);
-    event RedeemReward(
-        address indexed receiver,
-        uint256 cumulativeMiningReward,
-        uint256 serviceReward,
-        uint256 servicePool
-    );
+    event SgnAddrUpdate(address indexed valAddr, bytes indexed oldAddr, bytes indexed newAddr);
+    event Deposit(address indexed account, uint256 amount);
 
     /**
      * @notice SGN constructor
      * @dev Need to deploy DPoS contract first before deploying SGN contract
-     * @param _celrAddress address of Celer Token Contract
-     * @param _dposAddress address of DPoS Contract
+     * @param _celrAddr address of Celer Token Contract
+     * @param _dpos address of DPoS Contract
      */
-    constructor(address _celrAddress, DPoS _dposAddress) {
-        celr = IERC20(_celrAddress);
-        dpos = _dposAddress;
+    constructor(address _celrAddr, DPoS _dpos) {
+        celr = IERC20(_celrAddr);
+        dpos = _dpos;
     }
 
     /**
-     * @notice Update sidechain address
-     * @dev Note that the "sidechain address" here means the address in the offchain sidechain system,
-         which is different from the sidechain contract address
-     * @param _sidechainAddr the new address in the offchain sidechain system
+     * @notice Update sgn address
+     * @param _sgnAddr the new address in the layer 2 SGN
      */
-    function updateSidechainAddr(bytes calldata _sidechainAddr) external {
-        address msgSender = msg.sender;
+    function updateSgnAddr(bytes calldata _sgnAddr) external {
+        address valAddr = msg.sender;
 
-        DPoS.ValidatorStatus status = dpos.getValidatorStatus(msgSender);
-        require(status == DPoS.ValidatorStatus.Unbonded, "msg.sender is not unbonded");
+        DPoS.ValidatorStatus status = dpos.getValidatorStatus(valAddr);
+        require(status == DPoS.ValidatorStatus.Unbonded, "Not unbonded validator");
 
-        bytes memory oldSidechainAddr = sidechainAddrMap[msgSender];
-        sidechainAddrMap[msgSender] = _sidechainAddr;
+        bytes memory oldAddr = sgnAddrs[valAddr];
+        sgnAddrs[valAddr] = _sgnAddr;
 
-        emit UpdateSidechainAddr(msgSender, oldSidechainAddr, _sidechainAddr);
+        emit SgnAddrUpdate(valAddr, oldAddr, _sgnAddr);
     }
 
     /**
-     * @notice Subscribe the guardian service
+     * @notice Deposit to SGN
      * @param _amount subscription fee paid along this function call in CELR tokens
      */
-    function subscribe(uint256 _amount) external whenNotPaused {
+    function deposit(uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
-
-        servicePool = servicePool + _amount;
-        subscriptionDeposits[msgSender] = subscriptionDeposits[msgSender] + _amount;
-
+        deposits[msgSender] = deposits[msgSender] + _amount;
         celr.safeTransferFrom(msgSender, address(this), _amount);
-
-        emit AddSubscriptionBalance(msgSender, _amount);
+        emit Deposit(msgSender, _amount);
     }
 
     /**

@@ -56,10 +56,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 undelegationTokens; // tokens being undelegated
         uint256 undelegationShares; // shares of tokens being undelegated
         mapping(address => Delegator) delegators;
-        uint256 unbondTime;
+        uint256 bondBlock; // cannot become bonded before this block
+        uint256 unbondBlock; // cannot become unbonded before this block
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
         uint256 minSelfDelegation;
-        uint256 earliestBondTime;
     }
 
     uint256 public rewardPool;
@@ -161,9 +161,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             validator.status == ValidatorStatus.Unbonded || validator.status == ValidatorStatus.Unbonding,
             "Invalid validator status"
         );
-        require(block.number >= validator.earliestBondTime, "Not earliest bond time yet");
-        require(validator.tokens >= getUIntValue(uint256(ParamNames.MinValidatorTokens)), "Need min required tokens");
-        require(validator.delegators[valAddr].shares >= validator.minSelfDelegation, "Insufficient self delegation");
+        require(block.number >= validator.bondBlock, "Bond block not reached");
+        require(_meetMinTokenRequirements(valAddr), "Not meet min token requirements");
 
         uint256 maxBondedValidators = getUIntValue(uint256(ParamNames.MaxBondedValidators));
         // if the number of validators has not reached the max_validator_num,
@@ -186,7 +185,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
         require(validator.tokens > minTokens, "Insufficient tokens");
         _replaceBondedValidator(valAddr, minTokensIndex);
-        _checkVotingPower(validator.tokens);
+        _validateVotingPower(validator.tokens);
     }
 
     /**
@@ -196,10 +195,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function confirmUnbondedValidator(address _valAddr) external {
         Validator storage validator = validators[_valAddr];
         require(validator.status == ValidatorStatus.Unbonding, "Validator not unbonding");
-        require(block.number >= validator.unbondTime, "Unbond time not reached");
+        require(block.number >= validator.unbondBlock, "Unbond time not reached");
 
         validator.status = ValidatorStatus.Unbonded;
-        delete validator.unbondTime;
+        delete validator.unbondBlock;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonded);
     }
 
@@ -223,7 +222,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens += _tokens;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens += _tokens;
-            _checkVotingPower(validator.tokens);
+            _validateVotingPower(validator.tokens);
         }
         celerToken.safeTransferFrom(delAddr, address(this), _tokens);
         emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, int256(_tokens));
@@ -253,7 +252,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= tokens;
-            _checkBondedValidator(_valAddr);
+            if (!_meetMinTokenRequirements(_valAddr)) {
+                _unbondValidator(_valAddr);
+            }
         }
         require(
             delegator.undelegations.tail - delegator.undelegations.head < MAX_UNDELEGATION_ENTRIES,
@@ -351,7 +352,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(_minSelfDelegation >= CELR_DECIMAL, "Invalid min self delegation");
         if (_minSelfDelegation < validator.minSelfDelegation) {
             require(validator.status != ValidatorStatus.Bonded, "Validator is bonded");
-            validator.earliestBondTime = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
+            validator.bondBlock = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
         }
         validator.minSelfDelegation = _minSelfDelegation;
         emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, validator.commissionRate);
@@ -381,7 +382,12 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens -= slashAmt;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= slashAmt;
-            _checkBondedValidator(valAddr);
+            if (request.jailPeriod > 0 || !_meetMinTokenRequirements(valAddr)) {
+                _unbondValidator(valAddr);
+                if (request.jailPeriod > 0) {
+                    validator.bondBlock = block.number + request.jailPeriod;
+                }
+            }
         }
         emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, -int256(slashAmt));
 
@@ -668,7 +674,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function _setBondedValidator(address _valAddr) private {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Bonded;
-        delete validator.unbondTime;
+        delete validator.unbondBlock;
         bondedValTokens += validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Bonded);
     }
@@ -676,7 +682,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function _setUnbondingValidator(address _valAddr) private {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Unbonding;
-        validator.unbondTime = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
+        validator.unbondBlock = block.number + getUIntValue(uint256(ParamNames.SlashTimeout));
         bondedValTokens -= validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonding);
     }
@@ -720,24 +726,20 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         revert("Not bonded validator");
     }
 
-    /**
-     * @notice Validate a validator status after delegation change
-     * @dev remove this validator if it doesn't meet the requirement of being a validator
-     * @param _valAddr the validator address
-     */
-    function _checkBondedValidator(address _valAddr) private {
+    function _meetMinTokenRequirements(address _valAddr) private view returns (bool) {
         Validator storage v = validators[_valAddr];
-        uint256 validatorTokens = v.tokens;
-        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, validatorTokens, v.shares);
-        if (
-            validatorTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens)) ||
-            selfDelegation < v.minSelfDelegation
-        ) {
-            _unbondValidator(_valAddr);
+        uint256 valTokens = v.tokens;
+        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, valTokens, v.shares);
+        if (valTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens))) {
+            return false;
         }
+        if (selfDelegation < v.minSelfDelegation) {
+            return false;
+        }
+        return true;
     }
 
-    function _checkVotingPower(uint256 valTokens) private view {
+    function _validateVotingPower(uint256 valTokens) private view {
         uint256 bondedValNum = bondedValAddrs.length;
         if (bondedValNum == 2 || bondedValNum == 3) {
             require(valTokens < getQuorumTokens(), "Single validator should not have quorum tokens");

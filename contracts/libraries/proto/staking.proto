@@ -17,7 +17,7 @@ message Slash {
   uint64 nonce = 2;
   uint64 slash_factor = 3;
   uint64 expire_block = 4;
-  bool unbond = 5;
+  uint64 jail_period = 5;
   repeated AcctAmtPair collectors = 6;
 }
 

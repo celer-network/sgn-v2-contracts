@@ -72,7 +72,7 @@ export async function getSlashRequest(
   nonce: number,
   slashFactor: number,
   expireBlock: number,
-  unbond: boolean,
+  jailPeriod: number,
   collectorAddrs: string[],
   collectorAmts: BigNumber[],
   signers: Wallet[]
@@ -85,7 +85,7 @@ export async function getSlashRequest(
     nonce: nonce,
     slashFactor: slashFactor,
     expireBlock: expireBlock,
-    unbond: unbond,
+    jailPeriod: jailPeriod,
     collectors: collectors
   };
   const slashProto = Slash.create(slash);

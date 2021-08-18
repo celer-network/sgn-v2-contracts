@@ -37,7 +37,7 @@ library PbStaking {
         uint64 nonce; // tag: 2
         uint64 slashFactor; // tag: 3
         uint64 expireBlock; // tag: 4
-        bool unbond; // tag: 5
+        uint64 jailPeriod; // tag: 5
         AcctAmtPair[] collectors; // tag: 6
     } // end struct Slash
 
@@ -63,7 +63,7 @@ library PbStaking {
             } else if (tag == 4) {
                 m.expireBlock = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.unbond = Pb._bool(buf.decVarint());
+                m.jailPeriod = uint64(buf.decVarint());
             } else if (tag == 6) {
                 m.collectors[cnts[6]] = decAcctAmtPair(buf.decBytes());
                 cnts[6]++;

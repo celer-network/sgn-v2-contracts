@@ -12,6 +12,7 @@ export const VALIDATOR_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL
 export const DELEGATOR_STAKE = parseUnits('6');
 
 export const COMMISSION_RATE = 100;
+export const SLASH_FACTOR = 50000000; // 5%
 
 export const STATUS_UNBONDED = 1;
 export const STATUS_BONDED = 2;
@@ -34,7 +35,6 @@ export const SUB_FEE = parseUnits('100000000', 'wei');
 export const HASHED_NULL = '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470';
 
 export const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
-export const ONE_ADDR = '0x0000000000000000000000000000000000000000';
 
 export const userPrivKeys = [
   '0x36f2243a51a0f879b1859fff1a663ac04aeebca1bcff4d7dc5a8b38e53211199',

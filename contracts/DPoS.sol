@@ -18,7 +18,10 @@ import "./Whitelist.sol";
 contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 1e18;
     uint256 constant MAX_INT = 2**256 - 1;
-    uint256 public constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
+    uint256 constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
+    uint256 constant MAX_UNDELEGATION_ENTRIES = 7;
+    uint256 constant SLASH_FACTOR_DECIMAL = 1e9;
+    uint256 constant MAX_SLASH_FACTOR = 1e8; // 10%
 
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
@@ -65,16 +68,22 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
-    mapping(uint256 => bool) public usedSlashNonce;
+    mapping(uint256 => bool) public slashNonces;
 
     /* Events */
     // TODO: remove unnecessary event index
     event ValidatorParamsUpdate(address indexed valAddr, uint256 minSelfDelegation, uint256 commissionRate);
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
-    event DelegationUpdate(address indexed valAddr, address indexed delAddr, uint256 valTokens, uint256 delShares);
+    event DelegationUpdate(
+        address indexed valAddr,
+        address indexed delAddr,
+        uint256 valTokens,
+        uint256 delShares,
+        int256 tokenDiff
+    );
     event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
-    event Slash(address indexed valAddr, address indexed delAddr, uint256 amount);
-    event Compensate(address indexed recipient, uint256 amount);
+    event Slash(address indexed valAddr, uint64 nonce, uint256 slashAmt);
+    event SlashAmtCollected(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
@@ -175,6 +184,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
         require(validator.tokens > minTokens, "Insufficient tokens");
         _replaceBondedValidator(valAddr, minTokensIndex);
+        _checkVotingPower(validator.tokens);
     }
 
     /**
@@ -211,9 +221,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens += _tokens;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens += _tokens;
+            _checkVotingPower(validator.tokens);
         }
         celerToken.safeTransferFrom(delAddr, address(this), _tokens);
-        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares);
+        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, int256(_tokens));
     }
 
     /**
@@ -240,15 +251,19 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= tokens;
-            _validateValidator(_valAddr);
+            _checkBondedValidator(_valAddr);
         }
+        require(
+            delegator.undelegations.tail - delegator.undelegations.head < MAX_UNDELEGATION_ENTRIES,
+            "Exceed max undelegation entries"
+        );
 
         Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
         undelegation.amount = tokens;
         undelegation.creationBlock = block.number;
         delegator.undelegations.tail++;
 
-        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares);
+        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, -int256(tokens));
     }
 
     /**
@@ -343,35 +358,56 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(!slashDisabled, "Slash is disabled");
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         verifySignatures(_slashRequest, _sigs);
-        require(block.number < request.infractionBlock + request.timeout, "Slash expired");
-        require(!usedSlashNonce[request.nonce], "Used slash nonce");
-        usedSlashNonce[request.nonce] = true;
 
-        Validator storage validator = validators[request.validatorAddr];
+        uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
+        uint256 currBlock = block.number;
+        uint256 infractionBlock = request.infractionBlock;
+        require(currBlock < infractionBlock + slashTimeout, "Slash expired");
+        require(request.slashFactor <= MAX_SLASH_FACTOR, "Invalid slash factor");
+        require(!slashNonces[request.nonce], "Used slash nonce");
+        slashNonces[request.nonce] = true;
+
+        address valAddr = request.validator;
+        Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
-        uint256 totalSubAmt; // TODO: compute slash logic
-        _validateValidator(request.validatorAddr);
+        uint256 slashAmt = (validator.tokens * request.slashFactor) / SLASH_FACTOR_DECIMAL;
+        validator.tokens -= slashAmt;
+        // TODO: auto unbond validators when slashed?
+        if (validator.status == ValidatorStatus.Bonded) {
+            bondedValTokens -= slashAmt;
+            _checkBondedValidator(valAddr);
+        }
+        emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, -int256(slashAmt));
 
-        uint256 totalAddAmt;
-        for (uint256 i = 0; i < request.beneficiaries.length; i++) {
-            PbStaking.AccountAmtPair memory beneficiary = request.beneficiaries[i];
-            totalAddAmt += beneficiary.amt;
-
-            if (beneficiary.account == address(0)) {
-                // address(0) stands for rewardPool
-                rewardPool += beneficiary.amt;
-            } else if (beneficiary.account == address(1)) {
-                // address(1) means beneficiary is msg sender
-                celerToken.safeTransfer(msg.sender, beneficiary.amt);
-                emit Compensate(msg.sender, beneficiary.amt);
-            } else {
-                celerToken.safeTransfer(beneficiary.account, beneficiary.amt);
-                emit Compensate(beneficiary.account, beneficiary.amt);
+        for (uint256 i = 0; i < request.undelegators.length; i++) {
+            Delegator storage delegator = validator.delegators[request.undelegators[i]];
+            for (uint256 j = delegator.undelegations.head; j < delegator.undelegations.tail; j++) {
+                Undelegation storage undelegation = delegator.undelegations.queue[j];
+                uint256 creationBlock = undelegation.creationBlock;
+                if (creationBlock < infractionBlock && creationBlock + slashTimeout > currBlock) {
+                    uint256 s = (undelegation.amount * request.slashFactor) / SLASH_FACTOR_DECIMAL;
+                    undelegation.amount -= s;
+                    slashAmt += s;
+                }
             }
         }
 
-        require(totalSubAmt == totalAddAmt, "Amount not match");
+        uint256 collectAmt;
+        for (uint256 i = 0; i < request.collectors.length; i++) {
+            PbStaking.AcctAmtPair memory collector = request.collectors[i];
+            collectAmt += collector.amount;
+            if (collector.account == address(0)) {
+                celerToken.safeTransfer(msg.sender, collector.amount);
+                emit SlashAmtCollected(msg.sender, collector.amount);
+            } else {
+                celerToken.safeTransfer(collector.account, collector.amount);
+                emit SlashAmtCollected(collector.account, collector.amount);
+            }
+        }
+        require(slashAmt >= collectAmt, "Invalid collectors");
+        rewardPool += slashAmt - collectAmt;
+        emit Slash(valAddr, request.nonce, slashAmt);
     }
 
     /**
@@ -509,7 +545,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             signedTokens += validators[signers[i]].tokens;
         }
 
-        require(signedTokens >= getQuorumTokens(), "Not enough signatures");
+        require(signedTokens >= getQuorumTokens(), "Quorum not reached");
         return true;
     }
 
@@ -692,20 +728,28 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @dev remove this validator if it doesn't meet the requirement of being a validator
      * @param _valAddr the validator address
      */
-    function _validateValidator(address _valAddr) private {
+    function _checkBondedValidator(address _valAddr) private {
         Validator storage v = validators[_valAddr];
-        if (v.status != ValidatorStatus.Bonded) {
-            // no need to validate the tokens of a non-validator
-            return;
-        }
+        uint256 validatorTokens = v.tokens;
+        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, validatorTokens, v.totalShares);
         if (
-            v.delegators[_valAddr].shares < v.minSelfDelegation ||
-            v.tokens < getUIntValue(uint256(ParamNames.MinValidatorTokens))
+            validatorTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens)) ||
+            selfDelegation < v.minSelfDelegation
         ) {
             _unbondValidator(_valAddr);
         }
     }
 
+    function _checkVotingPower(uint256 valTokens) private view {
+        uint256 bondedValNum = bondedValAddrs.length;
+        if (bondedValNum == 2 || bondedValNum == 3) {
+            require(valTokens < getQuorumTokens(), "Single validator should not have quorum tokens");
+        } else if (bondedValNum > 3) {
+            require(valTokens < bondedValTokens / 3, "Single validator should not have 1/3 tokens");
+        }
+    }
+
+    // TODO: check edge cases when balance is low
     function _tokenToShare(
         uint256 tokens,
         uint256 totalTokens,

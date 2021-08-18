@@ -1,12 +1,10 @@
 import { expect } from 'chai';
-import { ethers } from 'hardhat';
 
 import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getSlashRequest } from './lib/proto';
 import * as consts from './lib/constants';
 import { DPoS, SGN, TestERC20 } from '../typechain';
 
@@ -150,9 +148,9 @@ describe('Basic Tests', function () {
 
       it('should drainToken successfully when paused', async function () {
         await dpos.pause();
-        let balanceBefore = await celr.balanceOf(admin.address);
+        const balanceBefore = await celr.balanceOf(admin.address);
         await dpos.drainToken(consts.DELEGATOR_STAKE);
-        let balanceAfter = await celr.balanceOf(admin.address);
+        const balanceAfter = await celr.balanceOf(admin.address);
         expect(balanceAfter.sub(balanceBefore)).to.equal(consts.DELEGATOR_STAKE);
       });
 
@@ -306,45 +304,6 @@ describe('Basic Tests', function () {
               expect(res.shares).to.equal(parseUnits('2'));
               expect(res.undelegations.length).to.equal(0);
             });
-            /*
-            it('should only confirm withdrawal partial amount due to slash', async function () {
-              const slashAmt = consts.DELEGATOR_STAKE.sub(parseUnits('1'));
-              const request = await getSlashRequest(
-                1,
-                1000000,
-                validator.address,
-                [delegator.address],
-                [slashAmt],
-                [consts.ZERO_ADDR],
-                [slashAmt],
-                [validator]
-              );
-              await dpos.slash(request.slashBytes, request.sigs);
-
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
-                .to.emit(dpos, 'Undelegated')
-                .withArgs(validator.address, delegator.address, parseUnits('1'));
-            });
-
-            it('should confirm withdrawal zero amt due to all stakes being slashed', async function () {
-              const request = await getSlashRequest(
-                1,
-                1000000,
-                validator.address,
-                [delegator.address],
-                [consts.DELEGATOR_STAKE],
-                [consts.ZERO_ADDR],
-                [consts.DELEGATOR_STAKE],
-                [validator]
-              );
-              await dpos.slash(request.slashBytes, request.sigs);
-
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
-              await expect(dpos.connect(delegator).completeUndelegate(validator.address))
-                .to.be.revertedWith('no undelegation ready to be completed');
-            });
-            */
           });
         });
       });

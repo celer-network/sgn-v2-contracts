@@ -83,7 +83,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     );
     event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Slash(address indexed valAddr, uint64 nonce, uint256 slashAmt);
-    event Compensate(address indexed recipient, uint256 amount);
+    event SlashAmtCollected(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
@@ -371,18 +371,19 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         uint256 slashAmt = (validator.tokens * request.slashFactor) / SLASH_FACTOR_DECIMAL;
         validator.tokens -= slashAmt;
+        // TODO: auto unbond validators when slashed?
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= slashAmt;
             _checkBondedValidator(valAddr);
         }
-        emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, int256(slashAmt));
+        emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, -int256(slashAmt));
 
         for (uint256 i = 0; i < request.undelegators.length; i++) {
             Delegator storage delegator = validator.delegators[request.undelegators[i]];
-            for (i = delegator.undelegations.head; i < delegator.undelegations.tail; i++) {
-                Undelegation storage undelegation = delegator.undelegations.queue[i];
+            for (uint256 j = delegator.undelegations.head; j < delegator.undelegations.tail; j++) {
+                Undelegation storage undelegation = delegator.undelegations.queue[j];
                 uint256 creationBlock = undelegation.creationBlock;
-                if (creationBlock < infractionBlock && creationBlock + slashTimeout <= currBlock) {
+                if (creationBlock < infractionBlock && creationBlock + slashTimeout > currBlock) {
                     uint256 s = (undelegation.amount * request.slashFactor) / SLASH_FACTOR_DECIMAL;
                     undelegation.amount -= s;
                     slashAmt += s;
@@ -396,14 +397,14 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             collectAmt += collector.amount;
             if (collector.account == address(0)) {
                 celerToken.safeTransfer(msg.sender, collector.amount);
-                emit Compensate(msg.sender, collector.amount);
+                emit SlashAmtCollected(msg.sender, collector.amount);
             } else {
                 celerToken.safeTransfer(collector.account, collector.amount);
-                emit Compensate(collector.account, collector.amount);
+                emit SlashAmtCollected(collector.account, collector.amount);
             }
         }
-
-        rewardPool = slashAmt - collectAmt + rewardPool;
+        require(slashAmt >= collectAmt, "Invalid collectors");
+        rewardPool += slashAmt - collectAmt;
         emit Slash(valAddr, request.nonce, slashAmt);
     }
 
@@ -542,7 +543,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             signedTokens += validators[signers[i]].tokens;
         }
 
-        require(signedTokens >= getQuorumTokens(), "Not enough signatures");
+        require(signedTokens >= getQuorumTokens(), "Quorum not reached");
         return true;
     }
 
@@ -737,6 +738,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
     }
 
+    // TODO: check edge cases when balance is low
     function _tokenToShare(
         uint256 tokens,
         uint256 totalTokens,

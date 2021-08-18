@@ -80,7 +80,7 @@ describe('Reward Tests', function () {
 
   it('should fail to claim reward with insufficient signatures', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), [validators[0], validators[1]]);
-    await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Not enough signatures');
+    await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
   });
 
   it('should fail to claim reward with disordered signatures', async function () {

@@ -12,6 +12,7 @@ export const VALIDATOR_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL
 export const DELEGATOR_STAKE = parseUnits('6');
 
 export const COMMISSION_RATE = 100;
+export const SLASH_FACTOR = 50000000; // 5%
 
 export const STATUS_UNBONDED = 1;
 export const STATUS_BONDED = 2;

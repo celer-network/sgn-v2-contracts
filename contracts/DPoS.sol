@@ -184,6 +184,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
         require(validator.tokens > minTokens, "Insufficient tokens");
         _replaceBondedValidator(valAddr, minTokensIndex);
+        _checkVotingPower(validator.tokens);
     }
 
     /**
@@ -220,6 +221,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens += _tokens;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens += _tokens;
+            _checkVotingPower(validator.tokens);
         }
         celerToken.safeTransferFrom(delAddr, address(this), _tokens);
         emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, int256(_tokens));
@@ -735,6 +737,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             selfDelegation < v.minSelfDelegation
         ) {
             _unbondValidator(_valAddr);
+        }
+    }
+
+    function _checkVotingPower(uint256 valTokens) private view {
+        uint256 bondedValNum = bondedValAddrs.length;
+        if (bondedValNum == 2 || bondedValNum == 3) {
+            require(valTokens < getQuorumTokens(), "Single validator should not have quorum tokens");
+        } else if (bondedValNum > 3) {
+            require(valTokens < bondedValTokens / 3, "Single validator should not have 1/3 tokens");
         }
     }
 

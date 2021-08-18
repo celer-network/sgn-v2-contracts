@@ -14,10 +14,10 @@ message Reward {
 
 message Slash {
   bytes validator = 1 [ (soltype) = "address" ];
-  repeated bytes undelegators = 2 [ (soltype) = "address" ];
-  uint64 nonce = 3;
-  uint64 slash_factor = 4;
-  uint64 infraction_block = 5;
+  uint64 nonce = 2;
+  uint64 slash_factor = 3;
+  uint64 expire_block = 4;
+  bool unbond = 5;
   repeated AcctAmtPair collectors = 6;
 }
 

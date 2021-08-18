@@ -34,10 +34,10 @@ library PbStaking {
 
     struct Slash {
         address validator; // tag: 1
-        address[] undelegators; // tag: 2
-        uint64 nonce; // tag: 3
-        uint64 slashFactor; // tag: 4
-        uint64 infractionBlock; // tag: 5
+        uint64 nonce; // tag: 2
+        uint64 slashFactor; // tag: 3
+        uint64 expireBlock; // tag: 4
+        bool unbond; // tag: 5
         AcctAmtPair[] collectors; // tag: 6
     } // end struct Slash
 
@@ -45,8 +45,6 @@ library PbStaking {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
         uint256[] memory cnts = buf.cntTags(6);
-        m.undelegators = new address[](cnts[2]);
-        cnts[2] = 0; // reset counter for later use
         m.collectors = new AcctAmtPair[](cnts[6]);
         cnts[6] = 0; // reset counter for later use
 
@@ -59,14 +57,13 @@ library PbStaking {
             else if (tag == 1) {
                 m.validator = Pb._address(buf.decBytes());
             } else if (tag == 2) {
-                m.undelegators[cnts[2]] = Pb._address(buf.decBytes());
-                cnts[2]++;
-            } else if (tag == 3) {
                 m.nonce = uint64(buf.decVarint());
-            } else if (tag == 4) {
+            } else if (tag == 3) {
                 m.slashFactor = uint64(buf.decVarint());
+            } else if (tag == 4) {
+                m.expireBlock = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.infractionBlock = uint64(buf.decVarint());
+                m.unbond = Pb._bool(buf.decVarint());
             } else if (tag == 6) {
                 m.collectors[cnts[6]] = decAcctAmtPair(buf.decBytes());
                 cnts[6]++;

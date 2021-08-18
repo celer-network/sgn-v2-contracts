@@ -277,8 +277,8 @@ describe('Basic Tests', function () {
 
               let res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('3'));
-              expect(res.undelegations[0].amount).to.equal(parseUnits('2'));
-              expect(res.undelegations[1].amount).to.equal(parseUnits('1'));
+              expect(res.undelegations[0].shares).to.equal(parseUnits('2'));
+              expect(res.undelegations[1].shares).to.equal(parseUnits('1'));
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await dpos.connect(delegator).undelegate(validator.address, parseUnits('1'));
@@ -289,7 +289,7 @@ describe('Basic Tests', function () {
 
               res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('2'));
-              expect(res.undelegations[0].amount).to.equal(parseUnits('1'));
+              expect(res.undelegations[0].shares).to.equal(parseUnits('1'));
 
               await expect(dpos.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
                 'no undelegation ready to be completed'

@@ -61,7 +61,6 @@ export async function getRewardRequest(recipient: string, cumulativeReward: BigN
   };
   const rewardProto = Reward.create(reward);
   const rewardBytes = Reward.encode(rewardProto).finish();
-
   const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
   const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
 
@@ -70,10 +69,10 @@ export async function getRewardRequest(recipient: string, cumulativeReward: BigN
 
 export async function getSlashRequest(
   validatorAddr: string,
-  undelegatorAddrs: string[],
   nonce: number,
   slashFactor: number,
-  infractionBlock: number,
+  expireBlock: number,
+  unbond: boolean,
   collectorAddrs: string[],
   collectorAmts: BigNumber[],
   signers: Wallet[]
@@ -81,21 +80,16 @@ export async function getSlashRequest(
   const { Slash } = await getProtos();
 
   const collectors = await getAcctAmtPairs(collectorAddrs, collectorAmts);
-  const undelegators = [];
-  for (let i = 0; i < undelegatorAddrs.length; i++) {
-    undelegators.push(hex2Bytes(undelegatorAddrs[i]));
-  }
   const slash = {
     validator: hex2Bytes(validatorAddr),
-    undelegators: undelegators,
     nonce: nonce,
     slashFactor: slashFactor,
-    infractionBlock: infractionBlock,
+    expireBlock: expireBlock,
+    unbond: unbond,
     collectors: collectors
   };
   const slashProto = Slash.create(slash);
   const slashBytes = Slash.encode(slashProto).finish();
-
   const slashBytesHash = keccak256(['bytes'], [slashBytes]);
   const sigs = await calculateSignatures(signers, hex2Bytes(slashBytesHash));
 

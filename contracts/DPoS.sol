@@ -19,7 +19,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 1e18;
     uint256 constant MAX_INT = 2**256 - 1;
     uint256 constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
-    uint256 constant MAX_UNDELEGATION_ENTRIES = 7;
+    uint256 constant MAX_UNDELEGATION_ENTRIES = 10;
     uint256 constant SLASH_FACTOR_DECIMAL = 1e9;
     uint256 constant MAX_SLASH_FACTOR = 1e8; // 10%
 
@@ -34,7 +34,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     struct Undelegation {
-        uint256 amount;
+        uint256 shares;
         uint256 creationBlock;
     }
 
@@ -51,8 +51,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     struct Validator {
         ValidatorStatus status;
-        uint256 tokens; // sum of all delegations to this validator
-        uint256 totalShares; // sum of all delegation shares
+        uint256 tokens; // sum of all tokens delegated to this validator
+        uint256 shares; // sum of all delegation shares
+        uint256 undelegationTokens; // tokens being undelegated
+        uint256 undelegationShares; // shares of tokens being undelegated
         mapping(address => Delegator) delegators;
         uint256 unbondTime;
         uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
@@ -213,11 +215,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         Validator storage validator = validators[_valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
-        uint256 shares = _tokenToShare(_tokens, validator.tokens, validator.totalShares);
+        uint256 shares = _tokenToShare(_tokens, validator.tokens, validator.shares);
 
         Delegator storage delegator = validator.delegators[delAddr];
         delegator.shares += shares;
-        validator.totalShares += shares;
+        validator.shares += shares;
         validator.tokens += _tokens;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens += _tokens;
@@ -239,11 +241,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
         Validator storage validator = validators[_valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
-        uint256 tokens = _shareToTokens(_shares, validator.tokens, validator.totalShares);
+        uint256 tokens = _shareToTokens(_shares, validator.tokens, validator.shares);
 
         Delegator storage delegator = validator.delegators[delAddr];
         delegator.shares -= _shares;
-        validator.totalShares -= _shares;
+        validator.shares -= _shares;
         validator.tokens -= tokens;
         if (validator.status == ValidatorStatus.Unbonded) {
             celerToken.safeTransfer(delAddr, tokens);
@@ -258,8 +260,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             "Exceed max undelegation entries"
         );
 
+        uint256 undelegationShares = _tokenToShare(tokens, validator.undelegationTokens, validator.undelegationShares);
+        validator.undelegationShares += undelegationShares;
+        validator.undelegationTokens += tokens;
         Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
-        undelegation.amount = tokens;
+        undelegation.shares = undelegationShares;
         undelegation.creationBlock = block.number;
         delegator.undelegations.tail++;
 
@@ -280,12 +285,12 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         bool isUnbonded = validator.status == ValidatorStatus.Unbonded;
         // for all pending undelegations
         uint32 i;
-        uint256 undelegateAmt;
+        uint256 undelegationShares;
         for (i = delegator.undelegations.head; i < delegator.undelegations.tail; i++) {
             if (isUnbonded || delegator.undelegations.queue[i].creationBlock + slashTimeout <= block.number) {
                 // complete undelegation when the validator becomes unbonded or
                 // the slashTimeout for the pending undelegation is up.
-                undelegateAmt += delegator.undelegations.queue[i].amount;
+                undelegationShares += delegator.undelegations.queue[i].shares;
                 delete delegator.undelegations.queue[i];
                 continue;
             }
@@ -293,9 +298,12 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
         delegator.undelegations.head = i;
 
-        require(undelegateAmt > 0, "no undelegation ready to be completed");
-        celerToken.safeTransfer(delAddr, undelegateAmt);
-        emit Undelegated(_valAddr, delAddr, undelegateAmt);
+        require(undelegationShares > 0, "no undelegation ready to be completed");
+        uint256 tokens = _shareToTokens(undelegationShares, validator.undelegationTokens, validator.undelegationShares);
+        validator.undelegationShares -= undelegationShares;
+        validator.undelegationTokens -= tokens;
+        celerToken.safeTransfer(delAddr, tokens);
+        emit Undelegated(_valAddr, delAddr, tokens);
     }
 
     /**
@@ -359,10 +367,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         verifySignatures(_slashRequest, _sigs);
 
-        uint256 slashTimeout = getUIntValue(uint256(ParamNames.SlashTimeout));
-        uint256 currBlock = block.number;
-        uint256 infractionBlock = request.infractionBlock;
-        require(currBlock < infractionBlock + slashTimeout, "Slash expired");
+        require(block.number < request.expireBlock, "Slash expired");
         require(request.slashFactor <= MAX_SLASH_FACTOR, "Invalid slash factor");
         require(!slashNonces[request.nonce], "Used slash nonce");
         slashNonces[request.nonce] = true;
@@ -371,27 +376,19 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Unbonded, "Validator unbounded");
 
+        // slash delegated tokens
         uint256 slashAmt = (validator.tokens * request.slashFactor) / SLASH_FACTOR_DECIMAL;
         validator.tokens -= slashAmt;
-        // TODO: auto unbond validators when slashed?
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= slashAmt;
             _checkBondedValidator(valAddr);
         }
         emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, -int256(slashAmt));
 
-        for (uint256 i = 0; i < request.undelegators.length; i++) {
-            Delegator storage delegator = validator.delegators[request.undelegators[i]];
-            for (uint256 j = delegator.undelegations.head; j < delegator.undelegations.tail; j++) {
-                Undelegation storage undelegation = delegator.undelegations.queue[j];
-                uint256 creationBlock = undelegation.creationBlock;
-                if (creationBlock < infractionBlock && creationBlock + slashTimeout > currBlock) {
-                    uint256 s = (undelegation.amount * request.slashFactor) / SLASH_FACTOR_DECIMAL;
-                    undelegation.amount -= s;
-                    slashAmt += s;
-                }
-            }
-        }
+        // slash pending undelegations
+        uint256 slashUndelegation = (validator.undelegationTokens * request.slashFactor) / SLASH_FACTOR_DECIMAL;
+        validator.undelegationTokens -= slashUndelegation;
+        slashAmt += slashUndelegation;
 
         uint256 collectAmt;
         for (uint256 i = 0; i < request.collectors.length; i++) {
@@ -731,7 +728,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function _checkBondedValidator(address _valAddr) private {
         Validator storage v = validators[_valAddr];
         uint256 validatorTokens = v.tokens;
-        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, validatorTokens, v.totalShares);
+        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, validatorTokens, v.shares);
         if (
             validatorTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens)) ||
             selfDelegation < v.minSelfDelegation

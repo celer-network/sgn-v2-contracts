@@ -206,7 +206,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(block.number >= validator.bondBlock, "Bond block not reached");
         require(block.number >= nextBondBlock, "Too frequent validator bond");
         nextBondBlock = block.number + getUIntValue(uint256(ParamNames.ValidatorBondInterval));
-        require(_meetMinTokenRequirements(valAddr), "Not meet min token requirements");
+        require(_meetMinTokenRequirements(valAddr, valAddr), "Not meet min token requirements");
 
         uint256 maxBondedValidators = getUIntValue(uint256(ParamNames.MaxBondedValidators));
         // if the number of validators has not reached the max_validator_num,
@@ -296,7 +296,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= tokens;
-            if (!_meetMinTokenRequirements(_valAddr)) {
+            if (!_meetMinTokenRequirements(_valAddr, delAddr)) {
                 _unbondValidator(_valAddr);
             }
         }
@@ -426,7 +426,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens -= slashAmt;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= slashAmt;
-            if (request.jailPeriod > 0 || !_meetMinTokenRequirements(valAddr)) {
+            if (request.jailPeriod > 0 || !_meetMinTokenRequirements(valAddr, valAddr)) {
                 _unbondValidator(valAddr);
                 if (request.jailPeriod > 0) {
                     validator.bondBlock = block.number + request.jailPeriod;
@@ -772,15 +772,17 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         revert("Not bonded validator");
     }
 
-    function _meetMinTokenRequirements(address _valAddr) private view returns (bool) {
+    function _meetMinTokenRequirements(address _valAddr, address _delAddr) private view returns (bool) {
         Validator storage v = validators[_valAddr];
         uint256 valTokens = v.tokens;
         if (valTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens))) {
             return false;
         }
-        uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, valTokens, v.shares);
-        if (selfDelegation < v.minSelfDelegation) {
-            return false;
+        if (_valAddr == _delAddr) {
+            uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, valTokens, v.shares);
+            if (selfDelegation < v.minSelfDelegation) {
+                return false;
+            }
         }
         return true;
     }

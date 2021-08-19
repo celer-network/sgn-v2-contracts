@@ -30,7 +30,9 @@ describe('Slash Tests', function () {
     await celr.approve(dpos.address, parseUnits('100'));
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos
+        .connect(validators[i])
+        .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await dpos.connect(validators[i]).bondValidator();
       const blockNumber = await ethers.provider.getBlockNumber();

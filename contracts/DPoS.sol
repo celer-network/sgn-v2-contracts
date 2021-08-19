@@ -51,6 +51,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     struct Validator {
         ValidatorStatus status;
+        address signer;
         uint256 tokens; // sum of all tokens delegated to this validator
         uint256 shares; // sum of all delegation shares
         uint256 undelegationTokens; // tokens being undelegated
@@ -68,6 +69,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
     mapping(address => Validator) public validators;
+    mapping(address => address) public valSigners;
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
@@ -75,7 +77,12 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /* Events */
     // TODO: remove unnecessary event index
-    event ValidatorParamsUpdate(address indexed valAddr, uint256 minSelfDelegation, uint256 commissionRate);
+    event ValidatorParamsUpdate(
+        address indexed valAddr,
+        address indexed signer,
+        uint256 minSelfDelegation,
+        uint256 commissionRate
+    );
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event DelegationUpdate(
         address indexed valAddr,
@@ -138,33 +145,55 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _minSelfDelegation minimal amount of tokens staked by the validator itself
      * @param _commissionRate the self-declaimed commission rate
      */
-    function initializeValidator(uint256 _minSelfDelegation, uint256 _commissionRate)
-        external
-        whenNotPaused
-        onlyWhitelisted
-    {
+    function initializeValidator(
+        address _signer,
+        uint256 _minSelfDelegation,
+        uint256 _commissionRate
+    ) external whenNotPaused onlyWhitelisted {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
         require(validator.status == ValidatorStatus.Null, "Validator is initialized");
+        require(validators[_signer].status == ValidatorStatus.Null, "Signer is other's validator");
+        require(valSigners[valAddr] == address(0), "Validator is other's signer");
+        require(valSigners[_signer] == address(0), "Signer already used");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
         require(
             _minSelfDelegation >= getUIntValue(uint256(ParamNames.MinSelfDelegation)),
             "Insufficient min self delegation"
         );
+        validator.signer = _signer;
         validator.status = ValidatorStatus.Unbonded;
         validator.minSelfDelegation = _minSelfDelegation;
         validator.commissionRate = _commissionRate;
         valAddrs.push(valAddr);
+        valSigners[_signer] = valAddr;
 
         delegate(valAddr, _minSelfDelegation);
-        emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, _commissionRate);
+        emit ValidatorParamsUpdate(valAddr, _signer, _minSelfDelegation, _commissionRate);
+    }
+
+    function updateValidatorSigner(address _signer) external {
+        address valAddr = msg.sender;
+        Validator storage validator = validators[valAddr];
+        require(validator.status != ValidatorStatus.Null, "Validator not initialized");
+        delete valSigners[validator.signer];
+        if (_signer != valAddr) {
+            require(validators[_signer].status == ValidatorStatus.Null, "Signer is other's validator");
+        }
+        require(valSigners[_signer] == address(0), "Signer already used");
+        validator.signer = _signer;
+        valSigners[_signer] = valAddr;
     }
 
     /**
      * @notice Candidate claims to become a bonded validator
+     * @dev caller can be either validator owner or signer
      */
     function bondValidator() external {
         address valAddr = msg.sender;
+        if (valSigners[msg.sender] != address(0)) {
+            valAddr = valSigners[msg.sender];
+        }
         Validator storage validator = validators[valAddr];
         require(
             validator.status == ValidatorStatus.Unbonded || validator.status == ValidatorStatus.Unbonding,
@@ -349,7 +378,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         validator.commissionRate = _newRate;
-        emit ValidatorParamsUpdate(valAddr, validator.minSelfDelegation, _newRate);
+        emit ValidatorParamsUpdate(valAddr, validator.signer, validator.minSelfDelegation, _newRate);
     }
 
     /**
@@ -366,7 +395,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             validator.bondBlock = block.number + getUIntValue(uint256(ParamNames.AdvanceNoticePeriod));
         }
         validator.minSelfDelegation = _minSelfDelegation;
-        emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, validator.commissionRate);
+        emit ValidatorParamsUpdate(valAddr, validator.signer, _minSelfDelegation, validator.commissionRate);
     }
 
     /**

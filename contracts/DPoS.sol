@@ -73,8 +73,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     uint256 public nextBondBlock;
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
-    mapping(address => Validator) public validators;
-    mapping(address => ValSigner) public valSigners;
+    mapping(address => Validator) public validators; // key is valAddr
+    mapping(address => ValSigner) public valSigners; // key is valSigner
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
@@ -146,6 +146,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Initialize a validator candidate
+     * @param _signer signer address
      * @param _minSelfDelegation minimal amount of tokens staked by the validator itself
      * @param _commissionRate the self-declaimed commission rate
      */
@@ -176,6 +177,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit ValidatorParamsUpdate(valAddr, _signer, _minSelfDelegation, _commissionRate);
     }
 
+    /**
+     * @notice Update validator signer address
+     * @param _signer signer address
+     */
     function updateValidatorSigner(address _signer) external {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
@@ -187,6 +192,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(valSigners[_signer].valAddr == address(0), "Signer already used");
         validator.signer = _signer;
         valSigners[_signer] = ValSigner(valAddr, false);
+        emit ValidatorParamsUpdate(valAddr, _signer, validator.minSelfDelegation, validator.commissionRate);
     }
 
     /**
@@ -206,7 +212,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         require(block.number >= validator.bondBlock, "Bond block not reached");
         require(block.number >= nextBondBlock, "Too frequent validator bond");
         nextBondBlock = block.number + getUIntValue(uint256(ParamNames.ValidatorBondInterval));
-        require(_meetMinTokenRequirements(valAddr, valAddr), "Not meet min token requirements");
+        require(_hasMinTokens(valAddr, valAddr), "Not have min tokens");
 
         uint256 maxBondedValidators = getUIntValue(uint256(ParamNames.MaxBondedValidators));
         // if the number of validators has not reached the max_validator_num,
@@ -229,7 +235,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         }
         require(validator.tokens > minTokens, "Insufficient tokens");
         _replaceBondedValidator(valAddr, minTokensIndex);
-        _validateVotingPower(validator.tokens);
+        _decentralizationCheck(validator.tokens);
     }
 
     /**
@@ -266,7 +272,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens += _tokens;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens += _tokens;
-            _validateVotingPower(validator.tokens);
+            _decentralizationCheck(validator.tokens);
         }
         celerToken.safeTransferFrom(delAddr, address(this), _tokens);
         emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, int256(_tokens));
@@ -296,7 +302,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= tokens;
-            if (!_meetMinTokenRequirements(_valAddr, delAddr)) {
+            if (!_hasMinTokens(_valAddr, delAddr)) {
                 _unbondValidator(_valAddr);
             }
         }
@@ -386,7 +392,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice update minimal self delegation value
+     * @notice Update minimal self delegation value
      * @param _minSelfDelegation minimal amount of tokens staked by the validator itself
      */
     function updateMinSelfDelegation(uint256 _minSelfDelegation) external {
@@ -426,7 +432,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.tokens -= slashAmt;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedValTokens -= slashAmt;
-            if (request.jailPeriod > 0 || !_meetMinTokenRequirements(valAddr, valAddr)) {
+            if (request.jailPeriod > 0 || !_hasMinTokens(valAddr, valAddr)) {
                 _unbondValidator(valAddr);
                 if (request.jailPeriod > 0) {
                     validator.bondBlock = block.number + request.jailPeriod;
@@ -572,10 +578,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      **************************/
 
     /**
-     * @notice Validate multi-signed message
+     * @notice Validate if a message is signed by quorum tokens
      * @param _msg signed message
      * @param _sigs list of validator signatures
-     * @return passed the validation or not
      */
     function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
@@ -715,6 +720,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * Private Functions *
      *********************/
 
+    /**
+     * @notice Set validator to bonded
+     * @param _valAddr the address of the validator
+     */
     function _setBondedValidator(address _valAddr) private {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Bonded;
@@ -724,6 +733,10 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Bonded);
     }
 
+    /**
+     * @notice Set validator to unbonding
+     * @param _valAddr the address of the validator
+     */
     function _setUnbondingValidator(address _valAddr) private {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Unbonding;
@@ -734,7 +747,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Add a validator
+     * @notice Bond a validator
      * @param _valAddr the address of the validator
      */
     function _bondValidator(address _valAddr) private {
@@ -743,7 +756,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Add a validator
+     * @notice Repace a bonded validator
      * @param _valAddr the address of the new validator
      * @param _index the index of the validator to be replaced
      */
@@ -754,7 +767,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Remove a validator
+     * @notice Unbond a validator
      * @param _valAddr validator to be removed
      */
     function _unbondValidator(address _valAddr) private {
@@ -772,7 +785,12 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         revert("Not bonded validator");
     }
 
-    function _meetMinTokenRequirements(address _valAddr, address _delAddr) private view returns (bool) {
+    /**
+     * @notice Check if min token requirements are met
+     * @param _valAddr the address of the validator
+     * @param _delAddr involved delegator address
+     */
+    function _hasMinTokens(address _valAddr, address _delAddr) private view returns (bool) {
         Validator storage v = validators[_valAddr];
         uint256 valTokens = v.tokens;
         if (valTokens < getUIntValue(uint256(ParamNames.MinValidatorTokens))) {
@@ -787,16 +805,23 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         return true;
     }
 
-    function _validateVotingPower(uint256 valTokens) private view {
+    /**
+     * @notice Check if one validator as too much power
+     * @param _valTokens token amounts of the validator
+     */
+    function _decentralizationCheck(uint256 _valTokens) private view {
         uint256 bondedValNum = bondedValAddrs.length;
         if (bondedValNum == 2 || bondedValNum == 3) {
-            require(valTokens < getQuorumTokens(), "Single validator should not have quorum tokens");
+            require(_valTokens < getQuorumTokens(), "Single validator should not have quorum tokens");
         } else if (bondedValNum > 3) {
-            require(valTokens < bondedValTokens / 3, "Single validator should not have 1/3 tokens");
+            require(_valTokens < bondedValTokens / 3, "Single validator should not have 1/3 tokens");
         }
     }
 
-    // TODO: check edge cases when balance is low
+    /**
+     * @notice Convert token to share
+     * TODO: check edge cases when balance is low
+     */
     function _tokenToShare(
         uint256 tokens,
         uint256 totalTokens,
@@ -808,6 +833,9 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         return (tokens * totalShares) / totalTokens;
     }
 
+    /**
+     * @notice Convert share to token
+     */
     function _shareToTokens(
         uint256 shares,
         uint256 totalTokens,

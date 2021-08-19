@@ -131,7 +131,7 @@ describe('Basic Tests', function () {
     });
 
     it('should fail to bondValidator before delegating enough stake', async function () {
-      await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not meet min token requirements');
+      await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not have min tokens');
     });
 
     describe('after one delegator delegates enough stake to the validator', async () => {
@@ -141,7 +141,7 @@ describe('Basic Tests', function () {
 
       it('should fail to bondValidator before self delegating minSelfDelegation', async function () {
         await dpos.connect(validator).undelegate(validator.address, parseUnits('1'));
-        await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not meet min token requirements');
+        await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not have min tokens');
       });
 
       it('should undelegate from unbonded validator by delegator successfully', async function () {

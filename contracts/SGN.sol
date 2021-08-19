@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "./libraries/PbSgn.sol";
 import "./DPoS.sol";
 
 /**
@@ -17,11 +18,14 @@ contract SGN is Ownable, Pausable {
 
     DPoS public immutable dpos;
     bytes32[] public deposits;
+    // account -> (token -> amount)
+    mapping(address => mapping(address => uint256)) public withdrawnAmts;
     mapping(address => bytes) public sgnAddrs;
 
     /* Events */
     event SgnAddrUpdate(address indexed valAddr, bytes oldAddr, bytes newAddr);
     event Deposit(uint256 depositId, address account, address token, uint256 amount);
+    event Withdraw(address account, address token, uint256 amount);
 
     /**
      * @notice SGN constructor
@@ -58,6 +62,24 @@ contract SGN is Ownable, Pausable {
         IERC20(_token).safeTransferFrom(msgSender, address(this), _amount);
         uint64 depositId = uint64(deposits.length - 1);
         emit Deposit(depositId, msgSender, _token, _amount);
+    }
+
+    /**
+     * @notice Withdraw token
+     * @dev Here we use cumulative amount to make withrawal process idempotent
+     * @param _withdrawalRequest withdrawal request bytes coded in protobuf
+     * @param _sigs list of validator signatures
+     */
+    function withdraw(bytes calldata _withdrawalRequest, bytes[] calldata _sigs) external whenNotPaused {
+        dpos.verifySignatures(_withdrawalRequest, _sigs);
+        PbSgn.Withdrawal memory withdrawal = PbSgn.decWithdrawal(_withdrawalRequest);
+
+        uint256 amount = withdrawal.cumulativeAmount - withdrawnAmts[withdrawal.account][withdrawal.token];
+        require(amount > 0, "No new amount to withdraw");
+        withdrawnAmts[withdrawal.account][withdrawal.token] = withdrawal.cumulativeAmount;
+
+        IERC20(withdrawal.token).safeTransfer(withdrawal.account, amount);
+        emit Withdraw(withdrawal.account, withdrawal.token, amount);
     }
 
     /**

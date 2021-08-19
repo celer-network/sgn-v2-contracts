@@ -26,7 +26,7 @@ describe('Reward Tests', function () {
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
       await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
-      await dpos.connect(validators[i]).delegate(validators[i].address, consts.MIN_STAKING_POOL);
+      await dpos.connect(validators[i]).delegate(validators[i].address, consts.MIN_VALIDATOR_TOKENS);
       await dpos.connect(validators[i]).bondValidator();
     }
     await dpos.connect(validators[0]).contributeToMiningPool(100);

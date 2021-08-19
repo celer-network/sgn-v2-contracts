@@ -31,7 +31,6 @@ describe('Slash Tests', function () {
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
       await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
-      await dpos.connect(validators[i]).delegate(validators[i].address, parseUnits('2.2'));
       await dpos.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await dpos.connect(validators[i]).bondValidator();
       const blockNumber = await ethers.provider.getBlockNumber();
@@ -56,9 +55,9 @@ describe('Slash Tests', function () {
     );
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'DelegationUpdate')
-      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.79'), 0, parseUnits('-0.41'))
+      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.6'), 0, parseUnits('-0.4'))
       .to.emit(dpos, 'Slash')
-      .withArgs(validators[0].address, 1, parseUnits('0.41'))
+      .withArgs(validators[0].address, 1, parseUnits('0.4'))
       .to.emit(dpos, 'SlashAmtCollected')
       .withArgs(admin.address, parseUnits('0.01'))
       .to.emit(dpos, 'SlashAmtCollected')
@@ -69,7 +68,7 @@ describe('Slash Tests', function () {
     const rewardPoolAfter = await dpos.rewardPool();
     expect(adminBalanceAfter.sub(parseUnits('0.01'))).to.equal(adminBalanceBefore);
     expect(val1BalanceAfter.sub(parseUnits('0.1'))).to.equal(val1BalanceBefore);
-    expect(rewardPoolAfter.sub(parseUnits('0.3'))).to.equal(rewardPoolBefore);
+    expect(rewardPoolAfter.sub(parseUnits('0.29'))).to.equal(rewardPoolBefore);
 
     await expect(dpos.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Used slash nonce');
   });
@@ -91,9 +90,9 @@ describe('Slash Tests', function () {
     );
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'DelegationUpdate')
-      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('3.99'), 0, parseUnits('-0.21'))
+      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('3.8'), 0, parseUnits('-0.2'))
       .to.emit(dpos, 'Slash')
-      .withArgs(validators[0].address, 1, parseUnits('0.41'));
+      .withArgs(validators[0].address, 1, parseUnits('0.4'));
 
     // check and complete pending undelegations
     const res = await dpos.getDelegatorInfo(validators[0].address, admin.address);
@@ -108,7 +107,7 @@ describe('Slash Tests', function () {
     // do additional undelegation
     await expect(dpos.undelegate(validators[0].address, parseUnits('1')))
       .to.emit(dpos, 'DelegationUpdate')
-      .withArgs(validators[0].address, admin.address, parseUnits('3.04'), parseUnits('2'), parseUnits('-0.95'));
+      .withArgs(validators[0].address, admin.address, parseUnits('2.85'), parseUnits('2'), parseUnits('-0.95'));
     await advanceBlockNumber(consts.SLASH_TIMEOUT);
     await expect(dpos.completeUndelegate(validators[0].address))
       .to.emit(dpos, 'Undelegated')
@@ -120,7 +119,7 @@ describe('Slash Tests', function () {
       .withArgs(
         validators[0].address,
         admin.address,
-        parseUnits('4.04'),
+        parseUnits('3.85'),
         parseUnits('3052631578947368421', 'wei'),
         parseUnits('1')
       );
@@ -130,7 +129,7 @@ describe('Slash Tests', function () {
       .withArgs(
         validators[0].address,
         admin.address,
-        parseUnits('3040000000000000001', 'wei'),
+        parseUnits('2850000000000000001', 'wei'),
         parseUnits('2'),
         parseUnits('-999999999999999999', 'wei')
       );
@@ -140,14 +139,15 @@ describe('Slash Tests', function () {
     const request = await getSlashRequest(validators[0].address, 1, 100000000, expireBlock, 0, [], [], validators);
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'DelegationUpdate')
-      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.38'), 0, parseUnits('-0.82'))
+      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.2'), 0, parseUnits('-0.8'))
       .to.emit(dpos, 'Slash')
-      .withArgs(validators[0].address, 1, parseUnits('0.82'))
+      .withArgs(validators[0].address, 1, parseUnits('0.8'))
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[0].address, consts.STATUS_UNBONDING);
   });
 
   it('should unbond validator due to slash with jail period', async function () {
+    await dpos.connect(validators[0]).delegate(validators[0].address, parseUnits('1'));
     const request = await getSlashRequest(
       validators[0].address,
       1,

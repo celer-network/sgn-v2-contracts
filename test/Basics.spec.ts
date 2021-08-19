@@ -153,7 +153,7 @@ describe('Basic Tests', function () {
       it('should fail to undelegate from unbonded validator more than it delegated', async function () {
         await expect(
           dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))
-        ).to.be.revertedWith('reverted with panic code 0x11');
+        ).to.be.reverted;
       });
 
       it('should fail to undelegate from unbonded validator with amount smaller than 1 share', async function () {
@@ -224,7 +224,7 @@ describe('Basic Tests', function () {
           it('should fail to undelegate more than it delegated', async function () {
             await expect(
               dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))
-            ).to.be.revertedWith('reverted with panic code 0x11');
+            ).to.be.reverted;
           });
 
           it('should remove the validator after validator undelegate to become under minSelfDelegation', async function () {
@@ -269,7 +269,7 @@ describe('Basic Tests', function () {
             it('should fail to undelegate with a total more than it delegated', async function () {
               await expect(
                 dpos.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE)
-              ).to.be.revertedWith('reverted with panic code 0x11');
+              ).to.be.reverted;
             });
 
             it('should completeUndelegate succesfully', async function () {

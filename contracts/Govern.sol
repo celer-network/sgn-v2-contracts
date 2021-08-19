@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Govern is Ownable {
     using SafeERC20 for IERC20;
 
-    enum ParamNames {
+    enum ParamName {
         ProposalDeposit,
         GovernVoteTimeout,
         SlashTimeout,
@@ -43,7 +43,7 @@ contract Govern is Ownable {
         address proposer;
         uint256 deposit;
         uint256 voteDeadline;
-        uint256 record;
+        ParamName name;
         uint256 newValue;
         ProposalStatus status;
         mapping(address => VoteType) votes;
@@ -51,7 +51,7 @@ contract Govern is Ownable {
 
     IERC20 public celerToken;
     // parameters
-    mapping(uint256 => uint256) public UIntStorage;
+    mapping(ParamName => uint256) public params;
     mapping(uint256 => ParamProposal) public paramProposals;
     uint256 public nextParamProposalId;
 
@@ -60,13 +60,13 @@ contract Govern is Ownable {
         address proposer,
         uint256 deposit,
         uint256 voteDeadline,
-        uint256 record,
+        ParamName name,
         uint256 newValue
     );
 
     event VoteParam(uint256 proposalId, address voter, VoteType voteType);
 
-    event ConfirmParamProposal(uint256 proposalId, bool passed, uint256 record, uint256 newValue);
+    event ConfirmParamProposal(uint256 proposalId, bool passed, ParamName name, uint256 newValue);
 
     /**
      * @notice Govern constructor
@@ -94,24 +94,24 @@ contract Govern is Ownable {
     ) {
         celerToken = IERC20(_celerTokenAddress);
 
-        UIntStorage[uint256(ParamNames.ProposalDeposit)] = _governProposalDeposit;
-        UIntStorage[uint256(ParamNames.GovernVoteTimeout)] = _governVoteTimeout;
-        UIntStorage[uint256(ParamNames.SlashTimeout)] = _slashTimeout;
-        UIntStorage[uint256(ParamNames.MaxBondedValidators)] = _maxBondedValidators;
-        UIntStorage[uint256(ParamNames.MinValidatorTokens)] = _minValidatorTokens;
-        UIntStorage[uint256(ParamNames.MinSelfDelegation)] = _minSelfDelegation;
-        UIntStorage[uint256(ParamNames.AdvanceNoticePeriod)] = _advanceNoticePeriod;
-        UIntStorage[uint256(ParamNames.ValidatorBondInterval)] = _validatorBondInterval;
+        params[ParamName.ProposalDeposit] = _governProposalDeposit;
+        params[ParamName.GovernVoteTimeout] = _governVoteTimeout;
+        params[ParamName.SlashTimeout] = _slashTimeout;
+        params[ParamName.MaxBondedValidators] = _maxBondedValidators;
+        params[ParamName.MinValidatorTokens] = _minValidatorTokens;
+        params[ParamName.MinSelfDelegation] = _minSelfDelegation;
+        params[ParamName.AdvanceNoticePeriod] = _advanceNoticePeriod;
+        params[ParamName.ValidatorBondInterval] = _validatorBondInterval;
     }
 
     /********** Get functions **********/
     /**
      * @notice Get the value of a specific uint parameter
-     * @param _record the key of this parameter
+     * @param _name the key of this parameter
      * @return the value of this parameter
      */
-    function getUIntValue(uint256 _record) public view returns (uint256) {
-        return UIntStorage[_record];
+    function getParamValue(ParamName _name) public view returns (uint256) {
+        return params[_name];
     }
 
     /**
@@ -127,25 +127,25 @@ contract Govern is Ownable {
     /********** Governance functions **********/
     /**
      * @notice Create a parameter proposal
-     * @param _record the key of this parameter
+     * @param _name the key of this parameter
      * @param _value the new proposed value of this parameter
      */
-    function createParamProposal(uint256 _record, uint256 _value) external {
+    function createParamProposal(ParamName _name, uint256 _value) external {
         ParamProposal storage p = paramProposals[nextParamProposalId];
         nextParamProposalId = nextParamProposalId + 1;
         address msgSender = msg.sender;
-        uint256 deposit = UIntStorage[uint256(ParamNames.ProposalDeposit)];
+        uint256 deposit = params[ParamName.ProposalDeposit];
 
         p.proposer = msgSender;
         p.deposit = deposit;
-        p.voteDeadline = block.number + UIntStorage[uint256(ParamNames.GovernVoteTimeout)];
-        p.record = _record;
+        p.voteDeadline = block.number + params[ParamName.GovernVoteTimeout];
+        p.name = _name;
         p.newValue = _value;
         p.status = ProposalStatus.Voting;
 
         celerToken.safeTransferFrom(msgSender, address(this), deposit);
 
-        emit CreateParamProposal(nextParamProposalId - 1, msgSender, deposit, p.voteDeadline, _record, _value);
+        emit CreateParamProposal(nextParamProposalId - 1, msgSender, deposit, p.voteDeadline, _name, _value);
     }
 
     /**
@@ -184,9 +184,9 @@ contract Govern is Ownable {
         p.status = ProposalStatus.Closed;
         if (_passed) {
             celerToken.safeTransfer(p.proposer, p.deposit);
-            UIntStorage[p.record] = p.newValue;
+            params[p.name] = p.newValue;
         }
 
-        emit ConfirmParamProposal(_proposalId, _passed, p.record, p.newValue);
+        emit ConfirmParamProposal(_proposalId, _passed, p.name, p.newValue);
     }
 }

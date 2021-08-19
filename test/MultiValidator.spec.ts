@@ -33,7 +33,9 @@ describe('Multiple validators Tests', function () {
     ];
     for (let i = 0; i < 8; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos.connect(validators[i]).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos
+        .connect(validators[i])
+        .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       if (i < 7) {
         await dpos.connect(validators[i]).delegate(validators[i].address, consts.VALIDATOR_STAKE);
         await dpos.delegate(validators[i].address, stakes[i]);

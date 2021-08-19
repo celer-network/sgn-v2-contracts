@@ -43,41 +43,45 @@ describe('Basic Tests', function () {
   it('should fail to initialize a validator when paused', async function () {
     await dpos.pause();
     await expect(
-      dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+      dpos.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     ).to.be.revertedWith('Pausable: paused');
   });
 
   it('should fail to initialize a validator with insufficient min self delegation', async function () {
     await expect(
-      dpos.connect(validator).initializeValidator(parseUnits('1'), consts.COMMISSION_RATE)
+      dpos.connect(validator).initializeValidator(validator.address, parseUnits('1'), consts.COMMISSION_RATE)
     ).to.be.revertedWith('Insufficient min self delegation');
   });
 
   it('should fail to initialize a validator if self delegation fails', async function () {
-    await expect(dpos.initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)).to.be.revertedWith(
-      'ERC20: transfer amount exceeds allowance'
-    );
+    await expect(
+      dpos.initializeValidator(admin.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+    ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
   });
 
   it('should fail to initialize a non-whitelisted validator when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await expect(
-      dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+      dpos.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     ).to.be.revertedWith('caller is not whitelisted');
   });
 
   it('should initialize a whitelisted validator successfully when whitelist is enabled', async function () {
     await dpos.enableWhitelist();
     await dpos.addWhitelisted(validator.address);
-    await expect(dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE))
+    await expect(
+      dpos.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+    )
       .to.emit(dpos, 'ValidatorParamsUpdate')
-      .withArgs(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      .withArgs(validator.address, validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
   });
 
   it('should initialize a validator and update sidechain address successfully', async function () {
-    await expect(dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE))
+    await expect(
+      dpos.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+    )
       .to.emit(dpos, 'ValidatorParamsUpdate')
-      .withArgs(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      .withArgs(validator.address, validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
 
     const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
     await expect(sgn.connect(validator).updateSgnAddr(sidechainAddr))
@@ -88,13 +92,17 @@ describe('Basic Tests', function () {
   describe('after one validator finishes initialization', async () => {
     const sidechainAddr = keccak256(['string'], ['sgnaddr']);
     beforeEach(async () => {
-      await dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      await dpos
+        .connect(validator)
+        .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await sgn.connect(validator).updateSgnAddr(sidechainAddr);
     });
 
     it('should fail to initialize the same validator twice', async function () {
       await expect(
-        dpos.connect(validator).initializeValidator(consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+        dpos
+          .connect(validator)
+          .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
       ).to.be.revertedWith('Validator is initialized');
     });
 
@@ -181,7 +189,7 @@ describe('Basic Tests', function () {
           const higherMinSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
           await expect(dpos.connect(validator).updateMinSelfDelegation(higherMinSelfDelegation))
             .to.emit(dpos, 'ValidatorParamsUpdate')
-            .withArgs(validator.address, higherMinSelfDelegation, consts.COMMISSION_RATE);
+            .withArgs(validator.address, validator.address, higherMinSelfDelegation, consts.COMMISSION_RATE);
 
           await expect(dpos.connect(validator).bondValidator())
             .to.emit(dpos, 'ValidatorStatusUpdate')
@@ -192,7 +200,7 @@ describe('Basic Tests', function () {
           const lowerMinSelfDelegation = consts.MIN_SELF_DELEGATION.sub(1000000);
           await expect(dpos.connect(validator).updateMinSelfDelegation(lowerMinSelfDelegation))
             .to.emit(dpos, 'ValidatorParamsUpdate')
-            .withArgs(validator.address, lowerMinSelfDelegation, consts.COMMISSION_RATE);
+            .withArgs(validator.address, validator.address, lowerMinSelfDelegation, consts.COMMISSION_RATE);
 
           await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Bond block not reached');
 
@@ -243,7 +251,7 @@ describe('Basic Tests', function () {
             const higherMinSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
             await expect(dpos.connect(validator).updateMinSelfDelegation(higherMinSelfDelegation))
               .to.emit(dpos, 'ValidatorParamsUpdate')
-              .withArgs(validator.address, higherMinSelfDelegation, consts.COMMISSION_RATE);
+              .withArgs(validator.address, validator.address, higherMinSelfDelegation, consts.COMMISSION_RATE);
           });
 
           it('should fail to decrease min self delegation', async function () {

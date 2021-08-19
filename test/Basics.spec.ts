@@ -112,7 +112,7 @@ describe('Basic Tests', function () {
 
     it('should fail to bondValidator before delegating enough stake', async function () {
       await dpos.connect(delegator).delegate(validator.address, consts.MIN_STAKING_POOL.sub(1000));
-      await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Need min required tokens');
+      await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not meet min token requirements');
     });
 
     describe('after one delegator delegates enough stake to the validator', async () => {
@@ -121,7 +121,7 @@ describe('Basic Tests', function () {
       });
 
       it('should fail to bondValidator before self delegating minSelfDelegation', async function () {
-        await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Insufficient self delegation');
+        await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not meet min token requirements');
       });
 
       it('should undelegate from unbonded validator by delegator successfully', async function () {
@@ -182,7 +182,7 @@ describe('Basic Tests', function () {
             .to.emit(dpos, 'ValidatorParamsUpdate')
             .withArgs(validator.address, lowerMinSelfDelegation, consts.COMMISSION_RATE);
 
-          await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Not earliest bond time yet');
+          await expect(dpos.connect(validator).bondValidator()).to.be.revertedWith('Bond block not reached');
 
           await advanceBlockNumber(consts.ADVANCE_NOTICE_PERIOD);
           await expect(dpos.connect(validator).bondValidator())
@@ -277,8 +277,8 @@ describe('Basic Tests', function () {
 
               let res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('3'));
-              expect(res.undelegations[0].amount).to.equal(parseUnits('2'));
-              expect(res.undelegations[1].amount).to.equal(parseUnits('1'));
+              expect(res.undelegations[0].shares).to.equal(parseUnits('2'));
+              expect(res.undelegations[1].shares).to.equal(parseUnits('1'));
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);
               await dpos.connect(delegator).undelegate(validator.address, parseUnits('1'));
@@ -289,7 +289,7 @@ describe('Basic Tests', function () {
 
               res = await dpos.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('2'));
-              expect(res.undelegations[0].amount).to.equal(parseUnits('1'));
+              expect(res.undelegations[0].shares).to.equal(parseUnits('1'));
 
               await expect(dpos.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
                 'no undelegation ready to be completed'

@@ -99,6 +99,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _slashTimeout the locking time for funds to be potentially slashed
      * @param _maxBondedValidators the maximum number of bonded validators
      * @param _minValidatorTokens the global minimum token amout requirement for bonded validator
+     * @param _minSelfDelegation minimal amount of self-delegated tokens
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
      * @param _validatorBondInterval min interval between bondValidator
      */
@@ -109,6 +110,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _slashTimeout,
         uint256 _maxBondedValidators,
         uint256 _minValidatorTokens,
+        uint256 _minSelfDelegation,
         uint256 _advanceNoticePeriod,
         uint256 _validatorBondInterval
     )
@@ -119,6 +121,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _slashTimeout,
             _maxBondedValidators,
             _minValidatorTokens,
+            _minSelfDelegation,
             _advanceNoticePeriod,
             _validatorBondInterval
         )
@@ -144,13 +147,16 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[valAddr];
         require(validator.status == ValidatorStatus.Null, "Validator is initialized");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
-        require(_minSelfDelegation >= CELR_DECIMAL, "Invalid min self delegation");
-
+        require(
+            _minSelfDelegation >= getUIntValue(uint256(ParamNames.MinSelfDelegation)),
+            "Insufficient min self delegation"
+        );
         validator.status = ValidatorStatus.Unbonded;
         validator.minSelfDelegation = _minSelfDelegation;
         validator.commissionRate = _commissionRate;
         valAddrs.push(valAddr);
 
+        delegate(valAddr, _minSelfDelegation);
         emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, _commissionRate);
     }
 

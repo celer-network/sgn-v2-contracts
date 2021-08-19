@@ -48,12 +48,12 @@ describe('Multiple validators Tests', function () {
   });
 
   it('should fail to bondValidator before delegating enough stake', async function () {
-    await dpos.connect(validators[7]).delegate(validators[7].address, consts.MIN_STAKING_POOL);
+    await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('2'));
     await expect(dpos.connect(validators[7]).bondValidator()).to.be.revertedWith('Insufficient tokens');
   });
 
   it('should replace a current validator by calling bondValidator with enough stake', async function () {
-    await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('10'));
+    await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('8'));
     await expect(dpos.connect(validators[7]).bondValidator())
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[1].address, consts.STATUS_UNBONDING)
@@ -71,7 +71,7 @@ describe('Multiple validators Tests', function () {
     let quorum = await dpos.getQuorumTokens();
     expect(quorum).to.equal(parseUnits('58').mul(2).div(3).add(1));
 
-    await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('10'));
+    await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('8'));
     await expect(dpos.connect(validators[7]).bondValidator())
       .to.emit(dpos, 'ValidatorStatusUpdate')
       .withArgs(validators[7].address, consts.STATUS_BONDED);
@@ -81,7 +81,7 @@ describe('Multiple validators Tests', function () {
 
   describe('after one validator is replaced', async () => {
     beforeEach(async () => {
-      await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('10'));
+      await dpos.connect(validators[7]).delegate(validators[7].address, parseUnits('8'));
       await dpos.connect(validators[7]).bondValidator();
     });
 

@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "./libraries/PbSgn.sol";
 import "./DPoS.sol";
 
 /**
@@ -15,23 +16,23 @@ import "./DPoS.sol";
 contract SGN is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable celr;
     DPoS public immutable dpos;
-    mapping(address => uint256) public deposits;
+    bytes32[] public deposits;
+    // account -> (token -> amount)
+    mapping(address => mapping(address => uint256)) public withdrawnAmts;
     mapping(address => bytes) public sgnAddrs;
 
     /* Events */
-    event SgnAddrUpdate(address indexed valAddr, bytes indexed oldAddr, bytes indexed newAddr);
-    event Deposit(address indexed account, uint256 amount);
+    event SgnAddrUpdate(address indexed valAddr, bytes oldAddr, bytes newAddr);
+    event Deposit(uint256 depositId, address account, address token, uint256 amount);
+    event Withdraw(address account, address token, uint256 amount);
 
     /**
      * @notice SGN constructor
      * @dev Need to deploy DPoS contract first before deploying SGN contract
-     * @param _celrAddr address of Celer Token Contract
      * @param _dpos address of DPoS Contract
      */
-    constructor(address _celrAddr, DPoS _dpos) {
-        celr = IERC20(_celrAddr);
+    constructor(DPoS _dpos) {
         dpos = _dpos;
     }
 
@@ -51,15 +52,34 @@ contract SGN is Ownable, Pausable {
         emit SgnAddrUpdate(valAddr, oldAddr, _sgnAddr);
     }
 
-    /**
+    /**a
      * @notice Deposit to SGN
      * @param _amount subscription fee paid along this function call in CELR tokens
      */
-    function deposit(uint256 _amount) external whenNotPaused {
+    function deposit(address _token, uint256 _amount) external whenNotPaused {
         address msgSender = msg.sender;
-        deposits[msgSender] = deposits[msgSender] + _amount;
-        celr.safeTransferFrom(msgSender, address(this), _amount);
-        emit Deposit(msgSender, _amount);
+        deposits.push(keccak256(abi.encodePacked(msgSender, _token, _amount)));
+        IERC20(_token).safeTransferFrom(msgSender, address(this), _amount);
+        uint64 depositId = uint64(deposits.length - 1);
+        emit Deposit(depositId, msgSender, _token, _amount);
+    }
+
+    /**
+     * @notice Withdraw token
+     * @dev Here we use cumulative amount to make withrawal process idempotent
+     * @param _withdrawalRequest withdrawal request bytes coded in protobuf
+     * @param _sigs list of validator signatures
+     */
+    function withdraw(bytes calldata _withdrawalRequest, bytes[] calldata _sigs) external whenNotPaused {
+        dpos.verifySignatures(_withdrawalRequest, _sigs);
+        PbSgn.Withdrawal memory withdrawal = PbSgn.decWithdrawal(_withdrawalRequest);
+
+        uint256 amount = withdrawal.cumulativeAmount - withdrawnAmts[withdrawal.account][withdrawal.token];
+        require(amount > 0, "No new amount to withdraw");
+        withdrawnAmts[withdrawal.account][withdrawal.token] = withdrawal.cumulativeAmount;
+
+        IERC20(withdrawal.token).safeTransfer(withdrawal.account, amount);
+        emit Withdraw(withdrawal.account, withdrawal.token, amount);
     }
 
     /**
@@ -83,7 +103,7 @@ contract SGN is Ownable, Pausable {
      * @dev emergency use only
      * @param _amount drained token amount
      */
-    function drainToken(uint256 _amount) external whenPaused onlyOwner {
-        celr.safeTransfer(msg.sender, _amount);
+    function drainToken(address _token, uint256 _amount) external whenPaused onlyOwner {
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 }

@@ -64,6 +64,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
 
     uint256 public rewardPool;
     uint256 public bondedValTokens;
+    uint256 public nextBondBlock;
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
     mapping(address => Validator) public validators;
@@ -99,6 +100,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      * @param _maxBondedValidators the maximum number of bonded validators
      * @param _minValidatorTokens the global minimum token amout requirement for bonded validator
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
+     * @param _validatorBondInterval min interval between bondValidator
      */
     constructor(
         address _celerTokenAddress,
@@ -107,7 +109,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 _slashTimeout,
         uint256 _maxBondedValidators,
         uint256 _minValidatorTokens,
-        uint256 _advanceNoticePeriod
+        uint256 _advanceNoticePeriod,
+        uint256 _validatorBondInterval
     )
         Govern(
             _celerTokenAddress,
@@ -116,7 +119,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             _slashTimeout,
             _maxBondedValidators,
             _minValidatorTokens,
-            _advanceNoticePeriod
+            _advanceNoticePeriod,
+            _validatorBondInterval
         )
     {}
 
@@ -147,7 +151,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.commissionRate = _commissionRate;
         valAddrs.push(valAddr);
 
-        // TODO: auto self delegate when initialized?
         emit ValidatorParamsUpdate(valAddr, _minSelfDelegation, _commissionRate);
     }
 
@@ -162,6 +165,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             "Invalid validator status"
         );
         require(block.number >= validator.bondBlock, "Bond block not reached");
+        require(block.number >= nextBondBlock, "Too frequent validator bond");
+        nextBondBlock = block.number + getUIntValue(uint256(ParamNames.ValidatorBondInterval));
         require(_meetMinTokenRequirements(valAddr), "Not meet min token requirements");
 
         uint256 maxBondedValidators = getUIntValue(uint256(ParamNames.MaxBondedValidators));
@@ -195,7 +200,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     function confirmUnbondedValidator(address _valAddr) external {
         Validator storage validator = validators[_valAddr];
         require(validator.status == ValidatorStatus.Unbonding, "Validator not unbonding");
-        require(block.number >= validator.unbondBlock, "Unbond time not reached");
+        require(block.number >= validator.unbondBlock, "Unbond block not reached");
 
         validator.status = ValidatorStatus.Unbonded;
         delete validator.unbondBlock;

@@ -21,7 +21,8 @@ contract Govern is Ownable {
         SlashTimeout,
         MaxBondedValidators,
         MinValidatorTokens,
-        AdvanceNoticePeriod
+        AdvanceNoticePeriod,
+        ValidatorBondInterval
     }
 
     enum ProposalStatus {
@@ -76,6 +77,7 @@ contract Govern is Ownable {
      * @param _maxBondedValidators the maximum number of bonded validators
      * @param _minValidatorTokens the global minimum token amout requirement for bonded validator
      * @param _advanceNoticePeriod the time after the announcement and prior to the effective time of an update
+     * @param _validatorBondInterval min interval between bondValidator
      */
     constructor(
         address _celerTokenAddress,
@@ -84,7 +86,8 @@ contract Govern is Ownable {
         uint256 _slashTimeout,
         uint256 _maxBondedValidators,
         uint256 _minValidatorTokens,
-        uint256 _advanceNoticePeriod
+        uint256 _advanceNoticePeriod,
+        uint256 _validatorBondInterval
     ) {
         celerToken = IERC20(_celerTokenAddress);
 
@@ -94,6 +97,7 @@ contract Govern is Ownable {
         UIntStorage[uint256(ParamNames.MaxBondedValidators)] = _maxBondedValidators;
         UIntStorage[uint256(ParamNames.MinValidatorTokens)] = _minValidatorTokens;
         UIntStorage[uint256(ParamNames.AdvanceNoticePeriod)] = _advanceNoticePeriod;
+        UIntStorage[uint256(ParamNames.ValidatorBondInterval)] = _validatorBondInterval;
     }
 
     /********** Get functions **********/

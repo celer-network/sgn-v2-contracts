@@ -70,7 +70,7 @@ describe('Basic Tests', function () {
     const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
     await expect(sgn.connect(validator).updateSgnAddr(sidechainAddr))
       .to.emit(sgn, 'SgnAddrUpdate')
-      .withArgs(validator.address, consts.HASHED_NULL, sidechainAddr);
+      .withArgs(validator.address, '0x', sidechainAddr);
   });
 
   describe('after one validator finishes initialization', async () => {

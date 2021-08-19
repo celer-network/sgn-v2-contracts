@@ -6,6 +6,7 @@ export const SLASH_TIMEOUT = 50;
 export const MAX_VALIDATOR_NUM = 7;
 export const MIN_STAKING_POOL = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
+export const VALIDATOR_BOND_INTERVAL =0;
 
 export const MIN_SELF_DELEGATION = parseUnits('2');
 export const VALIDATOR_STAKE = parseUnits('3'); // smaller than MIN_STAKING_POOL for testing purpose

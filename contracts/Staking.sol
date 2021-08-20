@@ -93,7 +93,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     event Slash(address indexed valAddr, uint64 nonce, uint256 slashAmt);
     event SlashAmtCollected(address indexed recipient, uint256 amount);
     event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
-    event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
+    event RewardPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
     /**
      * @notice Staking constructor
@@ -351,7 +351,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
 
     /**
      * @notice Claim reward
-     * @dev Here we use cumulative mining reward to make claim process idempotent
+     * @dev Here we use cumulative reward to make claim process idempotent
      * @param _rewardRequest reward request bytes coded in protobuf
      * @param _sigs list of validator signatures
      */
@@ -487,15 +487,15 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Contribute CELR tokens to the mining pool
+     * @notice Contribute CELR tokens to the reward pool
      * @param _amount the amount of CELR tokens to contribute
      */
-    function contributeToMiningPool(uint256 _amount) external whenNotPaused {
+    function contributeToRewardPool(uint256 _amount) external whenNotPaused {
         address contributor = msg.sender;
         rewardPool += _amount;
         celerToken.safeTransferFrom(contributor, address(this), _amount);
 
-        emit MiningPoolContribution(contributor, _amount, rewardPool);
+        emit RewardPoolContribution(contributor, _amount, rewardPool);
     }
 
     /**

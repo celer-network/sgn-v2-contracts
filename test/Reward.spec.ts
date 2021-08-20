@@ -34,17 +34,17 @@ describe('Reward Tests', function () {
       await staking.connect(validators[i]).delegate(validators[i].address, consts.MIN_VALIDATOR_TOKENS);
       await staking.connect(validators[i]).bondValidator();
     }
-    await staking.connect(validators[0]).contributeToMiningPool(100);
+    await staking.connect(validators[0]).contributeToRewardPool(100);
   });
 
-  it('should fail to contribute to mining poole when paused', async function () {
+  it('should fail to contribute to reward pool when paused', async function () {
     await staking.pause();
-    await expect(staking.contributeToMiningPool(100)).to.be.revertedWith('Pausable: paused');
+    await expect(staking.contributeToRewardPool(100)).to.be.revertedWith('Pausable: paused');
   });
 
-  it('should contribute to mining pool successfully', async function () {
-    await expect(staking.connect(validators[0]).contributeToMiningPool(100))
-      .to.emit(staking, 'MiningPoolContribution')
+  it('should contribute to reward pool successfully', async function () {
+    await expect(staking.connect(validators[0]).contributeToRewardPool(100))
+      .to.emit(staking, 'RewardPoolContribution')
       .withArgs(validators[0].address, 100, 200);
   });
 
@@ -73,7 +73,7 @@ describe('Reward Tests', function () {
       .withArgs(validators[0].address, 50, 10);
   });
 
-  it('should fail to claim reward more than amount in mining pool', async function () {
+  it('should fail to claim reward more than amount in reward pool', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
     await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
       'Reward pool is smaller than new reward'

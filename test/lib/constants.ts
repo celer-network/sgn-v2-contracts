@@ -7,13 +7,14 @@ export const MAX_VALIDATOR_NUM = 7;
 export const MIN_VALIDATOR_TOKENS = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
 export const VALIDATOR_BOND_INTERVAL = 0;
+export const MAX_SLASH_FACTOR = 1e5; // 10%
 
 export const MIN_SELF_DELEGATION = parseUnits('2');
 export const VALIDATOR_STAKE = parseUnits('1'); // smaller than MIN_VALIDATOR_TOKENS for testing purpose
 export const DELEGATOR_STAKE = parseUnits('6');
 
 export const COMMISSION_RATE = 100;
-export const SLASH_FACTOR = 50000000; // 5%
+export const SLASH_FACTOR = 50000; // 5%
 
 export const STATUS_UNBONDED = 1;
 export const STATUS_BONDED = 2;

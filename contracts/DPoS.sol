@@ -63,18 +63,13 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         uint256 minSelfDelegation;
     }
 
-    struct ValSigner {
-        address valAddr;
-        bool bonded;
-    }
-
     uint256 public rewardPool;
     uint256 public bondedTokens;
     uint256 public nextBondBlock;
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
     mapping(address => Validator) public validators; // key is valAddr
-    mapping(address => ValSigner) public valSigners; // key is valSigner
+    mapping(address => address) public valSigners; // signerAddr -> valAddr
     mapping(address => uint256) public claimedReward;
 
     bool public slashDisabled;
@@ -158,8 +153,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[valAddr];
         require(validator.status == ValidatorStatus.Null, "Validator is initialized");
         require(validators[_signer].status == ValidatorStatus.Null, "Signer is other validator");
-        require(valSigners[valAddr].valAddr == address(0), "Validator is other signer");
-        require(valSigners[_signer].valAddr == address(0), "Signer already used");
+        require(valSigners[valAddr] == address(0), "Validator is other signer");
+        require(valSigners[_signer] == address(0), "Signer already used");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
         require(_minSelfDelegation >= params[ParamName.MinSelfDelegation], "Insufficient min self delegation");
         validator.signer = _signer;
@@ -167,7 +162,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.minSelfDelegation = _minSelfDelegation;
         validator.commissionRate = _commissionRate;
         valAddrs.push(valAddr);
-        valSigners[_signer] = ValSigner(valAddr, false);
+        valSigners[_signer] = valAddr;
 
         delegate(valAddr, _minSelfDelegation);
         emit ValidatorParamsUpdate(valAddr, _signer, _minSelfDelegation, _commissionRate);
@@ -181,15 +176,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator not initialized");
-        require(valSigners[_signer].valAddr == address(0), "Signer already used");
+        require(valSigners[_signer] == address(0), "Signer already used");
         if (_signer != valAddr) {
             require(validators[_signer].status == ValidatorStatus.Null, "Signer is other validator");
         }
 
-        address currentSigner = validator.signer;
+        delete valSigners[validator.signer];
         validator.signer = _signer;
-        valSigners[_signer] = valSigners[currentSigner];
-        delete valSigners[currentSigner];
+        valSigners[_signer] = valAddr;
+
         emit ValidatorParamsUpdate(valAddr, _signer, validator.minSelfDelegation, validator.commissionRate);
     }
 
@@ -199,8 +194,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
      */
     function bondValidator() external {
         address valAddr = msg.sender;
-        if (valSigners[msg.sender].valAddr != address(0)) {
-            valAddr = valSigners[msg.sender].valAddr;
+        if (valSigners[msg.sender] != address(0)) {
+            valAddr = valSigners[msg.sender];
         }
         Validator storage validator = validators[valAddr];
         require(
@@ -589,10 +584,11 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
             signers[i] = hash.recover(_sigs[i]);
             require(signers[i] > prev, "Signers not in ascending order");
             prev = signers[i];
-            if (!valSigners[signers[i]].bonded) {
+            Validator storage validator = validators[valSigners[signers[i]]];
+            if (validator.status != ValidatorStatus.Bonded) {
                 continue;
             }
-            signedTokens += validators[signers[i]].tokens;
+            signedTokens += validator.tokens;
         }
 
         require(signedTokens >= getQuorumTokens(), "Quorum not reached");
@@ -738,7 +734,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.status = ValidatorStatus.Bonded;
         delete validator.unbondBlock;
         bondedTokens += validator.tokens;
-        valSigners[_valAddr].bonded = true;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Bonded);
     }
 
@@ -751,7 +746,6 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         validator.status = ValidatorStatus.Unbonding;
         validator.unbondBlock = block.number + params[ParamName.SlashTimeout];
         bondedTokens -= validator.tokens;
-        valSigners[_valAddr].bonded = false;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonding);
     }
 

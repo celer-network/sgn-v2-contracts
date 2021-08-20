@@ -141,7 +141,7 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash', async function () {
-    const request = await getSlashRequest(validators[0].address, 1, 100000000, expireBlock, 0, [], [], signers);
+    const request = await getSlashRequest(validators[0].address, 1, 1e5, expireBlock, 0, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.2'), 0, parseUnits('-0.8'))
@@ -152,20 +152,14 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash with jail period', async function () {
-    await staking.connect(validators[0]).delegate(validators[0].address, parseUnits('1'));
-    const request = await getSlashRequest(
-      validators[0].address,
-      1,
-      consts.SLASH_FACTOR,
-      expireBlock,
-      10,
-      [],
-      [],
-      signers
-    );
+    let request = await getSlashRequest(validators[0].address, 1, 0, expireBlock, 10, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'ValidatorStatusUpdate')
-      .withArgs(validators[0].address, consts.STATUS_UNBONDING);
+      .withArgs(validators[0].address, consts.STATUS_UNBONDING)
+      .to.emit(staking, 'DelegationUpdate')
+      .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('8'), 0, 0)
+      .to.emit(staking, 'Slash')
+      .withArgs(validators[0].address, 1, 0);
 
     await expect(staking.connect(validators[0]).bondValidator()).to.be.revertedWith('Bond block not reached');
     await advanceBlockNumber(10);
@@ -217,9 +211,9 @@ describe('Slash Tests', function () {
       signers
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Pausable: paused');
-
     await staking.unpause();
-    await staking.disableSlash();
-    await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Slash is disabled');
+
+    await staking.setMaxSlashFactor(0);
+    await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Exceed max slash factor');
   });
 });

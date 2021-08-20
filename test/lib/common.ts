@@ -37,7 +37,8 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
     consts.MIN_VALIDATOR_TOKENS,
     consts.MIN_SELF_DELEGATION,
     consts.ADVANCE_NOTICE_PERIOD,
-    consts.VALIDATOR_BOND_INTERVAL
+    consts.VALIDATOR_BOND_INTERVAL,
+    consts.MAX_SLASH_FACTOR
   );
   await staking.deployed();
 

@@ -19,8 +19,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     uint256 constant MAX_INT = 2**256 - 1;
     uint256 constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
     uint256 constant MAX_UNDELEGATION_ENTRIES = 10;
-    uint256 constant SLASH_FACTOR_DECIMAL = 1e9;
-    uint256 constant MAX_SLASH_FACTOR = 1e8; // 10%
+    uint256 constant SLASH_FACTOR_DECIMAL = 1e6;
 
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
@@ -70,8 +69,6 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     mapping(address => Validator) public validators; // key is valAddr
     mapping(address => address) public signerVals; // signerAddr -> valAddr
     mapping(address => uint256) public claimedReward;
-
-    bool public slashDisabled;
     mapping(uint256 => bool) public slashNonces;
 
     /* Events */
@@ -106,6 +103,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @param _minSelfDelegation minimal amount of self-delegated tokens
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
      * @param _validatorBondInterval min interval between bondValidator
+     * @param _maxSlashFactor maximal slashing factor (1e6 = 100%)
      */
     constructor(
         address _celerTokenAddress,
@@ -116,7 +114,8 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         uint256 _minValidatorTokens,
         uint256 _minSelfDelegation,
         uint256 _advanceNoticePeriod,
-        uint256 _validatorBondInterval
+        uint256 _validatorBondInterval,
+        uint256 _maxSlashFactor
     )
         Govern(
             _celerTokenAddress,
@@ -127,7 +126,8 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             _minValidatorTokens,
             _minSelfDelegation,
             _advanceNoticePeriod,
-            _validatorBondInterval
+            _validatorBondInterval,
+            _maxSlashFactor
         )
     {}
 
@@ -406,12 +406,12 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @param _sigs list of validator signatures
      */
     function slash(bytes calldata _slashRequest, bytes[] calldata _sigs) external whenNotPaused {
-        require(!slashDisabled, "Slash is disabled");
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         verifySignatures(_slashRequest, _sigs);
 
         require(block.number < request.expireBlock, "Slash expired");
-        require(request.slashFactor <= MAX_SLASH_FACTOR, "Invalid slash factor");
+        require(request.slashFactor <= SLASH_FACTOR_DECIMAL, "Invalid slash factor");
+        require(request.slashFactor <= params[ParamName.MaxSlashFactor], "Exceed max slash factor");
         require(!slashNonces[request.nonce], "Used slash nonce");
         slashNonces[request.nonce] = true;
 
@@ -527,17 +527,10 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Enable slash
+     * @notice Set max slash factor
      */
-    function enableSlash() external onlyOwner {
-        slashDisabled = false;
-    }
-
-    /**
-     * @notice Disable slash
-     */
-    function disableSlash() external onlyOwner {
-        slashDisabled = true;
+    function setMaxSlashFactor(uint256 _maxSlashFactor) external onlyOwner {
+        params[ParamName.MaxSlashFactor] = _maxSlashFactor;
     }
 
     /**

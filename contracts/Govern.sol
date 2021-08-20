@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Governance module for Staking contract
@@ -12,7 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Staking contract should inherit this contract
  * @dev Some specific functions of governance are defined in Staking contract
  */
-contract Govern is Ownable {
+contract Govern {
     using SafeERC20 for IERC20;
 
     enum ParamName {
@@ -23,7 +22,8 @@ contract Govern is Ownable {
         MinValidatorTokens,
         MinSelfDelegation,
         AdvanceNoticePeriod,
-        ValidatorBondInterval
+        ValidatorBondInterval,
+        MaxSlashFactor
     }
 
     enum ProposalStatus {
@@ -80,6 +80,7 @@ contract Govern is Ownable {
      * @param _minSelfDelegation minimal amount of self-delegated tokens
      * @param _advanceNoticePeriod the time after the announcement and prior to the effective time of an update
      * @param _validatorBondInterval min interval between bondValidator
+     * @param _maxSlashFactor maximal slashing factor (1e6 = 100%)
      */
     constructor(
         address _celerTokenAddress,
@@ -90,7 +91,8 @@ contract Govern is Ownable {
         uint256 _minValidatorTokens,
         uint256 _minSelfDelegation,
         uint256 _advanceNoticePeriod,
-        uint256 _validatorBondInterval
+        uint256 _validatorBondInterval,
+        uint256 _maxSlashFactor
     ) {
         celerToken = IERC20(_celerTokenAddress);
 
@@ -102,6 +104,7 @@ contract Govern is Ownable {
         params[ParamName.MinSelfDelegation] = _minSelfDelegation;
         params[ParamName.AdvanceNoticePeriod] = _advanceNoticePeriod;
         params[ParamName.ValidatorBondInterval] = _validatorBondInterval;
+        params[ParamName.MaxSlashFactor] = _maxSlashFactor;
     }
 
     /********** Get functions **********/

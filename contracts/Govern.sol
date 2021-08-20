@@ -7,10 +7,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Governance module for DPoS contract
+ * @title Governance module for Staking contract
  * @notice Govern contract implements the basic governance logic
- * @dev DPoS contract should inherit this contract
- * @dev Some specific functions of governance are defined in DPoS contract
+ * @dev Staking contract should inherit this contract
+ * @dev Some specific functions of governance are defined in Staking contract
  */
 contract Govern is Ownable {
     using SafeERC20 for IERC20;
@@ -150,7 +150,7 @@ contract Govern is Ownable {
 
     /**
      * @notice Internal function to vote for a parameter proposal
-     * @dev Must be used in DPoS contract
+     * @dev Must be used in Staking contract
      * @param _proposalId the proposal id
      * @param _voter the voter address
      * @param _vote the vote type
@@ -172,7 +172,7 @@ contract Govern is Ownable {
 
     /**
      * @notice Internal function to confirm a parameter proposal
-     * @dev Must be used in DPoS contract
+     * @dev Must be used in Staking contract
      * @param _proposalId the proposal id
      * @param _passed proposal passed or not
      */

@@ -12,10 +12,10 @@ import "./Govern.sol";
 import "./Whitelist.sol";
 
 /**
- * @title A DPoS contract shared by every sidechain
- * @notice This contract holds the basic logic of DPoS in Celer's coherent sidechain system
+ * @title A Staking contract shared by every sidechain
+ * @notice This contract holds the basic logic of Staking in Celer's coherent sidechain system
  */
-contract DPoS is Ownable, Pausable, Whitelist, Govern {
+contract Staking is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 1e18;
     uint256 constant MAX_INT = 2**256 - 1;
     uint256 constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
@@ -97,7 +97,7 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
     event MiningPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
     /**
-     * @notice DPoS constructor
+     * @notice Staking constructor
      * @param _celerTokenAddress address of Celer Token Contract
      * @param _governProposalDeposit required deposit amount for a governance proposal
      * @param _governVoteTimeout voting timeout for a governance proposal

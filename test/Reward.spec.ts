@@ -17,17 +17,20 @@ describe('Reward Tests', function () {
   let dpos: DPoS;
   let celr: TestERC20;
   let validators: Wallet[];
+  let signers: Wallet[];
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     dpos = res.dpos;
     celr = res.celr;
-    validators = await getAccounts(res.admin, [celr], 4);
+    const accounts = await getAccounts(res.admin, [celr], 6);
+    validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
+    signers = [accounts[0], accounts[1], accounts[4], accounts[5]];
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
       await dpos
         .connect(validators[i])
-        .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+        .initializeValidator(signers[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.connect(validators[i]).delegate(validators[i].address, consts.MIN_VALIDATOR_TOKENS);
       await dpos.connect(validators[i]).bondValidator();
     }
@@ -54,39 +57,39 @@ describe('Reward Tests', function () {
 
   it('should fail to claim reward when paused', async function () {
     await dpos.pause();
-    const r = await getRewardRequest(validators[0].address, parseUnits('100', 'wei'), validators);
+    const r = await getRewardRequest(validators[0].address, parseUnits('100', 'wei'), signers);
     await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Pausable: paused');
   });
 
   it('should claim reward successfully', async function () {
-    let r = await getRewardRequest(validators[0].address, parseUnits('40', 'wei'), validators);
+    let r = await getRewardRequest(validators[0].address, parseUnits('40', 'wei'), signers);
     await expect(dpos.claimReward(r.rewardBytes, r.sigs))
       .to.emit(dpos, 'RewardClaimed')
       .withArgs(validators[0].address, 40, 60);
 
-    r = await getRewardRequest(validators[0].address, parseUnits('90', 'wei'), validators);
+    r = await getRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers);
     await expect(dpos.claimReward(r.rewardBytes, r.sigs))
       .to.emit(dpos, 'RewardClaimed')
       .withArgs(validators[0].address, 50, 10);
   });
 
   it('should fail to claim reward more than amount in mining pool', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), validators);
+    const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
     await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Reward pool is smaller than new reward');
   });
 
   it('should fail to claim reward if there is no new reward', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('0'), validators);
+    const r = await getRewardRequest(validators[0].address, parseUnits('0'), signers);
     await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('No new reward');
   });
 
   it('should fail to claim reward with insufficient signatures', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), [validators[0], validators[1]]);
+    const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), [signers[0], signers[1]]);
     await expect(dpos.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
   });
 
   it('should fail to claim reward with disordered signatures', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), validators);
+    const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), signers);
     await expect(dpos.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[1], r.sigs[3], r.sigs[2]])).to.be.revertedWith(
       'Signers not in ascending order'
     );

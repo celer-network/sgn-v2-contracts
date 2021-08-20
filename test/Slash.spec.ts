@@ -19,6 +19,7 @@ describe('Slash Tests', function () {
   let celr: TestERC20;
   let admin: Wallet;
   let validators: Wallet[];
+  let signers: Wallet[];
   let expireBlock: number;
 
   beforeEach(async () => {
@@ -26,13 +27,15 @@ describe('Slash Tests', function () {
     dpos = res.dpos;
     celr = res.celr;
     admin = res.admin;
-    validators = await getAccounts(res.admin, [celr], 4);
+    const accounts = await getAccounts(res.admin, [celr], 7);
+    validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
+    signers = [accounts[0], accounts[4], accounts[5], accounts[6]];
     await celr.approve(dpos.address, parseUnits('100'));
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
       await dpos
         .connect(validators[i])
-        .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+        .initializeValidator(signers[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await dpos.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await dpos.connect(validators[i]).bondValidator();
       const blockNumber = await ethers.provider.getBlockNumber();
@@ -53,7 +56,7 @@ describe('Slash Tests', function () {
       0,
       [validators[1].address, consts.ZERO_ADDR],
       [parseUnits('0.1'), parseUnits('0.01')],
-      validators
+      signers
     );
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'DelegationUpdate')
@@ -88,7 +91,7 @@ describe('Slash Tests', function () {
       0,
       [],
       [],
-      validators
+      signers
     );
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'DelegationUpdate')
@@ -138,7 +141,7 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash', async function () {
-    const request = await getSlashRequest(validators[0].address, 1, 100000000, expireBlock, 0, [], [], validators);
+    const request = await getSlashRequest(validators[0].address, 1, 100000000, expireBlock, 0, [], [], signers);
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'DelegationUpdate')
       .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.2'), 0, parseUnits('-0.8'))
@@ -158,7 +161,7 @@ describe('Slash Tests', function () {
       10,
       [],
       [],
-      validators
+      signers
     );
     await expect(dpos.slash(request.slashBytes, request.sigs))
       .to.emit(dpos, 'ValidatorStatusUpdate')
@@ -180,7 +183,7 @@ describe('Slash Tests', function () {
       0,
       [],
       [],
-      [validators[1], validators[2]]
+      [signers[1], signers[2]]
     );
     await expect(dpos.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Quorum not reached');
 
@@ -192,11 +195,11 @@ describe('Slash Tests', function () {
       0,
       [consts.ZERO_ADDR],
       [parseUnits('1')],
-      validators
+      signers
     );
     await expect(dpos.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Invalid collectors');
 
-    request = await getSlashRequest(validators[0].address, 1, consts.SLASH_FACTOR, expireBlock, 0, [], [], validators);
+    request = await getSlashRequest(validators[0].address, 1, consts.SLASH_FACTOR, expireBlock, 0, [], [], signers);
     await advanceBlockNumber(10);
     await expect(dpos.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Slash expired');
   });
@@ -211,7 +214,7 @@ describe('Slash Tests', function () {
       0,
       [],
       [],
-      validators
+      signers
     );
     await expect(dpos.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Pausable: paused');
 

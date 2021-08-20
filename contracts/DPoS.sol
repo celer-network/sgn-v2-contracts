@@ -157,8 +157,8 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
         require(validator.status == ValidatorStatus.Null, "Validator is initialized");
-        require(validators[_signer].status == ValidatorStatus.Null, "Signer is other's validator");
-        require(valSigners[valAddr].valAddr == address(0), "Validator is other's signer");
+        require(validators[_signer].status == ValidatorStatus.Null, "Signer is other validator");
+        require(valSigners[valAddr].valAddr == address(0), "Validator is other signer");
         require(valSigners[_signer].valAddr == address(0), "Signer already used");
         require(_commissionRate <= COMMISSION_RATE_BASE, "Invalid commission rate");
         require(_minSelfDelegation >= params[ParamName.MinSelfDelegation], "Insufficient min self delegation");
@@ -181,13 +181,15 @@ contract DPoS is Ownable, Pausable, Whitelist, Govern {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator not initialized");
-        delete valSigners[validator.signer];
-        if (_signer != valAddr) {
-            require(validators[_signer].status == ValidatorStatus.Null, "Signer is other's validator");
-        }
         require(valSigners[_signer].valAddr == address(0), "Signer already used");
+        if (_signer != valAddr) {
+            require(validators[_signer].status == ValidatorStatus.Null, "Signer is other validator");
+        }
+
+        address currentSigner = validator.signer;
         validator.signer = _signer;
-        valSigners[_signer] = ValSigner(valAddr, false);
+        valSigners[_signer] = valSigners[currentSigner];
+        delete valSigners[currentSigner];
         emit ValidatorParamsUpdate(valAddr, _signer, validator.minSelfDelegation, validator.commissionRate);
     }
 

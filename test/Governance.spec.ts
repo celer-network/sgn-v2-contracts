@@ -6,41 +6,41 @@ import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { DPoS, TestERC20 } from '../typechain';
+import { Staking, TestERC20 } from '../typechain';
 
 describe('Governance Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { dpos, celr } = await deployContracts(admin);
-    return { admin, dpos, celr };
+    const { staking, celr } = await deployContracts(admin);
+    return { admin, staking, celr };
   }
 
-  let dpos: DPoS;
+  let staking: Staking;
   let celr: TestERC20;
   let admin: Wallet;
   let validators: Wallet[];
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
-    dpos = res.dpos;
+    staking = res.staking;
     celr = res.celr;
     admin = res.admin;
     validators = await getAccounts(res.admin, [celr], 4);
     for (let i = 0; i < 4; i++) {
-      await celr.connect(validators[i]).approve(dpos.address, parseUnits('100'));
-      await dpos
+      await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
+      await staking
         .connect(validators[i])
         .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
-      await dpos.connect(validators[i]).delegate(validators[i].address, parseUnits('6'));
-      await dpos.connect(validators[i]).bondValidator();
+      await staking.connect(validators[i]).delegate(validators[i].address, parseUnits('6'));
+      await staking.connect(validators[i]).bondValidator();
     }
-    await celr.approve(dpos.address, parseUnits('100'));
+    await celr.approve(staking.address, parseUnits('100'));
   });
 
   it('should createParamProposal successfully', async function () {
     const newSlashTimeout = consts.SLASH_TIMEOUT + 1;
     const blockNumber = await ethers.provider.getBlockNumber();
-    await expect(dpos.createParamProposal(consts.ENUM_SLASH_TIMEOUT, newSlashTimeout))
-      .to.emit(dpos, 'CreateParamProposal')
+    await expect(staking.createParamProposal(consts.ENUM_SLASH_TIMEOUT, newSlashTimeout))
+      .to.emit(staking, 'CreateParamProposal')
       .withArgs(
         0,
         admin.address,
@@ -57,50 +57,50 @@ describe('Governance Tests', function () {
     const paramValue = 25;
 
     beforeEach(async () => {
-      await dpos.createParamProposal(paramType, paramValue);
+      await staking.createParamProposal(paramType, paramValue);
     });
 
     it('should fail to voteParam if not validator', async function () {
-      await expect(dpos.voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
+      await expect(staking.voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
         'Caller is not a bonded validator'
       );
     });
 
     it('should fail to voteParam for a proposal with an invalid status', async function () {
-      await expect(dpos.connect(validators[0]).voteParam(proposalId + 1, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-        'Invalid proposal status'
-      );
+      await expect(
+        staking.connect(validators[0]).voteParam(proposalId + 1, consts.ENUM_VOTE_TYPE_YES)
+      ).to.be.revertedWith('Invalid proposal status');
     });
 
     it('should vote successfully as a validator', async function () {
-      await expect(dpos.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES))
-        .to.emit(dpos, 'VoteParam')
+      await expect(staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES))
+        .to.emit(staking, 'VoteParam')
         .withArgs(proposalId, validators[0].address, consts.ENUM_VOTE_TYPE_YES);
     });
 
     describe('after a validtor votes successfully', async () => {
       beforeEach(async () => {
-        await dpos.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES);
+        await staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES);
       });
 
       it('should fail to vote for the same proposal twice', async function () {
-        await expect(dpos.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-          'Voter has voted'
-        );
+        await expect(
+          staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)
+        ).to.be.revertedWith('Voter has voted');
       });
 
       it('should fail to confirmParamProposal before the vote deadline', async function () {
-        await expect(dpos.confirmParamProposal(proposalId)).to.be.revertedWith('Vote deadline not reached');
+        await expect(staking.confirmParamProposal(proposalId)).to.be.revertedWith('Vote deadline not reached');
       });
 
       it('should accept proposal after over 2/3 voted for Yes', async function () {
-        await expect(dpos.connect(validators[1]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES))
-          .to.emit(dpos, 'VoteParam')
+        await expect(staking.connect(validators[1]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES))
+          .to.emit(staking, 'VoteParam')
           .withArgs(proposalId, validators[1].address, consts.ENUM_VOTE_TYPE_YES);
-        await dpos.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES);
+        await staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES);
         await advanceBlockNumber(consts.GOVERN_VOTE_TIMEOUT);
-        await expect(dpos.confirmParamProposal(proposalId))
-          .to.emit(dpos, 'ConfirmParamProposal')
+        await expect(staking.confirmParamProposal(proposalId))
+          .to.emit(staking, 'ConfirmParamProposal')
           .withArgs(proposalId, true, paramType, paramValue);
       });
 
@@ -110,14 +110,14 @@ describe('Governance Tests', function () {
         });
 
         it('should fail to vote after the vote deadline', async function () {
-          await expect(dpos.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-            'Vote deadline passed'
-          );
+          await expect(
+            staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)
+          ).to.be.revertedWith('Vote deadline passed');
         });
 
         it('should reject proposal successfully', async function () {
-          await expect(dpos.confirmParamProposal(proposalId))
-            .to.emit(dpos, 'ConfirmParamProposal')
+          await expect(staking.confirmParamProposal(proposalId))
+            .to.emit(staking, 'ConfirmParamProposal')
             .withArgs(proposalId, false, paramType, paramValue);
         });
       });

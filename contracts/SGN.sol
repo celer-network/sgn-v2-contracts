@@ -7,16 +7,15 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./libraries/PbSgn.sol";
-import "./DPoS.sol";
+import "./Staking.sol";
 
 /**
- * @title Sidechain contract of SGN
- * TODO: complete implementation of reward and withdrawal
+ * @title contract of SGN chain
  */
 contract SGN is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-    DPoS public immutable dpos;
+    Staking public immutable staking;
     bytes32[] public deposits;
     // account -> (token -> amount)
     mapping(address => mapping(address => uint256)) public withdrawnAmts;
@@ -29,11 +28,11 @@ contract SGN is Ownable, Pausable {
 
     /**
      * @notice SGN constructor
-     * @dev Need to deploy DPoS contract first before deploying SGN contract
-     * @param _dpos address of DPoS Contract
+     * @dev Need to deploy Staking contract first before deploying SGN contract
+     * @param _staking address of Staking Contract
      */
-    constructor(DPoS _dpos) {
-        dpos = _dpos;
+    constructor(Staking _staking) {
+        staking = _staking;
     }
 
     /**
@@ -43,8 +42,8 @@ contract SGN is Ownable, Pausable {
     function updateSgnAddr(bytes calldata _sgnAddr) external {
         address valAddr = msg.sender;
 
-        DPoS.ValidatorStatus status = dpos.getValidatorStatus(valAddr);
-        require(status == DPoS.ValidatorStatus.Unbonded, "Not unbonded validator");
+        Staking.ValidatorStatus status = staking.getValidatorStatus(valAddr);
+        require(status == Staking.ValidatorStatus.Unbonded, "Not unbonded validator");
 
         bytes memory oldAddr = sgnAddrs[valAddr];
         sgnAddrs[valAddr] = _sgnAddr;
@@ -71,7 +70,7 @@ contract SGN is Ownable, Pausable {
      * @param _sigs list of validator signatures
      */
     function withdraw(bytes calldata _withdrawalRequest, bytes[] calldata _sigs) external whenNotPaused {
-        dpos.verifySignatures(_withdrawalRequest, _sigs);
+        staking.verifySignatures(_withdrawalRequest, _sigs);
         PbSgn.Withdrawal memory withdrawal = PbSgn.decWithdrawal(_withdrawalRequest);
 
         uint256 amount = withdrawal.cumulativeAmount - withdrawnAmts[withdrawal.account][withdrawal.token];

@@ -13,7 +13,7 @@ GO_REPO=https://${GH_TOKEN}@github.com/celer-network/sgn-v2
 
 # xx.sol under contracts/, no need for .sol suffix, if sol file is in subfolder, just add the relative path
 solFiles=(
-  DPoS
+  Staking
   SGN
 )
 

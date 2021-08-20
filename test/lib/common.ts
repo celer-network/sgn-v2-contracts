@@ -4,8 +4,8 @@ import { ethers, waffle } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { DPoS, SGN, TestERC20 } from '../../typechain';
-import { DPoS__factory, SGN__factory, TestERC20__factory } from '../../typechain';
+import { Staking, SGN, TestERC20 } from '../../typechain';
+import { Staking__factory, SGN__factory, TestERC20__factory } from '../../typechain';
 
 import * as consts from './constants';
 
@@ -17,7 +17,7 @@ export function loadFixture<T>(fixture: Fixture<T>): Promise<T> {
 }
 
 interface DeploymentInfo {
-  dpos: DPoS;
+  staking: Staking;
   sgn: SGN;
   celr: TestERC20;
 }
@@ -27,8 +27,8 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
   const celr = await testERC20Factory.deploy();
   await celr.deployed();
 
-  const dposFactory = (await ethers.getContractFactory('DPoS')) as DPoS__factory;
-  const dpos = await dposFactory.deploy(
+  const stakingFactory = (await ethers.getContractFactory('Staking')) as Staking__factory;
+  const staking = await stakingFactory.deploy(
     celr.address,
     consts.GOVERN_PROPOSAL_DEPOSIT,
     consts.GOVERN_VOTE_TIMEOUT,
@@ -39,13 +39,13 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
     consts.ADVANCE_NOTICE_PERIOD,
     consts.VALIDATOR_BOND_INTERVAL
   );
-  await dpos.deployed();
+  await staking.deployed();
 
   const sgnFactory = (await ethers.getContractFactory('SGN')) as SGN__factory;
-  const sgn = await sgnFactory.deploy(dpos.address);
+  const sgn = await sgnFactory.deploy(staking.address);
   await sgn.deployed();
 
-  return { dpos, sgn, celr };
+  return { staking, sgn, celr };
 }
 
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {

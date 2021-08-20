@@ -67,9 +67,9 @@ describe('Governance Tests', function () {
     });
 
     it('should fail to voteParam for a proposal with an invalid status', async function () {
-      await expect(staking.connect(validators[0]).voteParam(proposalId + 1, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-        'Invalid proposal status'
-      );
+      await expect(
+        staking.connect(validators[0]).voteParam(proposalId + 1, consts.ENUM_VOTE_TYPE_YES)
+      ).to.be.revertedWith('Invalid proposal status');
     });
 
     it('should vote successfully as a validator', async function () {
@@ -84,9 +84,9 @@ describe('Governance Tests', function () {
       });
 
       it('should fail to vote for the same proposal twice', async function () {
-        await expect(staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-          'Voter has voted'
-        );
+        await expect(
+          staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)
+        ).to.be.revertedWith('Voter has voted');
       });
 
       it('should fail to confirmParamProposal before the vote deadline', async function () {
@@ -110,9 +110,9 @@ describe('Governance Tests', function () {
         });
 
         it('should fail to vote after the vote deadline', async function () {
-          await expect(staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
-            'Vote deadline passed'
-          );
+          await expect(
+            staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)
+          ).to.be.revertedWith('Vote deadline passed');
         });
 
         it('should reject proposal successfully', async function () {

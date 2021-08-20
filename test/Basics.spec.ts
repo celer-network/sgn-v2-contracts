@@ -43,7 +43,9 @@ describe('Basic Tests', function () {
   it('should fail to initialize a validator when paused', async function () {
     await staking.pause();
     await expect(
-      staking.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+      staking
+        .connect(validator)
+        .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     ).to.be.revertedWith('Pausable: paused');
   });
 
@@ -62,7 +64,9 @@ describe('Basic Tests', function () {
   it('should fail to initialize a non-whitelisted validator when whitelist is enabled', async function () {
     await staking.enableWhitelist();
     await expect(
-      staking.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+      staking
+        .connect(validator)
+        .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     ).to.be.revertedWith('caller is not whitelisted');
   });
 
@@ -70,32 +74,36 @@ describe('Basic Tests', function () {
     await staking.enableWhitelist();
     await staking.addWhitelisted(validator.address);
     await expect(
-      staking.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+      staking
+        .connect(validator)
+        .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     )
       .to.emit(staking, 'ValidatorParamsUpdate')
       .withArgs(validator.address, validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
   });
 
-  it('should initialize a validator and update sidechain address successfully', async function () {
+  it('should initialize a validator and update sgn address successfully', async function () {
     await expect(
-      staking.connect(validator).initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
+      staking
+        .connect(validator)
+        .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     )
       .to.emit(staking, 'ValidatorParamsUpdate')
       .withArgs(validator.address, validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
 
-    const sidechainAddr = keccak256(['string'], ['sgnaddr1']);
-    await expect(sgn.connect(validator).updateSgnAddr(sidechainAddr))
+    const sgnAddr = keccak256(['string'], ['sgnaddr1']);
+    await expect(sgn.connect(validator).updateSgnAddr(sgnAddr))
       .to.emit(sgn, 'SgnAddrUpdate')
-      .withArgs(validator.address, '0x', sidechainAddr);
+      .withArgs(validator.address, '0x', sgnAddr);
   });
 
   describe('after one validator finishes initialization', async () => {
-    const sidechainAddr = keccak256(['string'], ['sgnaddr']);
+    const sgnAddr = keccak256(['string'], ['sgnaddr']);
     beforeEach(async () => {
       await staking
         .connect(validator)
         .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
-      await sgn.connect(validator).updateSgnAddr(sidechainAddr);
+      await sgn.connect(validator).updateSgnAddr(sgnAddr);
     });
 
     it('should fail to initialize the same validator twice', async function () {
@@ -107,10 +115,10 @@ describe('Basic Tests', function () {
     });
 
     it('should update sidechain address by validator successfully', async function () {
-      const newSidechainAddr = keccak256(['string'], ['sgnaddr_new']);
-      await expect(sgn.connect(validator).updateSgnAddr(newSidechainAddr))
+      const newSgnAddr = keccak256(['string'], ['sgnaddr_new']);
+      await expect(sgn.connect(validator).updateSgnAddr(newSgnAddr))
         .to.emit(sgn, 'SgnAddrUpdate')
-        .withArgs(validator.address, sidechainAddr, newSidechainAddr);
+        .withArgs(validator.address, sgnAddr, newSgnAddr);
     });
 
     it('should fail to delegate when paused', async function () {
@@ -221,8 +229,8 @@ describe('Basic Tests', function () {
           });
 
           it('should fail to undelegate more than it delegated', async function () {
-            await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))).to.be
-              .reverted;
+            await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))).to
+              .be.reverted;
           });
 
           it('should remove the validator after validator undelegate to become under minSelfDelegation', async function () {

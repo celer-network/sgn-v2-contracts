@@ -12,8 +12,7 @@ import "./Govern.sol";
 import "./Whitelist.sol";
 
 /**
- * @title A Staking contract shared by every sidechain
- * @notice This contract holds the basic logic of Staking in Celer's coherent sidechain system
+ * @title A Staking contract shared by all external sidechains and apps
  */
 contract Staking is Ownable, Pausable, Whitelist, Govern {
     uint256 constant CELR_DECIMAL = 1e18;

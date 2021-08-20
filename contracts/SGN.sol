@@ -10,8 +10,7 @@ import "./libraries/PbSgn.sol";
 import "./Staking.sol";
 
 /**
- * @title Sidechain contract of SGN
- * TODO: complete implementation of reward and withdrawal
+ * @title contract of SGN chain
  */
 contract SGN is Ownable, Pausable {
     using SafeERC20 for IERC20;

@@ -91,7 +91,9 @@ describe('Multiple validators Tests', function () {
       const res = await staking.validators(validators[1].address);
       expect(res.status).to.equal(consts.STATUS_UNBONDING);
 
-      await expect(staking.confirmUnbondedValidator(validators[1].address)).to.be.revertedWith('Unbond block not reached');
+      await expect(staking.confirmUnbondedValidator(validators[1].address)).to.be.revertedWith(
+        'Unbond block not reached'
+      );
 
       await advanceBlockNumber(consts.SLASH_TIMEOUT);
       await expect(staking.confirmUnbondedValidator(validators[1].address))

@@ -75,7 +75,9 @@ describe('Reward Tests', function () {
 
   it('should fail to claim reward more than amount in mining pool', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Reward pool is smaller than new reward');
+    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
+      'Reward pool is smaller than new reward'
+    );
   });
 
   it('should fail to claim reward if there is no new reward', async function () {

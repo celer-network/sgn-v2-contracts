@@ -17,8 +17,8 @@ export const COMMISSION_RATE = 100;
 export const SLASH_FACTOR = 50000; // 5%
 
 export const STATUS_UNBONDED = 1;
-export const STATUS_BONDED = 2;
-export const STATUS_UNBONDING = 3;
+export const STATUS_UNBONDING = 2;
+export const STATUS_BONDED = 3;
 
 export const ENUM_PROPOSAL_DEPOSIT = 0;
 export const ENUM_GOVERN_VOTE_TIMEOUT = 1;

@@ -27,8 +27,8 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     enum ValidatorStatus {
         Null,
         Unbonded,
-        Bonded,
-        Unbonding
+        Unbonding,
+        Bonded
     }
 
     struct Undelegation {

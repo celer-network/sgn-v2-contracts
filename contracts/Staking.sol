@@ -460,7 +460,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @param _proposalId the id of the parameter proposal
      * @param _vote the type of vote
      */
-    function voteParam(uint256 _proposalId, VoteType _vote) external {
+    function voteParam(uint256 _proposalId, VoteOption _vote) external {
         address valAddr = msg.sender;
         require(validators[valAddr].status == ValidatorStatus.Bonded, "Caller is not a bonded validator");
         internalVoteParam(_proposalId, valAddr, _vote);
@@ -474,7 +474,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         // check Yes votes only for now
         uint256 yesVotes;
         for (uint32 i = 0; i < bondedValAddrs.length; i++) {
-            if (getParamProposalVote(_proposalId, bondedValAddrs[i]) == VoteType.Yes) {
+            if (getParamProposalVote(_proposalId, bondedValAddrs[i]) == VoteOption.Yes) {
                 yesVotes += validators[bondedValAddrs[i]].tokens;
             }
         }

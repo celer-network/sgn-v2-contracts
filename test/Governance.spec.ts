@@ -61,31 +61,31 @@ describe('Governance Tests', function () {
     });
 
     it('should fail to voteParam if not validator', async function () {
-      await expect(staking.voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)).to.be.revertedWith(
+      await expect(staking.voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES)).to.be.revertedWith(
         'Caller is not a bonded validator'
       );
     });
 
     it('should fail to voteParam for a proposal with an invalid status', async function () {
       await expect(
-        staking.connect(validators[0]).voteParam(proposalId + 1, consts.ENUM_VOTE_TYPE_YES)
+        staking.connect(validators[0]).voteParam(proposalId + 1, consts.ENUM_VOTE_OPTION_YES)
       ).to.be.revertedWith('Invalid proposal status');
     });
 
     it('should vote successfully as a validator', async function () {
-      await expect(staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES))
+      await expect(staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES))
         .to.emit(staking, 'VoteParam')
-        .withArgs(proposalId, validators[0].address, consts.ENUM_VOTE_TYPE_YES);
+        .withArgs(proposalId, validators[0].address, consts.ENUM_VOTE_OPTION_YES);
     });
 
     describe('after a validtor votes successfully', async () => {
       beforeEach(async () => {
-        await staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES);
+        await staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES);
       });
 
       it('should fail to vote for the same proposal twice', async function () {
         await expect(
-          staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)
+          staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES)
         ).to.be.revertedWith('Voter has voted');
       });
 
@@ -94,10 +94,10 @@ describe('Governance Tests', function () {
       });
 
       it('should accept proposal after over 2/3 voted for Yes', async function () {
-        await expect(staking.connect(validators[1]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES))
+        await expect(staking.connect(validators[1]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES))
           .to.emit(staking, 'VoteParam')
-          .withArgs(proposalId, validators[1].address, consts.ENUM_VOTE_TYPE_YES);
-        await staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES);
+          .withArgs(proposalId, validators[1].address, consts.ENUM_VOTE_OPTION_YES);
+        await staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES);
         await advanceBlockNumber(consts.GOVERN_VOTE_TIMEOUT);
         await expect(staking.confirmParamProposal(proposalId))
           .to.emit(staking, 'ConfirmParamProposal')
@@ -111,7 +111,7 @@ describe('Governance Tests', function () {
 
         it('should fail to vote after the vote deadline', async function () {
           await expect(
-            staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_TYPE_YES)
+            staking.connect(validators[2]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES)
           ).to.be.revertedWith('Vote deadline passed');
         });
 

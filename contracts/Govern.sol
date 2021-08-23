@@ -32,11 +32,11 @@ contract Govern {
         Closed
     }
 
-    enum VoteType {
-        Unvoted,
+    enum VoteOption {
+        Null,
         Yes,
-        No,
-        Abstain
+        Abstain,
+        No
     }
 
     struct ParamProposal {
@@ -46,7 +46,7 @@ contract Govern {
         ParamName name;
         uint256 newValue;
         ProposalStatus status;
-        mapping(address => VoteType) votes;
+        mapping(address => VoteOption) votes;
     }
 
     IERC20 public celerToken;
@@ -64,7 +64,7 @@ contract Govern {
         uint256 newValue
     );
 
-    event VoteParam(uint256 proposalId, address voter, VoteType voteType);
+    event VoteParam(uint256 proposalId, address voter, VoteOption vote);
 
     event ConfirmParamProposal(uint256 proposalId, bool passed, ParamName name, uint256 newValue);
 
@@ -123,7 +123,7 @@ contract Govern {
      * @param _voter the voter address
      * @return the vote type of the given voter on the given parameter proposal
      */
-    function getParamProposalVote(uint256 _proposalId, address _voter) public view returns (VoteType) {
+    function getParamProposalVote(uint256 _proposalId, address _voter) public view returns (VoteOption) {
         return paramProposals[_proposalId].votes[_voter];
     }
 
@@ -161,12 +161,12 @@ contract Govern {
     function internalVoteParam(
         uint256 _proposalId,
         address _voter,
-        VoteType _vote
+        VoteOption _vote
     ) internal {
         ParamProposal storage p = paramProposals[_proposalId];
         require(p.status == ProposalStatus.Voting, "Invalid proposal status");
         require(block.number < p.voteDeadline, "Vote deadline passed");
-        require(p.votes[_voter] == VoteType.Unvoted, "Voter has voted");
+        require(p.votes[_voter] == VoteOption.Null, "Voter has voted");
 
         p.votes[_voter] = _vote;
 

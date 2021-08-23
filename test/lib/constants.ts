@@ -28,10 +28,10 @@ export const ENUM_MIN_VALIDATOR_TOKENS = 5;
 export const ENUM_MIN_SELF_DELEGATION = 6;
 export const ENUM_ADVANCE_NOTICE_PEROID = 7;
 
-export const ENUM_VOTE_TYPE_UNVOTED = 0;
-export const ENUM_VOTE_TYPE_YES = 1;
-export const ENUM_VOTE_TYPE_NO = 2;
-export const ENUM_VOTE_TYPE_ABSTAIN = 3;
+export const ENUM_VOTE_OPTION_UNVOTED = 0;
+export const ENUM_VOTE_OPTION_YES = 1;
+export const ENUM_VOTE_OPTION_ABSTAIN = 2;
+export const ENUM_VOTE_OPTION_NO = 3;
 
 export const SUB_FEE = parseUnits('100000000', 'wei');
 

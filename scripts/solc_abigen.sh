@@ -78,12 +78,12 @@ run_abigen() {
   git fetch
   git checkout $BRANCH || git checkout -b $BRANCH
 
-  mkdir -p contracts
-  abigen -combined-json ../$CNTRDIR/combined.json -pkg contracts -out contracts/combined.go
+  mkdir -p eth
+  abigen -combined-json ../$CNTRDIR/combined.json -pkg eth -out eth/contracts.go
 
-  pushd contracts
-  #go build # make sure contracts pkg can build
-  popd
+  #pushd eth
+  #go build # make sure eth pkg can build
+  #popd
 
   if [[ $(git status --porcelain) ]]; then
     echo "Sync-ing go binding"

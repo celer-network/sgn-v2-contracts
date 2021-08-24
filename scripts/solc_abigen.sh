@@ -76,7 +76,8 @@ run_abigen() {
   git clone $GO_REPO
   pushd sgn-v2
   git fetch
-  git checkout $BRANCH || git checkout -b $BRANCH
+  BR="$BRANCH-binding"
+  git checkout $BR || git checkout -b $BR
 
   mkdir -p eth
   abigen -combined-json ../$CNTRDIR/combined.json -pkg eth -out eth/contracts.go

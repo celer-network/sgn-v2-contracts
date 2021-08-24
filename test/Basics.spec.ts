@@ -204,10 +204,12 @@ describe('Basic Tests', function () {
         });
 
         it('should decrease min self delegation and only able to bondValidator after notice period', async function () {
-          const lowerMinSelfDelegation = consts.MIN_SELF_DELEGATION.sub(1000000);
-          await expect(staking.connect(validator).updateMinSelfDelegation(lowerMinSelfDelegation))
+          let minSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
+          await staking.connect(validator).updateMinSelfDelegation(minSelfDelegation)
+          minSelfDelegation = consts.MIN_SELF_DELEGATION.add(10);
+          await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation))
             .to.emit(staking, 'ValidatorParamsUpdate')
-            .withArgs(validator.address, validator.address, lowerMinSelfDelegation, consts.COMMISSION_RATE);
+            .withArgs(validator.address, validator.address, minSelfDelegation, consts.COMMISSION_RATE);
 
           await expect(staking.connect(validator).bondValidator()).to.be.revertedWith('Bond block not reached');
 
@@ -253,17 +255,20 @@ describe('Basic Tests', function () {
               );
           });
 
-          it('should increase min self delegation successfully', async function () {
-            const higherMinSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
-            await expect(staking.connect(validator).updateMinSelfDelegation(higherMinSelfDelegation))
+          it('should pass min self delegation updates', async function () {
+            let minSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
+            await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation))
               .to.emit(staking, 'ValidatorParamsUpdate')
-              .withArgs(validator.address, validator.address, higherMinSelfDelegation, consts.COMMISSION_RATE);
-          });
-
-          it('should fail to decrease min self delegation', async function () {
-            const lowerMinSelfDelegation = consts.MIN_SELF_DELEGATION.sub(1000000);
-            await expect(staking.connect(validator).updateMinSelfDelegation(lowerMinSelfDelegation)).to.be.revertedWith(
+              .withArgs(validator.address, validator.address, minSelfDelegation, consts.COMMISSION_RATE);
+            
+            minSelfDelegation = consts.MIN_SELF_DELEGATION.add(100);
+            await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation)).to.be.revertedWith(
               'Validator is bonded'
+            );
+
+            minSelfDelegation = consts.MIN_SELF_DELEGATION.sub(100);
+            await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation)).to.be.revertedWith(
+              'Insufficient min self delegation'
             );
           });
 
@@ -280,7 +285,7 @@ describe('Basic Tests', function () {
             it('should completeUndelegate succesfully', async function () {
               // before withdrawTimeout
               await expect(staking.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
-                'no undelegation ready to be completed'
+                'No undelegation ready to be completed'
               );
 
               // after withdrawTimeout
@@ -292,7 +297,7 @@ describe('Basic Tests', function () {
 
               // second completeUndelegate
               await expect(staking.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
-                'no undelegation ready to be completed'
+                'No undelegation ready to be completed'
               );
             });
 
@@ -316,7 +321,7 @@ describe('Basic Tests', function () {
               expect(res.undelegations[0].shares).to.equal(parseUnits('1'));
 
               await expect(staking.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
-                'no undelegation ready to be completed'
+                'No undelegation ready to be completed'
               );
 
               await advanceBlockNumber(consts.SLASH_TIMEOUT);

@@ -76,7 +76,7 @@ describe('Reward Tests', function () {
   it('should fail to claim reward more than amount in reward pool', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
     await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
-      'Reward pool is smaller than new reward'
+      'Insufficient reward pool'
     );
   });
 

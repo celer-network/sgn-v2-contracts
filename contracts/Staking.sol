@@ -341,7 +341,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         }
         delegator.undelegations.head = i;
 
-        require(undelegationShares > 0, "no undelegation ready to be completed");
+        require(undelegationShares > 0, "No undelegation ready to be completed");
         uint256 tokens = _shareToTokens(undelegationShares, validator.undelegationTokens, validator.undelegationShares);
         validator.undelegationShares -= undelegationShares;
         validator.undelegationTokens -= tokens;
@@ -361,7 +361,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
 
         uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
         require(newReward > 0, "No new reward");
-        require(rewardPool >= newReward, "Reward pool is smaller than new reward");
+        require(rewardPool >= newReward, "Insufficient reward pool");
 
         claimedReward[reward.recipient] = reward.cumulativeReward;
         rewardPool -= newReward;
@@ -391,7 +391,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
-        require(_minSelfDelegation >= CELR_DECIMAL, "Invalid min self delegation");
+        require(_minSelfDelegation >= params[ParamName.MinSelfDelegation], "Insufficient min self delegation");
         if (_minSelfDelegation < validator.minSelfDelegation) {
             require(validator.status != ValidatorStatus.Bonded, "Validator is bonded");
             validator.bondBlock = block.number + params[ParamName.AdvanceNoticePeriod];
@@ -462,7 +462,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      */
     function voteParam(uint256 _proposalId, VoteOption _vote) external {
         address valAddr = msg.sender;
-        require(validators[valAddr].status == ValidatorStatus.Bonded, "Caller is not a bonded validator");
+        require(validators[valAddr].status == ValidatorStatus.Bonded, "Voter is not a bonded validator");
         internalVoteParam(_proposalId, valAddr, _vote);
     }
 

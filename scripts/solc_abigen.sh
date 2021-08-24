@@ -76,20 +76,21 @@ run_abigen() {
   git clone $GO_REPO
   pushd sgn-v2
   git fetch
-  git checkout $BRANCH || git checkout -b $BRANCH
+  BR="$BRANCH-binding"
+  git checkout $BR || git checkout -b $BR
 
-  mkdir -p contracts
-  abigen -combined-json ../$CNTRDIR/combined.json -pkg contracts -out contracts/combined.go
+  mkdir -p eth
+  abigen -combined-json ../$CNTRDIR/combined.json -pkg eth -out eth/contracts.go
 
-  pushd contracts
-  #go build # make sure contracts pkg can build
-  popd
+  #pushd eth
+  #go build # make sure eth pkg can build
+  #popd
 
   if [[ $(git status --porcelain) ]]; then
     echo "Sync-ing go binding"
     git add .
     git commit -m "Sync go binding based on contract PR $PRID" -m "contract repo commit: $PR_COMMIT_ID"
-    git push origin $BRANCH
+    git push origin $BR
   fi
   popd
 }

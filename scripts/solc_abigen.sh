@@ -90,7 +90,7 @@ run_abigen() {
     echo "Sync-ing go binding"
     git add .
     git commit -m "Sync go binding based on contract PR $PRID" -m "contract repo commit: $PR_COMMIT_ID"
-    git push origin $BRANCH
+    git push origin $BR
   fi
   popd
 }

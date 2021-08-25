@@ -55,10 +55,10 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         uint256 undelegationTokens; // tokens being undelegated
         uint256 undelegationShares; // shares of tokens being undelegated
         mapping(address => Delegator) delegators;
-        uint256 bondBlock; // cannot become bonded before this block
-        uint256 unbondBlock; // cannot become unbonded before this block
-        uint256 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
         uint256 minSelfDelegation;
+        uint64 bondBlock; // cannot become bonded before this block
+        uint64 unbondBlock; // cannot become unbonded before this block
+        uint64 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
     }
 
     uint256 public rewardPool;
@@ -141,7 +141,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     function initializeValidator(
         address _signer,
         uint256 _minSelfDelegation,
-        uint256 _commissionRate
+        uint64 _commissionRate
     ) external whenNotPaused onlyWhitelisted {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
@@ -369,7 +369,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @notice Update commission rate
      * @param _newRate new commission rate
      */
-    function updateCommissionRate(uint256 _newRate) external {
+    function updateCommissionRate(uint64 _newRate) external {
         address valAddr = msg.sender;
         Validator storage validator = validators[valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
@@ -389,7 +389,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         require(_minSelfDelegation >= params[ParamName.MinSelfDelegation], "Insufficient min self delegation");
         if (_minSelfDelegation < validator.minSelfDelegation) {
             require(validator.status != ValidatorStatus.Bonded, "Validator is bonded");
-            validator.bondBlock = block.number + params[ParamName.AdvanceNoticePeriod];
+            validator.bondBlock = uint64(block.number + params[ParamName.AdvanceNoticePeriod]);
         }
         validator.minSelfDelegation = _minSelfDelegation;
         emit ValidatorNotice(valAddr, "min-self-delegation", abi.encode(_minSelfDelegation), address(0));
@@ -422,7 +422,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             if (request.jailPeriod > 0 || !hasMinRequiredTokens(valAddr, true)) {
                 _unbondValidator(valAddr);
                 if (request.jailPeriod > 0) {
-                    validator.bondBlock = block.number + request.jailPeriod;
+                    validator.bondBlock = uint64(block.number + request.jailPeriod);
                 }
             }
         }
@@ -757,7 +757,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     function _setUnbondingValidator(address _valAddr) private {
         Validator storage validator = validators[_valAddr];
         validator.status = ValidatorStatus.Unbonding;
-        validator.unbondBlock = block.number + params[ParamName.SlashTimeout];
+        validator.unbondBlock = uint64(block.number + params[ParamName.SlashTimeout]);
         bondedTokens -= validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, ValidatorStatus.Unbonding);
     }

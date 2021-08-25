@@ -17,3 +17,11 @@ message Relay {
     uint64 nonce = 7;
     bytes src_transfer_id = 8 [(soltype) = "bytes32"];
 }
+
+// reward for liquidity provider, serialized msg will be signed by validators
+message LiqProvReward {
+    uint64 chain_id = 1;
+    bytes receiver = 2 [ (soltype) = "address" ];
+    bytes token = 3 [ (soltype) = "address" ];
+    bytes amount = 4 [ (soltype) = "uint256" ];
+}

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { ethers } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
@@ -13,6 +14,8 @@ describe('Reward Tests', function () {
     const { staking, celr } = await deployContracts(admin);
     return { admin, staking, celr };
   }
+
+  const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
   let celr: TestERC20;
@@ -50,9 +53,10 @@ describe('Reward Tests', function () {
 
   it('should update the commission rate lock successfully', async function () {
     let newRate = consts.COMMISSION_RATE + 10;
+    const data = abiCoder.encode(['uint256'], [newRate]);
     await expect(staking.connect(validators[0]).updateCommissionRate(newRate))
-      .to.emit(staking, 'ValidatorParamsUpdate')
-      .withArgs(validators[0].address, validators[0].address, consts.MIN_SELF_DELEGATION, newRate);
+      .to.emit(staking, 'ValidatorNotice')
+      .withArgs(validators[0].address, 'commission', data, consts.ZERO_ADDR);
   });
 
   it('should fail to claim reward when paused', async function () {
@@ -75,9 +79,7 @@ describe('Reward Tests', function () {
 
   it('should fail to claim reward more than amount in reward pool', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
-      'Insufficient reward pool'
-    );
+    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Insufficient reward pool');
   });
 
   it('should fail to claim reward if there is no new reward', async function () {

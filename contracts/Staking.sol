@@ -72,12 +72,8 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     mapping(uint256 => bool) public slashNonces;
 
     /* Events */
-    event ValidatorParamsUpdate(
-        address indexed valAddr,
-        address indexed signer,
-        uint256 minSelfDelegation,
-        uint256 commissionRate
-    );
+    event ValidatorNotice(address indexed valAddr, string key, bytes data, address externalContract);
+
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event DelegationUpdate(
         address indexed valAddr,
@@ -164,7 +160,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         signerVals[_signer] = valAddr;
 
         delegate(valAddr, _minSelfDelegation);
-        emit ValidatorParamsUpdate(valAddr, _signer, _minSelfDelegation, _commissionRate);
+        emit ValidatorNotice(valAddr, "init", abi.encode(_signer, _minSelfDelegation, _commissionRate), address(0));
     }
 
     /**
@@ -184,7 +180,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         validator.signer = _signer;
         signerVals[_signer] = valAddr;
 
-        emit ValidatorParamsUpdate(valAddr, _signer, validator.minSelfDelegation, validator.commissionRate);
+        emit ValidatorNotice(valAddr, "signer", abi.encode(_signer), address(0));
     }
 
     /**
@@ -380,7 +376,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         validator.commissionRate = _newRate;
-        emit ValidatorParamsUpdate(valAddr, validator.signer, validator.minSelfDelegation, _newRate);
+        emit ValidatorNotice(valAddr, "commission", abi.encode(_newRate), address(0));
     }
 
     /**
@@ -397,7 +393,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             validator.bondBlock = block.number + params[ParamName.AdvanceNoticePeriod];
         }
         validator.minSelfDelegation = _minSelfDelegation;
-        emit ValidatorParamsUpdate(valAddr, validator.signer, _minSelfDelegation, validator.commissionRate);
+        emit ValidatorNotice(valAddr, "min-self-delegation", abi.encode(_minSelfDelegation), address(0));
     }
 
     /**

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { ethers } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
@@ -12,6 +13,7 @@ describe('Signer Tests', function () {
     const { staking, celr } = await deployContracts(admin);
     return { admin, staking, celr };
   }
+  const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
   let celr: TestERC20;
@@ -66,13 +68,16 @@ describe('Signer Tests', function () {
     });
 
     it('should update signer correctly', async function () {
-      await expect(staking.connect(validators[0]).updateValidatorSigner(admin.address))
-        .to.emit(staking, 'ValidatorParamsUpdate')
-        .withArgs(validators[0].address, admin.address, consts.MIN_VALIDATOR_TOKENS, consts.COMMISSION_RATE);
+      let data = abiCoder.encode(['address'], [admin.address]);
 
+      await expect(staking.connect(validators[0]).updateValidatorSigner(admin.address))
+        .to.emit(staking, 'ValidatorNotice')
+        .withArgs(validators[0].address, 'signer', data, consts.ZERO_ADDR);
+
+      data = abiCoder.encode(['address'], [validators[0].address]);
       await expect(staking.connect(validators[0]).updateValidatorSigner(validators[0].address))
-        .to.emit(staking, 'ValidatorParamsUpdate')
-        .withArgs(validators[0].address, validators[0].address, consts.MIN_VALIDATOR_TOKENS, consts.COMMISSION_RATE);
+        .to.emit(staking, 'ValidatorNotice')
+        .withArgs(validators[0].address, 'signer', data, consts.ZERO_ADDR);
     });
 
     it('should fail to update signer with invalid inputs', async function () {

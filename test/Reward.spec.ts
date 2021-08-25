@@ -4,10 +4,10 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, loadFixture } from './lib/common';
-import { getRewardRequest } from './lib/proto';
-import * as consts from './lib/constants';
 import { Staking, TestERC20 } from '../typechain';
+import { deployContracts, getAccounts, loadFixture } from './lib/common';
+import * as consts from './lib/constants';
+import { getRewardRequest } from './lib/proto';
 
 describe('Reward Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -52,7 +52,7 @@ describe('Reward Tests', function () {
   });
 
   it('should update the commission rate lock successfully', async function () {
-    let newRate = consts.COMMISSION_RATE + 10;
+    const newRate = consts.COMMISSION_RATE + 10;
     const data = abiCoder.encode(['uint256'], [newRate]);
     await expect(staking.connect(validators[0]).updateCommissionRate(newRate))
       .to.emit(staking, 'ValidatorNotice')

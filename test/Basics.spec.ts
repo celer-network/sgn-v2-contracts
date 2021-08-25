@@ -5,9 +5,9 @@ import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
+import { SGN, Staking, TestERC20 } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { Staking, SGN, TestERC20 } from '../typechain';
 
 describe('Basic Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -65,16 +65,16 @@ describe('Basic Tests', function () {
   });
 
   it('should fail to initialize a non-whitelisted validator when whitelist is enabled', async function () {
-    await staking.enableWhitelist();
+    await staking.setWhitelistEnabled(true);
     await expect(
       staking
         .connect(validator)
         .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
-    ).to.be.revertedWith('caller is not whitelisted');
+    ).to.be.revertedWith('Caller is not whitelisted');
   });
 
   it('should initialize a whitelisted validator successfully when whitelist is enabled', async function () {
-    await staking.enableWhitelist();
+    await staking.setWhitelistEnabled(true);
     await staking.addWhitelisted(validator.address);
 
     const data = abiCoder.encode(
@@ -303,7 +303,7 @@ describe('Basic Tests', function () {
                 .reverted;
             });
 
-            it('should completeUndelegate succesfully', async function () {
+            it('should completeUndelegate successfully', async function () {
               // before withdrawTimeout
               await expect(staking.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
                 'No undelegation ready to be completed'

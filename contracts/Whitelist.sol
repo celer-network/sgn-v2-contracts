@@ -3,7 +3,7 @@
 pragma solidity 0.8.7;
 
 abstract contract Whitelist {
-    mapping(address => bool) whitelist;
+    mapping(address => bool) public whitelist;
     bool public whitelistEnabled;
 
     event WhitelistedAdded(address account);
@@ -11,7 +11,7 @@ abstract contract Whitelist {
 
     modifier onlyWhitelisted() {
         if (whitelistEnabled) {
-            require(isWhitelisted(msg.sender), "caller is not whitelisted");
+            require(isWhitelisted(msg.sender), "Caller is not whitelisted");
         }
         _;
     }
@@ -20,22 +20,18 @@ abstract contract Whitelist {
         return whitelist[account];
     }
 
-    function _enableWhitelist() internal virtual {
-        whitelistEnabled = true;
-    }
-
-    function _disableWhitelist() internal virtual {
-        whitelistEnabled = false;
+    function _setWhitelistEnabled(bool _whitelistEnabled) internal virtual {
+        whitelistEnabled = _whitelistEnabled;
     }
 
     function _addWhitelisted(address account) internal virtual {
-        require(!isWhitelisted(account), "already whitelisted");
+        require(!isWhitelisted(account), "Already whitelisted");
         whitelist[account] = true;
         emit WhitelistedAdded(account);
     }
 
     function _removeWhitelisted(address account) internal virtual {
-        require(isWhitelisted(account), "not whitelisted");
+        require(isWhitelisted(account), "Not whitelisted");
         whitelist[account] = false;
         emit WhitelistedRemoved(account);
     }

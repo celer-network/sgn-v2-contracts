@@ -15,14 +15,14 @@ import "./Whitelist.sol";
  * @title A Staking contract shared by all external sidechains and apps
  */
 contract Staking is Ownable, Pausable, Whitelist, Govern {
+    using SafeERC20 for IERC20;
+    using ECDSA for bytes32;
+
     uint256 constant CELR_DECIMAL = 1e18;
     uint256 constant MAX_INT = 2**256 - 1;
     uint256 constant COMMISSION_RATE_BASE = 10000; // 1 commissionRate means 0.01%
     uint256 constant MAX_UNDELEGATION_ENTRIES = 10;
     uint256 constant SLASH_FACTOR_DECIMAL = 1e6;
-
-    using SafeERC20 for IERC20;
-    using ECDSA for bytes32;
 
     enum ValidatorStatus {
         Null,
@@ -94,7 +94,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @param _governVoteTimeout voting timeout for a governance proposal
      * @param _slashTimeout the locking time for funds to be potentially slashed
      * @param _maxBondedValidators the maximum number of bonded validators
-     * @param _minValidatorTokens the global minimum token amout requirement for bonded validator
+     * @param _minValidatorTokens the global minimum token amount requirement for bonded validator
      * @param _minSelfDelegation minimal amount of self-delegated tokens
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
      * @param _validatorBondInterval min interval between bondValidator
@@ -507,17 +507,10 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Enable whitelist
+     * @notice Set whitelistEnabled
      */
-    function enableWhitelist() external onlyOwner {
-        _enableWhitelist();
-    }
-
-    /**
-     * @notice Disable whitelist
-     */
-    function disableWhitelist() external onlyOwner {
-        _disableWhitelist();
+    function setWhitelistEnabled(bool _whitelistEnabled) external onlyOwner {
+        _setWhitelistEnabled(_whitelistEnabled);
     }
 
     /**

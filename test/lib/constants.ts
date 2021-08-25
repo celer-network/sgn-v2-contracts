@@ -26,7 +26,7 @@ export const ENUM_SLASH_TIMEOUT = 2;
 export const ENUM_MAX_VALIDATOR_NUM = 4;
 export const ENUM_MIN_VALIDATOR_TOKENS = 5;
 export const ENUM_MIN_SELF_DELEGATION = 6;
-export const ENUM_ADVANCE_NOTICE_PEROID = 7;
+export const ENUM_ADVANCE_NOTICE_PERIOD = 7;
 
 export const ENUM_VOTE_OPTION_UNVOTED = 0;
 export const ENUM_VOTE_OPTION_YES = 1;

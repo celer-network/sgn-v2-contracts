@@ -4,9 +4,9 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import * as consts from './lib/constants';
 import { Staking, TestERC20 } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
+import * as consts from './lib/constants';
 
 describe('Governance Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -78,7 +78,7 @@ describe('Governance Tests', function () {
         .withArgs(proposalId, validators[0].address, consts.ENUM_VOTE_OPTION_YES);
     });
 
-    describe('after a validtor votes successfully', async () => {
+    describe('after a validator votes successfully', async () => {
       beforeEach(async () => {
         await staking.connect(validators[0]).voteParam(proposalId, consts.ENUM_VOTE_OPTION_YES);
       });

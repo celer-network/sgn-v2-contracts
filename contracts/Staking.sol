@@ -72,12 +72,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     mapping(uint256 => bool) public slashNonces;
 
     /* Events */
-    event ValidatorParamsUpdate(
-        address indexed valAddr,
-        address indexed signer,
-        uint256 minSelfDelegation,
-        uint256 commissionRate
-    );
+    event ValidatorNotice(address indexed valAddr, string key, bytes data, address from);
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event DelegationUpdate(
         address indexed valAddr,
@@ -164,7 +159,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         signerVals[_signer] = valAddr;
 
         delegate(valAddr, _minSelfDelegation);
-        emit ValidatorParamsUpdate(valAddr, _signer, _minSelfDelegation, _commissionRate);
+        emit ValidatorNotice(valAddr, "init", abi.encode(_signer, _minSelfDelegation, _commissionRate), address(0));
     }
 
     /**
@@ -184,7 +179,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         validator.signer = _signer;
         signerVals[_signer] = valAddr;
 
-        emit ValidatorParamsUpdate(valAddr, _signer, validator.minSelfDelegation, validator.commissionRate);
+        emit ValidatorNotice(valAddr, "signer", abi.encode(_signer), address(0));
     }
 
     /**
@@ -380,7 +375,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         require(_newRate <= COMMISSION_RATE_BASE, "Invalid new rate");
         validator.commissionRate = _newRate;
-        emit ValidatorParamsUpdate(valAddr, validator.signer, validator.minSelfDelegation, _newRate);
+        emit ValidatorNotice(valAddr, "commission", abi.encode(_newRate), address(0));
     }
 
     /**
@@ -397,7 +392,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             validator.bondBlock = block.number + params[ParamName.AdvanceNoticePeriod];
         }
         validator.minSelfDelegation = _minSelfDelegation;
-        emit ValidatorParamsUpdate(valAddr, validator.signer, _minSelfDelegation, validator.commissionRate);
+        emit ValidatorNotice(valAddr, "min-self-delegation", abi.encode(_minSelfDelegation), address(0));
     }
 
     /**
@@ -496,6 +491,19 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         celerToken.safeTransferFrom(contributor, address(this), _amount);
 
         emit RewardPoolContribution(contributor, _amount, rewardPool);
+    }
+
+    /**
+     * @notice Validator send notice event
+     */
+    function validatorNotice(
+        address _valAddr,
+        string calldata _key,
+        bytes calldata _data
+    ) external {
+        Validator storage validator = validators[_valAddr];
+        require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
+        emit ValidatorNotice(_valAddr, _key, _data, msg.sender);
     }
 
     /**
@@ -670,7 +678,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @notice Get the delegator info of a specific validator
      * @param _delAddr the address of the delegator
      * @return DelegatorInfo from all related validators
-     */
+     * TODO: add back if contract size fits, or move to external contract
     function getDelegatorInfos(address _delAddr) public view returns (DelegatorInfo[] memory) {
         DelegatorInfo[] memory infos = new DelegatorInfo[](valAddrs.length);
         uint32 num = 0;
@@ -686,7 +694,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             delegatorInfos[i] = infos[i];
         }
         return delegatorInfos;
-    }
+    }*/
 
     /**
      * @notice Check the given address is a validator or not

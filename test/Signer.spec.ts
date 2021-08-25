@@ -1,19 +1,23 @@
 import { expect } from 'chai';
+import { ethers } from 'hardhat';
 
+import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { Staking, TestERC20 } from '../typechain';
+import { Staking, SGN, TestERC20 } from '../typechain';
 
 describe('Signer Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, celr } = await deployContracts(admin);
-    return { admin, staking, celr };
+    const { staking, sgn, celr } = await deployContracts(admin);
+    return { admin, staking, sgn, celr };
   }
+  const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
+  let sgn: SGN;
   let celr: TestERC20;
   let admin: Wallet;
   let validators: Wallet[];
@@ -22,6 +26,7 @@ describe('Signer Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
+    sgn = res.sgn;
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 4);
@@ -56,6 +61,15 @@ describe('Signer Tests', function () {
       .withArgs(validators[0].address, consts.STATUS_BONDED);
   });
 
+  it('should update sgn address using signer address', async function () {
+    const sgnAddr = keccak256(['string'], ['sgnaddr1']);
+    await expect(sgn.connect(signers[0]).updateSgnAddr(sgnAddr))
+      .to.emit(sgn, 'SgnAddrUpdate')
+      .withArgs(validators[0].address, '0x', sgnAddr)
+      .to.emit(staking, 'ValidatorNotice')
+      .withArgs(validators[0].address, 'sgn-addr', sgnAddr, sgn.address);
+  });
+
   describe('after both validators are bonded', async () => {
     beforeEach(async () => {
       await staking
@@ -66,13 +80,16 @@ describe('Signer Tests', function () {
     });
 
     it('should update signer correctly', async function () {
-      await expect(staking.connect(validators[0]).updateValidatorSigner(admin.address))
-        .to.emit(staking, 'ValidatorParamsUpdate')
-        .withArgs(validators[0].address, admin.address, consts.MIN_VALIDATOR_TOKENS, consts.COMMISSION_RATE);
+      let data = abiCoder.encode(['address'], [admin.address]);
 
+      await expect(staking.connect(validators[0]).updateValidatorSigner(admin.address))
+        .to.emit(staking, 'ValidatorNotice')
+        .withArgs(validators[0].address, 'signer', data, consts.ZERO_ADDR);
+
+      data = abiCoder.encode(['address'], [validators[0].address]);
       await expect(staking.connect(validators[0]).updateValidatorSigner(validators[0].address))
-        .to.emit(staking, 'ValidatorParamsUpdate')
-        .withArgs(validators[0].address, validators[0].address, consts.MIN_VALIDATOR_TOKENS, consts.COMMISSION_RATE);
+        .to.emit(staking, 'ValidatorNotice')
+        .withArgs(validators[0].address, 'signer', data, consts.ZERO_ADDR);
     });
 
     it('should fail to update signer with invalid inputs', async function () {

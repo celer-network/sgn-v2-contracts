@@ -1,0 +1,19 @@
+syntax = "proto3";
+option go_package = "github.com/celer-network/sgn-v2/proto/signer";
+
+import "google/protobuf/descriptor.proto";
+
+package signer;
+
+extend google.protobuf.FieldOptions { string soltype = 1007; }
+
+// represent one validator's signer, tokens is its weight
+message Signer {
+    bytes address = 1 [ (soltype) = "address" ];
+    bytes tokens = 2 [ (soltype) = "uint256" ];
+}
+
+// sorted by signer address
+message SortedSigners {
+    repeated Signer signers = 1;
+}

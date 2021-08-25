@@ -2,7 +2,6 @@ import { Fixture } from 'ethereum-waffle';
 import { ethers, waffle } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
-import { BigNumber } from '@ethersproject/bignumber';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Staking, SGN, TestERC20 } from '../../typechain';

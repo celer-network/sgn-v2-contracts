@@ -7,7 +7,7 @@ library PbSigner {
     using Pb for Pb.Buffer;  // so we can call Pb funcs on Buffer obj
 
     struct Signer {
-        address address;   // tag: 1
+        address account;   // tag: 1
         uint256 tokens;   // tag: 2
     } // end struct Signer
 
@@ -20,7 +20,7 @@ library PbSigner {
             (tag, wire) = buf.decKey();
             if (false) {} // solidity has no switch/case
             else if (tag == 1) {
-                m.address = Pb._address(buf.decBytes());
+                m.account = Pb._address(buf.decBytes());
             }
             else if (tag == 2) {
                 m.tokens = Pb._uint256(buf.decBytes());

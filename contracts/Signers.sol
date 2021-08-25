@@ -7,7 +7,7 @@ import "./libraries/PbSigner.sol";
 // only store hash of serialized SortedSigners
 contract Signers {
     event SignersUpdated(
-        bytes curSigners; // serialized SortedSigners
+        bytes curSigners // serialized SortedSigners
     );
 
     bytes32 ssHash;

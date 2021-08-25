@@ -5,9 +5,9 @@ import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
+import { SGN, Staking, TestERC20 } from '../typechain';
 import { deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { Staking, SGN, TestERC20 } from '../typechain';
 
 describe('Signer Tests', function () {
   async function fixture([admin]: Wallet[]) {

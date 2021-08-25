@@ -4,10 +4,10 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getSlashRequest } from './lib/proto';
-import * as consts from './lib/constants';
 import { Staking, TestERC20 } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
+import * as consts from './lib/constants';
+import { getSlashRequest } from './lib/proto';
 
 describe('Slash Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -152,7 +152,7 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash with jail period', async function () {
-    let request = await getSlashRequest(validators[0].address, 1, 0, expireBlock, 10, [], [], signers);
+    const request = await getSlashRequest(validators[0].address, 1, 0, expireBlock, 10, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[0].address, consts.STATUS_UNBONDING)

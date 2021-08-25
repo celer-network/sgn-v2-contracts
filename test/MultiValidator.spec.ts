@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import * as consts from './lib/constants';
 import { Staking, TestERC20 } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
+import * as consts from './lib/constants';
 
 describe('Multiple validators Tests', function () {
   async function fixture([admin]: Wallet[]) {

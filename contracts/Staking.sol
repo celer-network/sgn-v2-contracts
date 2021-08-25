@@ -199,7 +199,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         require(block.number >= validator.bondBlock, "Bond block not reached");
         require(block.number >= nextBondBlock, "Too frequent validator bond");
         nextBondBlock = block.number + params[ParamName.ValidatorBondInterval];
-        require(_hasMinTokens(valAddr, valAddr), "Not have min tokens");
+        require(hasMinRequiredTokens(valAddr, true), "Not have min tokens");
 
         uint256 maxBondedValidators = params[ParamName.MaxBondedValidators];
         // if the number of validators has not reached the max_validator_num,
@@ -289,7 +289,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             return;
         } else if (validator.status == ValidatorStatus.Bonded) {
             bondedTokens -= tokens;
-            if (!_hasMinTokens(_valAddr, delAddr)) {
+            if (!hasMinRequiredTokens(_valAddr, delAddr == _valAddr)) {
                 _unbondValidator(_valAddr);
             }
         }
@@ -419,7 +419,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         validator.tokens -= slashAmt;
         if (validator.status == ValidatorStatus.Bonded) {
             bondedTokens -= slashAmt;
-            if (request.jailPeriod > 0 || !_hasMinTokens(valAddr, valAddr)) {
+            if (request.jailPeriod > 0 || !hasMinRequiredTokens(valAddr, true)) {
                 _unbondValidator(valAddr);
                 if (request.jailPeriod > 0) {
                     validator.bondBlock = block.number + request.jailPeriod;
@@ -638,6 +638,26 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         return minTokens;
     }
 
+    /**
+     * @notice Check if min token requirements are met
+     * @param _valAddr the address of the validator
+     * @param _checkSelfDelegation check self delegation
+     */
+    function hasMinRequiredTokens(address _valAddr, bool _checkSelfDelegation) public view returns (bool) {
+        Validator storage v = validators[_valAddr];
+        uint256 valTokens = v.tokens;
+        if (valTokens < params[ParamName.MinValidatorTokens]) {
+            return false;
+        }
+        if (_checkSelfDelegation) {
+            uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, valTokens, v.shares);
+            if (selfDelegation < v.minSelfDelegation) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // used for delegator external view output
     struct DelegatorInfo {
         address valAddr;
@@ -786,26 +806,6 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             }
         }
         revert("Not bonded validator");
-    }
-
-    /**
-     * @notice Check if min token requirements are met
-     * @param _valAddr the address of the validator
-     * @param _delAddr involved delegator address
-     */
-    function _hasMinTokens(address _valAddr, address _delAddr) private view returns (bool) {
-        Validator storage v = validators[_valAddr];
-        uint256 valTokens = v.tokens;
-        if (valTokens < params[ParamName.MinValidatorTokens]) {
-            return false;
-        }
-        if (_valAddr == _delAddr) {
-            uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, valTokens, v.shares);
-            if (selfDelegation < v.minSelfDelegation) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**

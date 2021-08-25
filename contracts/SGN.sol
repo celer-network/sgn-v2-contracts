@@ -51,7 +51,7 @@ contract SGN is Ownable, Pausable {
         bytes memory oldAddr = sgnAddrs[valAddr];
         sgnAddrs[valAddr] = _sgnAddr;
 
-        staking.validatorNotice(valAddr, 'sgn-addr', _sgnAddr);
+        staking.validatorNotice(valAddr, "sgn-addr", _sgnAddr);
         emit SgnAddrUpdate(valAddr, oldAddr, _sgnAddr);
     }
 

@@ -135,6 +135,8 @@ describe('Basic Tests', function () {
         .withArgs(validator.address, sgnAddr, newSgnAddr)
         .to.emit(staking, 'ValidatorNotice')
         .withArgs(validator.address, 'sgn-addr', newSgnAddr, sgn.address);
+
+      await expect(sgn.connect(admin).updateSgnAddr(newSgnAddr)).to.be.revertedWith('Not unbonded validator');
     });
 
     it('should fail to delegate when paused', async function () {

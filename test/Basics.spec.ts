@@ -106,7 +106,9 @@ describe('Basic Tests', function () {
     const sgnAddr = keccak256(['string'], ['sgnaddr1']);
     await expect(sgn.connect(validator).updateSgnAddr(sgnAddr))
       .to.emit(sgn, 'SgnAddrUpdate')
-      .withArgs(validator.address, '0x', sgnAddr);
+      .withArgs(validator.address, '0x', sgnAddr)
+      .to.emit(staking, 'ValidatorNotice')
+      .withArgs(validator.address, 'sgn-addr', sgnAddr, sgn.address);
   });
 
   describe('after one validator finishes initialization', async () => {
@@ -126,11 +128,13 @@ describe('Basic Tests', function () {
       ).to.be.revertedWith('Validator is initialized');
     });
 
-    it('should update sidechain address by validator successfully', async function () {
+    it('should pass sgn address update', async function () {
       const newSgnAddr = keccak256(['string'], ['sgnaddr_new']);
       await expect(sgn.connect(validator).updateSgnAddr(newSgnAddr))
         .to.emit(sgn, 'SgnAddrUpdate')
-        .withArgs(validator.address, sgnAddr, newSgnAddr);
+        .withArgs(validator.address, sgnAddr, newSgnAddr)
+        .to.emit(staking, 'ValidatorNotice')
+        .withArgs(validator.address, 'sgn-addr', newSgnAddr, sgn.address);
     });
 
     it('should fail to delegate when paused', async function () {

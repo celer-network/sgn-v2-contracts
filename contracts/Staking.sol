@@ -72,8 +72,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     mapping(uint256 => bool) public slashNonces;
 
     /* Events */
-    event ValidatorNotice(address indexed valAddr, string key, bytes data, address externalContract);
-
+    event ValidatorNotice(address indexed valAddr, string key, bytes data, address from);
     event ValidatorStatusUpdate(address indexed valAddr, ValidatorStatus indexed status);
     event DelegationUpdate(
         address indexed valAddr,
@@ -495,6 +494,19 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
+     * @notice Validator send notice event
+     */
+    function validatorNotice(
+        address _valAddr,
+        string calldata _key,
+        bytes calldata _data
+    ) external {
+        Validator storage validator = validators[_valAddr];
+        require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
+        emit ValidatorNotice(_valAddr, _key, _data, msg.sender);
+    }
+
+    /**
      * @notice Enable whitelist
      */
     function enableWhitelist() external onlyOwner {
@@ -666,7 +678,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      * @notice Get the delegator info of a specific validator
      * @param _delAddr the address of the delegator
      * @return DelegatorInfo from all related validators
-     */
+     * TODO: add back if contract size fits, or move to external contract
     function getDelegatorInfos(address _delAddr) public view returns (DelegatorInfo[] memory) {
         DelegatorInfo[] memory infos = new DelegatorInfo[](valAddrs.length);
         uint32 num = 0;
@@ -682,7 +694,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
             delegatorInfos[i] = infos[i];
         }
         return delegatorInfos;
-    }
+    }*/
 
     /**
      * @notice Check the given address is a validator or not

@@ -41,6 +41,9 @@ contract SGN is Ownable, Pausable {
      */
     function updateSgnAddr(bytes calldata _sgnAddr) external {
         address valAddr = msg.sender;
+        if (staking.signerVals(msg.sender) != address(0)) {
+            valAddr = staking.signerVals(msg.sender);
+        }
 
         Staking.ValidatorStatus status = staking.getValidatorStatus(valAddr);
         require(status == Staking.ValidatorStatus.Unbonded, "Not unbonded validator");
@@ -48,6 +51,7 @@ contract SGN is Ownable, Pausable {
         bytes memory oldAddr = sgnAddrs[valAddr];
         sgnAddrs[valAddr] = _sgnAddr;
 
+        staking.validatorNotice(valAddr, 'sgn-addr', _sgnAddr);
         emit SgnAddrUpdate(valAddr, oldAddr, _sgnAddr);
     }
 

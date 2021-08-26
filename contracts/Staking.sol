@@ -73,14 +73,12 @@ contract Staking is Ownable, Pausable, Whitelist {
     }
 
     IERC20 public immutable celerToken;
-    uint256 public rewardPool;
     uint256 public bondedTokens;
     uint256 public nextBondBlock;
     address[] public valAddrs;
     address[] public bondedValAddrs; // TODO: deal with set size reduction
     mapping(address => Validator) public validators; // key is valAddr
     mapping(address => address) public signerVals; // signerAddr -> valAddr
-    mapping(address => uint256) public claimedReward;
     mapping(uint256 => bool) public slashNonces;
 
     mapping(ParamName => uint256) public params;
@@ -99,8 +97,6 @@ contract Staking is Ownable, Pausable, Whitelist {
     event Undelegated(address indexed valAddr, address indexed delAddr, uint256 amount);
     event Slash(address indexed valAddr, uint64 nonce, uint256 slashAmt);
     event SlashAmtCollected(address indexed recipient, uint256 amount);
-    event RewardClaimed(address indexed recipient, uint256 reward, uint256 rewardPool);
-    event RewardPoolContribution(address indexed contributor, uint256 contribution, uint256 rewardPoolSize);
 
     /**
      * @notice Staking constructor
@@ -359,27 +355,6 @@ contract Staking is Ownable, Pausable, Whitelist {
     }
 
     /**
-     * @notice Claim reward
-     * @dev Here we use cumulative reward to make claim process idempotent
-     * @param _rewardRequest reward request bytes coded in protobuf
-     * @param _sigs list of validator signatures
-     */
-    function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
-        verifySignatures(_rewardRequest, _sigs);
-        PbStaking.Reward memory reward = PbStaking.decReward(_rewardRequest);
-
-        uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
-        require(newReward > 0, "No new reward");
-        require(rewardPool >= newReward, "Insufficient reward pool");
-
-        claimedReward[reward.recipient] = reward.cumulativeReward;
-        rewardPool -= newReward;
-        celerToken.safeTransfer(reward.recipient, newReward);
-
-        emit RewardClaimed(reward.recipient, newReward, rewardPool);
-    }
-
-    /**
      * @notice Update commission rate
      * @param _newRate new commission rate
      */
@@ -460,20 +435,7 @@ contract Staking is Ownable, Pausable, Whitelist {
             }
         }
         require(slashAmt >= collectAmt, "Invalid collectors");
-        rewardPool += slashAmt - collectAmt;
         emit Slash(valAddr, request.nonce, slashAmt);
-    }
-
-    /**
-     * @notice Contribute CELR tokens to the reward pool
-     * @param _amount the amount of CELR tokens to contribute
-     */
-    function contributeToRewardPool(uint256 _amount) external whenNotPaused {
-        address contributor = msg.sender;
-        rewardPool += _amount;
-        celerToken.safeTransferFrom(contributor, address(this), _amount);
-
-        emit RewardPoolContribution(contributor, _amount, rewardPool);
     }
 
     /**

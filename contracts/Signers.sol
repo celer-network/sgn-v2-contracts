@@ -12,7 +12,7 @@ contract Signers {
 
     bytes32 ssHash;
 
-    constructor(bytes _ss) {
+    constructor(bytes memory _ss) {
         ssHash = keccak256(_ss);
     }
 

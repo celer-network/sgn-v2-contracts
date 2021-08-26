@@ -23,8 +23,8 @@ contract Signers {
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
         address prev = address(0);
         for (uint256 i = 0; i < ss.signers.length; i++) {
-            require(ss.signers[i].address > prev, "signer address not in ascending order");
-            prev = ss.signers[i].address;
+            require(ss.signers[i].account > prev, "signer address not in ascending order");
+            prev = ss.signers[i].account;
         }
         ssHash = keccak256(_newss);
         emit SignersUpdated(_newss);
@@ -48,11 +48,11 @@ contract Signers {
             require(curSigner > prev, "Signers not in ascending order");
             prev = curSigner;
             // now find match signer in ss, add its token
-            while (curSigner > ss.signers[signerIdx].address) {
+            while (curSigner > ss.signers[signerIdx].account) {
                 signerIdx += 1;
                 require(signerIdx < ss.signers.length, "signer not found in current sorted signers");
             }
-            if (curSigner == ss.signers[signerIdx].address) {
+            if (curSigner == ss.signers[signerIdx].account) {
                 signedTokens += ss.signers[signerIdx].tokens;
             }
         }

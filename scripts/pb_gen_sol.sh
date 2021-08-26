@@ -1,13 +1,19 @@
 PROTOC_VER=""
 GEN_SOL_VER=""
 
+# need to install and run npx prettier -w contracts
 
 prepare_tools() {
   setup_git
 }
 
-gen_sol() {}
-add_to_pr() {}
+gen_sol() {
+
+}
+
+add_to_pr() {
+
+}
 
 setup_git() {
   git config --global user.email "build@celer.network"

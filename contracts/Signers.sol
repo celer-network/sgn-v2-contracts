@@ -18,7 +18,7 @@ contract Signers {
 
     // set new signers
     function update(bytes calldata _newss, bytes calldata _curss, bytes[] calldata _sigs) external {
-        verifySigs(_newss, _curss, sigs);
+        verifySigs(_newss, _curss, _sigs);
         // ensure newss is sorted
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
         address prev = address(0);
@@ -31,7 +31,7 @@ contract Signers {
     }
 
     // first verify _curss hash into ssHash, then verify sigs. sigs must be sorted by signer address
-    function verifySigs(bytes calldata msg, bytes calldata _curss, bytes[] calldata _sigs) external {
+    function verifySigs(bytes memory msg, bytes memory _curss, bytes[] memory _sigs) external {
         require(ssHash == keccak256(_curss), "mismatch current signers");
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_curss); // sorted signers
         uint256 totalTokens; // sum of all signer.tokens, do one loop here for simpler code
@@ -39,12 +39,12 @@ contract Signers {
             totalTokens += ss[i].tokens;
         }
         // recover signer address, add their tokens
-        bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
+        bytes32 hash = keccak256(msg).toEthSignedMessageHash();
         uint256 signedTokens; // sum of signer who are in sigs
         address prev = address(0);
         uint256 signerIdx = 0;
         for (uint256 i = 0; i < _sigs.length; i++) {
-            curSigner = hash.recover(_sigs[i]);
+            address curSigner = hash.recover(_sigs[i]);
             require(curSigner > prev, "Signers not in ascending order");
             prev = curSigner;
             // now find match signer in ss, add its token

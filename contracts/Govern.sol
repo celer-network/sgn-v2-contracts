@@ -4,6 +4,7 @@ pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./Staking.sol";
 
 /**
@@ -32,7 +33,7 @@ contract Govern {
         address proposer;
         uint256 deposit;
         uint256 voteDeadline;
-        Staking.ParamName name;
+        dt.ParamName name;
         uint256 newValue;
         ProposalStatus status;
         mapping(address => VoteOption) votes;
@@ -46,11 +47,11 @@ contract Govern {
         address proposer,
         uint256 deposit,
         uint256 voteDeadline,
-        Staking.ParamName name,
+        dt.ParamName name,
         uint256 newValue
     );
     event VoteParam(uint256 proposalId, address voter, VoteOption vote);
-    event ConfirmParamProposal(uint256 proposalId, bool passed, Staking.ParamName name, uint256 newValue);
+    event ConfirmParamProposal(uint256 proposalId, bool passed, dt.ParamName name, uint256 newValue);
 
     constructor(Staking _staking, address _celerTokenAddress) {
         staking = _staking;
@@ -72,15 +73,15 @@ contract Govern {
      * @param _name the key of this parameter
      * @param _value the new proposed value of this parameter
      */
-    function createParamProposal(Staking.ParamName _name, uint256 _value) external {
+    function createParamProposal(dt.ParamName _name, uint256 _value) external {
         ParamProposal storage p = paramProposals[nextParamProposalId];
         nextParamProposalId = nextParamProposalId + 1;
         address msgSender = msg.sender;
-        uint256 deposit = staking.getParamValue(Staking.ParamName.ProposalDeposit);
+        uint256 deposit = staking.getParamValue(dt.ParamName.ProposalDeposit);
 
         p.proposer = msgSender;
         p.deposit = deposit;
-        p.voteDeadline = block.number + staking.getParamValue(Staking.ParamName.GovernVoteTimeout);
+        p.voteDeadline = block.number + staking.getParamValue(dt.ParamName.GovernVoteTimeout);
         p.name = _name;
         p.newValue = _value;
         p.status = ProposalStatus.Voting;
@@ -98,7 +99,7 @@ contract Govern {
     function voteParam(uint256 _proposalId, VoteOption _vote) external {
         address valAddr = msg.sender;
         require(
-            staking.getValidatorStatus(valAddr) == Staking.ValidatorStatus.Bonded,
+            staking.getValidatorStatus(valAddr) == dt.ValidatorStatus.Bonded,
             "Voter is not a bonded validator"
         );
         ParamProposal storage p = paramProposals[_proposalId];
@@ -118,7 +119,7 @@ contract Govern {
     function confirmParamProposal(uint256 _proposalId) external {
         uint256 yesVotes;
         uint256 bondedTokens;
-        Staking.ValidatorTokens[] memory validators = staking.getBondedValidatorsTokens();
+        dt.ValidatorTokens[] memory validators = staking.getBondedValidatorsTokens();
         for (uint32 i = 0; i < validators.length; i++) {
             if (getParamProposalVote(_proposalId, validators[i].valAddr) == VoteOption.Yes) {
                 yesVotes += validators[i].tokens;

@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.7;
 
+import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./Staking.sol";
 
 /**
@@ -16,9 +17,9 @@ contract Viewer {
         staking = _staking;
     }
 
-    function getDelegatorInfos(address _delAddr) public view returns (Staking.DelegatorInfo[] memory) {
+    function getDelegatorInfos(address _delAddr) public view returns (dt.DelegatorInfo[] memory) {
         uint256 valNum = staking.getValidatorNum();
-        Staking.DelegatorInfo[] memory infos = new Staking.DelegatorInfo[](valNum);
+        dt.DelegatorInfo[] memory infos = new dt.DelegatorInfo[](valNum);
         uint32 num = 0;
         for (uint32 i = 0; i < valNum; i++) {
             address valAddr = staking.valAddrs(i);
@@ -27,7 +28,7 @@ contract Viewer {
                 num++;
             }
         }
-        Staking.DelegatorInfo[] memory res = new Staking.DelegatorInfo[](num);
+        dt.DelegatorInfo[] memory res = new dt.DelegatorInfo[](num);
         uint32 j = 0;
         for (uint32 i = 0; i < valNum; i++) {
             if (infos[i].shares != 0 || infos[i].undelegationTokens != 0) {

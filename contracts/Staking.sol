@@ -525,14 +525,13 @@ contract Staking is Ownable, Pausable, Whitelist {
      */
     function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view returns (bool) {
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
-        address[] memory signers = new address[](_sigs.length);
         uint256 signedTokens;
         address prev = address(0);
         for (uint256 i = 0; i < _sigs.length; i++) {
-            signers[i] = hash.recover(_sigs[i]);
-            require(signers[i] > prev, "Signers not in ascending order");
-            prev = signers[i];
-            Validator storage validator = validators[signerVals[signers[i]]];
+            address signer = hash.recover(_sigs[i]);
+            require(signer > prev, "Signers not in ascending order");
+            prev = signer;
+            Validator storage validator = validators[signerVals[signer]];
             if (validator.status != ValidatorStatus.Bonded) {
                 continue;
             }
@@ -567,6 +566,45 @@ contract Staking is Ownable, Pausable, Whitelist {
      */
     function getValidatorStatus(address _valAddr) public view returns (ValidatorStatus) {
         return validators[_valAddr].status;
+    }
+
+    /**
+     * @notice Check the given address is a validator or not
+     * @param _addr the address to check
+     * @return the given address is a validator or not
+     */
+    function isBondedValidator(address _addr) public view returns (bool) {
+        return validators[_addr].status == ValidatorStatus.Bonded;
+    }
+
+    /**
+     * @notice Get the number of validators
+     * @return the number of validators
+     */
+    function getValidatorNum() public view returns (uint256) {
+        return valAddrs.length;
+    }
+
+    /**
+     * @notice Get the number of bonded validators
+     * @return the number of bonded validators
+     */
+    function getBondedValidatorNum() public view returns (uint256) {
+        return bondedValAddrs.length;
+    }
+
+    struct ValidatorTokens {
+        address valAddr;
+        uint256 tokens;
+    }
+
+    function getBondedValidatorsTokens() public view returns (ValidatorTokens[] memory) {
+        ValidatorTokens[] memory infos = new ValidatorTokens[](valAddrs.length);
+        for (uint256 i = 1; i < bondedValAddrs.length; i++) {
+            address valAddr = bondedValAddrs[i];
+            infos[i] = ValidatorTokens(valAddr, validators[valAddr].tokens);
+        }
+        return infos;
     }
 
     /**
@@ -662,31 +700,6 @@ contract Staking is Ownable, Pausable, Whitelist {
             delegatorInfos[i] = infos[i];
         }
         return delegatorInfos;
-    }
-
-    /**
-     * @notice Check the given address is a validator or not
-     * @param _addr the address to check
-     * @return the given address is a validator or not
-     */
-    function isBondedValidator(address _addr) public view returns (bool) {
-        return validators[_addr].status == ValidatorStatus.Bonded;
-    }
-
-    /**
-     * @notice Get the number of validators
-     * @return the number of validators
-     */
-    function getValidatorNum() public view returns (uint256) {
-        return valAddrs.length;
-    }
-
-    /**
-     * @notice Get the number of bonded validators
-     * @return the number of bonded validators
-     */
-    function getBondedValidatorNum() public view returns (uint256) {
-        return bondedValAddrs.length;
     }
 
     /**

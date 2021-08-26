@@ -117,13 +117,15 @@ contract Govern {
      */
     function confirmParamProposal(uint256 _proposalId) external {
         uint256 yesVotes;
-        for (uint32 i = 0; i < staking.getBondedValidatorNum(); i++) {
-            address valAddr = staking.bondedValAddrs(i);
-            if (getParamProposalVote(_proposalId, valAddr) == VoteOption.Yes) {
-                yesVotes += staking.getValidatorTokens(valAddr);
+        uint256 bondedTokens;
+        Staking.ValidatorTokens[] memory validators = staking.getBondedValidatorsTokens();
+        for (uint32 i = 0; i < validators.length; i++) {
+            if (getParamProposalVote(_proposalId, validators[i].valAddr) == VoteOption.Yes) {
+                yesVotes += validators[i].tokens;
             }
+            bondedTokens += validators[i].tokens;
         }
-        bool passed = yesVotes >= staking.getQuorumTokens();
+        bool passed = (yesVotes >= (bondedTokens * 2) / 3 + 1);
 
         ParamProposal storage p = paramProposals[_proposalId];
         require(p.status == ProposalStatus.Voting, "Invalid proposal status");

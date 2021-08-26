@@ -19,7 +19,6 @@ contract Reward is Ownable, Pausable {
     event RewardClaimed(address indexed recipient, uint256 reward);
     event RewardPoolContribution(address indexed contributor, uint256 contribution);
 
-
     constructor(Staking _staking, address _celerTokenAddress) {
         staking = _staking;
         celerToken = IERC20(_celerTokenAddress);

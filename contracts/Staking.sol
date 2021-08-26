@@ -608,23 +608,6 @@ contract Staking is Ownable, Pausable, Whitelist {
     }
 
     /**
-     * @notice Get the minimum staking pool of all bonded validators
-     * @return the minimum staking pool of all bonded validators
-     */
-    function getMinValidatorTokens() public view returns (uint256) {
-        uint256 minTokens = validators[bondedValAddrs[0]].tokens;
-        for (uint256 i = 1; i < bondedValAddrs.length; i++) {
-            if (validators[bondedValAddrs[i]].tokens < minTokens) {
-                minTokens = validators[bondedValAddrs[i]].tokens;
-                if (minTokens == 0) {
-                    return 0;
-                }
-            }
-        }
-        return minTokens;
-    }
-
-    /**
      * @notice Check if min token requirements are met
      * @param _valAddr the address of the validator
      * @param _checkSelfDelegation check self delegation
@@ -678,28 +661,6 @@ contract Staking is Ownable, Pausable, Whitelist {
         );
 
         return DelegatorInfo(_valAddr, tokens, d.shares, undelegationTokens, undelegations);
-    }
-
-    /**
-     * @notice Get the delegator info of a specific validator
-     * @param _delAddr the address of the delegator
-     * @return DelegatorInfo from all related validators
-     */
-    function getDelegatorInfos(address _delAddr) public view returns (DelegatorInfo[] memory) {
-        DelegatorInfo[] memory infos = new DelegatorInfo[](valAddrs.length);
-        uint32 num = 0;
-        for (uint32 i = 0; i < valAddrs.length; i++) {
-            Delegator storage d = validators[valAddrs[i]].delegators[_delAddr];
-            if (d.shares == 0 && d.undelegations.head == d.undelegations.tail) {
-                infos[i] = getDelegatorInfo(valAddrs[i], _delAddr);
-                num++;
-            }
-        }
-        DelegatorInfo[] memory delegatorInfos = new DelegatorInfo[](num);
-        for (uint32 i = 0; i < num; i++) {
-            delegatorInfos[i] = infos[i];
-        }
-        return delegatorInfos;
     }
 
     /**

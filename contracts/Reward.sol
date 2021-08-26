@@ -17,6 +17,8 @@ contract Reward is Ownable, Pausable {
     mapping(address => uint256) public claimedReward;
 
     event RewardClaimed(address indexed recipient, uint256 reward);
+    event RewardPoolContribution(address indexed contributor, uint256 contribution);
+
 
     constructor(Staking _staking, address _celerTokenAddress) {
         staking = _staking;
@@ -49,5 +51,16 @@ contract Reward is Ownable, Pausable {
      */
     function drainToken(uint256 _amount) external whenPaused onlyOwner {
         celerToken.safeTransfer(msg.sender, _amount);
+    }
+
+    /**
+     * @notice Contribute CELR tokens to the reward pool
+     * @param _amount the amount of CELR tokens to contribute
+     */
+    function contributeToRewardPool(uint256 _amount) external whenNotPaused {
+        address contributor = msg.sender;
+        celerToken.safeTransferFrom(contributor, address(this), _amount);
+
+        emit RewardPoolContribution(contributor, _amount);
     }
 }

@@ -22,9 +22,9 @@ contract Signers {
         // ensure newss is sorted
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
         address prev = address(0);
-        for (uint256 i = 0; i < ss.length; i++) {
-            require(ss[i].address > prev, "signer address not in ascending order");
-            prev = ss[i].address;
+        for (uint256 i = 0; i < ss.signers.length; i++) {
+            require(ss.signers[i].address > prev, "signer address not in ascending order");
+            prev = ss.signers[i].address;
         }
         ssHash = keccak256(_newss);
         emit SignersUpdated(_newss);
@@ -35,8 +35,8 @@ contract Signers {
         require(ssHash == keccak256(_curss), "mismatch current signers");
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_curss); // sorted signers
         uint256 totalTokens; // sum of all signer.tokens, do one loop here for simpler code
-        for (uint256 i = 0; i < ss.length; i++) {
-            totalTokens += ss[i].tokens;
+        for (uint256 i = 0; i < ss.signers.length; i++) {
+            totalTokens += ss.signers[i].tokens;
         }
         // recover signer address, add their tokens
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
@@ -48,12 +48,12 @@ contract Signers {
             require(curSigner > prev, "Signers not in ascending order");
             prev = curSigner;
             // now find match signer in ss, add its token
-            while (curSigner > ss[signerIdx].address) {
+            while (curSigner > ss.signers[signerIdx].address) {
                 signerIdx += 1;
-                require(signerIdx < ss.length, "signer not found in current sorted signers");
+                require(signerIdx < ss.signers.length, "signer not found in current sorted signers");
             }
-            if (curSigner == ss[signerIdx].address) {
-                signedTokens += ss[signerIdx].tokens;
+            if (curSigner == ss.signers[signerIdx].address) {
+                signedTokens += ss.signers[signerIdx].tokens;
             }
         }
 

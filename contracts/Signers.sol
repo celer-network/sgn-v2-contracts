@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.7;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./libraries/PbSigner.sol";
 
 // only store hash of serialized SortedSigners
@@ -9,7 +10,7 @@ contract Signers {
     event SignersUpdated(
         bytes curSigners // serialized SortedSigners
     );
-
+    using ECDSA for bytes32;
     bytes32 ssHash;
 
     constructor(bytes memory _ss) {

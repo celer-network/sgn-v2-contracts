@@ -646,7 +646,7 @@ contract Staking is Ownable, Pausable, Whitelist {
      * @notice Get the delegator info of a specific validator
      * @param _delAddr the address of the delegator
      * @return DelegatorInfo from all related validators
-     * TODO: add back if contract size fits, or move to external contract
+     */
     function getDelegatorInfos(address _delAddr) public view returns (DelegatorInfo[] memory) {
         DelegatorInfo[] memory infos = new DelegatorInfo[](valAddrs.length);
         uint32 num = 0;
@@ -662,7 +662,7 @@ contract Staking is Ownable, Pausable, Whitelist {
             delegatorInfos[i] = infos[i];
         }
         return delegatorInfos;
-    }*/
+    }
 
     /**
      * @notice Check the given address is a validator or not

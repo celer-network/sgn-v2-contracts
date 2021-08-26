@@ -13,7 +13,7 @@ contract Reward is Ownable, Pausable {
 
     Staking public immutable staking;
     IERC20 public immutable celerToken;
-    
+
     mapping(address => uint256) public claimedReward;
 
     event RewardClaimed(address indexed recipient, uint256 reward);
@@ -50,5 +50,4 @@ contract Reward is Ownable, Pausable {
     function drainToken(uint256 _amount) external whenPaused onlyOwner {
         celerToken.safeTransfer(msg.sender, _amount);
     }
-
 }

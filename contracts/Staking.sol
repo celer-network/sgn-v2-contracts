@@ -8,13 +8,12 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./libraries/PbStaking.sol";
-import "./Govern.sol";
 import "./Whitelist.sol";
 
 /**
  * @title A Staking contract shared by all external sidechains and apps
  */
-contract Staking is Ownable, Pausable, Whitelist, Govern {
+contract Staking is Ownable, Pausable, Whitelist {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
@@ -29,6 +28,18 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         Unbonded,
         Unbonding,
         Bonded
+    }
+
+    enum ParamName {
+        ProposalDeposit,
+        GovernVoteTimeout,
+        SlashTimeout,
+        MaxBondedValidators,
+        MinValidatorTokens,
+        MinSelfDelegation,
+        AdvanceNoticePeriod,
+        ValidatorBondInterval,
+        MaxSlashFactor
     }
 
     struct Undelegation {
@@ -61,6 +72,7 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         uint64 commissionRate; // equal to real commission rate * COMMISSION_RATE_BASE
     }
 
+    IERC20 public immutable celerToken;
     uint256 public rewardPool;
     uint256 public bondedTokens;
     uint256 public nextBondBlock;
@@ -70,6 +82,9 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     mapping(address => address) public signerVals; // signerAddr -> valAddr
     mapping(address => uint256) public claimedReward;
     mapping(uint256 => bool) public slashNonces;
+
+    mapping(ParamName => uint256) public params;
+    address public govContract;
 
     /* Events */
     event ValidatorNotice(address indexed valAddr, string key, bytes data, address from);
@@ -111,20 +126,19 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         uint256 _advanceNoticePeriod,
         uint256 _validatorBondInterval,
         uint256 _maxSlashFactor
-    )
-        Govern(
-            _celerTokenAddress,
-            _governProposalDeposit,
-            _governVoteTimeout,
-            _slashTimeout,
-            _maxBondedValidators,
-            _minValidatorTokens,
-            _minSelfDelegation,
-            _advanceNoticePeriod,
-            _validatorBondInterval,
-            _maxSlashFactor
-        )
-    {}
+    ) {
+        celerToken = IERC20(_celerTokenAddress);
+
+        params[ParamName.ProposalDeposit] = _governProposalDeposit;
+        params[ParamName.GovernVoteTimeout] = _governVoteTimeout;
+        params[ParamName.SlashTimeout] = _slashTimeout;
+        params[ParamName.MaxBondedValidators] = _maxBondedValidators;
+        params[ParamName.MinValidatorTokens] = _minValidatorTokens;
+        params[ParamName.MinSelfDelegation] = _minSelfDelegation;
+        params[ParamName.AdvanceNoticePeriod] = _advanceNoticePeriod;
+        params[ParamName.ValidatorBondInterval] = _validatorBondInterval;
+        params[ParamName.MaxSlashFactor] = _maxSlashFactor;
+    }
 
     receive() external payable {}
 
@@ -451,37 +465,6 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
     }
 
     /**
-     * @notice Vote for a parameter proposal with a specific type of vote
-     * @param _proposalId the id of the parameter proposal
-     * @param _vote the type of vote
-     */
-    function voteParam(uint256 _proposalId, VoteOption _vote) external {
-        address valAddr = msg.sender;
-        require(validators[valAddr].status == ValidatorStatus.Bonded, "Voter is not a bonded validator");
-        internalVoteParam(_proposalId, valAddr, _vote);
-    }
-
-    /**
-     * @notice Confirm a parameter proposal
-     * @param _proposalId the id of the parameter proposal
-     */
-    function confirmParamProposal(uint256 _proposalId) external {
-        // check Yes votes only for now
-        uint256 yesVotes;
-        for (uint32 i = 0; i < bondedValAddrs.length; i++) {
-            if (getParamProposalVote(_proposalId, bondedValAddrs[i]) == VoteOption.Yes) {
-                yesVotes += validators[bondedValAddrs[i]].tokens;
-            }
-        }
-
-        bool passed = yesVotes >= getQuorumTokens();
-        if (!passed) {
-            rewardPool += paramProposals[_proposalId].deposit;
-        }
-        internalConfirmParamProposal(_proposalId, passed);
-    }
-
-    /**
      * @notice Contribute CELR tokens to the reward pool
      * @param _amount the amount of CELR tokens to contribute
      */
@@ -504,6 +487,16 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
         Validator storage validator = validators[_valAddr];
         require(validator.status != ValidatorStatus.Null, "Validator is not initialized");
         emit ValidatorNotice(_valAddr, _key, _data, msg.sender);
+    }
+
+    function setParamValue(ParamName _name, uint256 _value) external {
+        require(msg.sender == govContract, "Caller is not gov contract");
+        params[_name] = _value;
+    }
+
+    function setGovContract(address _addr) external onlyOwner {
+        require(govContract == address(0), "gov contract already set");
+        govContract = _addr;
     }
 
     /**
@@ -732,6 +725,15 @@ contract Staking is Ownable, Pausable, Whitelist, Govern {
      */
     function getBondedValidatorNum() public view returns (uint256) {
         return bondedValAddrs.length;
+    }
+
+    /**
+     * @notice Get the value of a specific uint parameter
+     * @param _name the key of this parameter
+     * @return the value of this parameter
+     */
+    function getParamValue(ParamName _name) public view returns (uint256) {
+        return params[_name];
     }
 
     /*********************

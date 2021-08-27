@@ -47,9 +47,9 @@ contract Staking is Ownable, Pausable, Whitelist {
     /**
      * @notice Staking constructor
      * @param _celerTokenAddress address of Celer Token Contract
-     * @param _governProposalDeposit required deposit amount for a governance proposal
-     * @param _governVoteTimeout voting timeout for a governance proposal
-     * @param _slashTimeout the locking time for funds to be potentially slashed
+     * @param _proposalDeposit required deposit amount for a governance proposal
+     * @param _votingPeriod voting timeout for a governance proposal
+     * @param _unbondingPeriod the locking time for funds locked before withdrawn
      * @param _maxBondedValidators the maximum number of bonded validators
      * @param _minValidatorTokens the global minimum token amount requirement for bonded validator
      * @param _minSelfDelegation minimal amount of self-delegated tokens
@@ -59,9 +59,9 @@ contract Staking is Ownable, Pausable, Whitelist {
      */
     constructor(
         address _celerTokenAddress,
-        uint256 _governProposalDeposit,
-        uint256 _governVoteTimeout,
-        uint256 _slashTimeout,
+        uint256 _proposalDeposit,
+        uint256 _votingPeriod,
+        uint256 _unbondingPeriod,
         uint256 _maxBondedValidators,
         uint256 _minValidatorTokens,
         uint256 _minSelfDelegation,
@@ -71,9 +71,9 @@ contract Staking is Ownable, Pausable, Whitelist {
     ) {
         celerToken = IERC20(_celerTokenAddress);
 
-        params[dt.ParamName.ProposalDeposit] = _governProposalDeposit;
-        params[dt.ParamName.GovernVoteTimeout] = _governVoteTimeout;
-        params[dt.ParamName.SlashTimeout] = _slashTimeout;
+        params[dt.ParamName.ProposalDeposit] = _proposalDeposit;
+        params[dt.ParamName.VotingPeriod] = _votingPeriod;
+        params[dt.ParamName.UnbondingPeriod] = _unbondingPeriod;
         params[dt.ParamName.MaxBondedValidators] = _maxBondedValidators;
         params[dt.ParamName.MinValidatorTokens] = _minValidatorTokens;
         params[dt.ParamName.MinSelfDelegation] = _minSelfDelegation;
@@ -275,15 +275,15 @@ contract Staking is Ownable, Pausable, Whitelist {
         require(validator.status != dt.ValidatorStatus.Null, "Validator is not initialized");
         dt.Delegator storage delegator = validator.delegators[delAddr];
 
-        uint256 slashTimeout = params[dt.ParamName.SlashTimeout];
+        uint256 unbondingPeriod = params[dt.ParamName.UnbondingPeriod];
         bool isUnbonded = validator.status == dt.ValidatorStatus.Unbonded;
         // for all pending undelegations
         uint32 i;
         uint256 undelegationShares;
         for (i = delegator.undelegations.head; i < delegator.undelegations.tail; i++) {
-            if (isUnbonded || delegator.undelegations.queue[i].creationBlock + slashTimeout <= block.number) {
+            if (isUnbonded || delegator.undelegations.queue[i].creationBlock + unbondingPeriod <= block.number) {
                 // complete undelegation when the validator becomes unbonded or
-                // the slashTimeout for the pending undelegation is up.
+                // the unbondingPeriod for the pending undelegation is up.
                 undelegationShares += delegator.undelegations.queue[i].shares;
                 delete delegator.undelegations.queue[i];
                 continue;
@@ -380,6 +380,7 @@ contract Staking is Ownable, Pausable, Whitelist {
                 emit SlashAmtCollected(collector.account, collector.amount);
             }
         }
+        // TODO: enforce slashAmt == collectAmt ?
         require(slashAmt >= collectAmt, "Invalid collectors");
         emit Slash(valAddr, request.nonce, slashAmt);
     }
@@ -627,7 +628,7 @@ contract Staking is Ownable, Pausable, Whitelist {
     function _setUnbondingValidator(address _valAddr) private {
         dt.Validator storage validator = validators[_valAddr];
         validator.status = dt.ValidatorStatus.Unbonding;
-        validator.unbondBlock = uint64(block.number + params[dt.ParamName.SlashTimeout]);
+        validator.unbondBlock = uint64(block.number + params[dt.ParamName.UnbondingPeriod]);
         bondedTokens -= validator.tokens;
         emit ValidatorStatusUpdate(_valAddr, dt.ValidatorStatus.Unbonding);
     }

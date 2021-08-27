@@ -18,8 +18,8 @@ library DataTypes {
 
     enum ParamName {
         ProposalDeposit,
-        GovernVoteTimeout,
-        SlashTimeout,
+        VotingPeriod,
+        UnbondingPeriod,
         MaxBondedValidators,
         MinValidatorTokens,
         MinSelfDelegation,

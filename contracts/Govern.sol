@@ -42,6 +42,9 @@ contract Govern {
     mapping(uint256 => ParamProposal) public paramProposals;
     uint256 public nextParamProposalId;
 
+    uint256 public forfeitureAmount;
+    address public immutable collector;
+
     event CreateParamProposal(
         uint256 proposalId,
         address proposer,
@@ -53,9 +56,14 @@ contract Govern {
     event VoteParam(uint256 proposalId, address voter, VoteOption vote);
     event ConfirmParamProposal(uint256 proposalId, bool passed, dt.ParamName name, uint256 newValue);
 
-    constructor(Staking _staking, address _celerTokenAddress) {
+    constructor(
+        Staking _staking,
+        address _celerTokenAddress,
+        address _collector
+    ) {
         staking = _staking;
         celerToken = IERC20(_celerTokenAddress);
+        collector = _collector;
     }
 
     /**
@@ -81,7 +89,7 @@ contract Govern {
 
         p.proposer = msgSender;
         p.deposit = deposit;
-        p.voteDeadline = block.number + staking.getParamValue(dt.ParamName.GovernVoteTimeout);
+        p.voteDeadline = block.number + staking.getParamValue(dt.ParamName.VotingPeriod);
         p.name = _name;
         p.newValue = _value;
         p.status = ProposalStatus.Voting;
@@ -98,10 +106,7 @@ contract Govern {
      */
     function voteParam(uint256 _proposalId, VoteOption _vote) external {
         address valAddr = msg.sender;
-        require(
-            staking.getValidatorStatus(valAddr) == dt.ValidatorStatus.Bonded,
-            "Voter is not a bonded validator"
-        );
+        require(staking.getValidatorStatus(valAddr) == dt.ValidatorStatus.Bonded, "Voter is not a bonded validator");
         ParamProposal storage p = paramProposals[_proposalId];
         require(p.status == ProposalStatus.Voting, "Invalid proposal status");
         require(block.number < p.voteDeadline, "Vote deadline passed");
@@ -115,6 +120,7 @@ contract Govern {
     /**
      * @notice Confirm a parameter proposal
      * @param _proposalId the id of the parameter proposal
+     * TODO: add latest confirm time
      */
     function confirmParamProposal(uint256 _proposalId) external {
         uint256 yesVotes;
@@ -135,8 +141,17 @@ contract Govern {
         p.status = ProposalStatus.Closed;
         if (passed) {
             staking.setParamValue(p.name, p.newValue);
+            celerToken.safeTransfer(p.proposer, p.deposit);
+        } else {
+            forfeitureAmount += p.deposit;
         }
 
         emit ConfirmParamProposal(_proposalId, passed, p.name, p.newValue);
+    }
+
+    function collectForfeitureAmount() external {
+        require(forfeitureAmount > 0, "Nothing to collect");
+        celerToken.safeTransfer(collector, forfeitureAmount);
+        forfeitureAmount = 0;
     }
 }

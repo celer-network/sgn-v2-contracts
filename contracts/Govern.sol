@@ -42,7 +42,7 @@ contract Govern {
     mapping(uint256 => ParamProposal) public paramProposals;
     uint256 public nextParamProposalId;
 
-    uint256 public forfeitureAmount;
+    uint256 public forfeiture;
     address public immutable collector;
 
     event CreateParamProposal(
@@ -143,15 +143,15 @@ contract Govern {
             staking.setParamValue(p.name, p.newValue);
             celerToken.safeTransfer(p.proposer, p.deposit);
         } else {
-            forfeitureAmount += p.deposit;
+            forfeiture += p.deposit;
         }
 
         emit ConfirmParamProposal(_proposalId, passed, p.name, p.newValue);
     }
 
-    function collectForfeitureAmount() external {
-        require(forfeitureAmount > 0, "Nothing to collect");
-        celerToken.safeTransfer(collector, forfeitureAmount);
-        forfeitureAmount = 0;
+    function collectForfeiture() external {
+        require(forfeiture > 0, "Nothing to collect");
+        celerToken.safeTransfer(collector, forfeiture);
+        forfeiture = 0;
     }
 }

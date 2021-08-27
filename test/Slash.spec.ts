@@ -32,6 +32,7 @@ describe('Slash Tests', function () {
     const accounts = await getAccounts(res.admin, [celr], 7);
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
     signers = [accounts[0], accounts[4], accounts[5], accounts[6]];
+    await staking.setRewardContract(reward.address);
     await celr.approve(staking.address, parseUnits('100'));
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
@@ -56,8 +57,8 @@ describe('Slash Tests', function () {
       consts.SLASH_FACTOR,
       expireBlock,
       0,
-      [validators[1].address, consts.ZERO_ADDR, reward.address],
-      [parseUnits('0.1'), parseUnits('0.01'), parseUnits('0.29')],
+      [validators[1].address, consts.ZERO_ADDR],
+      [parseUnits('0.1'), parseUnits('0.01')],
       signers
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
@@ -70,6 +71,7 @@ describe('Slash Tests', function () {
       .to.emit(staking, 'SlashAmtCollected')
       .withArgs(validators[1].address, parseUnits('0.1'));
 
+    await staking.collectForfeiture();
     const adminBalanceAfter = await celr.balanceOf(admin.address);
     const val1BalanceAfter = await celr.balanceOf(validators[1].address);
     const rewardPoolAfter = await celr.balanceOf(reward.address);

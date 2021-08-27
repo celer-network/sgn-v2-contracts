@@ -28,6 +28,8 @@ contract Staking is Ownable, Pausable, Whitelist {
     mapping(uint256 => bool) public slashNonces;
 
     mapping(dt.ParamName => uint256) public params;
+    uint256 public forfeiture;
+    address public rewardContract;
     address public govContract;
 
     /* Events */
@@ -380,9 +382,15 @@ contract Staking is Ownable, Pausable, Whitelist {
                 emit SlashAmtCollected(collector.account, collector.amount);
             }
         }
-        // TODO: enforce slashAmt == collectAmt ?
         require(slashAmt >= collectAmt, "Invalid collectors");
+        forfeiture += slashAmt - collectAmt;
         emit Slash(valAddr, request.nonce, slashAmt);
+    }
+
+    function collectForfeiture() external {
+        require(forfeiture > 0, "Nothing to collect");
+        celerToken.safeTransfer(rewardContract, forfeiture);
+        forfeiture = 0;
     }
 
     /**
@@ -406,6 +414,11 @@ contract Staking is Ownable, Pausable, Whitelist {
     function setGovContract(address _addr) external onlyOwner {
         require(govContract == address(0), "gov contract already set");
         govContract = _addr;
+    }
+
+    function setRewardContract(address _addr) external onlyOwner {
+        require(rewardContract == address(0), "reward contract already set");
+        rewardContract = _addr;
     }
 
     /**

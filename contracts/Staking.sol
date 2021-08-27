@@ -336,9 +336,9 @@ contract Staking is Ownable, Pausable, Whitelist {
      * @param _sigs list of validator signatures
      */
     function slash(bytes calldata _slashRequest, bytes[] calldata _sigs) external whenNotPaused {
-        PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         verifySignatures(_slashRequest, _sigs);
 
+        PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         require(block.number < request.expireBlock, "Slash expired");
         require(request.slashFactor <= dt.SLASH_FACTOR_DECIMAL, "Invalid slash factor");
         require(request.slashFactor <= params[dt.ParamName.MaxSlashFactor], "Exceed max slash factor");

@@ -15,6 +15,9 @@ GO_REPO=https://${GH_TOKEN}@github.com/celer-network/sgn-v2
 solFiles=(
   Staking
   SGN
+  Reward
+  Govern
+  Viewer
 )
 
 dld_solc() {

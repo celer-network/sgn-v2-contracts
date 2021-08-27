@@ -26,6 +26,7 @@ describe('Governance Tests', function () {
     govern = res.govern;
     celr = res.celr;
     admin = res.admin;
+    await staking.setGovContract(govern.address);
     validators = await getAccounts(res.admin, [celr], 4);
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
@@ -106,6 +107,9 @@ describe('Governance Tests', function () {
         await expect(govern.confirmParamProposal(proposalId))
           .to.emit(govern, 'ConfirmParamProposal')
           .withArgs(proposalId, true, paramType, paramValue);
+
+        const val = await staking.params(consts.ENUM_MAX_VALIDATOR_NUM);
+        expect(val).to.equal(paramValue);
       });
 
       describe('after passing the vote deadline with less than 2/3 votes', async () => {
@@ -123,6 +127,9 @@ describe('Governance Tests', function () {
           await expect(govern.confirmParamProposal(proposalId))
             .to.emit(govern, 'ConfirmParamProposal')
             .withArgs(proposalId, false, paramType, paramValue);
+
+          const val = await staking.params(consts.ENUM_MAX_VALIDATOR_NUM);
+          expect(val).to.equal(consts.MAX_VALIDATOR_NUM);
         });
       });
     });

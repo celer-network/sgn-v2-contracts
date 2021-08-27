@@ -23,10 +23,10 @@ export const STATUS_BONDED = 3;
 export const ENUM_PROPOSAL_DEPOSIT = 0;
 export const ENUM_VOTING_PERIOD = 1;
 export const ENUM_UNBONDING_PERIOD = 2;
-export const ENUM_MAX_VALIDATOR_NUM = 4;
-export const ENUM_MIN_VALIDATOR_TOKENS = 5;
-export const ENUM_MIN_SELF_DELEGATION = 6;
-export const ENUM_ADVANCE_NOTICE_PERIOD = 7;
+export const ENUM_MAX_VALIDATOR_NUM = 3;
+export const ENUM_MIN_VALIDATOR_TOKENS = 4;
+export const ENUM_MIN_SELF_DELEGATION = 5;
+export const ENUM_ADVANCE_NOTICE_PERIOD = 6;
 
 export const ENUM_VOTE_OPTION_UNVOTED = 0;
 export const ENUM_VOTE_OPTION_YES = 1;

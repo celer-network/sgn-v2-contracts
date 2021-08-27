@@ -542,7 +542,7 @@ contract Staking is Ownable, Pausable, Whitelist {
 
     function getBondedValidatorsTokens() public view returns (dt.ValidatorTokens[] memory) {
         dt.ValidatorTokens[] memory infos = new dt.ValidatorTokens[](valAddrs.length);
-        for (uint256 i = 1; i < bondedValAddrs.length; i++) {
+        for (uint256 i = 0; i < bondedValAddrs.length; i++) {
             address valAddr = bondedValAddrs[i];
             infos[i] = dt.ValidatorTokens(valAddr, validators[valAddr].tokens);
         }

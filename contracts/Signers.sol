@@ -32,7 +32,7 @@ contract Signers {
     }
 
     // first verify _curss hash into ssHash, then verify sigs. sigs must be sorted by signer address
-    function verifySigs(bytes memory _msg, bytes memory _curss, bytes[] memory _sigs) external {
+    function verifySigs(bytes memory _msg, bytes memory _curss, bytes[] memory _sigs) external view {
         require(ssHash == keccak256(_curss), "mismatch current signers");
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_curss); // sorted signers
         uint256 totalTokens; // sum of all signer.tokens, do one loop here for simpler code

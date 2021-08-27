@@ -104,7 +104,7 @@ describe('Slash Tests', function () {
     expect(res.shares).to.equal(parseUnits('3'));
     expect(res.undelegations[0].shares).to.equal(parseUnits('1'));
     expect(res.undelegations[1].shares).to.equal(parseUnits('2'));
-    await advanceBlockNumber(consts.SLASH_TIMEOUT);
+    await advanceBlockNumber(consts.UNBONDING_PERIOD);
     await expect(staking.completeUndelegate(validators[0].address))
       .to.emit(staking, 'Undelegated')
       .withArgs(validators[0].address, admin.address, parseUnits('2.85'));
@@ -113,7 +113,7 @@ describe('Slash Tests', function () {
     await expect(staking.undelegate(validators[0].address, parseUnits('1')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(validators[0].address, admin.address, parseUnits('2.85'), parseUnits('2'), parseUnits('-0.95'));
-    await advanceBlockNumber(consts.SLASH_TIMEOUT);
+    await advanceBlockNumber(consts.UNBONDING_PERIOD);
     await expect(staking.completeUndelegate(validators[0].address))
       .to.emit(staking, 'Undelegated')
       .withArgs(validators[0].address, admin.address, parseUnits('0.95'));

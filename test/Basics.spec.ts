@@ -310,7 +310,7 @@ describe('Basic Tests', function () {
               );
 
               // after withdrawTimeout
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await advanceBlockNumber(consts.UNBONDING_PERIOD);
               // first completeUndelegate
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(staking, 'Undelegated')
@@ -330,7 +330,7 @@ describe('Basic Tests', function () {
               expect(res.undelegations[0].shares).to.equal(parseUnits('2'));
               expect(res.undelegations[1].shares).to.equal(parseUnits('1'));
 
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await advanceBlockNumber(consts.UNBONDING_PERIOD);
               await staking.connect(delegator).undelegate(validator.address, parseUnits('1'));
 
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
@@ -345,7 +345,7 @@ describe('Basic Tests', function () {
                 'No undelegation ready to be completed'
               );
 
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await advanceBlockNumber(consts.UNBONDING_PERIOD);
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(staking, 'Undelegated')
                 .withArgs(validator.address, delegator.address, parseUnits('1'));

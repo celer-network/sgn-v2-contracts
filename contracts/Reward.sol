@@ -45,15 +45,6 @@ contract Reward is Ownable, Pausable {
     }
 
     /**
-     * @notice Owner drains tokens when the contract is paused
-     * @dev emergency use only
-     * @param _amount drained token amount
-     */
-    function drainToken(uint256 _amount) external whenPaused onlyOwner {
-        celerToken.safeTransfer(msg.sender, _amount);
-    }
-
-    /**
      * @notice Contribute CELR tokens to the reward pool
      * @param _amount the amount of CELR tokens to contribute
      */
@@ -62,5 +53,30 @@ contract Reward is Ownable, Pausable {
         celerToken.safeTransferFrom(contributor, address(this), _amount);
 
         emit RewardPoolContribution(contributor, _amount);
+    }
+
+    /**
+     * @notice Called by the owner to pause contract
+     * @dev emergency use only
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /**
+     * @notice Called by the owner to unpause contract
+     * @dev emergency use only
+     */
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
+     * @notice Owner drains tokens when the contract is paused
+     * @dev emergency use only
+     * @param _amount drained token amount
+     */
+    function drainToken(uint256 _amount) external whenPaused onlyOwner {
+        celerToken.safeTransfer(msg.sender, _amount);
     }
 }

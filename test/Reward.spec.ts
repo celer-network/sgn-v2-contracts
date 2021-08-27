@@ -4,20 +4,21 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Staking, TestERC20 } from '../typechain';
+import { Reward, Staking, TestERC20 } from '../typechain';
 import { deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
 import { getRewardRequest } from './lib/proto';
 
 describe('Reward Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, celr } = await deployContracts(admin);
-    return { admin, staking, celr };
+    const { staking, reward, celr } = await deployContracts(admin);
+    return { admin, staking, reward, celr };
   }
 
   const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
+  let reward: Reward;
   let celr: TestERC20;
   let validators: Wallet[];
   let signers: Wallet[];
@@ -25,30 +26,32 @@ describe('Reward Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
+    reward = res.reward;
     celr = res.celr;
     const accounts = await getAccounts(res.admin, [celr], 6);
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
     signers = [accounts[0], accounts[1], accounts[4], accounts[5]];
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
+      await celr.connect(validators[i]).approve(reward.address, parseUnits('100'));
       await staking
         .connect(validators[i])
         .initializeValidator(signers[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await staking.connect(validators[i]).delegate(validators[i].address, consts.MIN_VALIDATOR_TOKENS);
       await staking.connect(validators[i]).bondValidator();
     }
-    await staking.connect(validators[0]).contributeToRewardPool(100);
+    await reward.connect(validators[0]).contributeToRewardPool(100);
   });
 
   it('should fail to contribute to reward pool when paused', async function () {
-    await staking.pause();
-    await expect(staking.contributeToRewardPool(100)).to.be.revertedWith('Pausable: paused');
+    await reward.pause();
+    await expect(reward.contributeToRewardPool(100)).to.be.revertedWith('Pausable: paused');
   });
 
   it('should contribute to reward pool successfully', async function () {
-    await expect(staking.connect(validators[0]).contributeToRewardPool(100))
-      .to.emit(staking, 'RewardPoolContribution')
-      .withArgs(validators[0].address, 100, 200);
+    await expect(reward.connect(validators[0]).contributeToRewardPool(100))
+      .to.emit(reward, 'RewardPoolContribution')
+      .withArgs(validators[0].address, 100);
   });
 
   it('should update the commission rate lock successfully', async function () {
@@ -60,44 +63,46 @@ describe('Reward Tests', function () {
   });
 
   it('should fail to claim reward when paused', async function () {
-    await staking.pause();
+    await reward.pause();
     const r = await getRewardRequest(validators[0].address, parseUnits('100', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Pausable: paused');
+    await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Pausable: paused');
   });
 
   it('should claim reward successfully', async function () {
     let r = await getRewardRequest(validators[0].address, parseUnits('40', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs))
-      .to.emit(staking, 'RewardClaimed')
-      .withArgs(validators[0].address, 40, 60);
+    await expect(reward.claimReward(r.rewardBytes, r.sigs))
+      .to.emit(reward, 'RewardClaimed')
+      .withArgs(validators[0].address, 40);
 
     r = await getRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs))
-      .to.emit(staking, 'RewardClaimed')
-      .withArgs(validators[0].address, 50, 10);
+    await expect(reward.claimReward(r.rewardBytes, r.sigs))
+      .to.emit(reward, 'RewardClaimed')
+      .withArgs(validators[0].address, 50);
   });
 
   it('should fail to claim reward more than amount in reward pool', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Insufficient reward pool');
+    await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
+      'ERC20: transfer amount exceeds balance'
+    );
   });
 
   it('should fail to claim reward if there is no new reward', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('0'), signers);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('No new reward');
+    await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('No new reward');
   });
 
   it('should fail to claim reward with insufficient signatures', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), [signers[0], signers[1]]);
-    await expect(staking.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
+    await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
   });
 
   it('should fail to claim reward with disordered signatures', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), signers);
-    await expect(staking.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[1], r.sigs[3], r.sigs[2]])).to.be.revertedWith(
+    await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[1], r.sigs[3], r.sigs[2]])).to.be.revertedWith(
       'Signers not in ascending order'
     );
-    await expect(staking.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[0], r.sigs[1], r.sigs[2]])).to.be.revertedWith(
+    await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[0], r.sigs[1], r.sigs[2]])).to.be.revertedWith(
       'Signers not in ascending order'
     );
   });

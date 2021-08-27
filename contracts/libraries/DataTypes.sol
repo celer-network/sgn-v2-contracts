@@ -65,6 +65,17 @@ library DataTypes {
     }
 
     // used for external view output
+    struct ValidatorInfo {
+        address valAddr;
+        ValidatorStatus status;
+        address signer;
+        uint256 tokens;
+        uint256 shares;
+        uint256 minSelfDelegation;
+        uint64 commissionRate;
+    }
+
+    // used for external view output
     struct DelegatorInfo {
         address valAddr;
         uint256 tokens;

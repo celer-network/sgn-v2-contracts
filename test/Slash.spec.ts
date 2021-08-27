@@ -4,18 +4,19 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Staking, TestERC20 } from '../typechain';
+import { Reward, Staking, TestERC20 } from '../typechain';
 import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
 import { getSlashRequest } from './lib/proto';
 
 describe('Slash Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, celr } = await deployContracts(admin);
-    return { admin, staking, celr };
+    const { staking, reward, celr } = await deployContracts(admin);
+    return { admin, staking, reward, celr };
   }
 
   let staking: Staking;
+  let reward: Reward;
   let celr: TestERC20;
   let admin: Wallet;
   let validators: Wallet[];
@@ -25,6 +26,7 @@ describe('Slash Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
+    reward = res.reward;
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 7);
@@ -46,7 +48,7 @@ describe('Slash Tests', function () {
   it('should slash successfully (only once using the same nonce)', async function () {
     const adminBalanceBefore = await celr.balanceOf(admin.address);
     const val1BalanceBefore = await celr.balanceOf(validators[1].address);
-    const rewardPoolBefore = await staking.rewardPool();
+    const rewardPoolBefore = await celr.balanceOf(reward.address);
 
     const request = await getSlashRequest(
       validators[0].address,
@@ -54,8 +56,8 @@ describe('Slash Tests', function () {
       consts.SLASH_FACTOR,
       expireBlock,
       0,
-      [validators[1].address, consts.ZERO_ADDR],
-      [parseUnits('0.1'), parseUnits('0.01')],
+      [validators[1].address, consts.ZERO_ADDR, reward.address],
+      [parseUnits('0.1'), parseUnits('0.01'), parseUnits('0.29')],
       signers
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
@@ -70,7 +72,7 @@ describe('Slash Tests', function () {
 
     const adminBalanceAfter = await celr.balanceOf(admin.address);
     const val1BalanceAfter = await celr.balanceOf(validators[1].address);
-    const rewardPoolAfter = await staking.rewardPool();
+    const rewardPoolAfter = await celr.balanceOf(reward.address);
     expect(adminBalanceAfter.sub(parseUnits('0.01'))).to.equal(adminBalanceBefore);
     expect(val1BalanceAfter.sub(parseUnits('0.1'))).to.equal(val1BalanceBefore);
     expect(rewardPoolAfter.sub(parseUnits('0.29'))).to.equal(rewardPoolBefore);

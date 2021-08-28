@@ -95,7 +95,7 @@ describe('Multiple validators Tests', function () {
         'Unbond block not reached'
       );
 
-      await advanceBlockNumber(consts.SLASH_TIMEOUT);
+      await advanceBlockNumber(consts.UNBONDING_PERIOD);
       await expect(staking.confirmUnbondedValidator(validators[1].address))
         .to.emit(staking, 'ValidatorStatusUpdate')
         .withArgs(validators[1].address, consts.STATUS_UNBONDED);

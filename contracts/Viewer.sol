@@ -82,6 +82,17 @@ contract Viewer {
         return res;
     }
 
+    function getDelegatorTokens(address _delAddr) public view returns (uint256, uint256) {
+        dt.DelegatorInfo[] memory infos = getDelegatorInfos(_delAddr);
+        uint256 tokens;
+        uint256 undelegationTokens;
+        for (uint32 i = 0; i < infos.length; i++) {
+            tokens += infos[i].tokens;
+            undelegationTokens += infos[i].undelegationTokens;
+        }
+        return (tokens, undelegationTokens);
+    }
+
     /**
      * @notice Get the minimum staking pool of all bonded validators
      * @return the minimum staking pool of all bonded validators

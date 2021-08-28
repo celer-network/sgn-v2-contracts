@@ -28,9 +28,9 @@ contract Staking is Ownable, Pausable, Whitelist {
     mapping(uint256 => bool) public slashNonces;
 
     mapping(dt.ParamName => uint256) public params;
-    uint256 public forfeiture;
-    address public rewardContract;
     address public govContract;
+    address public rewardContract;
+    uint256 public forfeiture;
 
     /* Events */
     event ValidatorNotice(address indexed valAddr, string key, bytes data, address from);

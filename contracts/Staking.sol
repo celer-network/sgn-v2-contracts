@@ -165,7 +165,7 @@ contract Staking is Ownable, Pausable, Whitelist {
         if (bondedValAddrs.length < maxBondedValidators) {
             return _bondValidator(valAddr);
         }
-        // if the number of validators has alrady reached the max_validator_num,
+        // if the number of validators has already reached the max_validator_num,
         // add validator only if its tokens is more than the current least bonded validator tokens
         uint256 minTokens = dt.MAX_INT;
         uint256 minTokensIndex;

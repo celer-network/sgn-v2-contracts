@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./libraries/PbSgn.sol";
 import "./Staking.sol";
 
@@ -41,13 +42,17 @@ contract SGN is Ownable, Pausable {
      */
     function updateSgnAddr(bytes calldata _sgnAddr) external {
         address valAddr = msg.sender;
+        if (staking.signerVals(msg.sender) != address(0)) {
+            valAddr = staking.signerVals(msg.sender);
+        }
 
-        Staking.ValidatorStatus status = staking.getValidatorStatus(valAddr);
-        require(status == Staking.ValidatorStatus.Unbonded, "Not unbonded validator");
+        dt.ValidatorStatus status = staking.getValidatorStatus(valAddr);
+        require(status == dt.ValidatorStatus.Unbonded, "Not unbonded validator");
 
         bytes memory oldAddr = sgnAddrs[valAddr];
         sgnAddrs[valAddr] = _sgnAddr;
 
+        staking.validatorNotice(valAddr, "sgn-addr", _sgnAddr);
         emit SgnAddrUpdate(valAddr, oldAddr, _sgnAddr);
     }
 

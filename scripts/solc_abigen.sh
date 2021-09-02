@@ -15,6 +15,9 @@ GO_REPO=https://${GH_TOKEN}@github.com/celer-network/sgn-v2
 solFiles=(
   Staking
   SGN
+  Reward
+  Govern
+  Viewer
 )
 
 dld_solc() {
@@ -80,7 +83,7 @@ run_abigen() {
   git checkout $BR || git checkout -b $BR
 
   mkdir -p eth
-  abigen -combined-json ../$CNTRDIR/combined.json -pkg eth -out eth/contracts.go
+  abigen -combined-json ../$CNTRDIR/combined.json -pkg eth -out eth/bindings.go
 
   #pushd eth
   #go build # make sure eth pkg can build

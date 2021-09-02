@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import * as consts from './lib/constants';
 import { Staking, TestERC20 } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
+import * as consts from './lib/constants';
 
 describe('Multiple validators Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -95,7 +95,7 @@ describe('Multiple validators Tests', function () {
         'Unbond block not reached'
       );
 
-      await advanceBlockNumber(consts.SLASH_TIMEOUT);
+      await advanceBlockNumber(consts.UNBONDING_PERIOD);
       await expect(staking.confirmUnbondedValidator(validators[1].address))
         .to.emit(staking, 'ValidatorStatusUpdate')
         .withArgs(validators[1].address, consts.STATUS_UNBONDED);

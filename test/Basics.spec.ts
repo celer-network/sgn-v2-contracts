@@ -1,21 +1,25 @@
 import { expect } from 'chai';
+import { ethers } from 'hardhat';
 
 import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
+import { SGN, Staking, TestERC20, Viewer } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { Staking, SGN, TestERC20 } from '../typechain';
 
 describe('Basic Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, sgn, celr } = await deployContracts(admin);
-    return { admin, staking, sgn, celr };
+    const { staking, sgn, viewer, celr } = await deployContracts(admin);
+    return { admin, staking, sgn, viewer, celr };
   }
+
+  const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
   let sgn: SGN;
+  let viewer: Viewer;
   let celr: TestERC20;
   let admin: Wallet;
   let validator: Wallet;
@@ -25,6 +29,7 @@ describe('Basic Tests', function () {
     const res = await loadFixture(fixture);
     staking = res.staking;
     sgn = res.sgn;
+    viewer = res.viewer;
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 2);
@@ -62,39 +67,50 @@ describe('Basic Tests', function () {
   });
 
   it('should fail to initialize a non-whitelisted validator when whitelist is enabled', async function () {
-    await staking.enableWhitelist();
+    await staking.setWhitelistEnabled(true);
     await expect(
       staking
         .connect(validator)
         .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
-    ).to.be.revertedWith('caller is not whitelisted');
+    ).to.be.revertedWith('Caller is not whitelisted');
   });
 
   it('should initialize a whitelisted validator successfully when whitelist is enabled', async function () {
-    await staking.enableWhitelist();
+    await staking.setWhitelistEnabled(true);
     await staking.addWhitelisted(validator.address);
+
+    const data = abiCoder.encode(
+      ['address', 'uint256', 'uint256'],
+      [validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE]
+    );
     await expect(
       staking
         .connect(validator)
         .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     )
-      .to.emit(staking, 'ValidatorParamsUpdate')
-      .withArgs(validator.address, validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      .to.emit(staking, 'ValidatorNotice')
+      .withArgs(validator.address, 'init', data, consts.ZERO_ADDR);
   });
 
   it('should initialize a validator and update sgn address successfully', async function () {
+    const data = abiCoder.encode(
+      ['address', 'uint256', 'uint256'],
+      [validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE]
+    );
     await expect(
       staking
         .connect(validator)
         .initializeValidator(validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
     )
-      .to.emit(staking, 'ValidatorParamsUpdate')
-      .withArgs(validator.address, validator.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
+      .to.emit(staking, 'ValidatorNotice')
+      .withArgs(validator.address, 'init', data, consts.ZERO_ADDR);
 
     const sgnAddr = keccak256(['string'], ['sgnaddr1']);
     await expect(sgn.connect(validator).updateSgnAddr(sgnAddr))
       .to.emit(sgn, 'SgnAddrUpdate')
-      .withArgs(validator.address, '0x', sgnAddr);
+      .withArgs(validator.address, '0x', sgnAddr)
+      .to.emit(staking, 'ValidatorNotice')
+      .withArgs(validator.address, 'sgn-addr', sgnAddr, sgn.address);
   });
 
   describe('after one validator finishes initialization', async () => {
@@ -114,11 +130,15 @@ describe('Basic Tests', function () {
       ).to.be.revertedWith('Validator is initialized');
     });
 
-    it('should update sidechain address by validator successfully', async function () {
+    it('should pass sgn address update', async function () {
       const newSgnAddr = keccak256(['string'], ['sgnaddr_new']);
       await expect(sgn.connect(validator).updateSgnAddr(newSgnAddr))
         .to.emit(sgn, 'SgnAddrUpdate')
-        .withArgs(validator.address, sgnAddr, newSgnAddr);
+        .withArgs(validator.address, sgnAddr, newSgnAddr)
+        .to.emit(staking, 'ValidatorNotice')
+        .withArgs(validator.address, 'sgn-addr', newSgnAddr, sgn.address);
+
+      await expect(sgn.connect(admin).updateSgnAddr(newSgnAddr)).to.be.revertedWith('Not unbonded validator');
     });
 
     it('should fail to delegate when paused', async function () {
@@ -139,6 +159,8 @@ describe('Basic Tests', function () {
     });
 
     it('should fail to bondValidator before delegating enough stake', async function () {
+      const shouldBond = await viewer.shouldBondValidator(validator.address);
+      expect(shouldBond).to.equal(false);
       await expect(staking.connect(validator).bondValidator()).to.be.revertedWith('Not have min tokens');
     });
 
@@ -187,6 +209,8 @@ describe('Basic Tests', function () {
         });
 
         it('should bondValidator successfully', async function () {
+          const shouldBond = await viewer.shouldBondValidator(validator.address);
+          expect(shouldBond).to.equal(true);
           await expect(staking.connect(validator).bondValidator())
             .to.emit(staking, 'ValidatorStatusUpdate')
             .withArgs(validator.address, consts.STATUS_BONDED);
@@ -194,9 +218,10 @@ describe('Basic Tests', function () {
 
         it('should increase min self delegation and bondValidator successfully', async function () {
           const higherMinSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
+          const data = abiCoder.encode(['uint256'], [higherMinSelfDelegation]);
           await expect(staking.connect(validator).updateMinSelfDelegation(higherMinSelfDelegation))
-            .to.emit(staking, 'ValidatorParamsUpdate')
-            .withArgs(validator.address, validator.address, higherMinSelfDelegation, consts.COMMISSION_RATE);
+            .to.emit(staking, 'ValidatorNotice')
+            .withArgs(validator.address, 'min-self-delegation', data, consts.ZERO_ADDR);
 
           await expect(staking.connect(validator).bondValidator())
             .to.emit(staking, 'ValidatorStatusUpdate')
@@ -205,11 +230,12 @@ describe('Basic Tests', function () {
 
         it('should decrease min self delegation and only able to bondValidator after notice period', async function () {
           let minSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
-          await staking.connect(validator).updateMinSelfDelegation(minSelfDelegation)
+          await staking.connect(validator).updateMinSelfDelegation(minSelfDelegation);
           minSelfDelegation = consts.MIN_SELF_DELEGATION.add(10);
+          const data = abiCoder.encode(['uint256'], [minSelfDelegation]);
           await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation))
-            .to.emit(staking, 'ValidatorParamsUpdate')
-            .withArgs(validator.address, validator.address, minSelfDelegation, consts.COMMISSION_RATE);
+            .to.emit(staking, 'ValidatorNotice')
+            .withArgs(validator.address, 'min-self-delegation', data, consts.ZERO_ADDR);
 
           await expect(staking.connect(validator).bondValidator()).to.be.revertedWith('Bond block not reached');
 
@@ -257,10 +283,11 @@ describe('Basic Tests', function () {
 
           it('should pass min self delegation updates', async function () {
             let minSelfDelegation = consts.MIN_SELF_DELEGATION.add(1000000);
+            const data = abiCoder.encode(['uint256'], [minSelfDelegation]);
             await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation))
-              .to.emit(staking, 'ValidatorParamsUpdate')
-              .withArgs(validator.address, validator.address, minSelfDelegation, consts.COMMISSION_RATE);
-            
+              .to.emit(staking, 'ValidatorNotice')
+              .withArgs(validator.address, 'min-self-delegation', data, consts.ZERO_ADDR);
+
             minSelfDelegation = consts.MIN_SELF_DELEGATION.add(100);
             await expect(staking.connect(validator).updateMinSelfDelegation(minSelfDelegation)).to.be.revertedWith(
               'Validator is bonded'
@@ -282,14 +309,14 @@ describe('Basic Tests', function () {
                 .reverted;
             });
 
-            it('should completeUndelegate succesfully', async function () {
+            it('should completeUndelegate successfully', async function () {
               // before withdrawTimeout
               await expect(staking.connect(delegator).completeUndelegate(validator.address)).to.be.revertedWith(
                 'No undelegation ready to be completed'
               );
 
               // after withdrawTimeout
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await advanceBlockNumber(consts.UNBONDING_PERIOD);
               // first completeUndelegate
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(staking, 'Undelegated')
@@ -309,7 +336,7 @@ describe('Basic Tests', function () {
               expect(res.undelegations[0].shares).to.equal(parseUnits('2'));
               expect(res.undelegations[1].shares).to.equal(parseUnits('1'));
 
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await advanceBlockNumber(consts.UNBONDING_PERIOD);
               await staking.connect(delegator).undelegate(validator.address, parseUnits('1'));
 
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
@@ -324,7 +351,7 @@ describe('Basic Tests', function () {
                 'No undelegation ready to be completed'
               );
 
-              await advanceBlockNumber(consts.SLASH_TIMEOUT);
+              await advanceBlockNumber(consts.UNBONDING_PERIOD);
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(staking, 'Undelegated')
                 .withArgs(validator.address, delegator.address, parseUnits('1'));

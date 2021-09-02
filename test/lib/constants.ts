@@ -1,8 +1,8 @@
 import { parseUnits } from '@ethersproject/units';
 
-export const GOVERN_PROPOSAL_DEPOSIT = 100;
-export const GOVERN_VOTE_TIMEOUT = 20;
-export const SLASH_TIMEOUT = 50;
+export const PROPOSAL_DEPOSIT = 100;
+export const VOTING_PERIOD = 20;
+export const UNBONDING_PERIOD = 50;
 export const MAX_VALIDATOR_NUM = 7;
 export const MIN_VALIDATOR_TOKENS = parseUnits('4');
 export const ADVANCE_NOTICE_PERIOD = 10;
@@ -21,12 +21,12 @@ export const STATUS_UNBONDING = 2;
 export const STATUS_BONDED = 3;
 
 export const ENUM_PROPOSAL_DEPOSIT = 0;
-export const ENUM_GOVERN_VOTE_TIMEOUT = 1;
-export const ENUM_SLASH_TIMEOUT = 2;
-export const ENUM_MAX_VALIDATOR_NUM = 4;
-export const ENUM_MIN_VALIDATOR_TOKENS = 5;
-export const ENUM_MIN_SELF_DELEGATION = 6;
-export const ENUM_ADVANCE_NOTICE_PEROID = 7;
+export const ENUM_VOTING_PERIOD = 1;
+export const ENUM_UNBONDING_PERIOD = 2;
+export const ENUM_MAX_VALIDATOR_NUM = 3;
+export const ENUM_MIN_VALIDATOR_TOKENS = 4;
+export const ENUM_MIN_SELF_DELEGATION = 5;
+export const ENUM_ADVANCE_NOTICE_PERIOD = 6;
 
 export const ENUM_VOTE_OPTION_UNVOTED = 0;
 export const ENUM_VOTE_OPTION_YES = 1;

@@ -4,18 +4,19 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { deployContracts, getAccounts, advanceBlockNumber, loadFixture } from './lib/common';
-import { getSlashRequest } from './lib/proto';
+import { Reward, Staking, TestERC20 } from '../typechain';
+import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { Staking, TestERC20 } from '../typechain';
+import { getSlashRequest } from './lib/proto';
 
 describe('Slash Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, celr } = await deployContracts(admin);
-    return { admin, staking, celr };
+    const { staking, reward, celr } = await deployContracts(admin);
+    return { admin, staking, reward, celr };
   }
 
   let staking: Staking;
+  let reward: Reward;
   let celr: TestERC20;
   let admin: Wallet;
   let validators: Wallet[];
@@ -25,11 +26,13 @@ describe('Slash Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
+    reward = res.reward;
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 7);
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
     signers = [accounts[0], accounts[4], accounts[5], accounts[6]];
+    await staking.setRewardContract(reward.address);
     await celr.approve(staking.address, parseUnits('100'));
     for (let i = 0; i < 4; i++) {
       await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
@@ -46,7 +49,7 @@ describe('Slash Tests', function () {
   it('should slash successfully (only once using the same nonce)', async function () {
     const adminBalanceBefore = await celr.balanceOf(admin.address);
     const val1BalanceBefore = await celr.balanceOf(validators[1].address);
-    const rewardPoolBefore = await staking.rewardPool();
+    const rewardPoolBefore = await celr.balanceOf(reward.address);
 
     const request = await getSlashRequest(
       validators[0].address,
@@ -68,9 +71,10 @@ describe('Slash Tests', function () {
       .to.emit(staking, 'SlashAmtCollected')
       .withArgs(validators[1].address, parseUnits('0.1'));
 
+    await staking.collectForfeiture();
     const adminBalanceAfter = await celr.balanceOf(admin.address);
     const val1BalanceAfter = await celr.balanceOf(validators[1].address);
-    const rewardPoolAfter = await staking.rewardPool();
+    const rewardPoolAfter = await celr.balanceOf(reward.address);
     expect(adminBalanceAfter.sub(parseUnits('0.01'))).to.equal(adminBalanceBefore);
     expect(val1BalanceAfter.sub(parseUnits('0.1'))).to.equal(val1BalanceBefore);
     expect(rewardPoolAfter.sub(parseUnits('0.29'))).to.equal(rewardPoolBefore);
@@ -104,7 +108,7 @@ describe('Slash Tests', function () {
     expect(res.shares).to.equal(parseUnits('3'));
     expect(res.undelegations[0].shares).to.equal(parseUnits('1'));
     expect(res.undelegations[1].shares).to.equal(parseUnits('2'));
-    await advanceBlockNumber(consts.SLASH_TIMEOUT);
+    await advanceBlockNumber(consts.UNBONDING_PERIOD);
     await expect(staking.completeUndelegate(validators[0].address))
       .to.emit(staking, 'Undelegated')
       .withArgs(validators[0].address, admin.address, parseUnits('2.85'));
@@ -113,7 +117,7 @@ describe('Slash Tests', function () {
     await expect(staking.undelegate(validators[0].address, parseUnits('1')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(validators[0].address, admin.address, parseUnits('2.85'), parseUnits('2'), parseUnits('-0.95'));
-    await advanceBlockNumber(consts.SLASH_TIMEOUT);
+    await advanceBlockNumber(consts.UNBONDING_PERIOD);
     await expect(staking.completeUndelegate(validators[0].address))
       .to.emit(staking, 'Undelegated')
       .withArgs(validators[0].address, admin.address, parseUnits('0.95'));
@@ -152,7 +156,7 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash with jail period', async function () {
-    let request = await getSlashRequest(validators[0].address, 1, 0, expireBlock, 10, [], [], signers);
+    const request = await getSlashRequest(validators[0].address, 1, 0, expireBlock, 10, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[0].address, consts.STATUS_UNBONDING)

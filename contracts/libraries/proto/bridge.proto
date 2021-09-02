@@ -5,7 +5,7 @@ import "google/protobuf/descriptor.proto";
 
 package bridge;
 
-extend google.protobuf.FieldOptions { string soltype = 1006; }
+extend google.protobuf.FieldOptions { string soltype = 1004; }
 
 message Relay {
     bytes sender = 1 [ (soltype) = "address" ];
@@ -16,12 +16,4 @@ message Relay {
     uint64 dst_chain_id = 6;
     uint64 nonce = 7;
     bytes src_transfer_id = 8 [(soltype) = "bytes32"];
-}
-
-// reward for liquidity provider, serialized msg will be signed by validators
-message LiqProvReward {
-    uint64 chain_id = 1;
-    bytes receiver = 2 [ (soltype) = "address" ];
-    bytes token = 3 [ (soltype) = "address" ];
-    bytes amount = 4 [ (soltype) = "uint256" ];
 }

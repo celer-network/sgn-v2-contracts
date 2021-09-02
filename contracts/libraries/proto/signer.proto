@@ -5,7 +5,7 @@ import "google/protobuf/descriptor.proto";
 
 package signer;
 
-extend google.protobuf.FieldOptions { string soltype = 1007; }
+extend google.protobuf.FieldOptions { string soltype = 1004; }
 
 // represent one validator's signer, tokens is its weight
 message Signer {

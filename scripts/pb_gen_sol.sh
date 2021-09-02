@@ -8,11 +8,11 @@ prepare_tools() {
 }
 
 gen_sol() {
-
+  echo "TBD"
 }
 
 add_to_pr() {
-
+  echo "TBD"
 }
 
 setup_git() {

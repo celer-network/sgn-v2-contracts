@@ -55,7 +55,7 @@ contract Pool is Signers {
         bytes calldata _curss,
         bytes[] calldata _sigs
     ) external {
-        verifySigs(_wdmsg, _curss, _sigs);
+        Signers.verifySigs(_wdmsg, _curss, _sigs);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");

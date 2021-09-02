@@ -42,7 +42,7 @@ contract Pool is Signers {
         addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(
-            block.chainid,
+            uint64(block.chainid),
             addseq,
             msg.sender,
             _token,
@@ -55,7 +55,7 @@ contract Pool is Signers {
         bytes calldata _curss,
         bytes[] calldata _sigs
     ) external {
-        Signers.verifySigs(_wdmsg, _curss, _sigs);
+        super.verifySigs(_wdmsg, _curss, _sigs);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");

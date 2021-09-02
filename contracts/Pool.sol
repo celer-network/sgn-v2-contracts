@@ -59,7 +59,6 @@ contract Pool is Signers {
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");
-        require(wdmsg.deadline > block.number, "deadline already passed");
         bytes32 wdId = keccak256(
             abi.encodePacked(
                 wdmsg.chainid,

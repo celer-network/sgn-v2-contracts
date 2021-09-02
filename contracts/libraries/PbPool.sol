@@ -9,10 +9,9 @@ library PbPool {
     struct WithdrawMsg {
         uint64 chainid;   // tag: 1
         uint64 seqnum;   // tag: 2
-        uint64 deadline;   // tag: 3
-        address receiver;   // tag: 4
-        address token;   // tag: 5
-        uint256 amount;   // tag: 6
+        address receiver;   // tag: 3
+        address token;   // tag: 4
+        uint256 amount;   // tag: 5
     } // end struct WithdrawMsg
 
     function decWithdrawMsg(bytes memory raw) internal pure returns (WithdrawMsg memory m) {
@@ -30,15 +29,12 @@ library PbPool {
                 m.seqnum = uint64(buf.decVarint());
             }
             else if (tag == 3) {
-                m.deadline = uint64(buf.decVarint());
-            }
-            else if (tag == 4) {
                 m.receiver = Pb._address(buf.decBytes());
             }
-            else if (tag == 5) {
+            else if (tag == 4) {
                 m.token = Pb._address(buf.decBytes());
             }
-            else if (tag == 6) {
+            else if (tag == 5) {
                 m.amount = Pb._uint256(buf.decBytes());
             }
             else { buf.skipValue(wire); } // skip value of unknown tag

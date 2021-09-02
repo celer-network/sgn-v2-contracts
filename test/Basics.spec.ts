@@ -5,20 +5,21 @@ import { keccak256 } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { SGN, Staking, TestERC20 } from '../typechain';
+import { SGN, Staking, TestERC20, Viewer } from '../typechain';
 import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
 
 describe('Basic Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, sgn, celr } = await deployContracts(admin);
-    return { admin, staking, sgn, celr };
+    const { staking, sgn, viewer, celr } = await deployContracts(admin);
+    return { admin, staking, sgn, viewer, celr };
   }
 
   const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
   let sgn: SGN;
+  let viewer: Viewer;
   let celr: TestERC20;
   let admin: Wallet;
   let validator: Wallet;
@@ -28,6 +29,7 @@ describe('Basic Tests', function () {
     const res = await loadFixture(fixture);
     staking = res.staking;
     sgn = res.sgn;
+    viewer = res.viewer;
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 2);
@@ -157,6 +159,8 @@ describe('Basic Tests', function () {
     });
 
     it('should fail to bondValidator before delegating enough stake', async function () {
+      const shouldBond = await viewer.shouldBondValidator(validator.address);
+      expect(shouldBond).to.equal(false);
       await expect(staking.connect(validator).bondValidator()).to.be.revertedWith('Not have min tokens');
     });
 
@@ -205,6 +209,8 @@ describe('Basic Tests', function () {
         });
 
         it('should bondValidator successfully', async function () {
+          const shouldBond = await viewer.shouldBondValidator(validator.address);
+          expect(shouldBond).to.equal(true);
           await expect(staking.connect(validator).bondValidator())
             .to.emit(staking, 'ValidatorStatusUpdate')
             .withArgs(validator.address, consts.STATUS_BONDED);

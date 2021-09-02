@@ -98,8 +98,11 @@ contract Viewer {
      * @return the minimum staking pool of all bonded validators
      */
     function getMinValidatorTokens() public view returns (uint256) {
-        uint256 minTokens = staking.getValidatorTokens(staking.bondedValAddrs(0));
         uint256 bondedValNum = staking.getBondedValidatorNum();
+        if (bondedValNum < staking.params(dt.ParamName.MaxBondedValidators)) {
+            return 0;
+        }
+        uint256 minTokens = dt.MAX_INT;
         for (uint256 i = 1; i < bondedValNum; i++) {
             uint256 tokens = staking.getValidatorTokens(staking.bondedValAddrs(i));
             if (tokens < minTokens) {

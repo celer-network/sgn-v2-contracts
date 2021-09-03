@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./libraries/PbBridge.sol";
+import "./Pool.sol";
 
-contract Bridge {
+contract Bridge is Pool {
     using SafeERC20 for IERC20;
 
     event Send(
@@ -37,6 +38,8 @@ contract Bridge {
 
     bytes32 stakingRoot;
 
+    constructor(bytes memory _signers) Pool(_signers) {}
+
     function send(
         address _receiver,
         address _token,
@@ -55,8 +58,8 @@ contract Bridge {
         emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce);
     }
 
-    function relay(bytes calldata _relayRequest, bytes[] calldata _sigs) external {
-        verifySignatures(_relayRequest, _sigs);
+    function relay(bytes calldata _relayRequest, bytes calldata _curss, bytes[] calldata _sigs) external {
+        verifySigs(_relayRequest, _curss, _sigs);
         PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
         require(request.dstChainId == block.chainid, "dst chainId not match");
 
@@ -87,6 +90,4 @@ contract Bridge {
             request.srcTransferId
         );
     }
-
-    function verifySignatures(bytes memory _msg, bytes[] memory _sigs) public view {}
 }

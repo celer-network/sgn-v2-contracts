@@ -17,7 +17,7 @@ contract Pool is Signers {
     uint64 addseq; // ensure unique LiquidityAdded event, start from 1
     // map of successful withdraws, if true means already withdrew money
     mapping(bytes32 => bool) public withdraws;
-    constructor(bytes memory _signers) Signers(_signers) {}
+
     event LiquidityAdded(
         uint64 chainId,
         uint64 seqnum,
@@ -34,6 +34,8 @@ contract Pool is Signers {
         address token,
         uint256 amount
     );
+
+    constructor(bytes memory _signers) Signers(_signers) {}
 
     function add_liquidity(
         address _token,

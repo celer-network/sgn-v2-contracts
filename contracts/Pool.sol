@@ -17,7 +17,7 @@ contract Pool is Signers {
     uint64 addseq; // ensure unique LiquidityAdded event, start from 1
     // map of successful withdraws, if true means already withdrew money
     mapping(bytes32 => bool) public withdraws;
-
+    constructor(bytes memory _signers) Signers(_signers) {}
     event LiquidityAdded(
         uint64 chainId,
         uint64 seqnum,
@@ -55,7 +55,7 @@ contract Pool is Signers {
         bytes calldata _curss,
         bytes[] calldata _sigs
     ) external {
-        super.verifySigs(_wdmsg, _curss, _sigs);
+        verifySigs(_wdmsg, _curss, _sigs);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");

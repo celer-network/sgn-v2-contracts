@@ -4,13 +4,11 @@ pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "./libraries/PbBridge.sol";
 import "./Pool.sol";
 
-contract Bridge is Pool {
+contract Bridge is Pool, Ownable {
     using SafeERC20 for IERC20;
 
     event Send(
@@ -20,7 +18,8 @@ contract Bridge is Pool {
         address token,
         uint256 amount,
         uint64 dstChainId,
-        uint64 nonce
+        uint64 nonce,
+        uint32 maxSlippage
     );
 
     event Relay(
@@ -35,8 +34,10 @@ contract Bridge is Pool {
     );
 
     mapping(bytes32 => bool) public transfers;
-
-    bytes32 stakingRoot;
+    mapping(address => uint256) public minSend; // send _amount must > minSend
+    // min allowed max slippage for each token and dest chain id, uint32 value is slippage * 1M, eg. 0.5% -> 5000
+    // per token, per dest chain id for most flexibility
+    mapping(address => mapping(uint64 => uint32)) public mams;
 
     constructor(bytes memory _signers) Pool(_signers) {}
 
@@ -45,9 +46,11 @@ contract Bridge is Pool {
         address _token,
         uint256 _amount,
         uint64 _dstChainId,
-        uint64 _nonce
+        uint64 _nonce,
+        uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
     ) external {
-        require(_amount > 0, "invalid amount");
+        require(_amount > minSend[_token], "amount too small");
+        require(_maxSlippage > mams[_token][_dstChainId], "max slippage too small");
         bytes32 transferId = keccak256(
             abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, block.chainid)
         );
@@ -55,7 +58,7 @@ contract Bridge is Pool {
         transfers[transferId] = true;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
-        emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce);
+        emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
     }
 
     function relay(bytes calldata _relayRequest, bytes calldata _curss, bytes[] calldata _sigs) external {
@@ -89,5 +92,17 @@ contract Bridge is Pool {
             request.nonce,
             request.srcTransferId
         );
+    }
+
+    function setMinSend(address[] calldata tokens, uint256[] calldata minsend) external onlyOwner {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            minSend[tokens[i]] = minsend[i];
+        }
+    }
+    // chainid not in chainIds is not touched
+    function setMinSlippage(address token, uint64[] calldata chainIds, uint32[] calldata minslip) external onlyOwner {
+        for (uint256 i = 0; i < chainIds.length; i++) {
+            mams[token][chainIds[i]] = minslip[i];
+        }
     }
 }

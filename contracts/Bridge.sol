@@ -100,7 +100,7 @@ contract Bridge is Pool, Ownable {
         }
     }
     // chainid not in chainIds is not touched
-    function setMinSlippage(uint32[] minslip) external onlyOwner {
+    function setMinSlippage(uint32 minslip) external onlyOwner {
         mams = minslip;
     }
 }

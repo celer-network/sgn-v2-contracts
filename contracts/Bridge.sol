@@ -35,9 +35,9 @@ contract Bridge is Pool, Ownable {
 
     mapping(bytes32 => bool) public transfers;
     mapping(address => uint256) public minSend; // send _amount must > minSend
-    // min allowed max slippage for each token and dest chain id, uint32 value is slippage * 1M, eg. 0.5% -> 5000
-    // per token, per dest chain id for most flexibility
-    mapping(address => mapping(uint64 => uint32)) public mams;
+
+    // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
+    uint32 mams;
 
     constructor(bytes memory _signers) Pool(_signers) {}
 
@@ -50,7 +50,7 @@ contract Bridge is Pool, Ownable {
         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
     ) external {
         require(_amount > minSend[_token], "amount too small");
-        require(_maxSlippage > mams[_token][_dstChainId], "max slippage too small");
+        require(_maxSlippage > mams, "max slippage too small");
         bytes32 transferId = keccak256(
             abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, block.chainid)
         );
@@ -100,9 +100,7 @@ contract Bridge is Pool, Ownable {
         }
     }
     // chainid not in chainIds is not touched
-    function setMinSlippage(address token, uint64[] calldata chainIds, uint32[] calldata minslip) external onlyOwner {
-        for (uint256 i = 0; i < chainIds.length; i++) {
-            mams[token][chainIds[i]] = minslip[i];
-        }
+    function setMinSlippage(uint32[] minslip) external onlyOwner {
+        mams = minslip;
     }
 }

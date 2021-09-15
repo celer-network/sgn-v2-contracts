@@ -487,6 +487,7 @@ contract Staking is Ownable, Pausable, Whitelist {
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
         uint256 signedTokens;
         address prev = address(0);
+        uint256 quorum = getQuorumTokens();
         for (uint256 i = 0; i < _sigs.length; i++) {
             address signer = hash.recover(_sigs[i]);
             require(signer > prev, "Signers not in ascending order");
@@ -496,10 +497,11 @@ contract Staking is Ownable, Pausable, Whitelist {
                 continue;
             }
             signedTokens += validator.tokens;
+            if (signedTokens >= quorum) {
+                return true;
+            }
         }
-
-        require(signedTokens >= getQuorumTokens(), "Quorum not reached");
-        return true;
+        revert("Quorum not reached");
     }
 
     /**

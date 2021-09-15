@@ -16,8 +16,8 @@ message Slash {
   bytes validator = 1 [ (soltype) = "address" ];
   uint64 nonce = 2;
   uint64 slash_factor = 3;
-  uint64 expire_block = 4;
-  uint64 jail_period = 5;
+  uint64 expire_time = 4; // block timestamp
+  uint64 jail_period = 5; // block number
   repeated AcctAmtPair collectors = 6;
 }
 

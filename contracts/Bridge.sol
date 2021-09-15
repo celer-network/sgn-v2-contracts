@@ -61,7 +61,11 @@ contract Bridge is Pool, Ownable {
         emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
     }
 
-    function relay(bytes calldata _relayRequest, bytes calldata _curss, bytes[] calldata _sigs) external {
+    function relay(
+        bytes calldata _relayRequest,
+        bytes calldata _curss,
+        bytes[] calldata _sigs
+    ) external {
         verifySigs(_relayRequest, _curss, _sigs);
         PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
         require(request.dstChainId == block.chainid, "dst chainId not match");
@@ -99,6 +103,7 @@ contract Bridge is Pool, Ownable {
             minSend[tokens[i]] = minsend[i];
         }
     }
+
     // chainid not in chainIds is not touched
     function setMinSlippage(uint32 minslip) external onlyOwner {
         mams = minslip;

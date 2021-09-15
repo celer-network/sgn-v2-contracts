@@ -5,7 +5,7 @@ import "google/protobuf/descriptor.proto";
 
 package sgn;
 
-extend google.protobuf.FieldOptions { string soltype = 1005; }
+extend google.protobuf.FieldOptions { string soltype = 1004; }
 
 message Withdrawal {
   bytes account = 1 [ (soltype) = "address" ];

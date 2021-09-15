@@ -99,7 +99,7 @@ describe('Reward Tests', function () {
 
   it('should fail to claim reward with disordered signatures', async function () {
     const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), signers);
-    await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[1], r.sigs[3], r.sigs[2]])).to.be.revertedWith(
+    await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]])).to.be.revertedWith(
       'Signers not in ascending order'
     );
     await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[0], r.sigs[1], r.sigs[2]])).to.be.revertedWith(

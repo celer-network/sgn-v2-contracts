@@ -21,7 +21,7 @@ describe('Slash Tests', function () {
   let admin: Wallet;
   let validators: Wallet[];
   let signers: Wallet[];
-  let expireBlock: number;
+  let expireTime: number;
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
@@ -42,7 +42,8 @@ describe('Slash Tests', function () {
       await staking.delegate(validators[i].address, consts.DELEGATOR_STAKE);
       await staking.connect(validators[i]).bondValidator();
       const blockNumber = await ethers.provider.getBlockNumber();
-      expireBlock = blockNumber + 10;
+      const blockTime = await (await ethers.provider.getBlock(blockNumber)).timestamp;
+      expireTime = blockTime + 100;
     }
   });
 
@@ -55,7 +56,7 @@ describe('Slash Tests', function () {
       validators[0].address,
       1,
       consts.SLASH_FACTOR,
-      expireBlock,
+      expireTime,
       0,
       [validators[1].address, consts.ZERO_ADDR],
       [parseUnits('0.1'), parseUnits('0.01')],
@@ -91,7 +92,7 @@ describe('Slash Tests', function () {
       validators[0].address,
       1,
       consts.SLASH_FACTOR,
-      expireBlock,
+      expireTime,
       0,
       [],
       [],
@@ -145,7 +146,7 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash', async function () {
-    const request = await getSlashRequest(validators[0].address, 1, 1e5, expireBlock, 0, [], [], signers);
+    const request = await getSlashRequest(validators[0].address, 1, 1e5, expireTime, 0, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.2'), 0, parseUnits('-0.8'))
@@ -156,7 +157,7 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash with jail period', async function () {
-    const request = await getSlashRequest(validators[0].address, 1, 0, expireBlock, 10, [], [], signers);
+    const request = await getSlashRequest(validators[0].address, 1, 0, expireTime, 10, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[0].address, consts.STATUS_UNBONDING)
@@ -177,7 +178,7 @@ describe('Slash Tests', function () {
       validators[0].address,
       1,
       consts.SLASH_FACTOR,
-      expireBlock,
+      expireTime,
       0,
       [],
       [],
@@ -189,7 +190,7 @@ describe('Slash Tests', function () {
       validators[0].address,
       1,
       consts.SLASH_FACTOR,
-      expireBlock,
+      expireTime,
       0,
       [consts.ZERO_ADDR],
       [parseUnits('1')],
@@ -197,8 +198,7 @@ describe('Slash Tests', function () {
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Invalid collectors');
 
-    request = await getSlashRequest(validators[0].address, 1, consts.SLASH_FACTOR, expireBlock, 0, [], [], signers);
-    await advanceBlockNumber(10);
+    request = await getSlashRequest(validators[0].address, 1, consts.SLASH_FACTOR, 0, 0, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Slash expired');
   });
 
@@ -208,7 +208,7 @@ describe('Slash Tests', function () {
       validators[0].address,
       1,
       consts.SLASH_FACTOR,
-      expireBlock,
+      expireTime,
       0,
       [],
       [],

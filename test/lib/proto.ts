@@ -92,7 +92,7 @@ export async function getSlashRequest(
   validatorAddr: string,
   nonce: number,
   slashFactor: number,
-  expireBlock: number,
+  expireTime: number,
   jailPeriod: number,
   collectorAddrs: string[],
   collectorAmts: BigNumber[],
@@ -105,7 +105,7 @@ export async function getSlashRequest(
     validator: hex2Bytes(validatorAddr),
     nonce: nonce,
     slashFactor: slashFactor,
-    expireBlock: expireBlock,
+    expireTime: expireTime,
     jailPeriod: jailPeriod,
     collectors: collectors
   };

@@ -8,6 +8,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./libraries/PbBridge.sol";
 import "./Pool.sol";
 
+interface IWETH {
+    function withdraw(uint) external;
+}
+
 contract Bridge is Pool, Ownable {
     using SafeERC20 for IERC20;
 
@@ -38,6 +42,12 @@ contract Bridge is Pool, Ownable {
 
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
     uint32 mams;
+
+    // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
+    // if request.token equals this, will withdraw and send native token to receiver
+    // note we don't check whether it's zero address. when this isn't set, and request.token
+    // is all 0 address, guarantee fail
+    address nativeWrap;
 
     constructor(bytes memory _signers) Pool(_signers) {}
 
@@ -80,7 +90,12 @@ contract Bridge is Pool, Ownable {
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
-        IERC20(request.token).safeTransfer(request.receiver, request.amount);
+        if (request.token == nativeWrap) { // withdraw then transfer native to receiver
+            IWETH(nativeWrap).withdraw(request.amount);
+            payable(request.receiver).transfer(request.amount);
+        } else {
+            IERC20(request.token).safeTransfer(request.receiver, request.amount);
+        }
 
         emit Relay(
             transferId,
@@ -99,8 +114,15 @@ contract Bridge is Pool, Ownable {
             minSend[tokens[i]] = minsend[i];
         }
     }
-    // chainid not in chainIds is not touched
     function setMinSlippage(uint32 minslip) external onlyOwner {
         mams = minslip;
     }
+    // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver
+    function setWrap(address _weth) external onlyOwner {
+        nativeWrap = _weth;
+    }
+
+    // This is needed to receive ETH when calling `IWETH.withdraw`
+    receive() external payable {}
+    fallback() external payable {}
 }

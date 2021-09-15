@@ -19,7 +19,6 @@ contract Pool is Signers {
     mapping(bytes32 => bool) public withdraws;
 
     event LiquidityAdded(
-        uint64 chainId,
         uint64 seqnum,
         address provider,
         address token,
@@ -28,7 +27,6 @@ contract Pool is Signers {
 
     event WithdrawDone(
         bytes32 withdrawId,
-        uint64 chainid,
         uint64 seqnum,
         address receiver,
         address token,
@@ -40,7 +38,7 @@ contract Pool is Signers {
     function add_liquidity(address _token, uint256 _amount) external {
         addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        emit LiquidityAdded(uint64(block.chainid), addseq, msg.sender, _token, _amount);
+        emit LiquidityAdded(addseq, msg.sender, _token, _amount);
     }
 
     function withdraw(
@@ -58,6 +56,6 @@ contract Pool is Signers {
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
         IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
-        emit WithdrawDone(wdId, wdmsg.chainid, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount);
+        emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount);
     }
 }

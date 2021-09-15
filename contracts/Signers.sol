@@ -18,7 +18,11 @@ contract Signers {
     }
 
     // set new signers
-    function update(bytes calldata _newss, bytes calldata _curss, bytes[] calldata _sigs) external {
+    function update(
+        bytes calldata _newss,
+        bytes calldata _curss,
+        bytes[] calldata _sigs
+    ) external {
         verifySigs(_newss, _curss, _sigs);
         // ensure newss is sorted
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
@@ -32,7 +36,11 @@ contract Signers {
     }
 
     // first verify _curss hash into ssHash, then verify sigs. sigs must be sorted by signer address
-    function verifySigs(bytes calldata _msg, bytes calldata _curss, bytes[] calldata _sigs) public view {
+    function verifySigs(
+        bytes calldata _msg,
+        bytes calldata _curss,
+        bytes[] calldata _sigs
+    ) public view {
         require(ssHash == keccak256(_curss), "mismatch current signers");
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_curss); // sorted signers
         uint256 totalTokens; // sum of all signer.tokens, do one loop here for simpler code

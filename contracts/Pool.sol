@@ -37,19 +37,10 @@ contract Pool is Signers {
 
     constructor(bytes memory _signers) Signers(_signers) {}
 
-    function add_liquidity(
-        address _token,
-        uint256 _amount
-    ) external {
+    function add_liquidity(address _token, uint256 _amount) external {
         addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        emit LiquidityAdded(
-            uint64(block.chainid),
-            addseq,
-            msg.sender,
-            _token,
-            _amount
-        );
+        emit LiquidityAdded(uint64(block.chainid), addseq, msg.sender, _token, _amount);
     }
 
     function withdraw(
@@ -62,24 +53,11 @@ contract Pool is Signers {
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");
         bytes32 wdId = keccak256(
-            abi.encodePacked(
-                wdmsg.chainid,
-                wdmsg.seqnum,
-                wdmsg.receiver,
-                wdmsg.token,
-                wdmsg.amount
-            )
+            abi.encodePacked(wdmsg.chainid, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount)
         );
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
         IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
-        emit WithdrawDone(
-            wdId,
-            wdmsg.chainid,
-            wdmsg.seqnum,
-            wdmsg.receiver,
-            wdmsg.token,
-            wdmsg.amount
-        );
+        emit WithdrawDone(wdId, wdmsg.chainid, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount);
     }
 }

@@ -36,7 +36,7 @@ library PbStaking {
         address validator; // tag: 1
         uint64 nonce; // tag: 2
         uint64 slashFactor; // tag: 3
-        uint64 expireBlock; // tag: 4
+        uint64 expireTime; // tag: 4
         uint64 jailPeriod; // tag: 5
         AcctAmtPair[] collectors; // tag: 6
     } // end struct Slash
@@ -61,7 +61,7 @@ library PbStaking {
             } else if (tag == 3) {
                 m.slashFactor = uint64(buf.decVarint());
             } else if (tag == 4) {
-                m.expireBlock = uint64(buf.decVarint());
+                m.expireTime = uint64(buf.decVarint());
             } else if (tag == 5) {
                 m.jailPeriod = uint64(buf.decVarint());
             } else if (tag == 6) {

@@ -35,7 +35,7 @@ contract Pool is Signers {
 
     constructor(bytes memory _signers) Signers(_signers) {}
 
-    function add_liquidity(address _token, uint256 _amount) external {
+    function addLiquidity(address _token, uint256 _amount) external {
         addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);

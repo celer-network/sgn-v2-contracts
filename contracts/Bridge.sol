@@ -33,7 +33,6 @@ contract Bridge is Pool, Ownable {
         address token,
         uint256 amount,
         uint64 srcChainId,
-        uint64 nonce,
         bytes32 srcTransferId
     );
 
@@ -88,8 +87,7 @@ contract Bridge is Pool, Ownable {
                 request.amount,
                 request.srcChainId,
                 request.dstChainId,
-                request.srcTransferId,
-                request.nonce
+                request.srcTransferId
             )
         );
         require(transfers[transferId] == false, "transfer exists");
@@ -108,7 +106,6 @@ contract Bridge is Pool, Ownable {
             request.token,
             request.amount,
             request.srcChainId,
-            request.nonce,
             request.srcTransferId
         );
     }

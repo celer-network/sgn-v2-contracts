@@ -16,9 +16,12 @@ import {
   Viewer,
   Viewer__factory,
   TestERC20,
-  TestERC20__factory
+  TestERC20__factory,
+  Bridge,
+  Bridge__factory
 } from '../../typechain';
 import * as consts from './constants';
+import { Bytes } from '@ethersproject/bytes';
 
 // Workaround for https://github.com/nomiclabs/hardhat/issues/849
 // TODO: Remove once fixed upstream.
@@ -75,6 +78,23 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
   await viewer.deployed();
 
   return { staking, sgn, reward, govern, viewer, celr };
+}
+
+interface BridgeInfo {
+  bridge: Bridge;
+  token: TestERC20;
+}
+
+export async function deployBridgeContracts(admin: Wallet, signers: Bytes): Promise<BridgeInfo> {
+  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const token = await testERC20Factory.connect(admin).deploy();
+  await token.deployed();
+
+  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridge = await bridgeFactory.connect(admin).deploy(signers);
+  await bridge.deployed();
+
+  return { bridge, token };
 }
 
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {

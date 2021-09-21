@@ -18,7 +18,7 @@ contract Signers {
     }
 
     // set new signers
-    function update(
+    function updateSigners(
         bytes calldata _newss,
         bytes calldata _curss,
         bytes[] calldata _sigs

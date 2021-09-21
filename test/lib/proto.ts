@@ -11,19 +11,27 @@ interface Proto {
   Slash: protobuf.Type;
   Reward: protobuf.Type;
   AcctAmtPair: protobuf.Type;
+  Signer: protobuf.Type;
+  SortedSigners: protobuf.Type;
 }
 
 async function getProtos(): Promise<Proto> {
   const staking = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/staking.proto`);
+  const signer = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/signer.proto`);
 
   const Slash = staking.lookupType('staking.Slash');
   const Reward = staking.lookupType('staking.Reward');
   const AcctAmtPair = staking.lookupType('staking.AcctAmtPair');
 
+  const Signer = signer.lookupType('signer.Signer');
+  const SortedSigners = signer.lookupType('signer.SortedSigners');
+
   return {
     Slash,
     Reward,
-    AcctAmtPair
+    AcctAmtPair,
+    Signer,
+    SortedSigners
   };
 }
 
@@ -115,4 +123,51 @@ export async function getSlashRequest(
   const sigs = await calculateSignatures(signers, hex2Bytes(slashBytesHash));
 
   return { slashBytes, sigs };
+}
+
+export async function getSignersBytes(accounts: string[], tokens: BigNumber[], sort: Boolean) {
+  const { Signer, SortedSigners } = await getProtos();
+  const ss = [];
+  for (let i = 0; i < accounts.length; i++) {
+    const signer = {
+      account: hex2Bytes(accounts[i]),
+      tokens: uint2Bytes(tokens[i])
+    };
+    ss.push(signer);
+  }
+  if (sort) {
+    ss.sort((a, b) => (a.account > b.account ? 1 : -1));
+  }
+  const signers = [];
+  for (let i = 0; i < ss.length; i++) {
+    const signerProto = Signer.create(ss[i]);
+    signers.push(signerProto);
+  }
+  const signersProto = {
+    signers: signers
+  };
+  const signersBytes = SortedSigners.encode(signersProto).finish();
+  return signersBytes;
+}
+
+export async function getUpdateSignersRequest(
+  newAccounts: string[],
+  newTokens: BigNumber[],
+  currSigners: Wallet[],
+  currTokens: BigNumber[],
+  sort: Boolean
+): Promise<{ newSignersBytes: Uint8Array; currSignersBytes: Uint8Array; sigs: number[][] }> {
+  const currAccounts = [];
+  for (let i = 0; i < currSigners.length; i++) {
+    currAccounts.push(currSigners[i].address);
+  }
+  const currSignersBytes = await getSignersBytes(currAccounts, currTokens, sort);
+
+  const newSignersBytes = await getSignersBytes(newAccounts, newTokens, sort);
+  const newSignersBytesHash = keccak256(['bytes'], [newSignersBytes]);
+
+  currSigners.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
+  const sigs = await calculateSignatures(currSigners, hex2Bytes(newSignersBytesHash));
+
+  return { newSignersBytes, currSignersBytes, sigs };
 }

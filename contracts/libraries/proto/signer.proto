@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/celer-network/sgn-v2/proto/signer";
+option go_package = "github.com/celer-network/sgn-v2/proto/eth";
 
 import "google/protobuf/descriptor.proto";
 

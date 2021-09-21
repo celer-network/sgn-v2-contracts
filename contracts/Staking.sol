@@ -373,16 +373,20 @@ contract Staking is Ownable, Pausable, Whitelist {
         uint256 collectAmt;
         for (uint256 i = 0; i < request.collectors.length; i++) {
             PbStaking.AcctAmtPair memory collector = request.collectors[i];
-            collectAmt += collector.amount;
-            if (collector.account == address(0)) {
-                celerToken.safeTransfer(msg.sender, collector.amount);
-                emit SlashAmtCollected(msg.sender, collector.amount);
-            } else {
-                celerToken.safeTransfer(collector.account, collector.amount);
-                emit SlashAmtCollected(collector.account, collector.amount);
+            if (collectAmt + collector.amount > slashAmt) {
+                collector.amount = slashAmt - collectAmt;
+            }
+            if (collector.amount > 0) {
+                collectAmt += collector.amount;
+                if (collector.account == address(0)) {
+                    celerToken.safeTransfer(msg.sender, collector.amount);
+                    emit SlashAmtCollected(msg.sender, collector.amount);
+                } else {
+                    celerToken.safeTransfer(collector.account, collector.amount);
+                    emit SlashAmtCollected(collector.account, collector.amount);
+                }
             }
         }
-        require(slashAmt >= collectAmt, "Invalid collectors");
         forfeiture += slashAmt - collectAmt;
         emit Slash(valAddr, request.nonce, slashAmt);
     }

@@ -186,18 +186,6 @@ describe('Slash Tests', function () {
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Quorum not reached');
 
-    request = await getSlashRequest(
-      validators[0].address,
-      1,
-      consts.SLASH_FACTOR,
-      expireTime,
-      0,
-      [consts.ZERO_ADDR],
-      [parseUnits('1')],
-      signers
-    );
-    await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Invalid collectors');
-
     request = await getSlashRequest(validators[0].address, 1, consts.SLASH_FACTOR, 0, 0, [], [], signers);
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Slash expired');
   });

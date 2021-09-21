@@ -25,13 +25,7 @@ contract Pool is Signers {
         uint256 amount // how many tokens were added
     );
 
-    event WithdrawDone(
-        bytes32 withdrawId,
-        uint64 seqnum,
-        address receiver,
-        address token,
-        uint256 amount
-    );
+    event WithdrawDone(bytes32 withdrawId, uint64 seqnum, address receiver, address token, uint256 amount);
 
     constructor(bytes memory _signers) Signers(_signers) {}
 

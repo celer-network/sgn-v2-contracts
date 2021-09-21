@@ -9,7 +9,7 @@ import "./libraries/PbBridge.sol";
 import "./Pool.sol";
 
 interface IWETH {
-    function withdraw(uint) external;
+    function withdraw(uint256) external;
 }
 
 contract Bridge is Pool, Ownable {
@@ -92,7 +92,8 @@ contract Bridge is Pool, Ownable {
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
-        if (request.token == nativeWrap) { // withdraw then transfer native to receiver
+        if (request.token == nativeWrap) {
+            // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(request.amount);
             payable(request.receiver).transfer(request.amount);
         } else {
@@ -119,6 +120,7 @@ contract Bridge is Pool, Ownable {
     function setMinSlippage(uint32 minslip) external onlyOwner {
         mams = minslip;
     }
+
     // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver
     function setWrap(address _weth) external onlyOwner {
         nativeWrap = _weth;
@@ -126,5 +128,6 @@ contract Bridge is Pool, Ownable {
 
     // This is needed to receive ETH when calling `IWETH.withdraw`
     receive() external payable {}
+
     fallback() external payable {}
 }

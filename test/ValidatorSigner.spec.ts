@@ -9,7 +9,7 @@ import { SGN, Staking, TestERC20 } from '../typechain';
 import { deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
 
-describe('Signer Tests', function () {
+describe('Validator Signer Tests', function () {
   async function fixture([admin]: Wallet[]) {
     const { staking, sgn, celr } = await deployContracts(admin);
     return { admin, staking, sgn, celr };

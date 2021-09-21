@@ -28,7 +28,7 @@ contract Signers {
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
         address prev = address(0);
         for (uint256 i = 0; i < ss.signers.length; i++) {
-            require(ss.signers[i].account > prev, "signer address not in ascending order");
+            require(ss.signers[i].account > prev, "New signers not in ascending order");
             prev = ss.signers[i].account;
         }
         ssHash = keccak256(_newss);
@@ -41,31 +41,31 @@ contract Signers {
         bytes calldata _curss,
         bytes[] calldata _sigs
     ) public view {
-        require(ssHash == keccak256(_curss), "mismatch current signers");
+        require(ssHash == keccak256(_curss), "Mismatch current signers");
         PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_curss); // sorted signers
-        uint256 totalTokens; // sum of all signer.tokens, do one loop here for simpler code
+        uint256 totalPower; // sum of all signer.power, do one loop here for simpler code
         for (uint256 i = 0; i < ss.signers.length; i++) {
-            totalTokens += ss.signers[i].tokens;
+            totalPower += ss.signers[i].power;
         }
-        // recover signer address, add their tokens
+        // recover signer address, add their power
         bytes32 hash = keccak256(_msg).toEthSignedMessageHash();
-        uint256 signedTokens; // sum of signer who are in sigs
+        uint256 signedPower; // sum of signer powers who are in sigs
         address prev = address(0);
         uint256 signerIdx = 0;
         for (uint256 i = 0; i < _sigs.length; i++) {
             address curSigner = hash.recover(_sigs[i]);
             require(curSigner > prev, "Signers not in ascending order");
             prev = curSigner;
-            // now find match signer in ss, add its token
+            // now find match signer in ss, add its power
             while (curSigner > ss.signers[signerIdx].account) {
                 signerIdx += 1;
-                require(signerIdx < ss.signers.length, "signer not found in current sorted signers");
+                require(signerIdx < ss.signers.length, "Signer not found");
             }
             if (curSigner == ss.signers[signerIdx].account) {
-                signedTokens += ss.signers[signerIdx].tokens;
+                signedPower += ss.signers[signerIdx].power;
             }
         }
 
-        require(signedTokens >= (totalTokens * 2) / 3 + 1, "Quorum not reached");
+        require(signedPower >= (totalPower * 2) / 3 + 1, "Quorum not reached");
     }
 }

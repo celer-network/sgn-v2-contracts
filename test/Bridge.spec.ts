@@ -37,7 +37,7 @@ describe('Bridge Tests', function () {
     );
 
     await expect(bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, req.sigs)).to.be.revertedWith(
-      'signer address not in ascending order'
+      'New signers not in ascending order'
     );
 
     req = await getUpdateSignersRequest(
@@ -53,7 +53,7 @@ describe('Bridge Tests', function () {
       .withArgs('0x' + Buffer.from(req.newSignersBytes).toString('hex'));
 
     await expect(bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, req.sigs)).to.be.revertedWith(
-      'mismatch current signers'
+      'Mismatch current signers'
     );
 
     req = await getUpdateSignersRequest(

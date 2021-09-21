@@ -125,13 +125,13 @@ export async function getSlashRequest(
   return { slashBytes, sigs };
 }
 
-export async function getSignersBytes(accounts: string[], tokens: BigNumber[], sort: Boolean) {
+export async function getSignersBytes(accounts: string[], powers: BigNumber[], sort: Boolean) {
   const { Signer, SortedSigners } = await getProtos();
   const ss = [];
   for (let i = 0; i < accounts.length; i++) {
     const signer = {
       account: hex2Bytes(accounts[i]),
-      tokens: uint2Bytes(tokens[i])
+      power: uint2Bytes(powers[i])
     };
     ss.push(signer);
   }
@@ -152,18 +152,18 @@ export async function getSignersBytes(accounts: string[], tokens: BigNumber[], s
 
 export async function getUpdateSignersRequest(
   newAccounts: string[],
-  newTokens: BigNumber[],
+  newPowers: BigNumber[],
   currSigners: Wallet[],
-  currTokens: BigNumber[],
+  currPowers: BigNumber[],
   sort: Boolean
 ): Promise<{ newSignersBytes: Uint8Array; currSignersBytes: Uint8Array; sigs: number[][] }> {
   const currAccounts = [];
   for (let i = 0; i < currSigners.length; i++) {
     currAccounts.push(currSigners[i].address);
   }
-  const currSignersBytes = await getSignersBytes(currAccounts, currTokens, sort);
+  const currSignersBytes = await getSignersBytes(currAccounts, currPowers, sort);
 
-  const newSignersBytes = await getSignersBytes(newAccounts, newTokens, sort);
+  const newSignersBytes = await getSignersBytes(newAccounts, newPowers, sort);
   const newSignersBytesHash = keccak256(['bytes'], [newSignersBytes]);
 
   currSigners.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));

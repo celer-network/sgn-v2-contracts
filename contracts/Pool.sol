@@ -4,6 +4,7 @@ pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./Signers.sol";
 import "./libraries/PbPool.sol";
@@ -11,7 +12,7 @@ import "./libraries/PbPool.sol";
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
-contract Pool is Signers {
+contract Pool is Signers, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint64 addseq; // ensure unique LiquidityAdded event, start from 1
@@ -29,7 +30,7 @@ contract Pool is Signers {
 
     constructor(bytes memory _signers) Signers(_signers) {}
 
-    function addLiquidity(address _token, uint256 _amount) external {
+    function addLiquidity(address _token, uint256 _amount) external nonReentrant {
         addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);

@@ -66,6 +66,6 @@ contract Signers {
             }
         }
 
-        require(signedPower >= (totalPower * 2) / 3 + 1, "Quorum not reached");
+        require(signedPower > (totalPower * 2) / 3, "Quorum not reached");
     }
 }

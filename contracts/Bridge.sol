@@ -57,7 +57,7 @@ contract Bridge is Pool, Ownable {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
-    ) external {
+    ) external nonReentrant {
         require(_amount > minSend[_token], "amount too small");
         require(_maxSlippage > mams, "max slippage too small");
         bytes32 transferId = keccak256(

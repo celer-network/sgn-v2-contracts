@@ -40,13 +40,13 @@ contract Bridge is Pool, Ownable {
     mapping(address => uint256) public minSend; // send _amount must > minSend
 
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
-    uint32 mams;
+    uint32 public mams;
 
     // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
     // if request.token equals this, will withdraw and send native token to receiver
     // note we don't check whether it's zero address. when this isn't set, and request.token
     // is all 0 address, guarantee fail
-    address nativeWrap;
+    address public nativeWrap;
 
     constructor(bytes memory _signers) Pool(_signers) {}
 

@@ -15,7 +15,7 @@ import "./libraries/PbPool.sol";
 contract Pool is Signers, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    uint64 addseq; // ensure unique LiquidityAdded event, start from 1
+    uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
     // map of successful withdraws, if true means already withdrew money
     mapping(bytes32 => bool) public withdraws;
 

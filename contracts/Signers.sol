@@ -11,7 +11,7 @@ contract Signers {
         bytes curSigners // serialized SortedSigners
     );
     using ECDSA for bytes32;
-    bytes32 ssHash;
+    bytes32 public ssHash;
 
     constructor(bytes memory _ss) {
         ssHash = keccak256(_ss);

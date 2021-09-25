@@ -15,6 +15,7 @@ contract Signers {
 
     constructor(bytes memory _ss) {
         ssHash = keccak256(_ss);
+        emit SignersUpdated(_ss);
     }
 
     // set new signers

@@ -8,17 +8,19 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
+import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbStaking.sol";
 import "./Whitelist.sol";
 
 /**
  * @title A Staking contract shared by all external sidechains and apps
  */
-contract Staking is Ownable, Pausable, Whitelist {
+contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
-    IERC20 public immutable celerToken;
+    IERC20 public immutable CELER_TOKEN;
+
     uint256 public bondedTokens;
     uint256 public nextBondBlock;
     address[] public valAddrs;
@@ -71,7 +73,7 @@ contract Staking is Ownable, Pausable, Whitelist {
         uint256 _validatorBondInterval,
         uint256 _maxSlashFactor
     ) {
-        celerToken = IERC20(_celerTokenAddress);
+        CELER_TOKEN = IERC20(_celerTokenAddress);
 
         params[dt.ParamName.ProposalDeposit] = _proposalDeposit;
         params[dt.ParamName.VotingPeriod] = _votingPeriod;
@@ -219,7 +221,7 @@ contract Staking is Ownable, Pausable, Whitelist {
             bondedTokens += _tokens;
             _decentralizationCheck(validator.tokens);
         }
-        celerToken.safeTransferFrom(delAddr, address(this), _tokens);
+        CELER_TOKEN.safeTransferFrom(delAddr, address(this), _tokens);
         emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, int256(_tokens));
     }
 
@@ -242,7 +244,7 @@ contract Staking is Ownable, Pausable, Whitelist {
         validator.shares -= _shares;
         validator.tokens -= tokens;
         if (validator.status == dt.ValidatorStatus.Unbonded) {
-            celerToken.safeTransfer(delAddr, tokens);
+            CELER_TOKEN.safeTransfer(delAddr, tokens);
             emit Undelegated(_valAddr, delAddr, tokens);
             return;
         } else if (validator.status == dt.ValidatorStatus.Bonded) {
@@ -298,7 +300,7 @@ contract Staking is Ownable, Pausable, Whitelist {
         uint256 tokens = _shareToTokens(undelegationShares, validator.undelegationTokens, validator.undelegationShares);
         validator.undelegationShares -= undelegationShares;
         validator.undelegationTokens -= tokens;
-        celerToken.safeTransfer(delAddr, tokens);
+        CELER_TOKEN.safeTransfer(delAddr, tokens);
         emit Undelegated(_valAddr, delAddr, tokens);
     }
 
@@ -379,10 +381,10 @@ contract Staking is Ownable, Pausable, Whitelist {
             if (collector.amount > 0) {
                 collectAmt += collector.amount;
                 if (collector.account == address(0)) {
-                    celerToken.safeTransfer(msg.sender, collector.amount);
+                    CELER_TOKEN.safeTransfer(msg.sender, collector.amount);
                     emit SlashAmtCollected(msg.sender, collector.amount);
                 } else {
-                    celerToken.safeTransfer(collector.account, collector.amount);
+                    CELER_TOKEN.safeTransfer(collector.account, collector.amount);
                     emit SlashAmtCollected(collector.account, collector.amount);
                 }
             }
@@ -393,7 +395,7 @@ contract Staking is Ownable, Pausable, Whitelist {
 
     function collectForfeiture() external {
         require(forfeiture > 0, "Nothing to collect");
-        celerToken.safeTransfer(rewardContract, forfeiture);
+        CELER_TOKEN.safeTransfer(rewardContract, forfeiture);
         forfeiture = 0;
     }
 
@@ -475,7 +477,7 @@ contract Staking is Ownable, Pausable, Whitelist {
      * @param _amount drained token amount
      */
     function drainToken(uint256 _amount) external whenPaused onlyOwner {
-        celerToken.safeTransfer(msg.sender, _amount);
+        CELER_TOKEN.safeTransfer(msg.sender, _amount);
     }
 
     /**************************
@@ -506,6 +508,20 @@ contract Staking is Ownable, Pausable, Whitelist {
             }
         }
         revert("Quorum not reached");
+    }
+
+    /**
+     * @notice Verifies that a message is signed by a quorum among the validators.
+     * @param _msg signed message
+     * @param // _signers are represented by the current validators
+     * @param _sigs the list of signatures
+     */
+    function verifySigs(
+        bytes calldata _msg,
+        bytes calldata,
+        bytes[] calldata _sigs
+    ) public view override {
+        require(verifySignatures(_msg, _sigs), "Failed to verify sigs");
     }
 
     /**

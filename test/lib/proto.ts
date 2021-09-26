@@ -9,7 +9,8 @@ protobuf.common('google/protobuf/descriptor.proto', {});
 
 interface Proto {
   Slash: protobuf.Type;
-  Reward: protobuf.Type;
+  StakingReward: protobuf.Type;
+  FarmingRewards: protobuf.Type;
   AcctAmtPair: protobuf.Type;
   Signer: protobuf.Type;
   SortedSigners: protobuf.Type;
@@ -17,10 +18,12 @@ interface Proto {
 
 async function getProtos(): Promise<Proto> {
   const staking = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/staking.proto`);
+  const farming = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/farming.proto`);
   const signer = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/signer.proto`);
 
   const Slash = staking.lookupType('staking.Slash');
-  const Reward = staking.lookupType('staking.Reward');
+  const StakingReward = staking.lookupType('staking.StakingReward');
+  const FarmingRewards = farming.lookupType('farming.FarmingRewards');
   const AcctAmtPair = staking.lookupType('staking.AcctAmtPair');
 
   const Signer = signer.lookupType('signer.Signer');
@@ -28,7 +31,8 @@ async function getProtos(): Promise<Proto> {
 
   return {
     Slash,
-    Reward,
+    StakingReward,
+    FarmingRewards,
     AcctAmtPair,
     Signer,
     SortedSigners
@@ -63,18 +67,40 @@ async function calculateSignatures(signers: Wallet[], hash: number[]): Promise<n
   return sigs;
 }
 
-export async function getRewardRequest(
+export async function getStakingRewardRequest(
   recipient: string,
-  cumulativeReward: BigNumber,
+  cumulativeRewardAmount: BigNumber,
   signers: Wallet[]
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
-  const { Reward } = await getProtos();
+  const { StakingReward } = await getProtos();
   const reward = {
     recipient: hex2Bytes(recipient),
-    cumulativeReward: uint2Bytes(cumulativeReward)
+    cumulativeRewardAmount: uint2Bytes(cumulativeRewardAmount)
   };
-  const rewardProto = Reward.create(reward);
-  const rewardBytes = Reward.encode(rewardProto).finish();
+  const rewardProto = StakingReward.create(reward);
+  const rewardBytes = StakingReward.encode(rewardProto).finish();
+  const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
+
+  return { rewardBytes, sigs };
+}
+
+export async function getFarmingRewardsRequest(
+  recipient: string,
+  chainId: BigNumber,
+  tokenAddresses: string[],
+  cumulativeRewardAmounts: BigNumber[],
+  signers: Wallet[]
+): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
+  const { FarmingRewards } = await getProtos();
+  const reward = {
+    recipient: hex2Bytes(recipient),
+    chainId: uint2Bytes(chainId),
+    tokenAddresses: tokenAddresses.map(hex2Bytes),
+    cumulativeRewardAmounts: cumulativeRewardAmounts.map(uint2Bytes)
+  };
+  const rewardProto = FarmingRewards.create(reward);
+  const rewardBytes = FarmingRewards.encode(rewardProto).finish();
   const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
   const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
 
@@ -125,7 +151,7 @@ export async function getSlashRequest(
   return { slashBytes, sigs };
 }
 
-export async function getSignersBytes(accounts: string[], powers: BigNumber[], sort: Boolean) {
+export async function getSignersBytes(accounts: string[], powers: BigNumber[], sort: boolean): Promise<Uint8Array> {
   const { Signer, SortedSigners } = await getProtos();
   const ss = [];
   for (let i = 0; i < accounts.length; i++) {
@@ -155,7 +181,7 @@ export async function getUpdateSignersRequest(
   newPowers: BigNumber[],
   currSigners: Wallet[],
   currPowers: BigNumber[],
-  sort: Boolean
+  sort: boolean
 ): Promise<{ newSignersBytes: Uint8Array; currSignersBytes: Uint8Array; sigs: number[][] }> {
   const currAccounts = [];
   for (let i = 0; i < currSigners.length; i++) {

@@ -4,19 +4,19 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Reward, Staking, TestERC20 } from '../typechain';
+import { Staking, StakingReward, TestERC20 } from '../typechain';
 import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
 import { getSlashRequest } from './lib/proto';
 
 describe('Slash Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, reward, celr } = await deployContracts(admin);
-    return { admin, staking, reward, celr };
+    const { staking, stakingReward, celr } = await deployContracts(admin);
+    return { admin, staking, stakingReward, celr };
   }
 
   let staking: Staking;
-  let reward: Reward;
+  let reward: StakingReward;
   let celr: TestERC20;
   let admin: Wallet;
   let validators: Wallet[];
@@ -26,7 +26,7 @@ describe('Slash Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
-    reward = res.reward;
+    reward = res.stakingReward;
     celr = res.celr;
     admin = res.admin;
     const accounts = await getAccounts(res.admin, [celr], 7);

@@ -3,10 +3,11 @@
 pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./libraries/PbSigner.sol";
 
 // only store hash of serialized SortedSigners
-contract Signers {
+contract Signers is Ownable {
     event SignersUpdated(
         bytes curSigners // serialized SortedSigners
     );
@@ -14,8 +15,10 @@ contract Signers {
     bytes32 public ssHash;
 
     constructor(bytes memory _ss) {
-        ssHash = keccak256(_ss);
-        emit SignersUpdated(_ss);
+        if (_ss.length > 0) {
+            ssHash = keccak256(_ss);
+            emit SignersUpdated(_ss);
+        }
     }
 
     // set new signers
@@ -68,5 +71,11 @@ contract Signers {
         }
 
         require(signedPower > (totalPower * 2) / 3, "Quorum not reached");
+    }
+
+    function setInitSigners(bytes memory _ss) external onlyOwner {
+        require(ssHash == bytes32(0), "signers already set");
+        ssHash = keccak256(_ss);
+        emit SignersUpdated(_ss);
     }
 }

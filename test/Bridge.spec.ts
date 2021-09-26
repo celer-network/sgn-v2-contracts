@@ -9,8 +9,7 @@ import { getSignersBytes, getUpdateSignersRequest } from './lib/proto';
 
 describe('Bridge Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const initSignersBytes = await getSignersBytes([admin.address], [parseUnits('1')], true);
-    const { bridge, token } = await deployBridgeContracts(admin, initSignersBytes);
+    const { bridge, token } = await deployBridgeContracts(admin, []);
     return { admin, bridge, token };
   }
 
@@ -28,6 +27,11 @@ describe('Bridge Tests', function () {
   });
 
   it('should update signers correctly', async function () {
+    const initSignersBytes = await getSignersBytes([admin.address], [parseUnits('1')], true);
+    await expect(bridge.setInitSigners(initSignersBytes))
+      .to.emit(bridge, 'SignersUpdated')
+      .withArgs('0x' + Buffer.from(initSignersBytes).toString('hex'));
+
     let req = await getUpdateSignersRequest(
       [admin.address, accounts[0].address, accounts[1].address, accounts[2].address],
       [parseUnits('10'), parseUnits('10'), parseUnits('10'), parseUnits('10')],

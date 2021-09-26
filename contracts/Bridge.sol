@@ -4,7 +4,6 @@ pragma solidity 0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./libraries/PbBridge.sol";
 import "./Pool.sol";
 
@@ -12,7 +11,7 @@ interface IWETH {
     function withdraw(uint256) external;
 }
 
-contract Bridge is Pool, Ownable {
+contract Bridge is Pool {
     using SafeERC20 for IERC20;
 
     event Send(

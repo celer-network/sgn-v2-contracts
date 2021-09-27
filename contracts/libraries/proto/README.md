@@ -8,3 +8,11 @@ have a single file like soltype.proto define the field option, then other proto 
 
 or maybe we just register the fieldoption w/ proto team officially? still need to import another proto but package will be celer.opt
 https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto#L325
+
+# Generating Solidity bindings
+
+From the project repo root, run:
+
+```sh
+protoc --sol_out=importpb=true:contracts/libraries contracts/libraries/proto/{filename}.proto
+```

@@ -5,15 +5,17 @@ import "google/protobuf/descriptor.proto";
 
 package signer;
 
-extend google.protobuf.FieldOptions { string soltype = 1004; }
+extend google.protobuf.FieldOptions {
+  string soltype = 1004;
+}
 
 // represent one validator's signer, power is validator tokens
 message Signer {
-    bytes account = 1 [ (soltype) = "address" ];
-    bytes power = 2 [ (soltype) = "uint256" ];
+  bytes account = 1 [(soltype) = "address"];
+  bytes power = 2 [(soltype) = "uint256"];
 }
 
 // sorted by signer address
 message SortedSigners {
-    repeated Signer signers = 1;
+  repeated Signer signers = 1;
 }

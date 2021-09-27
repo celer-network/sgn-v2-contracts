@@ -9,20 +9,19 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./Staking.sol";
 
-contract Reward is Ownable, Pausable {
+contract StakingReward is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
     Staking public immutable staking;
-    IERC20 public immutable celerToken;
 
-    mapping(address => uint256) public claimedReward;
+    // recipient => CELR reward amount
+    mapping(address => uint256) public claimedRewardAmounts;
 
-    event RewardClaimed(address indexed recipient, uint256 reward);
-    event RewardPoolContribution(address indexed contributor, uint256 contribution);
+    event StakingRewardClaimed(address indexed recipient, uint256 reward);
+    event StakingRewardContributed(address indexed contributor, uint256 contribution);
 
-    constructor(Staking _staking, address _celerTokenAddress) {
+    constructor(Staking _staking) {
         staking = _staking;
-        celerToken = IERC20(_celerTokenAddress);
     }
 
     /**
@@ -33,26 +32,25 @@ contract Reward is Ownable, Pausable {
      */
     function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
         staking.verifySignatures(_rewardRequest, _sigs);
-        PbStaking.Reward memory reward = PbStaking.decReward(_rewardRequest);
+        PbStaking.StakingReward memory reward = PbStaking.decStakingReward(_rewardRequest);
 
-        uint256 newReward = reward.cumulativeReward - claimedReward[reward.recipient];
+        uint256 cumulativeRewardAmount = reward.cumulativeRewardAmount;
+        uint256 newReward = cumulativeRewardAmount - claimedRewardAmounts[reward.recipient];
         require(newReward > 0, "No new reward");
-
-        claimedReward[reward.recipient] = reward.cumulativeReward;
-        celerToken.safeTransfer(reward.recipient, newReward);
-
-        emit RewardClaimed(reward.recipient, newReward);
+        claimedRewardAmounts[reward.recipient] = cumulativeRewardAmount;
+        staking.CELER_TOKEN().safeTransfer(reward.recipient, newReward);
+        emit StakingRewardClaimed(reward.recipient, newReward);
     }
 
     /**
      * @notice Contribute CELR tokens to the reward pool
-     * @param _amount the amount of CELR tokens to contribute
+     * @param _amount the amount of CELR token to contribute
      */
     function contributeToRewardPool(uint256 _amount) external whenNotPaused {
         address contributor = msg.sender;
-        celerToken.safeTransferFrom(contributor, address(this), _amount);
+        IERC20(staking.CELER_TOKEN()).safeTransferFrom(contributor, address(this), _amount);
 
-        emit RewardPoolContribution(contributor, _amount);
+        emit StakingRewardContributed(contributor, _amount);
     }
 
     /**
@@ -72,11 +70,11 @@ contract Reward is Ownable, Pausable {
     }
 
     /**
-     * @notice Owner drains tokens when the contract is paused
+     * @notice Owner drains CELR tokens when the contract is paused
      * @dev emergency use only
-     * @param _amount drained token amount
+     * @param _amount drained CELR token amount
      */
     function drainToken(uint256 _amount) external whenPaused onlyOwner {
-        celerToken.safeTransfer(msg.sender, _amount);
+        IERC20(staking.CELER_TOKEN()).safeTransfer(msg.sender, _amount);
     }
 }

@@ -4,21 +4,21 @@ import { ethers } from 'hardhat';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Reward, Staking, TestERC20 } from '../typechain';
+import { Staking, StakingReward, TestERC20 } from '../typechain';
 import { deployContracts, getAccounts, loadFixture } from './lib/common';
 import * as consts from './lib/constants';
-import { getRewardRequest } from './lib/proto';
+import { getStakingRewardRequest } from './lib/proto';
 
-describe('Reward Tests', function () {
+describe('StakingReward Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { staking, reward, celr } = await deployContracts(admin);
-    return { admin, staking, reward, celr };
+    const { staking, stakingReward, celr } = await deployContracts(admin);
+    return { admin, staking, stakingReward, celr };
   }
 
   const abiCoder = ethers.utils.defaultAbiCoder;
 
   let staking: Staking;
-  let reward: Reward;
+  let reward: StakingReward;
   let celr: TestERC20;
   let validators: Wallet[];
   let signers: Wallet[];
@@ -26,7 +26,7 @@ describe('Reward Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
-    reward = res.reward;
+    reward = res.stakingReward;
     celr = res.celr;
     const accounts = await getAccounts(res.admin, [celr], 6);
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
@@ -50,7 +50,7 @@ describe('Reward Tests', function () {
 
   it('should contribute to reward pool successfully', async function () {
     await expect(reward.connect(validators[0]).contributeToRewardPool(100))
-      .to.emit(reward, 'RewardPoolContribution')
+      .to.emit(reward, 'StakingRewardContributed')
       .withArgs(validators[0].address, 100);
   });
 
@@ -64,41 +64,41 @@ describe('Reward Tests', function () {
 
   it('should fail to claim reward when paused', async function () {
     await reward.pause();
-    const r = await getRewardRequest(validators[0].address, parseUnits('100', 'wei'), signers);
+    const r = await getStakingRewardRequest(validators[0].address, parseUnits('100', 'wei'), signers);
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Pausable: paused');
   });
 
   it('should claim reward successfully', async function () {
-    let r = await getRewardRequest(validators[0].address, parseUnits('40', 'wei'), signers);
+    let r = await getStakingRewardRequest(validators[0].address, parseUnits('40', 'wei'), signers);
     await expect(reward.claimReward(r.rewardBytes, r.sigs))
-      .to.emit(reward, 'RewardClaimed')
+      .to.emit(reward, 'StakingRewardClaimed')
       .withArgs(validators[0].address, 40);
 
-    r = await getRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers);
+    r = await getStakingRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers);
     await expect(reward.claimReward(r.rewardBytes, r.sigs))
-      .to.emit(reward, 'RewardClaimed')
+      .to.emit(reward, 'StakingRewardClaimed')
       .withArgs(validators[0].address, 50);
   });
 
   it('should fail to claim reward more than amount in reward pool', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
+    const r = await getStakingRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
       'ERC20: transfer amount exceeds balance'
     );
   });
 
   it('should fail to claim reward if there is no new reward', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('0'), signers);
+    const r = await getStakingRewardRequest(validators[0].address, parseUnits('0'), signers);
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('No new reward');
   });
 
   it('should fail to claim reward with insufficient signatures', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), [signers[0], signers[1]]);
+    const r = await getStakingRewardRequest(validators[0].address, parseUnits('10', 'wei'), [signers[0], signers[1]]);
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
   });
 
   it('should fail to claim reward with disordered signatures', async function () {
-    const r = await getRewardRequest(validators[0].address, parseUnits('10', 'wei'), signers);
+    const r = await getStakingRewardRequest(validators[0].address, parseUnits('10', 'wei'), signers);
     await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]])).to.be.revertedWith(
       'Signers not in ascending order'
     );

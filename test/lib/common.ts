@@ -5,23 +5,26 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import {
+  Bridge,
+  Bridge__factory,
+  FarmingRewards,
+  FarmingRewards__factory,
+  Govern,
+  Govern__factory,
   SGN,
   SGN__factory,
   Staking,
   Staking__factory,
-  Reward,
-  Reward__factory,
-  Govern,
-  Govern__factory,
-  Viewer,
-  Viewer__factory,
+  StakingReward,
+  StakingReward__factory,
   TestERC20,
   TestERC20__factory,
-  Bridge,
-  Bridge__factory
+  Viewer,
+  Viewer__factory,
 } from '../../typechain';
 import * as consts from './constants';
-import { Bytes } from '@ethersproject/bytes';
+
+import type { Bytes } from '@ethersproject/bytes';
 
 // Workaround for https://github.com/nomiclabs/hardhat/issues/849
 // TODO: Remove once fixed upstream.
@@ -33,7 +36,8 @@ export function loadFixture<T>(fixture: Fixture<T>): Promise<T> {
 interface DeploymentInfo {
   staking: Staking;
   sgn: SGN;
-  reward: Reward;
+  stakingReward: StakingReward;
+  farmingRewards: FarmingRewards;
   govern: Govern;
   viewer: Viewer;
   celr: TestERC20;
@@ -65,19 +69,23 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
   const sgn = await sgnFactory.connect(admin).deploy(staking.address);
   await sgn.deployed();
 
-  const rewardFactory = (await ethers.getContractFactory('Reward')) as Reward__factory;
-  const reward = await rewardFactory.connect(admin).deploy(staking.address, celr.address);
-  await reward.deployed();
+  const stakingRewardFactory = (await ethers.getContractFactory('StakingReward')) as StakingReward__factory;
+  const stakingReward = await stakingRewardFactory.connect(admin).deploy(staking.address);
+  await stakingReward.deployed();
+
+  const farmingRewardsFactory = (await ethers.getContractFactory('FarmingRewards')) as FarmingRewards__factory;
+  const farmingRewards = await farmingRewardsFactory.connect(admin).deploy(staking.address);
+  await farmingRewards.deployed();
 
   const governFactory = (await ethers.getContractFactory('Govern')) as Govern__factory;
-  const govern = await governFactory.connect(admin).deploy(staking.address, celr.address, reward.address);
+  const govern = await governFactory.connect(admin).deploy(staking.address, celr.address, stakingReward.address);
   await govern.deployed();
 
   const viewerFactory = (await ethers.getContractFactory('Viewer')) as Viewer__factory;
   const viewer = await viewerFactory.connect(admin).deploy(staking.address);
   await viewer.deployed();
 
-  return { staking, sgn, reward, govern, viewer, celr };
+  return { staking, sgn, stakingReward, farmingRewards, govern, viewer, celr };
 }
 
 interface BridgeInfo {

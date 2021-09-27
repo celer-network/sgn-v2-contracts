@@ -8,12 +8,12 @@ import "./Pb.sol";
 library PbStaking {
     using Pb for Pb.Buffer; // so we can call Pb funcs on Buffer obj
 
-    struct Reward {
+    struct StakingReward {
         address recipient; // tag: 1
-        uint256 cumulativeReward; // tag: 2
-    } // end struct Reward
+        uint256 cumulativeRewardAmount; // tag: 2
+    } // end struct StakingReward
 
-    function decReward(bytes memory raw) internal pure returns (Reward memory m) {
+    function decStakingReward(bytes memory raw) internal pure returns (StakingReward memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
         uint256 tag;
@@ -25,12 +25,12 @@ library PbStaking {
             else if (tag == 1) {
                 m.recipient = Pb._address(buf.decBytes());
             } else if (tag == 2) {
-                m.cumulativeReward = Pb._uint256(buf.decBytes());
+                m.cumulativeRewardAmount = Pb._uint256(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag
         }
-    } // end decoder Reward
+    } // end decoder StakingReward
 
     struct Slash {
         address validator; // tag: 1

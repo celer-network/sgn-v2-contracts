@@ -60,7 +60,8 @@ contract Bridge is Pool {
         require(_amount > minSend[_token], "amount too small");
         require(_maxSlippage > mams, "max slippage too small");
         bytes32 transferId = keccak256(
-            abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, block.chainid)
+            // uint64(block.chainid) for consistency as entire system uses uint64 for chain id
+            abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;

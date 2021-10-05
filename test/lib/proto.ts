@@ -162,12 +162,13 @@ export async function getSignersBytes(accounts: string[], powers: BigNumber[], s
   for (let i = 0; i < accounts.length; i++) {
     const signer = {
       account: hex2Bytes(accounts[i]),
-      power: uint2Bytes(powers[i])
+      power: uint2Bytes(powers[i]),
+      address: accounts[i]
     };
     ss.push(signer);
   }
   if (sort) {
-    ss.sort((a, b) => (a.account > b.account ? 1 : -1));
+    ss.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
   }
   const signers = [];
   for (let i = 0; i < ss.length; i++) {

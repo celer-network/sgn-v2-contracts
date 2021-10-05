@@ -6,7 +6,6 @@
     "clean": "hardhat clean",
     "compile": "hardhat compile",
     "generate:typechain": "rm -rf typechain && hardhat typechain",
-    "report-gas:benchmark": "hardhat test benchmark/*.ts",
     "report-gas:summary": "REPORT_GAS=true hardhat test",
     "size-contracts": "hardhat size-contracts | sed -r 's/[[:cntrl:]]\\[[0-9]{1,3}m//g' > reports/contract_sizes.txt",
     "test": "hardhat compile && hardhat test"

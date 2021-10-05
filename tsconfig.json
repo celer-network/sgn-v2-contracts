@@ -15,7 +15,6 @@
   "exclude": ["artifacts", "build", "cache", "node_modules"],
   "include": [
     "deploy/**/*",
-    "benchmark/**/*",
     "scripts/**/*",
     "test/**/*",
     "typechain/**/*",

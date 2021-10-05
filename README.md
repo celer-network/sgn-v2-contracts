@@ -12,7 +12,6 @@ yarn test
 
 ```sh
 yarn report-gas:summary
-yarn report-gas:benchmark // not implemented yet
 ```
 
 Check `reports/gas_usage`.

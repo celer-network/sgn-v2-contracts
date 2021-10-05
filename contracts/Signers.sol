@@ -15,13 +15,21 @@ contract Signers is Ownable, ISigsVerifier {
         bytes curSigners // serialized SortedSigners
     );
 
+    event SignersResetting(uint256 resetTime);
+
     bytes32 public ssHash;
+
+    // reset can be called by the owner address for emergency recovery
+    uint256 public resetTime;
+    uint256 public noticePeriod; // advance notice period as seconds for reset
+    uint256 constant MAX_INT = 2**256 - 1;
 
     constructor(bytes memory _ss) {
         if (_ss.length > 0) {
             ssHash = keccak256(_ss);
             emit SignersUpdated(_ss);
         }
+        resetTime = MAX_INT;
     }
 
     // set new signers
@@ -90,6 +98,23 @@ contract Signers is Ownable, ISigsVerifier {
     function setInitSigners(bytes memory _ss) external onlyOwner {
         require(ssHash == bytes32(0), "signers already set");
         ssHash = keccak256(_ss);
+        emit SignersUpdated(_ss);
+    }
+
+    function increaseNoticePeriod(uint256 period) external onlyOwner {
+        require(period > noticePeriod, "notice period can only be increased");
+        noticePeriod = period;
+    }
+
+    function startResetSigners() external onlyOwner {
+        resetTime = block.timestamp + noticePeriod;
+        emit SignersResetting(resetTime);
+    }
+
+    function resetSigners(bytes memory _ss) external onlyOwner {
+        require(block.timestamp > resetTime, "not reach reset time");
+        ssHash = keccak256(_ss);
+        resetTime = MAX_INT;
         emit SignersUpdated(_ss);
     }
 }

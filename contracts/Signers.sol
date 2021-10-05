@@ -26,8 +26,7 @@ contract Signers is Ownable, ISigsVerifier {
 
     constructor(bytes memory _ss) {
         if (_ss.length > 0) {
-            ssHash = keccak256(_ss);
-            emit SignersUpdated(_ss);
+            _updateSigners(_ss);
         }
         resetTime = MAX_INT;
     }
@@ -39,15 +38,7 @@ contract Signers is Ownable, ISigsVerifier {
         bytes[] calldata _sigs
     ) external {
         verifySigs(_newss, _curss, _sigs);
-        // ensure newss is sorted
-        PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
-        address prev = address(0);
-        for (uint256 i = 0; i < ss.signers.length; i++) {
-            require(ss.signers[i].account > prev, "New signers not in ascending order");
-            prev = ss.signers[i].account;
-        }
-        ssHash = keccak256(_newss);
-        emit SignersUpdated(_newss);
+        _updateSigners(_newss);
     }
 
     /**
@@ -95,10 +86,9 @@ contract Signers is Ownable, ISigsVerifier {
         revert("Quorum not reached");
     }
 
-    function setInitSigners(bytes memory _ss) external onlyOwner {
+    function setInitSigners(bytes calldata _initss) external onlyOwner {
         require(ssHash == bytes32(0), "signers already set");
-        ssHash = keccak256(_ss);
-        emit SignersUpdated(_ss);
+        _updateSigners(_initss);
     }
 
     function increaseNoticePeriod(uint256 period) external onlyOwner {
@@ -111,10 +101,21 @@ contract Signers is Ownable, ISigsVerifier {
         emit SignersResetting(resetTime);
     }
 
-    function resetSigners(bytes memory _ss) external onlyOwner {
+    function resetSigners(bytes calldata _newss) external onlyOwner {
         require(block.timestamp > resetTime, "not reach reset time");
-        ssHash = keccak256(_ss);
         resetTime = MAX_INT;
-        emit SignersUpdated(_ss);
+        _updateSigners(_newss);
+    }
+
+    function _updateSigners(bytes memory _newss) private {
+        // ensure newss is sorted
+        PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
+        address prev = address(0);
+        for (uint256 i = 0; i < ss.signers.length; i++) {
+            require(ss.signers[i].account > prev, "New signers not in ascending order");
+            prev = ss.signers[i].account;
+        }
+        ssHash = keccak256(_newss);
+        emit SignersUpdated(_newss);
     }
 }

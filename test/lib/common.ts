@@ -20,7 +20,7 @@ import {
   TestERC20,
   TestERC20__factory,
   Viewer,
-  Viewer__factory,
+  Viewer__factory
 } from '../../typechain';
 import * as consts from './constants';
 

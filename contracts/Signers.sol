@@ -15,13 +15,20 @@ contract Signers is Ownable, ISigsVerifier {
         bytes curSigners // serialized SortedSigners
     );
 
+    event SignersResetting(uint256 resetTime);
+
     bytes32 public ssHash;
+
+    // reset can be called by the owner address for emergency recovery
+    uint256 public resetTime;
+    uint256 public noticePeriod; // advance notice period as seconds for reset
+    uint256 constant MAX_INT = 2**256 - 1;
 
     constructor(bytes memory _ss) {
         if (_ss.length > 0) {
-            ssHash = keccak256(_ss);
-            emit SignersUpdated(_ss);
+            _updateSigners(_ss);
         }
+        resetTime = MAX_INT;
     }
 
     // set new signers
@@ -31,15 +38,7 @@ contract Signers is Ownable, ISigsVerifier {
         bytes[] calldata _sigs
     ) external {
         verifySigs(_newss, _curss, _sigs);
-        // ensure newss is sorted
-        PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
-        address prev = address(0);
-        for (uint256 i = 0; i < ss.signers.length; i++) {
-            require(ss.signers[i].account > prev, "New signers not in ascending order");
-            prev = ss.signers[i].account;
-        }
-        ssHash = keccak256(_newss);
-        emit SignersUpdated(_newss);
+        _updateSigners(_newss);
     }
 
     /**
@@ -87,9 +86,36 @@ contract Signers is Ownable, ISigsVerifier {
         revert("Quorum not reached");
     }
 
-    function setInitSigners(bytes memory _ss) external onlyOwner {
+    function setInitSigners(bytes calldata _initss) external onlyOwner {
         require(ssHash == bytes32(0), "signers already set");
-        ssHash = keccak256(_ss);
-        emit SignersUpdated(_ss);
+        _updateSigners(_initss);
+    }
+
+    function increaseNoticePeriod(uint256 period) external onlyOwner {
+        require(period > noticePeriod, "notice period can only be increased");
+        noticePeriod = period;
+    }
+
+    function startResetSigners() external onlyOwner {
+        resetTime = block.timestamp + noticePeriod;
+        emit SignersResetting(resetTime);
+    }
+
+    function resetSigners(bytes calldata _newss) external onlyOwner {
+        require(block.timestamp > resetTime, "not reach reset time");
+        resetTime = MAX_INT;
+        _updateSigners(_newss);
+    }
+
+    function _updateSigners(bytes memory _newss) private {
+        // ensure newss is sorted
+        PbSigner.SortedSigners memory ss = PbSigner.decSortedSigners(_newss);
+        address prev = address(0);
+        for (uint256 i = 0; i < ss.signers.length; i++) {
+            require(ss.signers[i].account > prev, "New signers not in ascending order");
+            prev = ss.signers[i].account;
+        }
+        ssHash = keccak256(_newss);
+        emit SignersUpdated(_newss);
     }
 }

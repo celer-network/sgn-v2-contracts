@@ -95,6 +95,11 @@ interface BridgeInfo {
   token: TestERC20;
 }
 
+interface Bridge2Info {
+  bridge2: Bridge2;
+  token: TestERC20;
+}
+
 export async function deployBridgeContracts(admin: Wallet, signers: Bytes): Promise<BridgeInfo> {
   const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
   const token = await testERC20Factory.connect(admin).deploy();
@@ -107,11 +112,15 @@ export async function deployBridgeContracts(admin: Wallet, signers: Bytes): Prom
   return { bridge, token };
 }
 
-export async function deployBridge2Contracts(admin: Wallet): Promise<Bridge2> {
+export async function deployBridge2Contracts(admin: Wallet): Promise<Bridge2Info> {
+  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const token = await testERC20Factory.connect(admin).deploy();
+  await token.deployed();
+
   const bridge2Factory = (await ethers.getContractFactory('Bridge2')) as Bridge2__factory;
   const bridge2 = await bridge2Factory.connect(admin).deploy();
   await bridge2.deployed();
-  return bridge2;
+  return { bridge2, token };
 }
 
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {

@@ -18,6 +18,7 @@ contract Signers2 is Ownable {
         address[] calldata _signers, // current sorted signers
         uint256[] calldata _powers // powers of current sorted signers
     ) public view {
+        require(_signers.length == _powers.length, "signers and powers length not match");
         bytes32 h = keccak256(abi.encodePacked(_signers, _powers));
         require(ssHash == h, "Mismatch current signers");
         uint256 totalPower; // sum of all signer.power, do one loop here for simpler code
@@ -64,7 +65,7 @@ contract Signers2 is Ownable {
     }
 
     function _updateSigners(address[] calldata _signers, uint256[] calldata _powers) private {
-        require(_signers.length == _powers.length, "length not match");
+        require(_signers.length == _powers.length, "signers and powers length not match");
         address prev = address(0);
         for (uint256 i = 0; i < _signers.length; i++) {
             require(_signers[i] > prev, "New signers not in ascending order");

@@ -47,8 +47,6 @@ contract Bridge is Pool {
     // is all 0 address, guarantee fail
     address public nativeWrap;
 
-    constructor(bytes memory _signers) Pool(_signers) {}
-
     function send(
         address _receiver,
         address _token,
@@ -72,10 +70,11 @@ contract Bridge is Pool {
 
     function relay(
         bytes calldata _relayRequest,
-        bytes calldata _curss,
-        bytes[] calldata _sigs
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
     ) external {
-        verifySigs(_relayRequest, _curss, _sigs);
+        verifySigs(_relayRequest, _sigs, _signers, _powers);
         PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
         require(request.dstChainId == block.chainid, "dst chainId not match");
 

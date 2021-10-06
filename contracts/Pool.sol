@@ -28,8 +28,6 @@ contract Pool is Signers, ReentrancyGuard {
 
     event WithdrawDone(bytes32 withdrawId, uint64 seqnum, address receiver, address token, uint256 amount);
 
-    constructor(bytes memory _signers) Signers(_signers) {}
-
     function addLiquidity(address _token, uint256 _amount) external nonReentrant {
         addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -38,10 +36,11 @@ contract Pool is Signers, ReentrancyGuard {
 
     function withdraw(
         bytes calldata _wdmsg,
-        bytes calldata _curss,
-        bytes[] calldata _sigs
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
     ) external {
-        verifySigs(_wdmsg, _curss, _sigs);
+        verifySigs(_wdmsg, _sigs, _signers, _powers);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");

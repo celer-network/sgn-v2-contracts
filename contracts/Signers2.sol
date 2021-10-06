@@ -24,9 +24,8 @@ contract Signers2 is Ownable {
         for (uint256 i = 0; i < _signers.length; i++) {
             totalPower += _powers[i];
         }
-        uint256 quorumThreshold = (totalPower * 2) / 3 + 1;
-        uint256 sigendPower = _getSignedPowers(keccak256(_msg).toEthSignedMessageHash(), _sigs, _signers, _powers);
-        require(sigendPower >= quorumThreshold, "Quorum not reached");
+        uint256 quorum = (totalPower * 2) / 3 + 1;
+        _verifySignedPowers(keccak256(_msg).toEthSignedMessageHash(), _sigs, _signers, _powers, quorum);
     }
 
     function resetSigners(address[] calldata _signers, uint256[] calldata _powers) external onlyOwner {
@@ -34,12 +33,13 @@ contract Signers2 is Ownable {
     }
 
     // separate from verifySigs func to avoid "stack too deep" issue
-    function _getSignedPowers(
+    function _verifySignedPowers(
         bytes32 _hash,
         bytes[] calldata _sigs,
         address[] calldata _signers,
-        uint256[] calldata _powers
-    ) private pure returns (uint256) {
+        uint256[] calldata _powers,
+        uint256 quorum
+    ) private pure {
         uint256 signedPower; // sum of signer powers who are in sigs
         address prev = address(0);
         uint256 index = 0;
@@ -55,8 +55,12 @@ contract Signers2 is Ownable {
             if (signer == _signers[index]) {
                 signedPower += _powers[index];
             }
+            if (signedPower >= quorum) {
+                // return early to save gas
+                return;
+            }
         }
-        return signedPower;
+        revert("Quorum not reached");
     }
 
     function _updateSigners(address[] calldata _signers, uint256[] calldata _powers) private {

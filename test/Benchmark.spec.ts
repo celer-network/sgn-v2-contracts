@@ -137,7 +137,7 @@ async function getPowers(
   const powers: BigNumber[] = [];
   signers.push(accounts[0]);
   addrs.push(accounts[0].address);
-  powers.push(parseUnits('100'));
+  powers.push(parseUnits('1'));
   for (let i = 1; i < num; i++) {
     signers.push(accounts[i]);
     addrs.push(accounts[i].address);

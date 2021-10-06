@@ -29,15 +29,17 @@ contract FarmingRewards is Ownable, Pausable {
      * @notice Claim rewards
      * @dev Here we use cumulative reward to make claim process idempotent
      * @param _rewardsRequest rewards request bytes coded in protobuf
-     * @param _signers list of signers.
-     * @param _sigs list of signer signatures
+     * @param _sigs list of signatures sorted by signer addresses
+     * @param _signers sorted list of current signers
+     * @param _powers powers of current signers
      */
     function claimRewards(
         bytes calldata _rewardsRequest,
-        bytes calldata _signers,
-        bytes[] calldata _sigs
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
     ) external whenNotPaused {
-        sigsVerifier.verifySigs(_rewardsRequest, _signers, _sigs);
+        sigsVerifier.verifySigs(_rewardsRequest, _sigs, _signers, _powers);
         PbFarming.FarmingRewards memory rewards = PbFarming.decFarmingRewards(_rewardsRequest);
         require(rewards.chainId == block.chainid, "Chain ID mismatch");
         bool hasNewReward;

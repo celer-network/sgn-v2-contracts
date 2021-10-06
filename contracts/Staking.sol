@@ -513,13 +513,13 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     /**
      * @notice Verifies that a message is signed by a quorum among the validators.
      * @param _msg signed message
-     * @param // _signers are represented by the current validators
      * @param _sigs the list of signatures
      */
     function verifySigs(
-        bytes calldata _msg,
-        bytes calldata,
-        bytes[] calldata _sigs
+        bytes memory _msg,
+        bytes[] calldata _sigs,
+        address[] calldata,
+        uint256[] calldata
     ) public view override {
         require(verifySignatures(_msg, _sigs), "Failed to verify sigs");
     }

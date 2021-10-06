@@ -17,7 +17,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 const GAS_USAGE_DIR = 'reports/gas_usage/';
 const GAS_USAGE_LOG = path.join(GAS_USAGE_DIR, 'relay.txt');
 
-describe('Relay2 Gas Benchmark', function () {
+describe('Relay Gas Benchmark', function () {
   if (!fs.existsSync(GAS_USAGE_DIR)) {
     fs.mkdirSync(GAS_USAGE_DIR, { recursive: true });
   }

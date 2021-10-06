@@ -74,7 +74,7 @@ describe('FarmingRewards Tests', function () {
       [parseUnits('100', 'wei')],
       signers
     );
-    await expect(rewards.claimRewards(r.rewardBytes, [], r.sigs)).to.be.revertedWith('Pausable: paused');
+    await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith('Pausable: paused');
   });
 
   it('should claim reward successfully', async function () {
@@ -85,7 +85,7 @@ describe('FarmingRewards Tests', function () {
       [parseUnits('40', 'wei')],
       signers
     );
-    await expect(rewards.claimRewards(r.rewardBytes, [], r.sigs))
+    await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], []))
       .to.emit(rewards, 'FarmingRewardClaimed')
       .withArgs(validators[0].address, celr.address, 40);
 
@@ -96,7 +96,7 @@ describe('FarmingRewards Tests', function () {
       [parseUnits('90', 'wei')],
       signers
     );
-    await expect(rewards.claimRewards(r.rewardBytes, [], r.sigs))
+    await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], []))
       .to.emit(rewards, 'FarmingRewardClaimed')
       .withArgs(validators[0].address, celr.address, 50);
   });
@@ -109,7 +109,7 @@ describe('FarmingRewards Tests', function () {
       [parseUnits('101', 'wei')],
       signers
     );
-    await expect(rewards.claimRewards(r.rewardBytes, [], r.sigs)).to.be.revertedWith(
+    await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith(
       'ERC20: transfer amount exceeds balance'
     );
   });
@@ -122,7 +122,7 @@ describe('FarmingRewards Tests', function () {
       [parseUnits('0')],
       signers
     );
-    await expect(rewards.claimRewards(r.rewardBytes, [], r.sigs)).to.be.revertedWith('No new reward');
+    await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith('No new reward');
   });
 
   it('should fail to claim reward with insufficient signatures', async function () {
@@ -133,7 +133,7 @@ describe('FarmingRewards Tests', function () {
       [parseUnits('10', 'wei')],
       [signers[0], signers[1]]
     );
-    await expect(rewards.claimRewards(r.rewardBytes, [], r.sigs)).to.be.revertedWith('Quorum not reached');
+    await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith('Quorum not reached');
   });
 
   it('should fail to claim reward with disordered signatures', async function () {
@@ -145,10 +145,10 @@ describe('FarmingRewards Tests', function () {
       signers
     );
     await expect(
-      rewards.claimRewards(r.rewardBytes, [], [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]])
+      rewards.claimRewards(r.rewardBytes, [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]], [], [])
     ).to.be.revertedWith('Signers not in ascending order');
     await expect(
-      rewards.claimRewards(r.rewardBytes, [], [r.sigs[0], r.sigs[0], r.sigs[1], r.sigs[2]])
+      rewards.claimRewards(r.rewardBytes, [r.sigs[0], r.sigs[0], r.sigs[1], r.sigs[2]], [], [])
     ).to.be.revertedWith('Signers not in ascending order');
   });
 });

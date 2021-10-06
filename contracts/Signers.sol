@@ -4,8 +4,9 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/ISigsVerifier.sol";
 
-contract Signers is Ownable {
+contract Signers is Ownable, ISigsVerifier {
     using ECDSA for bytes32;
 
     bytes32 public ssHash;
@@ -32,7 +33,7 @@ contract Signers is Ownable {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) public view {
+    ) public view override {
         bytes32 h = keccak256(abi.encodePacked(_signers, _powers));
         require(ssHash == h, "Mismatch current signers");
         _verifySignedPowers(keccak256(_msg).toEthSignedMessageHash(), _sigs, _signers, _powers);

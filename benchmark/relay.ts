@@ -11,13 +11,13 @@ import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20 } from '../typechain';
 import { deployBridgeContracts, getAccounts, loadFixture } from '../test/lib/common';
-import { getSignersBytes, getRelayRequest } from '../test/lib/proto';
+import { getRelayRequest } from '../test/lib/proto';
 import { BigNumber } from '@ethersproject/bignumber';
 
 const GAS_USAGE_DIR = 'reports/gas_usage/';
 const GAS_USAGE_LOG = path.join(GAS_USAGE_DIR, 'relay.txt');
 
-describe('Relay Gas Benchmark', function () {
+describe('Relay2 Gas Benchmark', function () {
   if (!fs.existsSync(GAS_USAGE_DIR)) {
     fs.mkdirSync(GAS_USAGE_DIR, { recursive: true });
   }
@@ -25,7 +25,7 @@ describe('Relay Gas Benchmark', function () {
   fs.appendFileSync(GAS_USAGE_LOG, '<signer num, quorum sig num, gas cost> for cbr relay tx\n\n');
 
   async function fixture([admin]: Wallet[]) {
-    const { bridge, token } = await deployBridgeContracts(admin, []);
+    const { bridge, token } = await deployBridgeContracts(admin);
     return { admin, bridge, token };
   }
 
@@ -81,16 +81,15 @@ describe('Relay Gas Benchmark', function () {
     let lastCost = 0;
     for (let i = minNum; i <= maxNum; i++) {
       const { signers, addrs, powers, quorumSigNum } = await getPowers(accounts, i, quorumSigs);
-      const signerBytes = await getSignersBytes(addrs, powers, true);
-      await bridge.startResetSigners();
-      await bridge.resetSigners(signerBytes);
+      await bridge.notifyResetSigners();
+      await bridge.resetSigners(addrs, powers);
 
       const sender = accounts[0];
       const receiver = accounts[1];
       const amount = parseUnits('1');
       const chainId = (await ethers.provider.getNetwork()).chainId;
       const srcXferId = keccak256(['uint64'], [Date.now()]); // fake src xfer id
-      const { relayBytes, curss, sigs } = await getRelayRequest(
+      const { relayBytes, sigs } = await getRelayRequest(
         sender.address,
         receiver.address,
         token.address,
@@ -99,9 +98,8 @@ describe('Relay Gas Benchmark', function () {
         chainId,
         srcXferId,
         signers,
-        powers
       );
-      const gasUsed = (await (await bridge.relay(relayBytes, curss, sigs)).wait()).gasUsed;
+      const gasUsed = (await (await bridge.relay(relayBytes, sigs, addrs, powers)).wait()).gasUsed;
       if (i == minNum) {
         firstCost = gasUsed.toNumber();
       }

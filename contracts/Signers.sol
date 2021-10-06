@@ -95,12 +95,12 @@ contract Signers is Ownable {
         uint256 index = 0;
         for (uint256 i = 0; i < _sigs.length; i++) {
             address signer = _hash.recover(_sigs[i]);
-            require(signer > prev, "Signers not in ascending order");
+            require(signer > prev, "signers not in ascending order");
             prev = signer;
             // now find match signer add its power
             while (signer > _signers[index]) {
                 index += 1;
-                require(index < _signers.length, "Signer not found");
+                require(index < _signers.length, "signer not found");
             }
             if (signer == _signers[index]) {
                 signedPower += _powers[index];
@@ -110,7 +110,7 @@ contract Signers is Ownable {
                 return;
             }
         }
-        revert("Quorum not reached");
+        revert("quorum not reached");
     }
 
     function _updateSigners(address[] calldata _signers, uint256[] calldata _powers) private {

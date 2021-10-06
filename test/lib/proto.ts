@@ -12,24 +12,18 @@ interface Proto {
   StakingReward: protobuf.Type;
   FarmingRewards: protobuf.Type;
   AcctAmtPair: protobuf.Type;
-  Signer: protobuf.Type;
-  SortedSigners: protobuf.Type;
   Relay: protobuf.Type;
 }
 
 async function getProtos(): Promise<Proto> {
   const staking = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/staking.proto`);
   const farming = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/farming.proto`);
-  const signer = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/signer.proto`);
   const bridge = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/bridge.proto`);
 
   const Slash = staking.lookupType('staking.Slash');
   const StakingReward = staking.lookupType('staking.StakingReward');
   const FarmingRewards = farming.lookupType('farming.FarmingRewards');
   const AcctAmtPair = staking.lookupType('staking.AcctAmtPair');
-
-  const Signer = signer.lookupType('signer.Signer');
-  const SortedSigners = signer.lookupType('signer.SortedSigners');
 
   const Relay = bridge.lookupType('bridge.Relay');
 
@@ -38,13 +32,11 @@ async function getProtos(): Promise<Proto> {
     StakingReward,
     FarmingRewards,
     AcctAmtPair,
-    Signer,
-    SortedSigners,
     Relay
   };
 }
 
-function hex2Bytes(hexString: string): number[] {
+export function hex2Bytes(hexString: string): number[] {
   let hex = hexString;
   const result = [];
   if (hex.substr(0, 2) === '0x') {
@@ -59,11 +51,11 @@ function hex2Bytes(hexString: string): number[] {
   return result;
 }
 
-function uint2Bytes(x: BigNumber): number[] {
+export function uint2Bytes(x: BigNumber): number[] {
   return hex2Bytes(x.toHexString());
 }
 
-async function calculateSignatures(signers: Wallet[], hash: number[]): Promise<number[][]> {
+export async function calculateSignatures(signers: Wallet[], hash: number[]): Promise<number[][]> {
   const sigs = [];
   for (let i = 0; i < signers.length; i++) {
     const sig = await signers[i].signMessage(hash);
@@ -156,54 +148,6 @@ export async function getSlashRequest(
   return { slashBytes, sigs };
 }
 
-export async function getSignersBytes(accounts: string[], powers: BigNumber[], sort: boolean): Promise<Uint8Array> {
-  const { Signer, SortedSigners } = await getProtos();
-  const ss = [];
-  for (let i = 0; i < accounts.length; i++) {
-    const signer = {
-      account: hex2Bytes(accounts[i]),
-      power: uint2Bytes(powers[i]),
-      address: accounts[i]
-    };
-    ss.push(signer);
-  }
-  if (sort) {
-    ss.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  }
-  const signers = [];
-  for (let i = 0; i < ss.length; i++) {
-    const signerProto = Signer.create(ss[i]);
-    signers.push(signerProto);
-  }
-  const signersProto = {
-    signers: signers
-  };
-  const signersBytes = SortedSigners.encode(signersProto).finish();
-  return signersBytes;
-}
-
-export async function getUpdateSignersRequest(
-  newAccounts: string[],
-  newPowers: BigNumber[],
-  currSigners: Wallet[],
-  currPowers: BigNumber[],
-  sort: boolean
-): Promise<{ newSignersBytes: Uint8Array; currSignersBytes: Uint8Array; sigs: number[][] }> {
-  const currAccounts = [];
-  for (let i = 0; i < currSigners.length; i++) {
-    currAccounts.push(currSigners[i].address);
-  }
-  const currSignersBytes = await getSignersBytes(currAccounts, currPowers, sort);
-
-  const newSignersBytes = await getSignersBytes(newAccounts, newPowers, sort);
-  const newSignersBytesHash = keccak256(['bytes'], [newSignersBytes]);
-
-  currSigners.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  const sigs = await calculateSignatures(currSigners, hex2Bytes(newSignersBytesHash));
-
-  return { newSignersBytes, currSignersBytes, sigs };
-}
-
 export async function getRelayRequest(
   sender: string,
   receiver: string,
@@ -212,9 +156,8 @@ export async function getRelayRequest(
   srcChainId: number,
   dstChainId: number,
   srcTransferId: string,
-  signers: Wallet[],
-  powers: BigNumber[]
-): Promise<{ relayBytes: Uint8Array; curss: Uint8Array; sigs: number[][] }> {
+  signers: Wallet[]
+): Promise<{ relayBytes: Uint8Array; sigs: number[][] }> {
   const { Relay } = await getProtos();
   const relay = {
     sender: hex2Bytes(sender),
@@ -233,10 +176,9 @@ export async function getRelayRequest(
   for (let i = 0; i < signers.length; i++) {
     signerAddrs.push(signers[i].address);
   }
-  const curss = await getSignersBytes(signerAddrs, powers, true);
 
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
   const sigs = await calculateSignatures(signers, hex2Bytes(relayBytesHash));
 
-  return { relayBytes, curss, sigs };
+  return { relayBytes, sigs };
 }

@@ -7,6 +7,8 @@ import { Wallet } from '@ethersproject/wallet';
 import {
   Bridge,
   Bridge__factory,
+  Bridge2,
+  Bridge2__factory,
   FarmingRewards,
   FarmingRewards__factory,
   Govern,
@@ -103,6 +105,13 @@ export async function deployBridgeContracts(admin: Wallet, signers: Bytes): Prom
   await bridge.deployed();
 
   return { bridge, token };
+}
+
+export async function deployBridge2Contracts(admin: Wallet): Promise<Bridge2> {
+  const bridge2Factory = (await ethers.getContractFactory('Bridge2')) as Bridge2__factory;
+  const bridge2 = await bridge2Factory.connect(admin).deploy();
+  await bridge2.deployed();
+  return bridge2;
 }
 
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {

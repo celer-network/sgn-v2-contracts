@@ -44,10 +44,10 @@ describe('Relay2 Gas Benchmark', function () {
   });
 
   it('benchmark relay gas cost for bridge2', async function () {
-    await doBenchmarkBridge2(3);
-    await doBenchmarkBridge2(6);
-    await doBenchmarkBridge2(10);
-    await doBenchmarkBridge2(15);
+    await doBenchmarkBridge2(4, 12, 3);
+    await doBenchmarkBridge2(5, 15, 6);
+    await doBenchmarkBridge2(10, 21, 10);
+    await doBenchmarkBridge2(15, 21, 15);
   });
 
   async function getPowers(
@@ -75,10 +75,8 @@ describe('Relay2 Gas Benchmark', function () {
     return { signers, addrs, powers, quorumSigNum };
   }
 
-  async function doBenchmarkBridge2(quorumSigs: number) {
+  async function doBenchmarkBridge2(minNum: number, maxNum: number, quorumSigs: number) {
     fs.appendFileSync(GAS_USAGE_LOG, 'max number of sigs to reach quorum: ' + quorumSigs + '\n');
-    const minNum = 4;
-    const maxNum = 21;
     let firstCost = 0;
     let lastCost = 0;
     for (let i = minNum; i <= maxNum; i++) {

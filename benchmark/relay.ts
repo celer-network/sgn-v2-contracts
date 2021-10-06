@@ -1,3 +1,5 @@
+import '@nomiclabs/hardhat-ethers';
+
 import fs from 'fs';
 import path from 'path';
 
@@ -8,8 +10,8 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, Bridge2, TestERC20 } from '../typechain';
-import { deployBridgeContracts, deployBridge2Contracts, getAccounts, loadFixture } from './lib/common';
-import { getSignersBytes, getRelayRequest } from './lib/proto';
+import { deployBridgeContracts, deployBridge2Contracts, getAccounts, loadFixture } from '../test/lib/common';
+import { getSignersBytes, getRelayRequest } from '../test/lib/proto';
 import { BigNumber } from '@ethersproject/bignumber';
 
 const GAS_USAGE_DIR = 'reports/gas_usage/';
@@ -135,10 +137,7 @@ async function getPowers(
   const signers: Wallet[] = [];
   const addrs: string[] = [];
   const powers: BigNumber[] = [];
-  signers.push(accounts[0]);
-  addrs.push(accounts[0].address);
-  powers.push(parseUnits('1'));
-  for (let i = 1; i < num; i++) {
+  for (let i = 0; i < num; i++) {
     signers.push(accounts[i]);
     addrs.push(accounts[i].address);
     powers.push(parseUnits('1'));

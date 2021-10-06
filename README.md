@@ -11,6 +11,7 @@ yarn test
 ### Benchmark gas cost
 
 ```sh
+yarn report-gas:benchmark
 yarn report-gas:summary
 ```
 

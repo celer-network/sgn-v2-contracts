@@ -81,6 +81,7 @@ describe('Relay2 Gas Benchmark', function () {
     let lastCost = 0;
     for (let i = minNum; i <= maxNum; i++) {
       const { signers, addrs, powers, quorumSigNum } = await getPowers(accounts, i, quorumSigs);
+      await bridge2.notifyResetSigners();
       await bridge2.resetSigners(addrs, powers);
 
       const sender = accounts[0];

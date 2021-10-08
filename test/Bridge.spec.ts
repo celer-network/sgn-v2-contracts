@@ -1,17 +1,18 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { keccak256 } from '@ethersproject/solidity';
+import { BigNumber } from '@ethersproject/bignumber';
+import { keccak256, pack } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20 } from '../typechain';
 import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
-import { getSignersBytes, getUpdateSignersRequest, getRelayRequest } from './lib/proto';
+import { getRelayRequest, calculateSignatures, hex2Bytes } from './lib/proto';
 
 describe('Bridge Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { bridge, token } = await deployBridgeContracts(admin, []);
+    const { bridge, token } = await deployBridgeContracts(admin);
     return { admin, bridge, token };
   }
 
@@ -25,74 +26,65 @@ describe('Bridge Tests', function () {
     bridge = res.bridge;
     token = res.token;
     admin = res.admin;
-    accounts = await getAccounts(res.admin, [token], 3);
+    accounts = await getAccounts(res.admin, [token], 4);
   });
 
   it('should update signers correctly', async function () {
-    const initSignersBytes = await getSignersBytes([admin.address], [parseUnits('1')], true);
-    await expect(bridge.setInitSigners(initSignersBytes))
+    await expect(bridge.resetSigners([accounts[0].address], [parseUnits('1')]))
       .to.emit(bridge, 'SignersUpdated')
-      .withArgs('0x' + Buffer.from(initSignersBytes).toString('hex'));
+      .withArgs([accounts[0].address], [parseUnits('1')]);
 
-    let req = await getUpdateSignersRequest(
-      [admin.address, accounts[0].address, accounts[1].address, accounts[2].address],
-      [parseUnits('10'), parseUnits('10'), parseUnits('10'), parseUnits('10')],
-      [admin],
-      [parseUnits('1')],
-      false
-    );
+    let newSigners = [accounts[2], accounts[1], accounts[0], accounts[3]];
+    let newPowers = [parseUnits('12'), parseUnits('11'), parseUnits('10'), parseUnits('9')];
 
-    await expect(bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, req.sigs)).to.be.revertedWith(
-      'New signers not in ascending order'
-    );
+    let sigs = await getUpdateSignersSigs(getAddrs(newSigners), newPowers, [accounts[0]]);
+    await expect(
+      bridge.updateSigners(getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
+    ).to.be.revertedWith('New signers not in ascending order');
 
-    req = await getUpdateSignersRequest(
-      [admin.address, accounts[0].address, accounts[1].address, accounts[2].address],
-      [parseUnits('12'), parseUnits('11'), parseUnits('10'), parseUnits('9')],
-      [admin],
-      [parseUnits('1')],
-      true
-    );
-
-    await expect(bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, req.sigs))
+    newSigners = [accounts[0], accounts[1], accounts[2], accounts[3]];
+    sigs = await getUpdateSignersSigs(getAddrs(newSigners), newPowers, [accounts[0]]);
+    await expect(bridge.updateSigners(getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')]))
       .to.emit(bridge, 'SignersUpdated')
-      .withArgs('0x' + Buffer.from(req.newSignersBytes).toString('hex'));
-
-    await expect(bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, req.sigs)).to.be.revertedWith(
-      'Mismatch current signers'
-    );
-
-    req = await getUpdateSignersRequest(
-      [admin.address, accounts[0].address],
-      [parseUnits('15'), parseUnits('50')],
-      [admin, accounts[0], accounts[1], accounts[2]],
-      [parseUnits('12'), parseUnits('11'), parseUnits('10'), parseUnits('9')],
-      true
-    );
+      .withArgs(getAddrs(newSigners), newPowers);
 
     await expect(
-      bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, [req.sigs[0], req.sigs[1]])
-    ).to.be.revertedWith('Quorum not reached');
+      bridge.updateSigners(getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('10')])
+    ).to.be.revertedWith('Mismatch current signers');
+
+    let curSigners = newSigners;
+    let curPowers = newPowers;
+    newSigners = [accounts[1], accounts[3]];
+    newPowers = [parseUnits('15'), parseUnits('50')];
+    sigs = await getUpdateSignersSigs(getAddrs(newSigners), newPowers, curSigners);
 
     await expect(
-      bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, [req.sigs[1], req.sigs[0]])
-    ).to.be.revertedWith('Signers not in ascending order');
+      bridge.updateSigners(getAddrs(newSigners), newPowers, [sigs[0], sigs[1]], getAddrs(curSigners), curPowers)
+    ).to.be.revertedWith('quorum not reached');
 
     await expect(
-      bridge.updateSigners(req.newSignersBytes, req.currSignersBytes, [req.sigs[0], req.sigs[1], req.sigs[3]])
+      bridge.updateSigners(getAddrs(newSigners), newPowers, [sigs[1], sigs[0]], getAddrs(curSigners), curPowers)
+    ).to.be.revertedWith('signers not in ascending order');
+
+    await expect(
+      bridge.updateSigners(
+        getAddrs(newSigners),
+        newPowers,
+        [sigs[0], sigs[1], sigs[2]],
+        getAddrs(curSigners),
+        curPowers
+      )
     )
       .to.emit(bridge, 'SignersUpdated')
-      .withArgs('0x' + Buffer.from(req.newSignersBytes).toString('hex'));
+      .withArgs(getAddrs(newSigners), newPowers);
   });
 
-  it('should send and successfully', async function () {
+  it('should send and relay successfully', async function () {
     const signers = [accounts[0], accounts[1], accounts[2]];
-    const signersAddrs = [accounts[0].address, accounts[1].address, accounts[2].address];
     const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
-    const initSignersBytes = await getSignersBytes(signersAddrs, powers, true);
-    await expect(bridge.setInitSigners(initSignersBytes))
+    await expect(bridge.resetSigners(getAddrs(signers), powers))
       .to.emit(bridge, 'SignersUpdated')
-      .withArgs('0x' + Buffer.from(initSignersBytes).toString('hex'));
+      .withArgs(getAddrs(signers), powers);
 
     const sender = accounts[0];
     const receiver = accounts[1];
@@ -111,7 +103,7 @@ describe('Bridge Tests', function () {
       .to.emit(bridge, 'Send')
       .withArgs(srcXferId, sender.address, receiver.address, token.address, amount, chainId, nonce, slippage);
 
-    const { relayBytes, curss, sigs } = await getRelayRequest(
+    const { relayBytes, sigs } = await getRelayRequest(
       sender.address,
       receiver.address,
       token.address,
@@ -119,8 +111,7 @@ describe('Bridge Tests', function () {
       chainId,
       chainId,
       srcXferId,
-      signers,
-      powers
+      signers
     );
 
     const dstXferId = keccak256(
@@ -128,8 +119,23 @@ describe('Bridge Tests', function () {
       [sender.address, receiver.address, token.address, amount, chainId, chainId, srcXferId]
     );
 
-    await expect(bridge.relay(relayBytes, curss, sigs))
+    await expect(bridge.relay(relayBytes, sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, amount, chainId, srcXferId);
   });
 });
+
+function getAddrs(signers: Wallet[]) {
+  const addrs: string[] = [];
+  for (let i = 0; i < signers.length; i++) {
+    addrs.push(signers[i].address);
+  }
+  return addrs;
+}
+
+async function getUpdateSignersSigs(newSignerAddrs: string[], newPowers: BigNumber[], currSigners: Wallet[]) {
+  const data = pack(['address[]', 'uint256[]'], [newSignerAddrs, newPowers]);
+  const hash = keccak256(['bytes'], [data]);
+  const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
+  return sigs;
+}

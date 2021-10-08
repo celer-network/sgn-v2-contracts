@@ -93,13 +93,13 @@ interface BridgeInfo {
   token: TestERC20;
 }
 
-export async function deployBridgeContracts(admin: Wallet, signers: Bytes): Promise<BridgeInfo> {
+export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {
   const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
   const token = await testERC20Factory.connect(admin).deploy();
   await token.deployed();
 
   const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
-  const bridge = await bridgeFactory.connect(admin).deploy(signers);
+  const bridge = await bridgeFactory.connect(admin).deploy();
   await bridge.deployed();
 
   return { bridge, token };

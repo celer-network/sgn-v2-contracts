@@ -6,12 +6,14 @@ interface ISigsVerifier {
     /**
      * @notice Verifies that a message is signed by a quorum among the signers.
      * @param _msg signed message
-     * @param _signers the list of signers
-     * @param _sigs the list of signatures
+     * @param _sigs list of signatures sorted by signer addresses
+     * @param _signers sorted list of current signers
+     * @param _powers powers of current signers
      */
     function verifySigs(
-        bytes calldata _msg,
-        bytes calldata _signers,
-        bytes[] calldata _sigs
+        bytes memory _msg,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
     ) external view;
 }

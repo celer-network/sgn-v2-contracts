@@ -62,7 +62,7 @@ EOF
 run_solc() {
   pushd $CNTRDIR
   gen_dtHelper
-  solc --base-path $PWD --allow-paths . --overwrite --optimize --pretty-json --combined-json abi,bin -o . '@openzeppelin/'=$OPENZEPPELIN/ \
+  solc --base-path $PWD --allow-paths . --overwrite --optimize --optimize-runs 800 --pretty-json --combined-json abi,bin -o . '@openzeppelin/'=$OPENZEPPELIN/ \
     $(for f in ${solFiles[@]}; do echo -n "$f.sol "; done)
   no_openzeppelin combined.json # combined.json file name is hardcoded in solc
   popd

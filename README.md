@@ -24,3 +24,25 @@ yarn size-contracts
 ```
 
 Check `reports/contract_sizes.txt`.
+
+### Deploy contracts
+
+1. `cp .env.template .env`, then ensure all environment variables are set in `.env`.
+
+2. Deploy SGN and Staking contarcts:
+
+```sh
+hardhat deploy --network <network> --tags SGNStaking
+```
+
+Deploy Bridge contract:
+
+```sh
+hardhat deploy --network <network>  --tags Bridge
+```
+
+3. Verify contracts on Etherscan:
+
+```sh
+hardhat etherscan-verify --network <network> --license "GPL-3.0" --force-license
+```

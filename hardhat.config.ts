@@ -21,6 +21,12 @@ const ropstenPrivateKey = process.env.ROPSTEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY
 const goerliEndpoint = process.env.GOERLI_ENDPOINT || DEFAULT_ENDPOINT;
 const goerliPrivateKey = process.env.GOERLI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const bscEndpoint = process.env.BSC_ENDPOINT || DEFAULT_ENDPOINT;
+const bscPrivateKey = process.env.BSC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const fantomEndpoint = process.env.FANTOM_ENDPOINT || DEFAULT_ENDPOINT;
+const fantomPrivateKey = process.env.FANTOM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const mainnetEndpoint = process.env.MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const mainnetPrivateKey = process.env.MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -40,6 +46,14 @@ const config: HardhatUserConfig = {
     goerli: {
       url: goerliEndpoint,
       accounts: [`0x${goerliPrivateKey}`]
+    },
+    bsc: {
+      url: bscEndpoint,
+      accounts: [`0x${bscPrivateKey}`]
+    },
+    fantom: {
+      url: fantomEndpoint,
+      accounts: [`0x${fantomPrivateKey}`]
     },
     mainnet: {
       url: mainnetEndpoint,

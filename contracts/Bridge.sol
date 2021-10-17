@@ -111,6 +111,7 @@ contract Bridge is Pool {
     }
 
     function setMinSend(address[] calldata tokens, uint256[] calldata minsend) external onlyOwner {
+        require(tokens.length == minsend.length, "length mismatch");
         for (uint256 i = 0; i < tokens.length; i++) {
             minSend[tokens[i]] = minsend[i];
         }

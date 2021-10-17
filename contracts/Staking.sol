@@ -351,7 +351,10 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
 
         address valAddr = request.validator;
         dt.Validator storage validator = validators[valAddr];
-        require(validator.status != dt.ValidatorStatus.Unbonded, "Validator unbounded");
+        require(
+            validator.status == dt.ValidatorStatus.Bonded || validator.status == dt.ValidatorStatus.Unbonding,
+            "Invalid validator status"
+        );
 
         // slash delegated tokens
         uint256 slashAmt = (validator.tokens * request.slashFactor) / dt.SLASH_FACTOR_DECIMAL;
@@ -620,7 +623,7 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
         dt.Undelegation[] memory undelegations = new dt.Undelegation[](len);
         for (uint256 i = 0; i < len; i++) {
             undelegations[i] = d.undelegations.queue[i + d.undelegations.head];
-            undelegationShares += d.undelegations.queue[i].shares;
+            undelegationShares += undelegations[i].shares;
         }
         uint256 undelegationTokens = _shareToTokens(
             undelegationShares,

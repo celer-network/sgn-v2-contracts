@@ -103,7 +103,7 @@ contract Viewer {
             return 0;
         }
         uint256 minTokens = dt.MAX_INT;
-        for (uint256 i = 1; i < bondedValNum; i++) {
+        for (uint256 i = 0; i < bondedValNum; i++) {
             uint256 tokens = staking.getValidatorTokens(staking.bondedValAddrs(i));
             if (tokens < minTokens) {
                 minTokens = tokens;

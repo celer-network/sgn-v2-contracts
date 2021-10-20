@@ -619,19 +619,38 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
         uint256 tokens = _shareToTokens(d.shares, validator.tokens, validator.shares);
 
         uint256 undelegationShares;
+        uint256 withdrawableUndelegationShares;
+        uint256 unbondingPeriod = params[dt.ParamName.UnbondingPeriod];
+        bool isUnbonded = validator.status == dt.ValidatorStatus.Unbonded;
         uint256 len = d.undelegations.tail - d.undelegations.head;
         dt.Undelegation[] memory undelegations = new dt.Undelegation[](len);
         for (uint256 i = 0; i < len; i++) {
             undelegations[i] = d.undelegations.queue[i + d.undelegations.head];
             undelegationShares += undelegations[i].shares;
+            if (isUnbonded || undelegations[i].creationBlock + unbondingPeriod <= block.number) {
+                withdrawableUndelegationShares += undelegations[i].shares;
+            }
         }
         uint256 undelegationTokens = _shareToTokens(
             undelegationShares,
             validator.undelegationTokens,
             validator.undelegationShares
         );
+        uint256 withdrawableUndelegationTokens = _shareToTokens(
+            withdrawableUndelegationShares,
+            validator.undelegationTokens,
+            validator.undelegationShares
+        );
 
-        return dt.DelegatorInfo(_valAddr, tokens, d.shares, undelegationTokens, undelegations);
+        return
+            dt.DelegatorInfo(
+                _valAddr,
+                tokens,
+                d.shares,
+                undelegations,
+                undelegationTokens,
+                withdrawableUndelegationTokens
+            );
     }
 
     /**

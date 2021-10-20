@@ -80,7 +80,8 @@ library DataTypes {
         address valAddr;
         uint256 tokens;
         uint256 shares;
-        uint256 undelegationTokens;
         Undelegation[] undelegations;
+        uint256 undelegationTokens;
+        uint256 withdrawableUndelegationTokens;
     }
 }

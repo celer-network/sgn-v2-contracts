@@ -226,47 +226,31 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     }
 
     /**
-     * @notice Undelegate tokens from a validator
+     * @notice Undelegate shares from a validator
      * @dev Tokens are delegated by the msgSender to the validator
      * @param _valAddr the address of the validator
      * @param _shares undelegate shares
      */
-    function undelegate(address _valAddr, uint256 _shares) external {
-        address delAddr = msg.sender;
+    function undelegateShares(address _valAddr, uint256 _shares) external {
         require(_shares >= dt.CELR_DECIMAL, "Minimal amount is 1 share");
-
         dt.Validator storage validator = validators[_valAddr];
         require(validator.status != dt.ValidatorStatus.Null, "Validator is not initialized");
-        uint256 tokens = _shareToTokens(_shares, validator.tokens, validator.shares);
+        uint256 tokens = _shareToToken(_shares, validator.tokens, validator.shares);
+        _undelegate(validator, _valAddr, tokens, _shares);
+    }
 
-        dt.Delegator storage delegator = validator.delegators[delAddr];
-        delegator.shares -= _shares;
-        validator.shares -= _shares;
-        validator.tokens -= tokens;
-        if (validator.status == dt.ValidatorStatus.Unbonded) {
-            CELER_TOKEN.safeTransfer(delAddr, tokens);
-            emit Undelegated(_valAddr, delAddr, tokens);
-            return;
-        } else if (validator.status == dt.ValidatorStatus.Bonded) {
-            bondedTokens -= tokens;
-            if (!hasMinRequiredTokens(_valAddr, delAddr == _valAddr)) {
-                _unbondValidator(_valAddr);
-            }
-        }
-        require(
-            delegator.undelegations.tail - delegator.undelegations.head < dt.MAX_UNDELEGATION_ENTRIES,
-            "Exceed max undelegation entries"
-        );
-
-        uint256 undelegationShares = _tokenToShare(tokens, validator.undelegationTokens, validator.undelegationShares);
-        validator.undelegationShares += undelegationShares;
-        validator.undelegationTokens += tokens;
-        dt.Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
-        undelegation.shares = undelegationShares;
-        undelegation.creationBlock = block.number;
-        delegator.undelegations.tail++;
-
-        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, -int256(tokens));
+    /**
+     * @notice Undelegate shares from a validator
+     * @dev Tokens are delegated by the msgSender to the validator
+     * @param _valAddr the address of the validator
+     * @param _tokens undelegate tokens
+     */
+    function undelegateTokens(address _valAddr, uint256 _tokens) external {
+        require(_tokens >= dt.CELR_DECIMAL, "Minimal amount is 1 CELR");
+        dt.Validator storage validator = validators[_valAddr];
+        require(validator.status != dt.ValidatorStatus.Null, "Validator is not initialized");
+        uint256 shares = _tokenToShare(_tokens, validator.tokens, validator.shares);
+        _undelegate(validator, _valAddr, _tokens, shares);
     }
 
     /**
@@ -297,7 +281,7 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
         delegator.undelegations.head = i;
 
         require(undelegationShares > 0, "No undelegation ready to be completed");
-        uint256 tokens = _shareToTokens(undelegationShares, validator.undelegationTokens, validator.undelegationShares);
+        uint256 tokens = _shareToToken(undelegationShares, validator.undelegationTokens, validator.undelegationShares);
         validator.undelegationShares -= undelegationShares;
         validator.undelegationTokens -= tokens;
         CELER_TOKEN.safeTransfer(delAddr, tokens);
@@ -599,7 +583,7 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
             return false;
         }
         if (_checkSelfDelegation) {
-            uint256 selfDelegation = _shareToTokens(v.delegators[_valAddr].shares, valTokens, v.shares);
+            uint256 selfDelegation = _shareToToken(v.delegators[_valAddr].shares, valTokens, v.shares);
             if (selfDelegation < v.minSelfDelegation) {
                 return false;
             }
@@ -616,7 +600,7 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     function getDelegatorInfo(address _valAddr, address _delAddr) public view returns (dt.DelegatorInfo memory) {
         dt.Validator storage validator = validators[_valAddr];
         dt.Delegator storage d = validator.delegators[_delAddr];
-        uint256 tokens = _shareToTokens(d.shares, validator.tokens, validator.shares);
+        uint256 tokens = _shareToToken(d.shares, validator.tokens, validator.shares);
 
         uint256 undelegationShares;
         uint256 withdrawableUndelegationShares;
@@ -631,12 +615,12 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
                 withdrawableUndelegationShares += undelegations[i].shares;
             }
         }
-        uint256 undelegationTokens = _shareToTokens(
+        uint256 undelegationTokens = _shareToToken(
             undelegationShares,
             validator.undelegationTokens,
             validator.undelegationShares
         );
-        uint256 withdrawableUndelegationTokens = _shareToTokens(
+        uint256 withdrawableUndelegationTokens = _shareToToken(
             withdrawableUndelegationShares,
             validator.undelegationTokens,
             validator.undelegationShares
@@ -665,6 +649,43 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     /*********************
      * Private Functions *
      *********************/
+
+    function _undelegate(
+        dt.Validator storage validator,
+        address _valAddr,
+        uint256 _tokens,
+        uint256 _shares
+    ) private {
+        address delAddr = msg.sender;
+        dt.Delegator storage delegator = validator.delegators[delAddr];
+        delegator.shares -= _shares;
+        validator.shares -= _shares;
+        validator.tokens -= _tokens;
+        if (validator.status == dt.ValidatorStatus.Unbonded) {
+            CELER_TOKEN.safeTransfer(delAddr, _tokens);
+            emit Undelegated(_valAddr, delAddr, _tokens);
+            return;
+        } else if (validator.status == dt.ValidatorStatus.Bonded) {
+            bondedTokens -= _tokens;
+            if (!hasMinRequiredTokens(_valAddr, delAddr == _valAddr)) {
+                _unbondValidator(_valAddr);
+            }
+        }
+        require(
+            delegator.undelegations.tail - delegator.undelegations.head < dt.MAX_UNDELEGATION_ENTRIES,
+            "Exceed max undelegation entries"
+        );
+
+        uint256 undelegationShares = _tokenToShare(_tokens, validator.undelegationTokens, validator.undelegationShares);
+        validator.undelegationShares += undelegationShares;
+        validator.undelegationTokens += _tokens;
+        dt.Undelegation storage undelegation = delegator.undelegations.queue[delegator.undelegations.tail];
+        undelegation.shares = undelegationShares;
+        undelegation.creationBlock = block.number;
+        delegator.undelegations.tail++;
+
+        emit DelegationUpdate(_valAddr, delAddr, validator.tokens, delegator.shares, -int256(_tokens));
+    }
 
     /**
      * @notice Set validator to bonded
@@ -760,7 +781,7 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     /**
      * @notice Convert share to token
      */
-    function _shareToTokens(
+    function _shareToToken(
         uint256 shares,
         uint256 totalTokens,
         uint256 totalShares

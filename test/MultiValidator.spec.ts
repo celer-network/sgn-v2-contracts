@@ -67,7 +67,7 @@ describe('Multiple validators Tests', function () {
   });
 
   it('should remove validator due to undelegate and add new validator successfully', async function () {
-    await expect(staking.connect(validators[1]).undelegate(validators[1].address, parseUnits('2')))
+    await expect(staking.connect(validators[1]).undelegateShares(validators[1].address, parseUnits('2')))
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[1].address, consts.STATUS_UNBONDING);
     let quorum = await staking.getQuorumTokens();

@@ -24,7 +24,7 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     uint256 public bondedTokens;
     uint256 public nextBondBlock;
     address[] public valAddrs;
-    address[] public bondedValAddrs; // TODO: deal with set size reduction
+    address[] public bondedValAddrs;
     mapping(address => dt.Validator) public validators; // key is valAddr
     mapping(address => address) public signerVals; // signerAddr -> valAddr
     mapping(uint256 => bool) public slashNonces;
@@ -401,6 +401,9 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
 
     function setParamValue(dt.ParamName _name, uint256 _value) external {
         require(msg.sender == govContract, "Caller is not gov contract");
+        if (_name == dt.ParamName.MaxBondedValidators) {
+            require(bondedValAddrs.length <= _value, "invalid value");
+        }
         params[_name] = _value;
     }
 

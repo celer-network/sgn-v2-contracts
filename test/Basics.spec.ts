@@ -170,23 +170,23 @@ describe('Basic Tests', function () {
       });
 
       it('should fail to bondValidator before self delegating minSelfDelegation', async function () {
-        await staking.connect(validator).undelegate(validator.address, parseUnits('1'));
+        await staking.connect(validator).undelegateShares(validator.address, parseUnits('1'));
         await expect(staking.connect(validator).bondValidator()).to.be.revertedWith('Not have min tokens');
       });
 
       it('should undelegate from unbonded validator by delegator successfully', async function () {
-        await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
+        await expect(staking.connect(delegator).undelegateShares(validator.address, consts.DELEGATOR_STAKE))
           .to.emit(staking, 'Undelegated')
           .withArgs(validator.address, delegator.address, consts.DELEGATOR_STAKE);
       });
 
       it('should fail to undelegate from unbonded validator more than it delegated', async function () {
-        await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))).to.be
-          .reverted;
+        await expect(staking.connect(delegator).undelegateShares(validator.address, consts.DELEGATOR_STAKE.add(1000)))
+          .to.be.reverted;
       });
 
       it('should fail to undelegate from unbonded validator with amount smaller than 1 share', async function () {
-        await expect(staking.connect(delegator).undelegate(validator.address, 1000)).to.be.revertedWith(
+        await expect(staking.connect(delegator).undelegateShares(validator.address, 1000)).to.be.revertedWith(
           'Minimal amount is 1 share'
         );
       });
@@ -251,24 +251,25 @@ describe('Basic Tests', function () {
           });
 
           it('should fail to undelegate with amount smaller than 1 share', async function () {
-            await expect(staking.connect(delegator).undelegate(validator.address, 1000)).to.be.revertedWith(
+            await expect(staking.connect(delegator).undelegateShares(validator.address, 1000)).to.be.revertedWith(
               'Minimal amount is 1 share'
             );
           });
 
           it('should fail to undelegate more than it delegated', async function () {
-            await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE.add(1000))).to
-              .be.reverted;
+            await expect(
+              staking.connect(delegator).undelegateShares(validator.address, consts.DELEGATOR_STAKE.add(1000))
+            ).to.be.reverted;
           });
 
           it('should remove the validator after validator undelegate to become under minSelfDelegation', async function () {
-            await expect(staking.connect(validator).undelegate(validator.address, consts.MIN_SELF_DELEGATION))
+            await expect(staking.connect(validator).undelegateShares(validator.address, consts.MIN_SELF_DELEGATION))
               .to.emit(staking, 'ValidatorStatusUpdate')
               .withArgs(validator.address, consts.STATUS_UNBONDING);
           });
 
           it('should remove the validator after delegator undelegate to become under minStakingPool', async function () {
-            await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE))
+            await expect(staking.connect(delegator).undelegateShares(validator.address, consts.DELEGATOR_STAKE))
               .to.emit(staking, 'ValidatorStatusUpdate')
               .withArgs(validator.address, consts.STATUS_UNBONDING)
               .to.emit(staking, 'DelegationUpdate')
@@ -301,11 +302,11 @@ describe('Basic Tests', function () {
 
           describe('after a delegator undelegate', async () => {
             beforeEach(async () => {
-              await staking.connect(delegator).undelegate(validator.address, parseUnits('2'));
+              await staking.connect(delegator).undelegateShares(validator.address, parseUnits('2'));
             });
 
             it('should fail to undelegate with a total more than it delegated', async function () {
-              await expect(staking.connect(delegator).undelegate(validator.address, consts.DELEGATOR_STAKE)).to.be
+              await expect(staking.connect(delegator).undelegateShares(validator.address, consts.DELEGATOR_STAKE)).to.be
                 .reverted;
             });
 
@@ -329,7 +330,7 @@ describe('Basic Tests', function () {
             });
 
             it('should pass with multiple undelegations', async function () {
-              await staking.connect(delegator).undelegate(validator.address, parseUnits('1'));
+              await staking.connect(delegator).undelegateShares(validator.address, parseUnits('1'));
 
               let res = await staking.getDelegatorInfo(validator.address, delegator.address);
               expect(res.shares).to.equal(parseUnits('3'));
@@ -337,7 +338,7 @@ describe('Basic Tests', function () {
               expect(res.undelegations[1].shares).to.equal(parseUnits('1'));
 
               await advanceBlockNumber(consts.UNBONDING_PERIOD);
-              await staking.connect(delegator).undelegate(validator.address, parseUnits('1'));
+              await staking.connect(delegator).undelegateShares(validator.address, parseUnits('1'));
 
               await expect(staking.connect(delegator).completeUndelegate(validator.address))
                 .to.emit(staking, 'Undelegated')

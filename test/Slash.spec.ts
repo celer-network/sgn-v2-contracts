@@ -84,9 +84,9 @@ describe('Slash Tests', function () {
   });
 
   it('should slash successfully with undelegations and redelegations', async function () {
-    await staking.undelegate(validators[0].address, parseUnits('1'));
-    await staking.undelegate(validators[0].address, parseUnits('2'));
-    await staking.connect(validators[0]).undelegate(validators[0].address, parseUnits('1'));
+    await staking.undelegateShares(validators[0].address, parseUnits('1'));
+    await staking.undelegateShares(validators[0].address, parseUnits('2'));
+    await staking.connect(validators[0]).undelegateShares(validators[0].address, parseUnits('1'));
 
     const request = await getSlashRequest(
       validators[0].address,
@@ -115,7 +115,7 @@ describe('Slash Tests', function () {
       .withArgs(validators[0].address, admin.address, parseUnits('2.85'));
 
     // do additional undelegation
-    await expect(staking.undelegate(validators[0].address, parseUnits('1')))
+    await expect(staking.undelegateShares(validators[0].address, parseUnits('1')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(validators[0].address, admin.address, parseUnits('2.85'), parseUnits('2'), parseUnits('-0.95'));
     await advanceBlockNumber(consts.UNBONDING_PERIOD);
@@ -134,7 +134,7 @@ describe('Slash Tests', function () {
         parseUnits('1')
       );
     // re-undelegate. TODO: see if we can remove the rounding diff
-    await expect(staking.undelegate(validators[0].address, parseUnits('1052631578947368421', 'wei')))
+    await expect(staking.undelegateShares(validators[0].address, parseUnits('1052631578947368421', 'wei')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(
         validators[0].address,
@@ -142,6 +142,16 @@ describe('Slash Tests', function () {
         parseUnits('2850000000000000001', 'wei'),
         parseUnits('2'),
         parseUnits('-999999999999999999', 'wei')
+      );
+
+      await expect(staking.undelegateTokens(validators[0].address, parseUnits('1')))
+      .to.emit(staking, 'DelegationUpdate')
+      .withArgs(
+        validators[0].address,
+        admin.address,
+        parseUnits('1850000000000000001', 'wei'),
+        parseUnits('947368421052631580', 'wei'),
+        parseUnits('-1')
       );
   });
 

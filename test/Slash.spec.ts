@@ -143,6 +143,16 @@ describe('Slash Tests', function () {
         parseUnits('2'),
         parseUnits('-999999999999999999', 'wei')
       );
+
+      await expect(staking.undelegateTokens(validators[0].address, parseUnits('1')))
+      .to.emit(staking, 'DelegationUpdate')
+      .withArgs(
+        validators[0].address,
+        admin.address,
+        parseUnits('1850000000000000001', 'wei'),
+        parseUnits('947368421052631580', 'wei'),
+        parseUnits('-1')
+      );
   });
 
   it('should unbond validator due to slash', async function () {

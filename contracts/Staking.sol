@@ -565,6 +565,9 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
         return bondedValAddrs.length;
     }
 
+    /**
+     * @return addresses and token amounts of bonded validators
+     */
     function getBondedValidatorsTokens() public view returns (dt.ValidatorTokens[] memory) {
         dt.ValidatorTokens[] memory infos = new dt.ValidatorTokens[](valAddrs.length);
         for (uint256 i = 0; i < bondedValAddrs.length; i++) {

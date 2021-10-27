@@ -68,7 +68,7 @@ abstract contract Pausable is Ownable {
     }
 
     function addPauser(address account) public onlyOwner {
-       _addPauser(account);
+        _addPauser(account);
     }
 
     function removePauser(address account) public onlyOwner {

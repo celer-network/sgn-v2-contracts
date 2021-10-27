@@ -22,7 +22,7 @@ abstract contract Whitelist is Ownable {
      * @notice Set whitelistEnabled
      */
     function setWhitelistEnabled(bool _whitelistEnabled) external onlyOwner {
-       whitelistEnabled = _whitelistEnabled;
+        whitelistEnabled = _whitelistEnabled;
     }
 
     /**
@@ -31,7 +31,8 @@ abstract contract Whitelist is Ownable {
     function addWhitelisted(address account) external onlyOwner {
         require(!isWhitelisted(account), "Already whitelisted");
         whitelist[account] = true;
-        emit WhitelistedAdded(account);    }
+        emit WhitelistedAdded(account);
+    }
 
     /**
      * @notice Remove an account from whitelist
@@ -39,7 +40,8 @@ abstract contract Whitelist is Ownable {
     function removeWhitelisted(address account) external onlyOwner {
         require(isWhitelisted(account), "Not whitelisted");
         whitelist[account] = false;
-        emit WhitelistedRemoved(account);    }
+        emit WhitelistedRemoved(account);
+    }
 
     /**
      * @return is account whitelisted

@@ -7,12 +7,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./libraries/PbSgn.sol";
 import "./Staking.sol";
-import "./Pausable.sol";
+import "./Pauser.sol";
 
 /**
  * @title contract of SGN chain
  */
-contract SGN is Pausable {
+contract SGN is Pauser {
     using SafeERC20 for IERC20;
 
     Staking public immutable staking;

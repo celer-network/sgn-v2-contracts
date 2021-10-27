@@ -9,12 +9,12 @@ import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbStaking.sol";
 import "./Whitelist.sol";
-import "./Pausable.sol";
+import "./Pauser.sol";
 
 /**
  * @title A Staking contract shared by all external sidechains and apps
  */
-contract Staking is ISigsVerifier, Pausable, Whitelist {
+contract Staking is ISigsVerifier, Pauser, Whitelist {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 

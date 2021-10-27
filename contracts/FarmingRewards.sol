@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbFarming.sol";
-import "./Pausable.sol";
+import "./Pauser.sol";
 
-contract FarmingRewards is Pausable {
+contract FarmingRewards is Pauser {
     using SafeERC20 for IERC20;
 
     ISigsVerifier public immutable sigsVerifier;

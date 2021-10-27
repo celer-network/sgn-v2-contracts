@@ -4,21 +4,15 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-abstract contract Pausable is Ownable {
+abstract contract Pauser is Ownable, Pausable {
     mapping(address => bool) public pausers;
-    bool public paused;
 
-    event Paused(address account);
-    event Unpaused(address account);
     event PauserAdded(address account);
     event PauserRemoved(address account);
 
-    /**
-     * @dev Initializes the contract in unpaused state.
-     */
     constructor() {
-        paused = false;
         _addPauser(msg.sender);
     }
 
@@ -27,36 +21,12 @@ abstract contract Pausable is Ownable {
         _;
     }
 
-    /**
-     * @dev Modifier to make a function callable only when the contract is paused.
-     */
-    modifier whenPaused() {
-        require(paused, "Pausable: not paused");
-        _;
+    function pause() public onlyPauser {
+        _pause();
     }
 
-    /**
-     * @dev Modifier to make a function callable only when the contract is not paused.
-     */
-    modifier whenNotPaused() {
-        require(!paused, "Pausable: paused");
-        _;
-    }
-
-    /**
-     * @dev Triggers paused state.
-     */
-    function pause() public onlyPauser whenNotPaused {
-        paused = true;
-        emit Paused(msg.sender);
-    }
-
-    /**
-     * @dev Returns to normal state.
-     */
-    function unpause() public onlyPauser whenPaused {
-        paused = false;
-        emit Unpaused(msg.sender);
+    function unpause() public onlyPauser {
+        _unpause();
     }
 
     function isPauser(address account) public view returns (bool) {

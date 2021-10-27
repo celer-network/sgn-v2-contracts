@@ -7,12 +7,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./libraries/PbPool.sol";
 import "./Signers.sol";
-import "./Pausable.sol";
+import "./Pauser.sol";
 
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
-contract Pool is Signers, ReentrancyGuard, Pausable {
+contract Pool is Signers, ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1

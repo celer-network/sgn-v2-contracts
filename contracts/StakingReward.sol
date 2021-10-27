@@ -4,12 +4,11 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./Staking.sol";
+import "./Pausable.sol";
 
-contract StakingReward is Ownable, Pausable {
+contract StakingReward is Pausable {
     using SafeERC20 for IERC20;
 
     Staking public immutable staking;
@@ -51,22 +50,6 @@ contract StakingReward is Ownable, Pausable {
         IERC20(staking.CELER_TOKEN()).safeTransferFrom(contributor, address(this), _amount);
 
         emit StakingRewardContributed(contributor, _amount);
-    }
-
-    /**
-     * @notice Called by the owner to pause contract
-     * @dev emergency use only
-     */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /**
-     * @notice Called by the owner to unpause contract
-     * @dev emergency use only
-     */
-    function unpause() external onlyOwner {
-        _unpause();
     }
 
     /**

@@ -5,17 +5,16 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbStaking.sol";
 import "./Whitelist.sol";
+import "./Pausable.sol";
 
 /**
  * @title A Staking contract shared by all external sidechains and apps
  */
-contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
+contract Staking is ISigsVerifier, Pausable, Whitelist {
     using SafeERC20 for IERC20;
     using ECDSA for bytes32;
 
@@ -418,47 +417,10 @@ contract Staking is ISigsVerifier, Ownable, Pausable, Whitelist {
     }
 
     /**
-     * @notice Set whitelistEnabled
-     */
-    function setWhitelistEnabled(bool _whitelistEnabled) external onlyOwner {
-        _setWhitelistEnabled(_whitelistEnabled);
-    }
-
-    /**
-     * @notice Add an account to whitelist
-     */
-    function addWhitelisted(address account) external onlyOwner {
-        _addWhitelisted(account);
-    }
-
-    /**
-     * @notice Remove an account from whitelist
-     */
-    function removeWhitelisted(address account) external onlyOwner {
-        _removeWhitelisted(account);
-    }
-
-    /**
      * @notice Set max slash factor
      */
     function setMaxSlashFactor(uint256 _maxSlashFactor) external onlyOwner {
         params[dt.ParamName.MaxSlashFactor] = _maxSlashFactor;
-    }
-
-    /**
-     * @notice Called by the owner to pause contract
-     * @dev emergency use only
-     */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /**
-     * @notice Called by the owner to unpause contract
-     * @dev emergency use only
-     */
-    function unpause() external onlyOwner {
-        _unpause();
     }
 
     /**

@@ -2,7 +2,9 @@
 
 pragma solidity 0.8.9;
 
-abstract contract Whitelist {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+abstract contract Whitelist is Ownable {
     mapping(address => bool) public whitelist;
     bool public whitelistEnabled;
 
@@ -16,23 +18,33 @@ abstract contract Whitelist {
         _;
     }
 
-    function isWhitelisted(address account) public view virtual returns (bool) {
-        return whitelist[account];
+    /**
+     * @notice Set whitelistEnabled
+     */
+    function setWhitelistEnabled(bool _whitelistEnabled) external onlyOwner {
+       whitelistEnabled = _whitelistEnabled;
     }
 
-    function _setWhitelistEnabled(bool _whitelistEnabled) internal virtual {
-        whitelistEnabled = _whitelistEnabled;
-    }
-
-    function _addWhitelisted(address account) internal virtual {
+    /**
+     * @notice Add an account to whitelist
+     */
+    function addWhitelisted(address account) external onlyOwner {
         require(!isWhitelisted(account), "Already whitelisted");
         whitelist[account] = true;
-        emit WhitelistedAdded(account);
-    }
+        emit WhitelistedAdded(account);    }
 
-    function _removeWhitelisted(address account) internal virtual {
+    /**
+     * @notice Remove an account from whitelist
+     */
+    function removeWhitelisted(address account) external onlyOwner {
         require(isWhitelisted(account), "Not whitelisted");
         whitelist[account] = false;
-        emit WhitelistedRemoved(account);
+        emit WhitelistedRemoved(account);    }
+
+    /**
+     * @return is account whitelisted
+     */
+    function isWhitelisted(address account) public view returns (bool) {
+        return whitelist[account];
     }
 }

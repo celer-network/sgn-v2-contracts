@@ -144,7 +144,7 @@ describe('Slash Tests', function () {
         parseUnits('-999999999999999999', 'wei')
       );
 
-      await expect(staking.undelegateTokens(validators[0].address, parseUnits('1')))
+    await expect(staking.undelegateTokens(validators[0].address, parseUnits('1')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(
         validators[0].address,

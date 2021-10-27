@@ -54,7 +54,7 @@ contract Bridge is Pool {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
-    ) external nonReentrant {
+    ) external nonReentrant whenNotPaused {
         require(_amount > minSend[_token], "amount too small");
         require(_maxSlippage > mams, "max slippage too small");
         bytes32 transferId = keccak256(
@@ -73,7 +73,7 @@ contract Bridge is Pool {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external {
+    ) external whenNotPaused {
         verifySigs(_relayRequest, _sigs, _signers, _powers);
         PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
         require(request.dstChainId == block.chainid, "dst chainId not match");

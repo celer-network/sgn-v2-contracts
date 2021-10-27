@@ -4,13 +4,12 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbFarming.sol";
+import "./Pauser.sol";
 
-contract FarmingRewards is Ownable, Pausable {
+contract FarmingRewards is Pauser {
     using SafeERC20 for IERC20;
 
     ISigsVerifier public immutable sigsVerifier;
@@ -67,22 +66,6 @@ contract FarmingRewards is Ownable, Pausable {
         IERC20(_token).safeTransferFrom(contributor, address(this), _amount);
 
         emit FarmingRewardContributed(contributor, _token, _amount);
-    }
-
-    /**
-     * @notice Called by the owner to pause contract
-     * @dev emergency use only
-     */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    /**
-     * @notice Called by the owner to unpause contract
-     * @dev emergency use only
-     */
-    function unpause() external onlyOwner {
-        _unpause();
     }
 
     /**

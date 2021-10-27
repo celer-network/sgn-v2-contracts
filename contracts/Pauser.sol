@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Modified based on openzeppelin
 
 pragma solidity 0.8.9;
 

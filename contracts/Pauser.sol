@@ -45,13 +45,13 @@ abstract contract Pauser is Ownable, Pausable {
     }
 
     function _addPauser(address account) private {
-        require(!isPauser(account), "Caller is pauser already");
+        require(!isPauser(account), "Account is pauser already");
         pausers[account] = true;
         emit PauserAdded(account);
     }
 
     function _removePauser(address account) private {
-        require(isPauser(account), "Caller is not pauser");
+        require(isPauser(account), "Account is not pauser");
         pausers[account] = false;
         emit PauserRemoved(account);
     }

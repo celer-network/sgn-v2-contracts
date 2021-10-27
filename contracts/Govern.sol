@@ -111,6 +111,7 @@ contract Govern {
         require(p.status == ProposalStatus.Voting, "Invalid proposal status");
         require(block.number < p.voteDeadline, "Vote deadline passed");
         require(p.votes[valAddr] == VoteOption.Null, "Voter has voted");
+        require(_vote != VoteOption.Null, "Invalid vote");
 
         p.votes[valAddr] = _vote;
 

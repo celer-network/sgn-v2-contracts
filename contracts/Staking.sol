@@ -164,7 +164,9 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         // if the number of validators has not reached the max_validator_num,
         // add validator directly
         if (bondedValAddrs.length < maxBondedValidators) {
-            return _bondValidator(valAddr);
+            _bondValidator(valAddr);
+            _decentralizationCheck(validator.tokens);
+            return;
         }
         // if the number of validators has already reached the max_validator_num,
         // add validator only if its tokens is more than the current least bonded validator tokens
@@ -346,10 +348,10 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
             bondedTokens -= slashAmt;
             if (request.jailPeriod > 0 || !hasMinRequiredTokens(valAddr, true)) {
                 _unbondValidator(valAddr);
-                if (request.jailPeriod > 0) {
-                    validator.bondBlock = uint64(block.number + request.jailPeriod);
-                }
             }
+        }
+        if (validator.status == dt.ValidatorStatus.Unbonding && request.jailPeriod > 0) {
+            validator.bondBlock = uint64(block.number + request.jailPeriod);
         }
         emit DelegationUpdate(valAddr, address(0), validator.tokens, 0, -int256(slashAmt));
 
@@ -531,7 +533,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
      * @return addresses and token amounts of bonded validators
      */
     function getBondedValidatorsTokens() public view returns (dt.ValidatorTokens[] memory) {
-        dt.ValidatorTokens[] memory infos = new dt.ValidatorTokens[](valAddrs.length);
+        dt.ValidatorTokens[] memory infos = new dt.ValidatorTokens[](bondedValAddrs.length);
         for (uint256 i = 0; i < bondedValAddrs.length; i++) {
             address valAddr = bondedValAddrs[i];
             infos[i] = dt.ValidatorTokens(valAddr, validators[valAddr].tokens);

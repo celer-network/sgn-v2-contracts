@@ -94,7 +94,8 @@ contract Bridge is Pool {
         if (request.token == nativeWrap) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(request.amount);
-            payable(request.receiver).transfer(request.amount);
+            (bool sent, ) = request.receiver.call{value: request.amount}("");
+            require(sent, "failed to relay native token");
         } else {
             IERC20(request.token).safeTransfer(request.receiver, request.amount);
         }
@@ -128,6 +129,4 @@ contract Bridge is Pool {
 
     // This is needed to receive ETH when calling `IWETH.withdraw`
     receive() external payable {}
-
-    fallback() external payable {}
 }

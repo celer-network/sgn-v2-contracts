@@ -123,6 +123,50 @@ describe('Bridge Tests', function () {
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, amount, chainId, srcXferId);
   });
+
+  it('should pass volume cap', async function () {
+    const signers = [accounts[0], accounts[1], accounts[2]];
+    const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
+    await expect(bridge.resetSigners(getAddrs(signers), powers))
+      .to.emit(bridge, 'SignersUpdated')
+      .withArgs(getAddrs(signers), powers);
+
+    await bridge.setEpochLength(5);
+    await bridge.setEpochVolumeCaps([token.address], [parseUnits('5')]);
+
+    const sender = accounts[0];
+    const receiver = accounts[1];
+    const amount = parseUnits('1');
+    const chainId = (await ethers.provider.getNetwork()).chainId;
+
+    await token.connect(sender).approve(bridge.address, parseUnits('100'));
+    await bridge.connect(sender).addLiquidity(token.address, parseUnits('50'));
+
+    let srcXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'uint64'],
+      [sender.address, receiver.address, token.address, amount, chainId, 0, chainId]
+    );
+
+    let dstXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
+      [sender.address, receiver.address, token.address, amount, chainId, chainId, srcXferId]
+    );
+
+    const { relayBytes, sigs } = await getRelayRequest(
+      sender.address,
+      receiver.address,
+      token.address,
+      amount,
+      chainId,
+      chainId,
+      srcXferId,
+      signers
+    );
+
+    await expect(bridge.relay(relayBytes, sigs, getAddrs(signers), powers))
+      .to.emit(bridge, 'Relay')
+      .withArgs(dstXferId, sender.address, receiver.address, token.address, amount, chainId, srcXferId);
+  });
 });
 
 function getAddrs(signers: Wallet[]) {

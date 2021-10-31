@@ -60,10 +60,7 @@ contract Bridge is Pool {
         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
     ) external nonReentrant whenNotPaused {
         require(_amount > minSend[_token], "amount too small");
-        uint256 max = maxSend[_token];
-        if (max > 0) {
-            require(_amount <= max, "amount too large");
-        }
+        require(maxSend[_token] == 0 || _amount <= maxSend[_token], "amount too large");
         require(_maxSlippage > mams, "max slippage too small");
         bytes32 transferId = keccak256(
             // uint64(block.chainid) for consistency as entire system uses uint64 for chain id

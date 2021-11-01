@@ -32,10 +32,6 @@ abstract contract Pauser is Ownable, Pausable {
         return pausers[account];
     }
 
-    function renouncePauser() public {
-        _removePauser(msg.sender);
-    }
-
     function addPauser(address account) public onlyOwner {
         _addPauser(account);
     }
@@ -44,8 +40,12 @@ abstract contract Pauser is Ownable, Pausable {
         _removePauser(account);
     }
 
+    function renouncePauser() public {
+        _removePauser(msg.sender);
+    }
+
     function _addPauser(address account) private {
-        require(!isPauser(account), "Account is pauser already");
+        require(!isPauser(account), "Account is already pauser");
         pausers[account] = true;
         emit PauserAdded(account);
     }

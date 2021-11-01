@@ -7,7 +7,7 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20 } from '../typechain';
-import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
+import { deployBridgeContracts, getAccounts, advanceBlockNumberTo, loadFixture } from './lib/common';
 import { getRelayRequest, calculateSignatures, hex2Bytes } from './lib/proto';
 
 describe('Bridge Tests', function () {
@@ -18,14 +18,12 @@ describe('Bridge Tests', function () {
 
   let bridge: Bridge;
   let token: TestERC20;
-  let admin: Wallet;
   let accounts: Wallet[];
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     bridge = res.bridge;
     token = res.token;
-    admin = res.admin;
     accounts = await getAccounts(res.admin, [token], 4);
   });
 
@@ -122,6 +120,101 @@ describe('Bridge Tests', function () {
     await expect(bridge.relay(relayBytes, sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, amount, chainId, srcXferId);
+  });
+
+  it('should pass volume cap', async function () {
+    const signers = [accounts[0], accounts[1], accounts[2]];
+    const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
+    await expect(bridge.resetSigners(getAddrs(signers), powers))
+      .to.emit(bridge, 'SignersUpdated')
+      .withArgs(getAddrs(signers), powers);
+
+    const epochLength = 5;
+    await bridge.setEpochLength(epochLength);
+    await bridge.setEpochVolumeCaps([token.address], [parseUnits('5')]);
+    await bridge.setMaxSend([token.address], [parseUnits('5')]);
+
+    const sender = accounts[0];
+    const receiver = accounts[1];
+    const chainId = (await ethers.provider.getNetwork()).chainId;
+
+    await token.connect(sender).approve(bridge.address, parseUnits('100'));
+    await expect(
+      bridge.connect(sender).send(receiver.address, token.address, parseUnits('10'), chainId, 0, 10000)
+    ).to.be.revertedWith('amount too large');
+    await bridge.connect(sender).addLiquidity(token.address, parseUnits('50'));
+
+    let srcXferId = keccak256(['string'], ['srcId']);
+    let dstXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
+      [sender.address, receiver.address, token.address, parseUnits('2'), chainId, chainId, srcXferId]
+    );
+
+    let req = await getRelayRequest(
+      sender.address,
+      receiver.address,
+      token.address,
+      parseUnits('2'),
+      chainId,
+      chainId,
+      srcXferId,
+      signers
+    );
+
+    let blockNumber = await ethers.provider.getBlockNumber();
+    let epochStartBlock = Math.floor(blockNumber / epochLength) * epochLength;
+    await advanceBlockNumberTo(epochStartBlock + epochLength);
+    await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
+      .to.emit(bridge, 'Relay')
+      .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('2'), chainId, srcXferId);
+
+    req = await getRelayRequest(
+      sender.address,
+      receiver.address,
+      token.address,
+      parseUnits('4'),
+      chainId,
+      chainId,
+      srcXferId,
+      signers
+    );
+    dstXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
+      [sender.address, receiver.address, token.address, parseUnits('4'), chainId, chainId, srcXferId]
+    );
+
+    await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers)).to.be.revertedWith(
+      'volume exceeds cap'
+    );
+    blockNumber = await ethers.provider.getBlockNumber();
+    epochStartBlock = Math.floor(blockNumber / epochLength) * epochLength;
+    await advanceBlockNumberTo(epochStartBlock + epochLength);
+    await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
+      .to.emit(bridge, 'Relay')
+      .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('4'), chainId, srcXferId);
+
+    req = await getRelayRequest(
+      sender.address,
+      receiver.address,
+      token.address,
+      parseUnits('3'),
+      chainId,
+      chainId,
+      srcXferId,
+      signers
+    );
+    dstXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
+      [sender.address, receiver.address, token.address, parseUnits('3'), chainId, chainId, srcXferId]
+    );
+    for (let i = 0; i < 3; i++) {
+      await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers)).to.be.revertedWith(
+        'volume exceeds cap'
+      );
+    }
+    await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
+      .to.emit(bridge, 'Relay')
+      .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('3'), chainId, srcXferId);
   });
 });
 

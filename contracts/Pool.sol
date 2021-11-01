@@ -26,7 +26,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         uint256 amount // how many tokens were added
     );
 
-    event WithdrawDone(bytes32 withdrawId, uint64 seqnum, address receiver, address token, uint256 amount);
+    event WithdrawDone(
+        bytes32 withdrawId,
+        uint64 seqnum,
+        address receiver,
+        address token,
+        uint256 amount,
+        bytes32 refid
+    );
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
         addseq += 1;
@@ -50,6 +57,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
         IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
-        emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount);
+        emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
     }
 }

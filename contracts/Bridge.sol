@@ -96,6 +96,7 @@ contract Bridge is Pool {
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
+        updateVolume(request.token, request.amount);
         if (request.token == nativeWrap) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(request.amount);
@@ -104,7 +105,6 @@ contract Bridge is Pool {
         } else {
             IERC20(request.token).safeTransfer(request.receiver, request.amount);
         }
-        updateVolume(request.token, request.amount);
 
         emit Relay(
             transferId,

@@ -72,8 +72,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         );
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
-        IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
         updateVolume(wdmsg.token, wdmsg.amount);
+        IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
         emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
     }
 

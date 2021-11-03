@@ -145,6 +145,10 @@ describe('Slash Tests', function () {
         parseUnits('-999999999999999998', 'wei')
       );
 
+    await expect(staking.undelegateTokens(validators[0].address, parseUnits('1'))).to.be.revertedWith(
+      'not enough remaining shares'
+    );
+
     await expect(staking.undelegateTokens(validators[0].address, parseUnits('1900000000000000001', 'wei')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(

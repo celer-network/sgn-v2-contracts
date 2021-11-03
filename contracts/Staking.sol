@@ -635,7 +635,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
             validator.shares -= delegator.shares;
             delegator.shares = 0;
         }
-        require(delegator.shares == 0 || delegator.shares >= dt.CELR_DECIMAL, "remaining shares too small");
+        require(delegator.shares == 0 || delegator.shares >= dt.CELR_DECIMAL, "not enough remaining shares");
         validator.tokens -= _tokens;
         if (validator.status == dt.ValidatorStatus.Unbonded) {
             CELER_TOKEN.safeTransfer(delAddr, _tokens);

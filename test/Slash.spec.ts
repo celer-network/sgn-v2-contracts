@@ -85,7 +85,7 @@ describe('Slash Tests', function () {
 
   it('should slash successfully with undelegations and redelegations', async function () {
     await staking.undelegateShares(validators[0].address, parseUnits('1'));
-    await staking.undelegateShares(validators[0].address, parseUnits('2'));
+    await staking.undelegateTokens(validators[0].address, parseUnits('2'));
     await staking.connect(validators[0]).undelegateShares(validators[0].address, parseUnits('1'));
 
     const request = await getSlashRequest(
@@ -105,10 +105,11 @@ describe('Slash Tests', function () {
       .withArgs(validators[0].address, 1, parseUnits('0.4'));
 
     // check and complete pending undelegations
-    const res = await staking.getDelegatorInfo(validators[0].address, admin.address);
-    expect(res.shares).to.equal(parseUnits('3'));
-    expect(res.undelegations[0].shares).to.equal(parseUnits('1'));
-    expect(res.undelegations[1].shares).to.equal(parseUnits('2'));
+    let dinfo = await staking.getDelegatorInfo(validators[0].address, admin.address);
+    expect(dinfo.tokens).to.equal(parseUnits('2.85'));
+    expect(dinfo.shares).to.equal(parseUnits('3'));
+    expect(dinfo.undelegations[0].shares).to.equal(parseUnits('1'));
+    expect(dinfo.undelegations[1].shares).to.equal(parseUnits('2'));
     await advanceBlockNumber(consts.UNBONDING_PERIOD);
     await expect(staking.completeUndelegate(validators[0].address))
       .to.emit(staking, 'Undelegated')
@@ -133,26 +134,30 @@ describe('Slash Tests', function () {
         parseUnits('3052631578947368421', 'wei'),
         parseUnits('1')
       );
-    // re-undelegate. TODO: see if we can remove the rounding diff
-    await expect(staking.undelegateShares(validators[0].address, parseUnits('1052631578947368421', 'wei')))
+
+    await expect(staking.undelegateShares(validators[0].address, parseUnits('1052631578947368419', 'wei')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(
         validators[0].address,
         admin.address,
-        parseUnits('2850000000000000001', 'wei'),
-        parseUnits('2'),
-        parseUnits('-999999999999999999', 'wei')
+        parseUnits('2850000000000000002', 'wei'),
+        parseUnits('2000000000000000002', 'wei'),
+        parseUnits('-999999999999999998', 'wei')
       );
 
-    await expect(staking.undelegateTokens(validators[0].address, parseUnits('1')))
+    await expect(staking.undelegateTokens(validators[0].address, parseUnits('1900000000000000001', 'wei')))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(
         validators[0].address,
         admin.address,
-        parseUnits('1850000000000000001', 'wei'),
-        parseUnits('947368421052631580', 'wei'),
-        parseUnits('-1')
+        parseUnits('950000000000000001', 'wei'),
+        0,
+        parseUnits('-1900000000000000001', 'wei')
       );
+
+    dinfo = await staking.getDelegatorInfo(validators[0].address, admin.address);
+    expect(dinfo.tokens).to.equal(0);
+    expect(dinfo.shares).to.equal(0);
   });
 
   it('should unbond validator due to slash', async function () {

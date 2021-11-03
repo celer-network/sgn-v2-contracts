@@ -8,7 +8,6 @@ import "./Staking.sol";
 /**
  * @title Viewer of the staking contract
  * @notice Using a seperate viewer contract to reduce staking contract size
- * TODO: add more view functions
  */
 contract Viewer {
     Staking public immutable staking;

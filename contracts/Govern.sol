@@ -121,7 +121,6 @@ contract Govern {
     /**
      * @notice Confirm a parameter proposal
      * @param _proposalId the id of the parameter proposal
-     * TODO: add latest confirm time
      */
     function confirmParamProposal(uint256 _proposalId) external {
         uint256 yesVotes;

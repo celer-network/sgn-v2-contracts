@@ -630,6 +630,12 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         dt.Delegator storage delegator = validator.delegators[delAddr];
         delegator.shares -= _shares;
         validator.shares -= _shares;
+        if (delegator.shares <= 2) {
+            // remove rounding reminder
+            validator.shares -= delegator.shares;
+            delegator.shares = 0;
+        }
+        require(delegator.shares == 0 || delegator.shares >= dt.CELR_DECIMAL, "remaining shares too small");
         validator.tokens -= _tokens;
         if (validator.status == dt.ValidatorStatus.Unbonded) {
             CELER_TOKEN.safeTransfer(delAddr, _tokens);
@@ -735,7 +741,6 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
 
     /**
      * @notice Convert token to share
-     * TODO: check edge cases when balance is low
      */
     function _tokenToShare(
         uint256 tokens,

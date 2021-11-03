@@ -33,7 +33,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         address token,
         uint256 amount // how many tokens were added
     );
-    event WithdrawDone(bytes32 withdrawId, uint64 seqnum, address receiver, address token, uint256 amount);
+    event WithdrawDone(
+        bytes32 withdrawId,
+        uint64 seqnum,
+        address receiver,
+        address token,
+        uint256 amount,
+        bytes32 refid
+    );
     // gov events
     event GovernorAdded(address account);
     event GovernorRemoved(address account);
@@ -65,9 +72,9 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         );
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
-        IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
         updateVolume(wdmsg.token, wdmsg.amount);
-        emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount);
+        IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
+        emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
     }
 
     function setEpochLength(uint256 _length) external onlyGovernor {

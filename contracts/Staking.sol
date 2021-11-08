@@ -388,7 +388,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
     }
 
     /**
-     * @notice Validator send notice event
+     * @notice Validator notice event, could be triggered by anyone
      */
     function validatorNotice(
         address _valAddr,

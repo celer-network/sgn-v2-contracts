@@ -12,17 +12,37 @@ import "./Pauser.sol";
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
+interface IWETH {
+    function withdraw(uint256) external;
+}
+
 contract Pool is Signers, ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
-    // map of successful withdraws, if true means already withdrew money
+    // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
 
-    uint256 epochLength;
+    uint256 public epochLength;
     mapping(address => uint256) public epochVolumes;
     mapping(address => uint256) public epochVolumeCaps;
     mapping(address => uint256) public lastOpBlks;
+
+    uint256 public delayPeriod; // in seconds
+    struct delayedTransfer {
+        address receiver;
+        address token;
+        uint256 amount;
+        uint256 timestamp;
+    }
+    mapping(bytes32 => delayedTransfer) public delayedTransfers;
+    mapping(address => uint256) public delayThresholds;
+
+    // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
+    // if request.token equals this, will withdraw and send native token to receiver
+    // note we don't check whether it's zero address. when this isn't set, and request.token
+    // is all 0 address, guarantee fail
+    address public nativeWrap;
 
     mapping(address => bool) public governors;
 
@@ -41,11 +61,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         uint256 amount,
         bytes32 refid
     );
+    event TransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
     // gov events
     event GovernorAdded(address account);
     event GovernorRemoved(address account);
     event EpochLengthUpdated(uint256 length);
     event EpochVolumeUpdated(address token, uint256 cap);
+    event DelayPeriodUpdated(uint256 period);
+    event DelayThresholdUpdated(address token, uint256 threshold);
 
     constructor() {
         _addGovernor(msg.sender);
@@ -73,8 +96,29 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
         updateVolume(wdmsg.token, wdmsg.amount);
-        IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
+        uint256 delayThreshold = delayThresholds[wdmsg.token];
+        if (delayThreshold > 0 && wdmsg.amount > delayThreshold) {
+            addDelayedTransfer(wdId, wdmsg.receiver, wdmsg.token, wdmsg.amount);
+        } else {
+            IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
+        }
         emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
+    }
+
+    function executeTransfer(bytes32 id) external whenNotPaused {
+        delayedTransfer memory transfer = delayedTransfers[id];
+        require(transfer.timestamp > 0, "transfer not exist");
+        require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
+        if (transfer.token == nativeWrap && withdraws[id] == false) {
+            // withdraw then transfer native to receiver
+            IWETH(nativeWrap).withdraw(transfer.amount);
+            (bool sent, ) = transfer.receiver.call{value: transfer.amount}("");
+            require(sent, "failed to relay native token");
+        } else {
+            IERC20(transfer.token).safeTransfer(transfer.receiver, transfer.amount);
+        }
+        delete delayedTransfers[id];
+        emit TransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
     }
 
     function setEpochLength(uint256 _length) external onlyGovernor {
@@ -88,6 +132,19 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             epochVolumeCaps[_tokens[i]] = _caps[i];
             emit EpochVolumeUpdated(_tokens[i], _caps[i]);
         }
+    }
+
+    function setDelayThresholds(address[] calldata _tokens, uint256[] calldata _thresholds) external onlyGovernor {
+        require(_tokens.length == _thresholds.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            delayThresholds[_tokens[i]] = _thresholds[i];
+            emit DelayThresholdUpdated(_tokens[i], _thresholds[i]);
+        }
+    }
+
+    function setDelayPeriod(uint256 _period) external onlyGovernor {
+        delayPeriod = _period;
+        emit DelayPeriodUpdated(_period);
     }
 
     function updateVolume(address _token, uint256 _amount) internal {
@@ -109,6 +166,27 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         require(volume <= cap, "volume exceeds cap");
         epochVolumes[_token] = volume;
         lastOpBlks[_token] = blkNum;
+    }
+
+    function addDelayedTransfer(
+        bytes32 id,
+        address receiver,
+        address token,
+        uint256 amount
+    ) internal {
+        // note: rely on caller for id uniquess
+        // current ids are relay transfer id and withdrawal id
+        delayedTransfers[id] = delayedTransfer({
+            receiver: receiver,
+            token: token,
+            amount: amount,
+            timestamp: block.timestamp
+        });
+    }
+
+    // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver
+    function setWrap(address _weth) external onlyOwner {
+        nativeWrap = _weth;
     }
 
     modifier onlyGovernor() {

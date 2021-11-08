@@ -7,7 +7,13 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20 } from '../typechain';
-import { deployBridgeContracts, getAccounts, advanceBlockNumberTo, loadFixture } from './lib/common';
+import {
+  deployBridgeContracts,
+  getAccounts,
+  advanceBlockNumber,
+  advanceBlockNumberTo,
+  loadFixture
+} from './lib/common';
 import { getRelayRequest, calculateSignatures, hex2Bytes } from './lib/proto';
 
 describe('Bridge Tests', function () {
@@ -78,6 +84,8 @@ describe('Bridge Tests', function () {
   });
 
   it('should send and relay successfully', async function () {
+    await bridge.setDelayThresholds([token.address], [parseUnits('5')]);
+    await bridge.setDelayPeriod(10);
     const signers = [accounts[0], accounts[1], accounts[2]];
     const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
     await expect(bridge.resetSigners(getAddrs(signers), powers))
@@ -97,11 +105,12 @@ describe('Bridge Tests', function () {
     );
 
     await token.connect(sender).approve(bridge.address, parseUnits('100'));
+    await bridge.connect(sender).addLiquidity(token.address, parseUnits('50'));
     await expect(bridge.connect(sender).send(receiver.address, token.address, amount, chainId, nonce, slippage))
       .to.emit(bridge, 'Send')
       .withArgs(srcXferId, sender.address, receiver.address, token.address, amount, chainId, nonce, slippage);
 
-    const { relayBytes, sigs } = await getRelayRequest(
+    let req = await getRelayRequest(
       sender.address,
       receiver.address,
       token.address,
@@ -111,15 +120,40 @@ describe('Bridge Tests', function () {
       srcXferId,
       signers
     );
-
-    const dstXferId = keccak256(
+    let dstXferId = keccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
       [sender.address, receiver.address, token.address, amount, chainId, chainId, srcXferId]
     );
-
-    await expect(bridge.relay(relayBytes, sigs, getAddrs(signers), powers))
+    await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, amount, chainId, srcXferId);
+
+    const largeAmount = parseUnits('10');
+    req = await getRelayRequest(
+      sender.address,
+      receiver.address,
+      token.address,
+      largeAmount,
+      chainId,
+      chainId,
+      srcXferId,
+      signers
+    );
+    dstXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
+      [sender.address, receiver.address, token.address, largeAmount, chainId, chainId, srcXferId]
+    );
+    await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
+      .to.emit(bridge, 'Relay')
+      .withArgs(dstXferId, sender.address, receiver.address, token.address, largeAmount, chainId, srcXferId);
+
+    await expect(bridge.executeTransfer(dstXferId)).to.be.revertedWith('transfer still locked');
+    await ethers.provider.send('evm_increaseTime', [100]);
+    await ethers.provider.send('evm_mine', []);
+    await expect(bridge.executeTransfer(dstXferId))
+      .to.emit(bridge, 'TransferExecuted')
+      .withArgs(dstXferId, receiver.address, token.address, largeAmount);
+    await expect(bridge.executeTransfer(dstXferId)).to.be.revertedWith('transfer not exist');
   });
 
   it('should pass volume cap', async function () {
@@ -231,4 +265,8 @@ async function getUpdateSignersSigs(newSignerAddrs: string[], newPowers: BigNumb
   const hash = keccak256(['bytes'], [data]);
   const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
   return sigs;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -7,10 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./libraries/PbBridge.sol";
 import "./Pool.sol";
 
-interface IWETH {
-    function withdraw(uint256) external;
-}
-
 contract Bridge is Pool {
     using SafeERC20 for IERC20;
 
@@ -44,12 +40,6 @@ contract Bridge is Pool {
 
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
     uint32 public mams;
-
-    // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
-    // if request.token equals this, will withdraw and send native token to receiver
-    // note we don't check whether it's zero address. when this isn't set, and request.token
-    // is all 0 address, guarantee fail
-    address public nativeWrap;
 
     function send(
         address _receiver,
@@ -97,13 +87,18 @@ contract Bridge is Pool {
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
         updateVolume(request.token, request.amount);
-        if (request.token == nativeWrap) {
-            // withdraw then transfer native to receiver
-            IWETH(nativeWrap).withdraw(request.amount);
-            (bool sent, ) = request.receiver.call{value: request.amount}("");
-            require(sent, "failed to relay native token");
+        uint256 delayThreshold = delayThresholds[request.token];
+        if (delayThreshold > 0 && request.amount > delayThreshold) {
+            addDelayedTransfer(transferId, request.receiver, request.token, request.amount);
         } else {
-            IERC20(request.token).safeTransfer(request.receiver, request.amount);
+            if (request.token == nativeWrap) {
+                // withdraw then transfer native to receiver
+                IWETH(nativeWrap).withdraw(request.amount);
+                (bool sent, ) = request.receiver.call{value: request.amount}("");
+                require(sent, "failed to relay native token");
+            } else {
+                IERC20(request.token).safeTransfer(request.receiver, request.amount);
+            }
         }
 
         emit Relay(
@@ -135,11 +130,6 @@ contract Bridge is Pool {
 
     function setMinSlippage(uint32 _minslip) external onlyGovernor {
         mams = _minslip;
-    }
-
-    // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver
-    function setWrap(address _weth) external onlyOwner {
-        nativeWrap = _weth;
     }
 
     // This is needed to receive ETH when calling `IWETH.withdraw`

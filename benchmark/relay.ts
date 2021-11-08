@@ -43,6 +43,7 @@ describe('Relay Gas Benchmark', function () {
     await token.transfer(bridge.address, parseUnits('1000000'));
     await bridge.setEpochVolumeCaps([token.address], [parseUnits('100')]);
     await bridge.setEpochLength(5);
+    await bridge.setDelayThresholds([token.address], [parseUnits('100')])
   });
 
   it('benchmark relay gas cost for bridge', async function () {

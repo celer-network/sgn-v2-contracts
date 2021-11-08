@@ -23,19 +23,19 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     // map of successful withdraws, if true means already withdrew money or marked as delayed transfer
     mapping(bytes32 => bool) public withdraws;
 
-    uint256 epochLength;
+    uint256 public epochLength;
     mapping(address => uint256) public epochVolumes;
     mapping(address => uint256) public epochVolumeCaps;
     mapping(address => uint256) public lastOpBlks;
 
-    uint256 unlockPeriod; // in seconds
+    uint256 public delayPeriod; // in seconds
     struct delayedTransfer {
         address receiver;
         address token;
         uint256 amount;
         uint256 unlockTime; // earliest block timestamp to execute the transfer
     }
-    mapping(bytes32 => delayedTransfer) delayedTransfers;
+    mapping(bytes32 => delayedTransfer) public delayedTransfers;
     mapping(address => uint256) public delayThresholds;
 
     // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
@@ -61,12 +61,13 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         uint256 amount,
         bytes32 refid
     );
+    event TransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
     // gov events
     event GovernorAdded(address account);
     event GovernorRemoved(address account);
     event EpochLengthUpdated(uint256 length);
     event EpochVolumeUpdated(address token, uint256 cap);
-    event UnlockPeriodUpdated(uint256 period);
+    event DelayPeriodUpdated(uint256 period);
     event DelayThresholdUpdated(address token, uint256 threshold);
 
     constructor() {
@@ -106,7 +107,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
 
     function executeTransfer(bytes32 id) external whenNotPaused {
         delayedTransfer memory transfer = delayedTransfers[id];
-        require(transfer.unlockTime > 0, "pending transfer not exist");
+        require(transfer.unlockTime > 0, "transfer not exist");
+        require(block.timestamp > transfer.unlockTime, "transfer still locked");
         if (transfer.token == nativeWrap && withdraws[id] == false) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(transfer.amount);
@@ -116,6 +118,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             IERC20(transfer.token).safeTransfer(transfer.receiver, transfer.amount);
         }
         delete delayedTransfers[id];
+        emit TransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
     }
 
     function setEpochLength(uint256 _length) external onlyGovernor {
@@ -139,9 +142,9 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         }
     }
 
-    function setUnlockPeriod(uint256 _period) external onlyGovernor {
-        unlockPeriod = _period;
-        emit UnlockPeriodUpdated(_period);
+    function setDelayPeriod(uint256 _period) external onlyGovernor {
+        delayPeriod = _period;
+        emit DelayPeriodUpdated(_period);
     }
 
     function updateVolume(address _token, uint256 _amount) internal {
@@ -177,7 +180,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             receiver: receiver,
             token: token,
             amount: amount,
-            unlockTime: block.timestamp + unlockPeriod
+            unlockTime: block.timestamp + delayPeriod
         });
     }
 

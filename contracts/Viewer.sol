@@ -7,7 +7,7 @@ import "./Staking.sol";
 
 /**
  * @title Viewer of the staking contract
- * @notice Using a seperate viewer contract to reduce staking contract size
+ * @notice Using a separate viewer contract to reduce staking contract size
  */
 contract Viewer {
     Staking public immutable staking;

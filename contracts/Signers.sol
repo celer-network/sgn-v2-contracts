@@ -40,7 +40,7 @@ contract Signers is Ownable, ISigsVerifier {
     }
 
     /**
-     * @notice Update new sigenrs.
+     * @notice Update new signers.
      * @param _newSigners sorted list of new signers
      * @param _curPowers powers of new signers
      * @param _sigs list of signatures sorted by signer addresses

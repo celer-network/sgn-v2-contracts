@@ -33,7 +33,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         address receiver;
         address token;
         uint256 amount;
-        uint256 unlockTime; // earliest block timestamp to execute the transfer
+        uint256 timestamp; // earliest block timestamp to execute the transfer
     }
     mapping(bytes32 => delayedTransfer) public delayedTransfers;
     mapping(address => uint256) public delayThresholds;
@@ -107,8 +107,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
 
     function executeTransfer(bytes32 id) external whenNotPaused {
         delayedTransfer memory transfer = delayedTransfers[id];
-        require(transfer.unlockTime > 0, "transfer not exist");
-        require(block.timestamp > transfer.unlockTime, "transfer still locked");
+        require(transfer.timestamp > 0, "transfer not exist");
+        require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
         if (transfer.token == nativeWrap && withdraws[id] == false) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(transfer.amount);
@@ -180,7 +180,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             receiver: receiver,
             token: token,
             amount: amount,
-            unlockTime: block.timestamp + delayPeriod
+            timestamp: block.timestamp
         });
     }
 

@@ -20,7 +20,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
-    // map of successful withdraws, if true means already withdrew money or marked as delayed transfer
+    // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
 
     uint256 public epochLength;
@@ -33,7 +33,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         address receiver;
         address token;
         uint256 amount;
-        uint256 timestamp; // earliest block timestamp to execute the transfer
+        uint256 timestamp;
     }
     mapping(bytes32 => delayedTransfer) public delayedTransfers;
     mapping(address => uint256) public delayThresholds;

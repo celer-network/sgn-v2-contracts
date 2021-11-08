@@ -632,7 +632,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         validator.shares -= _shares;
         validator.tokens -= _tokens;
         if (validator.tokens != validator.shares && delegator.shares <= 2) {
-            // remove rounding reminder when total shares and tokens are not equal
+            // Remove residual share caused by rounding error when total shares and tokens are not equal
             validator.shares -= delegator.shares;
             delegator.shares = 0;
         }
@@ -698,7 +698,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
     }
 
     /**
-     * @notice Repace a bonded validator
+     * @notice Replace a bonded validator
      * @param _valAddr the address of the new validator
      * @param _index the index of the validator to be replaced
      */

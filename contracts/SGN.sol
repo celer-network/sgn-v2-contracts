@@ -69,7 +69,7 @@ contract SGN is Pauser {
 
     /**
      * @notice Withdraw token
-     * @dev Here we use cumulative amount to make withrawal process idempotent
+     * @dev Here we use cumulative amount to make withdrawal process idempotent
      * @param _withdrawalRequest withdrawal request bytes coded in protobuf
      * @param _sigs list of validator signatures
      */

@@ -84,6 +84,8 @@ describe('Bridge Tests', function () {
       .to.emit(bridge, 'SignersUpdated')
       .withArgs(getAddrs(signers), powers);
 
+    await bridge.setDelayThresholds([token.address], [parseUnits('100')]);
+
     const sender = accounts[0];
     const receiver = accounts[1];
     const amount = parseUnits('1');

@@ -156,7 +156,7 @@ describe('Bridge Tests', function () {
     await expect(bridge.executeTransfer(dstXferId)).to.be.revertedWith('transfer not exist');
   });
 
-  it('should pass volume cap', async function () {
+  it('should pass risk control tests', async function () {
     const signers = [accounts[0], accounts[1], accounts[2]];
     const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
     await expect(bridge.resetSigners(getAddrs(signers), powers))
@@ -176,7 +176,14 @@ describe('Bridge Tests', function () {
     await expect(
       bridge.connect(sender).send(receiver.address, token.address, parseUnits('10'), chainId, 0, 10000)
     ).to.be.revertedWith('amount too large');
-    await bridge.connect(sender).addLiquidity(token.address, parseUnits('50'));
+
+    await bridge.setMinAdd([token.address], [parseUnits('10')]);
+    await expect(bridge.connect(sender).addLiquidity(token.address, parseUnits('50')))
+      .to.emit(bridge, 'LiquidityAdded')
+      .withArgs(1, sender.address, token.address, parseUnits('50'));
+    await expect(bridge.connect(sender).addLiquidity(token.address, parseUnits('5'))).to.be.revertedWith(
+      'amount too small'
+    );
 
     let srcXferId = keccak256(['string'], ['srcId']);
     let dstXferId = keccak256(

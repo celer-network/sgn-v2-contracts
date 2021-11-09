@@ -20,6 +20,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
+    mapping(address => uint256) public minAdd; // add _amount must > minAdd
+
     // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
 
@@ -69,6 +71,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     event EpochVolumeUpdated(address token, uint256 cap);
     event DelayPeriodUpdated(uint256 period);
     event DelayThresholdUpdated(address token, uint256 threshold);
+    event MinAddUpdated(address token, uint256 amount);
 
     constructor() {
         _addGovernor(msg.sender);
@@ -76,6 +79,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
         addseq += 1;
+        require(_amount > minAdd[_token], "amount too small");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);
     }
@@ -145,6 +149,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     function setDelayPeriod(uint256 _period) external onlyGovernor {
         delayPeriod = _period;
         emit DelayPeriodUpdated(_period);
+    }
+
+    function setMinAdd(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
+        require(_tokens.length == _amounts.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            minAdd[_tokens[i]] = _amounts[i];
+            emit MinAddUpdated(_tokens[i], _amounts[i]);
+        }
     }
 
     function updateVolume(address _token, uint256 _amount) internal {

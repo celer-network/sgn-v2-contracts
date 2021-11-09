@@ -23,10 +23,10 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
 
-    uint256 public epochLength;
-    mapping(address => uint256) public epochVolumes;
-    mapping(address => uint256) public epochVolumeCaps;
-    mapping(address => uint256) public lastOpBlks;
+    uint256 public epochLength; // seconds
+    mapping(address => uint256) public epochVolumes; // key is token
+    mapping(address => uint256) public epochVolumeCaps; // key is token
+    mapping(address => uint256) public lastOpTimestamps; // key is token
 
     uint256 public delayPeriod; // in seconds
     struct delayedTransfer {
@@ -156,16 +156,16 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             return;
         }
         uint256 volume = epochVolumes[_token];
-        uint256 blkNum = block.number;
-        uint256 epochStartBlk = (blkNum / epochLength) * epochLength;
-        if (lastOpBlks[_token] < epochStartBlk) {
+        uint256 timestamp = block.timestamp;
+        uint256 epochStartTime = (timestamp / epochLength) * epochLength;
+        if (lastOpTimestamps[_token] < epochStartTime) {
             volume = _amount;
         } else {
             volume += _amount;
         }
         require(volume <= cap, "volume exceeds cap");
         epochVolumes[_token] = volume;
-        lastOpBlks[_token] = blkNum;
+        lastOpTimestamps[_token] = timestamp;
     }
 
     function addDelayedTransfer(

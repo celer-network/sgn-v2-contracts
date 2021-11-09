@@ -163,7 +163,7 @@ describe('Bridge Tests', function () {
       .to.emit(bridge, 'SignersUpdated')
       .withArgs(getAddrs(signers), powers);
 
-    const epochLength = 5;
+    const epochLength = 20;
     await bridge.setEpochLength(epochLength);
     await bridge.setEpochVolumeCaps([token.address], [parseUnits('5')]);
     await bridge.setMaxSend([token.address], [parseUnits('5')]);
@@ -195,9 +195,10 @@ describe('Bridge Tests', function () {
       signers
     );
 
-    let blockNumber = await ethers.provider.getBlockNumber();
-    let epochStartBlock = Math.floor(blockNumber / epochLength) * epochLength;
-    await advanceBlockNumberTo(epochStartBlock + epochLength);
+    let blockTime = await getBlockTime();
+    let epochStartTime = Math.floor(blockTime / epochLength) * epochLength;
+    await ethers.provider.send('evm_setNextBlockTimestamp', [epochStartTime + epochLength]);
+    await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('2'), chainId, srcXferId);
@@ -220,9 +221,10 @@ describe('Bridge Tests', function () {
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers)).to.be.revertedWith(
       'volume exceeds cap'
     );
-    blockNumber = await ethers.provider.getBlockNumber();
-    epochStartBlock = Math.floor(blockNumber / epochLength) * epochLength;
-    await advanceBlockNumberTo(epochStartBlock + epochLength);
+    blockTime = await getBlockTime();
+    epochStartTime = Math.floor(blockTime / epochLength) * epochLength;
+    await ethers.provider.send('evm_setNextBlockTimestamp', [epochStartTime + epochLength]);
+    await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('4'), chainId, srcXferId);
@@ -246,6 +248,11 @@ describe('Bridge Tests', function () {
         'volume exceeds cap'
       );
     }
+
+    blockTime = await getBlockTime();
+    epochStartTime = Math.floor(blockTime / epochLength) * epochLength;
+    await ethers.provider.send('evm_setNextBlockTimestamp', [epochStartTime + epochLength]);
+    await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('3'), chainId, srcXferId);
@@ -267,6 +274,8 @@ async function getUpdateSignersSigs(newSignerAddrs: string[], newPowers: BigNumb
   return sigs;
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function getBlockTime() {
+  const blockNumber = await ethers.provider.getBlockNumber();
+  const block = await ethers.provider.getBlock(blockNumber);
+  return block.timestamp;
 }

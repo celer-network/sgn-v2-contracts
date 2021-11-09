@@ -20,13 +20,15 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
+    mapping(address => uint256) public minAdd; // add _amount must > minAdd
+
     // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
 
-    uint256 public epochLength;
-    mapping(address => uint256) public epochVolumes;
-    mapping(address => uint256) public epochVolumeCaps;
-    mapping(address => uint256) public lastOpBlks;
+    uint256 public epochLength; // seconds
+    mapping(address => uint256) public epochVolumes; // key is token
+    mapping(address => uint256) public epochVolumeCaps; // key is token
+    mapping(address => uint256) public lastOpTimestamps; // key is token
 
     uint256 public delayPeriod; // in seconds
     struct delayedTransfer {
@@ -69,6 +71,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     event EpochVolumeUpdated(address token, uint256 cap);
     event DelayPeriodUpdated(uint256 period);
     event DelayThresholdUpdated(address token, uint256 threshold);
+    event MinAddUpdated(address token, uint256 amount);
 
     constructor() {
         _addGovernor(msg.sender);
@@ -76,6 +79,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
         addseq += 1;
+        require(_amount > minAdd[_token], "amount too small");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);
     }
@@ -147,6 +151,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         emit DelayPeriodUpdated(_period);
     }
 
+    function setMinAdd(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
+        require(_tokens.length == _amounts.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            minAdd[_tokens[i]] = _amounts[i];
+            emit MinAddUpdated(_tokens[i], _amounts[i]);
+        }
+    }
+
     function updateVolume(address _token, uint256 _amount) internal {
         if (epochLength == 0) {
             return;
@@ -156,16 +168,16 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             return;
         }
         uint256 volume = epochVolumes[_token];
-        uint256 blkNum = block.number;
-        uint256 epochStartBlk = (blkNum / epochLength) * epochLength;
-        if (lastOpBlks[_token] < epochStartBlk) {
+        uint256 timestamp = block.timestamp;
+        uint256 epochStartTime = (timestamp / epochLength) * epochLength;
+        if (lastOpTimestamps[_token] < epochStartTime) {
             volume = _amount;
         } else {
             volume += _amount;
         }
         require(volume <= cap, "volume exceeds cap");
         epochVolumes[_token] = volume;
-        lastOpBlks[_token] = blkNum;
+        lastOpTimestamps[_token] = timestamp;
     }
 
     function addDelayedTransfer(

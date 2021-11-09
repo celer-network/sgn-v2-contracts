@@ -156,14 +156,14 @@ describe('Bridge Tests', function () {
     await expect(bridge.executeTransfer(dstXferId)).to.be.revertedWith('transfer not exist');
   });
 
-  it('should pass volume cap', async function () {
+  it('should pass risk control tests', async function () {
     const signers = [accounts[0], accounts[1], accounts[2]];
     const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
     await expect(bridge.resetSigners(getAddrs(signers), powers))
       .to.emit(bridge, 'SignersUpdated')
       .withArgs(getAddrs(signers), powers);
 
-    const epochLength = 5;
+    const epochLength = 20;
     await bridge.setEpochLength(epochLength);
     await bridge.setEpochVolumeCaps([token.address], [parseUnits('5')]);
     await bridge.setMaxSend([token.address], [parseUnits('5')]);
@@ -176,7 +176,14 @@ describe('Bridge Tests', function () {
     await expect(
       bridge.connect(sender).send(receiver.address, token.address, parseUnits('10'), chainId, 0, 10000)
     ).to.be.revertedWith('amount too large');
-    await bridge.connect(sender).addLiquidity(token.address, parseUnits('50'));
+
+    await bridge.setMinAdd([token.address], [parseUnits('10')]);
+    await expect(bridge.connect(sender).addLiquidity(token.address, parseUnits('50')))
+      .to.emit(bridge, 'LiquidityAdded')
+      .withArgs(1, sender.address, token.address, parseUnits('50'));
+    await expect(bridge.connect(sender).addLiquidity(token.address, parseUnits('5'))).to.be.revertedWith(
+      'amount too small'
+    );
 
     let srcXferId = keccak256(['string'], ['srcId']);
     let dstXferId = keccak256(
@@ -195,9 +202,10 @@ describe('Bridge Tests', function () {
       signers
     );
 
-    let blockNumber = await ethers.provider.getBlockNumber();
-    let epochStartBlock = Math.floor(blockNumber / epochLength) * epochLength;
-    await advanceBlockNumberTo(epochStartBlock + epochLength);
+    let blockTime = await getBlockTime();
+    let epochStartTime = Math.floor(blockTime / epochLength) * epochLength;
+    await ethers.provider.send('evm_setNextBlockTimestamp', [epochStartTime + epochLength]);
+    await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('2'), chainId, srcXferId);
@@ -220,9 +228,10 @@ describe('Bridge Tests', function () {
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers)).to.be.revertedWith(
       'volume exceeds cap'
     );
-    blockNumber = await ethers.provider.getBlockNumber();
-    epochStartBlock = Math.floor(blockNumber / epochLength) * epochLength;
-    await advanceBlockNumberTo(epochStartBlock + epochLength);
+    blockTime = await getBlockTime();
+    epochStartTime = Math.floor(blockTime / epochLength) * epochLength;
+    await ethers.provider.send('evm_setNextBlockTimestamp', [epochStartTime + epochLength]);
+    await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('4'), chainId, srcXferId);
@@ -246,6 +255,11 @@ describe('Bridge Tests', function () {
         'volume exceeds cap'
       );
     }
+
+    blockTime = await getBlockTime();
+    epochStartTime = Math.floor(blockTime / epochLength) * epochLength;
+    await ethers.provider.send('evm_setNextBlockTimestamp', [epochStartTime + epochLength]);
+    await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('3'), chainId, srcXferId);
@@ -267,6 +281,8 @@ async function getUpdateSignersSigs(newSignerAddrs: string[], newPowers: BigNumb
   return sigs;
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function getBlockTime() {
+  const blockNumber = await ethers.provider.getBlockNumber();
+  const block = await ethers.provider.getBlock(blockNumber);
+  return block.timestamp;
 }

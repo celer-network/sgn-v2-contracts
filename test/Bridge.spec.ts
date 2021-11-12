@@ -7,14 +7,29 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20 } from '../typechain';
-import {
-  deployBridgeContracts,
-  getAccounts,
-  advanceBlockNumber,
-  advanceBlockNumberTo,
-  loadFixture
-} from './lib/common';
-import { getRelayRequest, calculateSignatures, hex2Bytes } from './lib/proto';
+import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
+import { calculateSignatures, getRelayRequest, hex2Bytes } from './lib/proto';
+
+function getAddrs(signers: Wallet[]) {
+  const addrs: string[] = [];
+  for (let i = 0; i < signers.length; i++) {
+    addrs.push(signers[i].address);
+  }
+  return addrs;
+}
+
+async function getUpdateSignersSigs(newSignerAddrs: string[], newPowers: BigNumber[], currSigners: Wallet[]) {
+  const data = pack(['address[]', 'uint256[]'], [newSignerAddrs, newPowers]);
+  const hash = keccak256(['bytes'], [data]);
+  const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
+  return sigs;
+}
+
+async function getBlockTime() {
+  const blockNumber = await ethers.provider.getBlockNumber();
+  const block = await ethers.provider.getBlock(blockNumber);
+  return block.timestamp;
+}
 
 describe('Bridge Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -56,8 +71,8 @@ describe('Bridge Tests', function () {
       bridge.updateSigners(getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('10')])
     ).to.be.revertedWith('Mismatch current signers');
 
-    let curSigners = newSigners;
-    let curPowers = newPowers;
+    const curSigners = newSigners;
+    const curPowers = newPowers;
     newSigners = [accounts[1], accounts[3]];
     newPowers = [parseUnits('15'), parseUnits('50')];
     sigs = await getUpdateSignersSigs(getAddrs(newSigners), newPowers, curSigners);
@@ -187,7 +202,7 @@ describe('Bridge Tests', function () {
       'amount too small'
     );
 
-    let srcXferId = keccak256(['string'], ['srcId']);
+    const srcXferId = keccak256(['string'], ['srcId']);
     let dstXferId = keccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
       [sender.address, receiver.address, token.address, parseUnits('2'), chainId, chainId, srcXferId]
@@ -267,24 +282,3 @@ describe('Bridge Tests', function () {
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('3'), chainId, srcXferId);
   });
 });
-
-function getAddrs(signers: Wallet[]) {
-  const addrs: string[] = [];
-  for (let i = 0; i < signers.length; i++) {
-    addrs.push(signers[i].address);
-  }
-  return addrs;
-}
-
-async function getUpdateSignersSigs(newSignerAddrs: string[], newPowers: BigNumber[], currSigners: Wallet[]) {
-  const data = pack(['address[]', 'uint256[]'], [newSignerAddrs, newPowers]);
-  const hash = keccak256(['bytes'], [data]);
-  const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
-  return sigs;
-}
-
-async function getBlockTime() {
-  const blockNumber = await ethers.provider.getBlockNumber();
-  const block = await ethers.provider.getBlock(blockNumber);
-  return block.timestamp;
-}

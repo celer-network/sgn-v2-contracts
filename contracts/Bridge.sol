@@ -39,7 +39,7 @@ contract Bridge is Pool {
     mapping(address => uint256) public maxSend;
 
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
-    uint32 public mams;
+    uint32 public minimalMaxSlippage;
 
     function send(
         address _receiver,
@@ -51,7 +51,7 @@ contract Bridge is Pool {
     ) external nonReentrant whenNotPaused {
         require(_amount > minSend[_token], "amount too small");
         require(maxSend[_token] == 0 || _amount <= maxSend[_token], "amount too large");
-        require(_maxSlippage > mams, "max slippage too small");
+        require(_maxSlippage > minimalMaxSlippage, "max slippage too small");
         bytes32 transferId = keccak256(
             // uint64(block.chainid) for consistency as entire system uses uint64 for chain id
             abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
@@ -128,8 +128,8 @@ contract Bridge is Pool {
         }
     }
 
-    function setMinSlippage(uint32 _minslip) external onlyGovernor {
-        mams = _minslip;
+    function setMinimalMaxSlippage(uint32 _minimalMaxSlippage) external onlyGovernor {
+        minimalMaxSlippage = _minimalMaxSlippage;
     }
 
     // This is needed to receive ETH when calling `IWETH.withdraw`

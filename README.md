@@ -29,7 +29,7 @@ Check `reports/contract_sizes.txt`.
 
 1. `cp .env.template .env`, then ensure all environment variables are set in `.env`.
 
-2. Deploy SGN and Staking contarcts:
+2. Deploy SGN and Staking contracts:
 
 ```sh
 hardhat deploy --network <network> --tags SGNStaking

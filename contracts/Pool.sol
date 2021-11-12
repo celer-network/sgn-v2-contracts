@@ -30,7 +30,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     mapping(address => uint256) public epochVolumeCaps; // key is token
     mapping(address => uint256) public lastOpTimestamps; // key is token
 
-    uint256 public delayPeriod; // in seconds
     struct delayedTransfer {
         address receiver;
         address token;
@@ -39,6 +38,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     }
     mapping(bytes32 => delayedTransfer) public delayedTransfers;
     mapping(address => uint256) public delayThresholds;
+    uint256 public delayPeriod; // in seconds
 
     // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
     // if request.token equals this, will withdraw and send native token to receiver
@@ -63,7 +63,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         uint256 amount,
         bytes32 refid
     );
-    event TransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
+    event DelayedTransferAdded(bytes32 id);
+    event DelayedTransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
     // gov events
     event GovernorAdded(address account);
     event GovernorRemoved(address account);
@@ -109,7 +110,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
     }
 
-    function executeTransfer(bytes32 id) external whenNotPaused {
+    function executeDelayedTransfer(bytes32 id) external whenNotPaused {
         delayedTransfer memory transfer = delayedTransfers[id];
         require(transfer.timestamp > 0, "transfer not exist");
         require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
@@ -122,7 +123,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             IERC20(transfer.token).safeTransfer(transfer.receiver, transfer.amount);
         }
         delete delayedTransfers[id];
-        emit TransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
+        emit DelayedTransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
     }
 
     function setEpochLength(uint256 _length) external onlyGovernor {
@@ -194,6 +195,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
             amount: amount,
             timestamp: block.timestamp
         });
+        emit DelayedTransferAdded(id);
     }
 
     // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver

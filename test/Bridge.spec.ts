@@ -145,15 +145,17 @@ describe('Bridge Tests', function () {
     );
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
-      .withArgs(dstXferId, sender.address, receiver.address, token.address, largeAmount, chainId, srcXferId);
+      .withArgs(dstXferId, sender.address, receiver.address, token.address, largeAmount, chainId, srcXferId)
+      .to.emit(bridge, 'DelayedTransferAdded')
+      .withArgs(dstXferId);
 
-    await expect(bridge.executeTransfer(dstXferId)).to.be.revertedWith('transfer still locked');
+    await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('transfer still locked');
     await ethers.provider.send('evm_increaseTime', [100]);
     await ethers.provider.send('evm_mine', []);
-    await expect(bridge.executeTransfer(dstXferId))
-      .to.emit(bridge, 'TransferExecuted')
+    await expect(bridge.executeDelayedTransfer(dstXferId))
+      .to.emit(bridge, 'DelayedTransferExecuted')
       .withArgs(dstXferId, receiver.address, token.address, largeAmount);
-    await expect(bridge.executeTransfer(dstXferId)).to.be.revertedWith('transfer not exist');
+    await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('transfer not exist');
   });
 
   it('should pass risk control tests', async function () {

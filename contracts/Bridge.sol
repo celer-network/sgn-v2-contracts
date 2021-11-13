@@ -94,7 +94,7 @@ contract Bridge is Pool {
             if (request.token == nativeWrap) {
                 // withdraw then transfer native to receiver
                 IWETH(nativeWrap).withdraw(request.amount);
-                (bool sent, ) = request.receiver.call{value: request.amount}("");
+                (bool sent, ) = request.receiver.call{value: request.amount, gas: 50000}("");
                 require(sent, "failed to relay native token");
             } else {
                 IERC20(request.token).safeTransfer(request.receiver, request.amount);

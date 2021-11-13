@@ -114,15 +114,15 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         delayedTransfer memory transfer = delayedTransfers[id];
         require(transfer.timestamp > 0, "transfer not exist");
         require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
+        delete delayedTransfers[id];
         if (transfer.token == nativeWrap && withdraws[id] == false) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(transfer.amount);
-            (bool sent, ) = transfer.receiver.call{value: transfer.amount}("");
+            (bool sent, ) = transfer.receiver.call{value: transfer.amount, gas: 50000}("");
             require(sent, "failed to relay native token");
         } else {
             IERC20(transfer.token).safeTransfer(transfer.receiver, transfer.amount);
         }
-        delete delayedTransfers[id];
         emit DelayedTransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
     }
 

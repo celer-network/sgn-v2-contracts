@@ -2,59 +2,44 @@
 
 pragma solidity 0.8.9;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-contract IncentiveEventsRewards {
+contract IncentiveEventsRewards is Ownable {
     using SafeERC20 for IERC20;
 
-    struct EventReward {
-        address addr;
-        uint64 expireTime; // UNIX timestamp seconds
-        bool claimed;
-        uint256 amount;
-    }
-
-    mapping(address => EventReward) public rewards;
-
-    address owner;
     IERC20 public immutable celerToken;
+    bytes32 immutable public root;
 
     constructor(
-        address _celerTokenAddress
+        address _celerTokenAddress,
+        bytes32 merkleroot
     ) {
-        owner = msg.sender;
         celerToken = IERC20(_celerTokenAddress);
-    }
-
-    /**
-     * @dev send bunch of rewards to winners.
-     */
-    function sendRewards(
-        address[] calldata _addrs, uint256[] calldata _amounts, uint64 calldata _expireTime) external {
-        require(msg.sender == owner, "must be owner");
-        require(_expireTime > block.timestamp, "expireTime invalid");
-        for (uint256 i = 0; i < _addrs.length; i++) {
-            require(_amounts[i] > 0, "invalid amount");
-            rewards[_addrs[i]] = EventReward(
-            msg.sender,
-            _addrs[i],
-            _expireTime,
-            false,
-            _amounts[i]
-            );
-        }
+        root = merkleroot;
     }
 
     /**
      * @dev user claim reward.
      */
     function claimReward(
-        address calldata _addr
+        address calldata _addr, uint256 calldata _amount, bytes32[] calldata proof
     ) external {
-        require(rewards[_addr].expireTime < block.timestamp, "reward expired");
-        require(!rewards[_addr].claimed, "reward must not be claimed");
-        celerToken.safeTransferFrom(msg.sender, address(this), rewards[_addr].amount);
+        require(_verify(_leaf(account, _amount), proof), "Invalid merkle proof");
+        celerToken.safeTransferFrom(address(this), msg.sender, _amount);
     }
 
+    function _leaf(address account, uint256 amount)
+    internal pure returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(amount, account));
+    }
+
+    function _verify(bytes32 leaf, bytes32[] memory proof)
+    internal view returns (bool)
+    {
+        return MerkleProof.verify(proof, root, leaf);
+    }
 }

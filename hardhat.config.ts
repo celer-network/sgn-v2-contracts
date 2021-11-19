@@ -25,6 +25,9 @@ const goerliPrivateKey = process.env.GOERLI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const bscTestEndpoint = process.env.BSC_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const bscTestPrivateKey = process.env.BSC_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const optimismTestEndpoint = process.env.OPTIMISM_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const optimismTestPrivateKey = process.env.OPTIMISM_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const fantomTestEndpoint = process.env.FANTOM_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const fantomTestPrivateKey = process.env.FANTOM_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -45,6 +48,9 @@ const fantomPrivateKey = process.env.FANTOM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const avalancheEndpoint = process.env.AVALANCHE_ENDPOINT || DEFAULT_ENDPOINT;
 const avalanchePrivateKey = process.env.AVALANCHE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const optimismEndpoint = process.env.OPTIMISM_ENDPOINT || DEFAULT_ENDPOINT;
+const optimismPrivateKey = process.env.OPTIMISM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -71,6 +77,10 @@ const config: HardhatUserConfig = {
       url: fantomTestEndpoint,
       accounts: [`0x${fantomTestPrivateKey}`]
     },
+    optimismTest: {
+      url: optimismTestEndpoint,
+      accounts: [`0x${optimismTestPrivateKey}`]
+    },
     ethMainnet: {
       url: ethMainnetEndpoint,
       accounts: [`0x${ethMainnetPrivateKey}`]
@@ -94,6 +104,10 @@ const config: HardhatUserConfig = {
     avalanche: {
       url: avalancheEndpoint,
       accounts: [`0x${avalanchePrivateKey}`]
+    },
+    optimism: {
+      url: optimismEndpoint,
+      accounts: [`0x${optimismPrivateKey}`]
     }
   },
   namedAccounts: {

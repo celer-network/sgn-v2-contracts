@@ -11,6 +11,8 @@ solFiles=(
   Govern
   Viewer
   interfaces/ISigsVerifier
+  miscs/Faucet
+  miscs/MintableERC20
 )
 
 run_solt_write() {

@@ -67,12 +67,14 @@ export async function calculateSignatures(signers: Wallet[], hash: number[]): Pr
 export async function getStakingRewardRequest(
   recipient: string,
   cumulativeRewardAmount: BigNumber,
-  signers: Wallet[]
+  signers: Wallet[],
+  contractAddress: string
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
   const { StakingReward } = await getProtos();
   const reward = {
     recipient: hex2Bytes(recipient),
-    cumulativeRewardAmount: uint2Bytes(cumulativeRewardAmount)
+    cumulativeRewardAmount: uint2Bytes(cumulativeRewardAmount),
+    contractAddress: hex2Bytes(contractAddress)
   };
   const rewardProto = StakingReward.create(reward);
   const rewardBytes = StakingReward.encode(rewardProto).finish();
@@ -127,7 +129,8 @@ export async function getSlashRequest(
   jailPeriod: number,
   collectorAddrs: string[],
   collectorAmts: BigNumber[],
-  signers: Wallet[]
+  signers: Wallet[],
+  contractAddress: string
 ): Promise<{ slashBytes: Uint8Array; sigs: number[][] }> {
   const { Slash } = await getProtos();
 
@@ -138,7 +141,8 @@ export async function getSlashRequest(
     slashFactor: slashFactor,
     expireTime: expireTime,
     jailPeriod: jailPeriod,
-    collectors: collectors
+    collectors: collectors,
+    contractAddress: hex2Bytes(contractAddress)
   };
   const slashProto = Slash.create(slash);
   const slashBytes = Slash.encode(slashProto).finish();

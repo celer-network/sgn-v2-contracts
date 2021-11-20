@@ -331,6 +331,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         require(block.timestamp < request.expireTime, "Slash expired");
         require(request.slashFactor <= dt.SLASH_FACTOR_DECIMAL, "Invalid slash factor");
         require(request.slashFactor <= params[dt.ParamName.MaxSlashFactor], "Exceed max slash factor");
+        require(request.contractAddress == address(this), "Contract address not match");
         require(!slashNonces[request.nonce], "Used slash nonce");
         slashNonces[request.nonce] = true;
 

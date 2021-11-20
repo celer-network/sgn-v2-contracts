@@ -12,6 +12,7 @@ library PbSgn {
         address account; // tag: 1
         address token; // tag: 2
         uint256 cumulativeAmount; // tag: 3
+        address contractAddress; // tag: 4
     } // end struct Withdrawal
 
     function decWithdrawal(bytes memory raw) internal pure returns (Withdrawal memory m) {
@@ -29,6 +30,8 @@ library PbSgn {
                 m.token = Pb._address(buf.decBytes());
             } else if (tag == 3) {
                 m.cumulativeAmount = Pb._uint256(buf.decBytes());
+            } else if (tag == 4) {
+                m.contractAddress = Pb._address(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

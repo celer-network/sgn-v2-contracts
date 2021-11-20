@@ -32,6 +32,7 @@ contract StakingReward is Pauser {
     function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
         staking.verifySignatures(_rewardRequest, _sigs);
         PbStaking.StakingReward memory reward = PbStaking.decStakingReward(_rewardRequest);
+        require(reward.contractAddress == address(this), "Contract address not match");
 
         uint256 cumulativeRewardAmount = reward.cumulativeRewardAmount;
         uint256 newReward = cumulativeRewardAmount - claimedRewardAmounts[reward.recipient];

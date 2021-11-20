@@ -11,6 +11,7 @@ library PbStaking {
     struct StakingReward {
         address recipient; // tag: 1
         uint256 cumulativeRewardAmount; // tag: 2
+        address contractAddress; // tag: 3
     } // end struct StakingReward
 
     function decStakingReward(bytes memory raw) internal pure returns (StakingReward memory m) {
@@ -26,6 +27,8 @@ library PbStaking {
                 m.recipient = Pb._address(buf.decBytes());
             } else if (tag == 2) {
                 m.cumulativeRewardAmount = Pb._uint256(buf.decBytes());
+            } else if (tag == 3) {
+                m.contractAddress = Pb._address(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag
@@ -39,12 +42,13 @@ library PbStaking {
         uint64 expireTime; // tag: 4
         uint64 jailPeriod; // tag: 5
         AcctAmtPair[] collectors; // tag: 6
+        address contractAddress; // tag: 7
     } // end struct Slash
 
     function decSlash(bytes memory raw) internal pure returns (Slash memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint256[] memory cnts = buf.cntTags(6);
+        uint256[] memory cnts = buf.cntTags(7);
         m.collectors = new AcctAmtPair[](cnts[6]);
         cnts[6] = 0; // reset counter for later use
 
@@ -67,6 +71,8 @@ library PbStaking {
             } else if (tag == 6) {
                 m.collectors[cnts[6]] = decAcctAmtPair(buf.decBytes());
                 cnts[6]++;
+            } else if (tag == 7) {
+                m.contractAddress = Pb._address(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

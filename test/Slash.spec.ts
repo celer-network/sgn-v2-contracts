@@ -60,7 +60,8 @@ describe('Slash Tests', function () {
       0,
       [validators[1].address, consts.ZERO_ADDR],
       [parseUnits('0.1'), parseUnits('0.01')],
-      signers
+      signers,
+      staking.address
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
@@ -96,7 +97,8 @@ describe('Slash Tests', function () {
       0,
       [],
       [],
-      signers
+      signers,
+      staking.address
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
@@ -165,7 +167,17 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash', async function () {
-    const request = await getSlashRequest(validators[0].address, 1, 1e5, expireTime, 0, [], [], signers);
+    const request = await getSlashRequest(
+      validators[0].address,
+      1,
+      1e5,
+      expireTime,
+      0,
+      [],
+      [],
+      signers,
+      staking.address
+    );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
       .withArgs(validators[0].address, consts.ZERO_ADDR, parseUnits('7.2'), 0, parseUnits('-0.8'))
@@ -176,7 +188,17 @@ describe('Slash Tests', function () {
   });
 
   it('should unbond validator due to slash with jail period', async function () {
-    const request = await getSlashRequest(validators[0].address, 1, 0, expireTime, 10, [], [], signers);
+    const request = await getSlashRequest(
+      validators[0].address,
+      1,
+      0,
+      expireTime,
+      10,
+      [],
+      [],
+      signers,
+      staking.address
+    );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[0].address, consts.STATUS_UNBONDING)
@@ -201,11 +223,22 @@ describe('Slash Tests', function () {
       0,
       [],
       [],
-      [signers[1], signers[2]]
+      [signers[1], signers[2]],
+      staking.address
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Quorum not reached');
 
-    request = await getSlashRequest(validators[0].address, 1, consts.SLASH_FACTOR, 0, 0, [], [], signers);
+    request = await getSlashRequest(
+      validators[0].address,
+      1,
+      consts.SLASH_FACTOR,
+      0,
+      0,
+      [],
+      [],
+      signers,
+      staking.address
+    );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Slash expired');
   });
 
@@ -219,7 +252,8 @@ describe('Slash Tests', function () {
       0,
       [],
       [],
-      signers
+      signers,
+      staking.address
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Pausable: paused');
     await staking.unpause();

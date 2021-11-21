@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { BigNumber } from '@ethersproject/bignumber';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
@@ -23,14 +22,13 @@ describe('FarmingRewards Tests', function () {
   let celr: TestERC20;
   let validators: Wallet[];
   let signers: Wallet[];
-  let chainId: BigNumber;
+  let chainId: number;
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
     rewards = res.farmingRewards;
     celr = res.celr;
-    chainId = BigNumber.from((await ethers.provider.getNetwork()).chainId);
     const accounts = await getAccounts(res.admin, [celr], 6);
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
     signers = [accounts[0], accounts[1], accounts[4], accounts[5]];
@@ -44,6 +42,7 @@ describe('FarmingRewards Tests', function () {
       await staking.connect(validators[i]).bondValidator();
     }
     await rewards.connect(validators[0]).contributeToRewardPool(celr.address, 100);
+    chainId = (await ethers.provider.getNetwork()).chainId;
   });
 
   it('should fail to contribute to reward pool when paused', async function () {
@@ -68,8 +67,9 @@ describe('FarmingRewards Tests', function () {
   it('should fail to claim reward when paused', async function () {
     await rewards.pause();
     const r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('100', 'wei')],
       signers
@@ -79,8 +79,9 @@ describe('FarmingRewards Tests', function () {
 
   it('should claim reward successfully', async function () {
     let r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('40', 'wei')],
       signers
@@ -90,8 +91,9 @@ describe('FarmingRewards Tests', function () {
       .withArgs(validators[0].address, celr.address, 40);
 
     r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('90', 'wei')],
       signers
@@ -103,8 +105,9 @@ describe('FarmingRewards Tests', function () {
 
   it('should fail to claim reward more than amount in reward pool', async function () {
     const r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('101', 'wei')],
       signers
@@ -116,8 +119,9 @@ describe('FarmingRewards Tests', function () {
 
   it('should fail to claim reward if there is no new reward', async function () {
     const r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('0')],
       signers
@@ -127,8 +131,9 @@ describe('FarmingRewards Tests', function () {
 
   it('should fail to claim reward with insufficient signatures', async function () {
     const r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('10', 'wei')],
       [signers[0], signers[1]]
@@ -138,8 +143,9 @@ describe('FarmingRewards Tests', function () {
 
   it('should fail to claim reward with disordered signatures', async function () {
     const r = await getFarmingRewardsRequest(
-      validators[0].address,
       chainId,
+      rewards.address,
+      validators[0].address,
       [celr.address],
       [parseUnits('10', 'wei')],
       signers

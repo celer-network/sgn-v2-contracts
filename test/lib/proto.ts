@@ -65,11 +65,11 @@ export async function calculateSignatures(signers: Wallet[], hash: number[]): Pr
 }
 
 export async function getStakingRewardRequest(
+  chainId: number,
+  contractAddress: string,
   recipient: string,
   cumulativeRewardAmount: BigNumber,
-  signers: Wallet[],
-  contractAddress: string,
-  chainId: number
+  signers: Wallet[]
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
   const { StakingReward } = await getProtos();
   const reward = {
@@ -86,16 +86,17 @@ export async function getStakingRewardRequest(
 }
 
 export async function getFarmingRewardsRequest(
+  chainId: number,
+  contractAddress: string,
   recipient: string,
-  chainId: BigNumber,
   tokenAddresses: string[],
   cumulativeRewardAmounts: BigNumber[],
   signers: Wallet[]
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
   const { FarmingRewards } = await getProtos();
   const reward = {
+    domain: hex2Bytes(keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'FarmingRewards'])),
     recipient: hex2Bytes(recipient),
-    chainId: uint2Bytes(chainId),
     tokenAddresses: tokenAddresses.map(hex2Bytes),
     cumulativeRewardAmounts: cumulativeRewardAmounts.map(uint2Bytes)
   };

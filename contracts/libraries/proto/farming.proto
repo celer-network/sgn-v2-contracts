@@ -10,11 +10,11 @@ extend google.protobuf.FieldOptions {
 }
 
 message FarmingRewards {
-  // recipient defines the reward recipient
-  bytes recipient = 1 [(soltype) = "address"];
+  // domain is keccak256(abi.encodePacked(chainid, verifyingContractAddress, "FarmingRewards"));
+  bytes domain = 1 [(soltype) = "bytes32"];
 
-  // chain_id defines the EVM chain ID to receive rewards
-  bytes chain_id = 2 [(soltype) = "uint256"];
+  // recipient defines the reward recipient
+  bytes recipient = 2 [(soltype) = "address"];
 
   // token_addresses defines the list of reward token addresses
   repeated bytes token_addresses = 3 [(soltype) = "address"];

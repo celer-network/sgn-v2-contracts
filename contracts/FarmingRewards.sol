@@ -40,7 +40,9 @@ contract FarmingRewards is Pauser {
     ) external whenNotPaused {
         sigsVerifier.verifySigs(_rewardsRequest, _sigs, _signers, _powers);
         PbFarming.FarmingRewards memory rewards = PbFarming.decFarmingRewards(_rewardsRequest);
-        require(rewards.chainId == block.chainid, "Chain ID mismatch");
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "FarmingRewards"));
+        require(rewards.domain == domain, "Invalid domain");
+
         bool hasNewReward;
         for (uint256 i = 0; i < rewards.tokenAddresses.length; i++) {
             address token = rewards.tokenAddresses[i];

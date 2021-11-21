@@ -22,6 +22,7 @@ describe('Slash Tests', function () {
   let validators: Wallet[];
   let signers: Wallet[];
   let expireTime: number;
+  let chainId: number;
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
@@ -45,6 +46,7 @@ describe('Slash Tests', function () {
       const blockTime = await (await ethers.provider.getBlock(blockNumber)).timestamp;
       expireTime = blockTime + 100;
     }
+    chainId = (await ethers.provider.getNetwork()).chainId;
   });
 
   it('should slash successfully (only once using the same nonce)', async function () {
@@ -61,7 +63,8 @@ describe('Slash Tests', function () {
       [validators[1].address, consts.ZERO_ADDR],
       [parseUnits('0.1'), parseUnits('0.01')],
       signers,
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
@@ -98,7 +101,8 @@ describe('Slash Tests', function () {
       [],
       [],
       signers,
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
@@ -176,7 +180,8 @@ describe('Slash Tests', function () {
       [],
       [],
       signers,
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'DelegationUpdate')
@@ -197,7 +202,8 @@ describe('Slash Tests', function () {
       [],
       [],
       signers,
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs))
       .to.emit(staking, 'ValidatorStatusUpdate')
@@ -224,7 +230,8 @@ describe('Slash Tests', function () {
       [],
       [],
       [signers[1], signers[2]],
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Quorum not reached');
 
@@ -237,7 +244,8 @@ describe('Slash Tests', function () {
       [],
       [],
       signers,
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Slash expired');
   });
@@ -253,7 +261,8 @@ describe('Slash Tests', function () {
       [],
       [],
       signers,
-      staking.address
+      staking.address,
+      chainId
     );
     await expect(staking.slash(request.slashBytes, request.sigs)).to.be.revertedWith('Pausable: paused');
     await staking.unpause();

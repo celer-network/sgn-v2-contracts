@@ -68,13 +68,14 @@ export async function getStakingRewardRequest(
   recipient: string,
   cumulativeRewardAmount: BigNumber,
   signers: Wallet[],
-  contractAddress: string
+  contractAddress: string,
+  chainId: number
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
   const { StakingReward } = await getProtos();
   const reward = {
+    domain: hex2Bytes(keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'StakingReward'])),
     recipient: hex2Bytes(recipient),
-    cumulativeRewardAmount: uint2Bytes(cumulativeRewardAmount),
-    contractAddress: hex2Bytes(contractAddress)
+    cumulativeRewardAmount: uint2Bytes(cumulativeRewardAmount)
   };
   const rewardProto = StakingReward.create(reward);
   const rewardBytes = StakingReward.encode(rewardProto).finish();
@@ -130,19 +131,20 @@ export async function getSlashRequest(
   collectorAddrs: string[],
   collectorAmts: BigNumber[],
   signers: Wallet[],
-  contractAddress: string
+  contractAddress: string,
+  chainId: number
 ): Promise<{ slashBytes: Uint8Array; sigs: number[][] }> {
   const { Slash } = await getProtos();
 
   const collectors = await getAcctAmtPairs(collectorAddrs, collectorAmts);
   const slash = {
+    domain: hex2Bytes(keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Slash'])),
     validator: hex2Bytes(validatorAddr),
     nonce: nonce,
     slashFactor: slashFactor,
     expireTime: expireTime,
     jailPeriod: jailPeriod,
-    collectors: collectors,
-    contractAddress: hex2Bytes(contractAddress)
+    collectors: collectors
   };
   const slashProto = Slash.create(slash);
   const slashBytes = Slash.encode(slashProto).finish();

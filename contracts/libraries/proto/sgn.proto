@@ -10,8 +10,8 @@ extend google.protobuf.FieldOptions {
 }
 
 message Withdrawal {
-  bytes account = 1 [(soltype) = "address"];
-  bytes token = 2 [(soltype) = "address"];
-  bytes cumulative_amount = 3 [(soltype) = "uint256"];
-  bytes contract_address = 4 [(soltype) = "address"];
+  bytes domain = 1 [(soltype) = "bytes32"];
+  bytes account = 2 [(soltype) = "address"];
+  bytes token = 3 [(soltype) = "address"];
+  bytes cumulative_amount = 4 [(soltype) = "uint256"];
 }

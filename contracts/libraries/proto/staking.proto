@@ -10,19 +10,19 @@ extend google.protobuf.FieldOptions {
 }
 
 message StakingReward {
-  bytes recipient = 1 [(soltype) = "address"];
-  bytes cumulative_reward_amount = 2 [(soltype) = "uint256"];
-  bytes contract_address = 3 [(soltype) = "address"];
+  bytes domain = 1 [(soltype) = "bytes32"];
+  bytes recipient = 2 [(soltype) = "address"];
+  bytes cumulative_reward_amount = 3 [(soltype) = "uint256"];
 }
 
 message Slash {
-  bytes validator = 1 [(soltype) = "address"];
-  uint64 nonce = 2;
-  uint64 slash_factor = 3;
-  uint64 expire_time = 4;  // block timestamp
-  uint64 jail_period = 5;  // block number
-  repeated AcctAmtPair collectors = 6;
-  bytes contract_address = 7 [(soltype) = "address"];
+  bytes domain = 1 [(soltype) = "bytes32"];
+  bytes validator = 2 [(soltype) = "address"];
+  uint64 nonce = 3;
+  uint64 slash_factor = 4;
+  uint64 expire_time = 5;  // block timestamp
+  uint64 jail_period = 6;  // block number
+  repeated AcctAmtPair collectors = 7;
 }
 
 message AcctAmtPair {

@@ -76,7 +76,8 @@ contract SGN is Pauser {
     function withdraw(bytes calldata _withdrawalRequest, bytes[] calldata _sigs) external whenNotPaused {
         staking.verifySignatures(_withdrawalRequest, _sigs);
         PbSgn.Withdrawal memory withdrawal = PbSgn.decWithdrawal(_withdrawalRequest);
-        require(withdrawal.contractAddress == address(this), "Contract address not match");
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Withdrawal"));
+        require(withdrawal.domain == domain, "Invalid domain");
 
         uint256 amount = withdrawal.cumulativeAmount - withdrawnAmts[withdrawal.account][withdrawal.token];
         require(amount > 0, "No new amount to withdraw");

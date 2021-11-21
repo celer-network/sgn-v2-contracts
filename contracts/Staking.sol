@@ -328,10 +328,11 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         verifySignatures(_slashRequest, _sigs);
 
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Slash"));
+        require(request.domain == domain, "Invalid domain");
         require(block.timestamp < request.expireTime, "Slash expired");
         require(request.slashFactor <= dt.SLASH_FACTOR_DECIMAL, "Invalid slash factor");
         require(request.slashFactor <= params[dt.ParamName.MaxSlashFactor], "Exceed max slash factor");
-        require(request.contractAddress == address(this), "Contract address not match");
         require(!slashNonces[request.nonce], "Used slash nonce");
         slashNonces[request.nonce] = true;
 

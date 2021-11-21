@@ -9,9 +9,9 @@ library PbStaking {
     using Pb for Pb.Buffer; // so we can call Pb funcs on Buffer obj
 
     struct StakingReward {
-        address recipient; // tag: 1
-        uint256 cumulativeRewardAmount; // tag: 2
-        address contractAddress; // tag: 3
+        bytes32 domain; // tag: 1
+        address recipient; // tag: 2
+        uint256 cumulativeRewardAmount; // tag: 3
     } // end struct StakingReward
 
     function decStakingReward(bytes memory raw) internal pure returns (StakingReward memory m) {
@@ -24,11 +24,11 @@ library PbStaking {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.recipient = Pb._address(buf.decBytes());
+                m.domain = Pb._bytes32(buf.decBytes());
             } else if (tag == 2) {
-                m.cumulativeRewardAmount = Pb._uint256(buf.decBytes());
+                m.recipient = Pb._address(buf.decBytes());
             } else if (tag == 3) {
-                m.contractAddress = Pb._address(buf.decBytes());
+                m.cumulativeRewardAmount = Pb._uint256(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag
@@ -36,21 +36,21 @@ library PbStaking {
     } // end decoder StakingReward
 
     struct Slash {
-        address validator; // tag: 1
-        uint64 nonce; // tag: 2
-        uint64 slashFactor; // tag: 3
-        uint64 expireTime; // tag: 4
-        uint64 jailPeriod; // tag: 5
-        AcctAmtPair[] collectors; // tag: 6
-        address contractAddress; // tag: 7
+        bytes32 domain; // tag: 1
+        address validator; // tag: 2
+        uint64 nonce; // tag: 3
+        uint64 slashFactor; // tag: 4
+        uint64 expireTime; // tag: 5
+        uint64 jailPeriod; // tag: 6
+        AcctAmtPair[] collectors; // tag: 7
     } // end struct Slash
 
     function decSlash(bytes memory raw) internal pure returns (Slash memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
         uint256[] memory cnts = buf.cntTags(7);
-        m.collectors = new AcctAmtPair[](cnts[6]);
-        cnts[6] = 0; // reset counter for later use
+        m.collectors = new AcctAmtPair[](cnts[7]);
+        cnts[7] = 0; // reset counter for later use
 
         uint256 tag;
         Pb.WireType wire;
@@ -59,20 +59,20 @@ library PbStaking {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.validator = Pb._address(buf.decBytes());
+                m.domain = Pb._bytes32(buf.decBytes());
             } else if (tag == 2) {
-                m.nonce = uint64(buf.decVarint());
+                m.validator = Pb._address(buf.decBytes());
             } else if (tag == 3) {
-                m.slashFactor = uint64(buf.decVarint());
+                m.nonce = uint64(buf.decVarint());
             } else if (tag == 4) {
-                m.expireTime = uint64(buf.decVarint());
+                m.slashFactor = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.jailPeriod = uint64(buf.decVarint());
+                m.expireTime = uint64(buf.decVarint());
             } else if (tag == 6) {
-                m.collectors[cnts[6]] = decAcctAmtPair(buf.decBytes());
-                cnts[6]++;
+                m.jailPeriod = uint64(buf.decVarint());
             } else if (tag == 7) {
-                m.contractAddress = Pb._address(buf.decBytes());
+                m.collectors[cnts[7]] = decAcctAmtPair(buf.decBytes());
+                cnts[7]++;
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

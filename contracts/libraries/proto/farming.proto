@@ -12,13 +12,8 @@ extend google.protobuf.FieldOptions {
 message FarmingRewards {
   // recipient defines the reward recipient
   bytes recipient = 1 [(soltype) = "address"];
-
-  // chain_id defines the EVM chain ID to receive rewards
-  bytes chain_id = 2 [(soltype) = "uint256"];
-
   // token_addresses defines the list of reward token addresses
-  repeated bytes token_addresses = 3 [(soltype) = "address"];
-
+  repeated bytes token_addresses = 2 [(soltype) = "address"];
   // cumulative_reward_amounts defines the cumulative amount of rewards
-  repeated bytes cumulative_reward_amounts = 4 [(soltype) = "uint256"];
+  repeated bytes cumulative_reward_amounts = 3 [(soltype) = "uint256"];
 }

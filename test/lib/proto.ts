@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import protobuf from 'protobufjs';
 
 import { BigNumber } from '@ethersproject/bignumber';
-import { keccak256 } from '@ethersproject/solidity';
+import { keccak256, pack } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
 
 protobuf.common('google/protobuf/descriptor.proto', {});
@@ -67,7 +67,9 @@ export async function calculateSignatures(signers: Wallet[], hash: number[]): Pr
 export async function getStakingRewardRequest(
   recipient: string,
   cumulativeRewardAmount: BigNumber,
-  signers: Wallet[]
+  signers: Wallet[],
+  chainId: number,
+  contractAddress: string
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
   const { StakingReward } = await getProtos();
   const reward = {
@@ -76,30 +78,36 @@ export async function getStakingRewardRequest(
   };
   const rewardProto = StakingReward.create(reward);
   const rewardBytes = StakingReward.encode(rewardProto).finish();
-  const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
+
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'StakingReward']);
+  const signedData = pack(['bytes32', 'bytes'], [domain, rewardBytes]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
 
   return { rewardBytes, sigs };
 }
 
 export async function getFarmingRewardsRequest(
   recipient: string,
-  chainId: BigNumber,
   tokenAddresses: string[],
   cumulativeRewardAmounts: BigNumber[],
-  signers: Wallet[]
+  signers: Wallet[],
+  chainId: number,
+  contractAddress: string
 ): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
   const { FarmingRewards } = await getProtos();
   const reward = {
     recipient: hex2Bytes(recipient),
-    chainId: uint2Bytes(chainId),
     tokenAddresses: tokenAddresses.map(hex2Bytes),
     cumulativeRewardAmounts: cumulativeRewardAmounts.map(uint2Bytes)
   };
   const rewardProto = FarmingRewards.create(reward);
   const rewardBytes = FarmingRewards.encode(rewardProto).finish();
-  const rewardBytesHash = keccak256(['bytes'], [rewardBytes]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(rewardBytesHash));
+
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'FarmingRewards']);
+  const signedData = pack(['bytes32', 'bytes'], [domain, rewardBytes]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
 
   return { rewardBytes, sigs };
 }
@@ -127,7 +135,9 @@ export async function getSlashRequest(
   jailPeriod: number,
   collectorAddrs: string[],
   collectorAmts: BigNumber[],
-  signers: Wallet[]
+  signers: Wallet[],
+  chainId: number,
+  contractAddress: string
 ): Promise<{ slashBytes: Uint8Array; sigs: number[][] }> {
   const { Slash } = await getProtos();
 
@@ -142,8 +152,11 @@ export async function getSlashRequest(
   };
   const slashProto = Slash.create(slash);
   const slashBytes = Slash.encode(slashProto).finish();
-  const slashBytesHash = keccak256(['bytes'], [slashBytes]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(slashBytesHash));
+
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Slash']);
+  const signedData = pack(['bytes32', 'bytes'], [domain, slashBytes]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
 
   return { slashBytes, sigs };
 }

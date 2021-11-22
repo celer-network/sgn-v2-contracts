@@ -325,7 +325,8 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
      * @param _sigs list of validator signatures
      */
     function slash(bytes calldata _slashRequest, bytes[] calldata _sigs) external whenNotPaused {
-        verifySignatures(_slashRequest, _sigs);
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Slash"));
+        verifySignatures(abi.encodePacked(domain, _slashRequest), _sigs);
 
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);
         require(block.timestamp < request.expireTime, "Slash expired");

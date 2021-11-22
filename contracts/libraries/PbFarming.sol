@@ -10,19 +10,18 @@ library PbFarming {
 
     struct FarmingRewards {
         address recipient; // tag: 1
-        uint256 chainId; // tag: 2
-        address[] tokenAddresses; // tag: 3
-        uint256[] cumulativeRewardAmounts; // tag: 4
+        address[] tokenAddresses; // tag: 2
+        uint256[] cumulativeRewardAmounts; // tag: 3
     } // end struct FarmingRewards
 
     function decFarmingRewards(bytes memory raw) internal pure returns (FarmingRewards memory m) {
         Pb.Buffer memory buf = Pb.fromBytes(raw);
 
-        uint256[] memory cnts = buf.cntTags(4);
-        m.tokenAddresses = new address[](cnts[3]);
+        uint256[] memory cnts = buf.cntTags(3);
+        m.tokenAddresses = new address[](cnts[2]);
+        cnts[2] = 0; // reset counter for later use
+        m.cumulativeRewardAmounts = new uint256[](cnts[3]);
         cnts[3] = 0; // reset counter for later use
-        m.cumulativeRewardAmounts = new uint256[](cnts[4]);
-        cnts[4] = 0; // reset counter for later use
 
         uint256 tag;
         Pb.WireType wire;
@@ -33,13 +32,11 @@ library PbFarming {
             else if (tag == 1) {
                 m.recipient = Pb._address(buf.decBytes());
             } else if (tag == 2) {
-                m.chainId = Pb._uint256(buf.decBytes());
+                m.tokenAddresses[cnts[2]] = Pb._address(buf.decBytes());
+                cnts[2]++;
             } else if (tag == 3) {
-                m.tokenAddresses[cnts[3]] = Pb._address(buf.decBytes());
+                m.cumulativeRewardAmounts[cnts[3]] = Pb._uint256(buf.decBytes());
                 cnts[3]++;
-            } else if (tag == 4) {
-                m.cumulativeRewardAmounts[cnts[4]] = Pb._uint256(buf.decBytes());
-                cnts[4]++;
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

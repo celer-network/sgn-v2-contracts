@@ -23,14 +23,14 @@ describe('FarmingRewards Tests', function () {
   let celr: TestERC20;
   let validators: Wallet[];
   let signers: Wallet[];
-  let chainId: BigNumber;
+  let chainId: number;
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     staking = res.staking;
     rewards = res.farmingRewards;
     celr = res.celr;
-    chainId = BigNumber.from((await ethers.provider.getNetwork()).chainId);
+    chainId = (await ethers.provider.getNetwork()).chainId;
     const accounts = await getAccounts(res.admin, [celr], 6);
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
     signers = [accounts[0], accounts[1], accounts[4], accounts[5]];
@@ -69,10 +69,11 @@ describe('FarmingRewards Tests', function () {
     await rewards.pause();
     const r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('100', 'wei')],
-      signers
+      signers,
+      chainId,
+      rewards.address
     );
     await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith('Pausable: paused');
   });
@@ -80,10 +81,11 @@ describe('FarmingRewards Tests', function () {
   it('should claim reward successfully', async function () {
     let r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('40', 'wei')],
-      signers
+      signers,
+      chainId,
+      rewards.address
     );
     await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], []))
       .to.emit(rewards, 'FarmingRewardClaimed')
@@ -91,10 +93,11 @@ describe('FarmingRewards Tests', function () {
 
     r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('90', 'wei')],
-      signers
+      signers,
+      chainId,
+      rewards.address
     );
     await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], []))
       .to.emit(rewards, 'FarmingRewardClaimed')
@@ -104,10 +107,11 @@ describe('FarmingRewards Tests', function () {
   it('should fail to claim reward more than amount in reward pool', async function () {
     const r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('101', 'wei')],
-      signers
+      signers,
+      chainId,
+      rewards.address
     );
     await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith(
       'ERC20: transfer amount exceeds balance'
@@ -117,10 +121,11 @@ describe('FarmingRewards Tests', function () {
   it('should fail to claim reward if there is no new reward', async function () {
     const r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('0')],
-      signers
+      signers,
+      chainId,
+      rewards.address
     );
     await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith('No new reward');
   });
@@ -128,10 +133,11 @@ describe('FarmingRewards Tests', function () {
   it('should fail to claim reward with insufficient signatures', async function () {
     const r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('10', 'wei')],
-      [signers[0], signers[1]]
+      [signers[0], signers[1]],
+      chainId,
+      rewards.address
     );
     await expect(rewards.claimRewards(r.rewardBytes, r.sigs, [], [])).to.be.revertedWith('Quorum not reached');
   });
@@ -139,10 +145,11 @@ describe('FarmingRewards Tests', function () {
   it('should fail to claim reward with disordered signatures', async function () {
     const r = await getFarmingRewardsRequest(
       validators[0].address,
-      chainId,
       [celr.address],
       [parseUnits('10', 'wei')],
-      signers
+      signers,
+      chainId,
+      rewards.address
     );
     await expect(
       rewards.claimRewards(r.rewardBytes, [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]], [], [])

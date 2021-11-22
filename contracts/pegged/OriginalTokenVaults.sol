@@ -17,7 +17,7 @@ contract OriginalTokenVaults is ReentrancyGuard {
     ISigsVerifier public immutable sigsVerifier;
 
     uint64 public mintseq; // ensure unique Mint event, start from 1
-    mapping(bytes32 => uint256) public vaults;
+    mapping(address => mapping(uint256 => uint256)) public vaults; // token -> chainId -> amount
     mapping(bytes32 => bool) public withdraws;
 
     event Deposited(uint64 seqnum, address account, address token, uint256 amount, uint64 mintChainId);
@@ -39,8 +39,7 @@ contract OriginalTokenVaults is ReentrancyGuard {
         uint64 _mintChainId
     ) external nonReentrant {
         mintseq += 1;
-        bytes32 vaultId = keccak256(abi.encodePacked(_token, _mintChainId));
-        vaults[vaultId] += _amount;
+        vaults[_token][_mintChainId] += _amount;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit Deposited(mintseq, msg.sender, _token, _amount, _mintChainId);
     }
@@ -63,8 +62,7 @@ contract OriginalTokenVaults is ReentrancyGuard {
         );
         require(withdraws[wdId] == false, "Already withdrawn");
         withdraws[wdId] = true;
-        bytes32 vaultId = keccak256(abi.encodePacked(request.token, request.burnChainId));
-        vaults[vaultId] -= request.amount;
+        vaults[request.token][request.burnChainId] -= request.amount;
         IERC20(request.token).safeTransfer(request.receiver, request.amount);
         emit Withdrawn(request.receiver, request.token, request.amount, request.burnChainId, request.nonce);
     }

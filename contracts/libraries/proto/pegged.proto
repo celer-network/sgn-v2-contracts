@@ -10,20 +10,16 @@ extend google.protobuf.FieldOptions {
 }
 
 message Mint {
-  // keccak256(abi.encodePacked(chainId, contractAddress, "Mint"));
-  bytes domain = 1 [(soltype) = "bytes32"];
-  bytes token = 2 [(soltype) = "address"];
-  bytes account = 3 [(soltype) = "address"];
-  bytes amount = 4 [(soltype) = "uint256"];
-  uint64 nonce = 5;
+  bytes token = 1 [(soltype) = "address"];
+  bytes account = 2 [(soltype) = "address"];
+  bytes amount = 3 [(soltype) = "uint256"];
+  uint64 nonce = 4;
 }
 
 message Withdraw {
-  // keccak256(abi.encodePacked(chainId, contractAddress, "Withdraw"));
-  bytes domain = 1 [(soltype) = "bytes32"];
-  bytes receiver = 2 [(soltype) = "address"];
-  bytes token = 3 [(soltype) = "address"];
-  bytes amount = 4 [(soltype) = "uint256"];
-  uint64 burnChainId = 5;
-  uint64 nonce = 6;
+  bytes receiver = 1 [(soltype) = "address"];
+  bytes token = 2 [(soltype) = "address"];
+  bytes amount = 3 [(soltype) = "uint256"];
+  uint64 burnChainId = 4;
+  uint64 nonce = 5;
 }

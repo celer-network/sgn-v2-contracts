@@ -33,10 +33,9 @@ contract PeggedTokenBridge {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external {
-        sigsVerifier.verifySigs(_request, _sigs, _signers, _powers);
-        PbPegged.Mint memory request = PbPegged.decMint(_request);
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Mint"));
-        require(request.domain == domain, "Invalid domain");
+        sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
+        PbPegged.Mint memory request = PbPegged.decMint(_request);
         bytes32 id = keccak256(abi.encodePacked("mint", request.token, request.account, request.amount, request.nonce));
         require(records[id] == false, "record exists");
         records[id] = true;

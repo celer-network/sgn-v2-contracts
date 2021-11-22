@@ -9,11 +9,10 @@ library PbPegged {
     using Pb for Pb.Buffer; // so we can call Pb funcs on Buffer obj
 
     struct Mint {
-        bytes32 domain; // tag: 1
-        address token; // tag: 2
-        address account; // tag: 3
-        uint256 amount; // tag: 4
-        uint64 nonce; // tag: 5
+        address token; // tag: 1
+        address account; // tag: 2
+        uint256 amount; // tag: 3
+        uint64 nonce; // tag: 4
     } // end struct Mint
 
     function decMint(bytes memory raw) internal pure returns (Mint memory m) {
@@ -26,14 +25,12 @@ library PbPegged {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.domain = Pb._bytes32(buf.decBytes());
-            } else if (tag == 2) {
                 m.token = Pb._address(buf.decBytes());
-            } else if (tag == 3) {
+            } else if (tag == 2) {
                 m.account = Pb._address(buf.decBytes());
-            } else if (tag == 4) {
+            } else if (tag == 3) {
                 m.amount = Pb._uint256(buf.decBytes());
-            } else if (tag == 5) {
+            } else if (tag == 4) {
                 m.nonce = uint64(buf.decVarint());
             } else {
                 buf.skipValue(wire);
@@ -42,12 +39,11 @@ library PbPegged {
     } // end decoder Mint
 
     struct Withdraw {
-        bytes32 domain; // tag: 1
-        address receiver; // tag: 2
-        address token; // tag: 3
-        uint256 amount; // tag: 4
-        uint64 burnChainId; // tag: 5
-        uint64 nonce; // tag: 6
+        address receiver; // tag: 1
+        address token; // tag: 2
+        uint256 amount; // tag: 3
+        uint64 burnChainId; // tag: 4
+        uint64 nonce; // tag: 5
     } // end struct Withdraw
 
     function decWithdraw(bytes memory raw) internal pure returns (Withdraw memory m) {
@@ -60,16 +56,14 @@ library PbPegged {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.domain = Pb._bytes32(buf.decBytes());
-            } else if (tag == 2) {
                 m.receiver = Pb._address(buf.decBytes());
-            } else if (tag == 3) {
+            } else if (tag == 2) {
                 m.token = Pb._address(buf.decBytes());
-            } else if (tag == 4) {
+            } else if (tag == 3) {
                 m.amount = Pb._uint256(buf.decBytes());
-            } else if (tag == 5) {
+            } else if (tag == 4) {
                 m.burnChainId = uint64(buf.decVarint());
-            } else if (tag == 6) {
+            } else if (tag == 5) {
                 m.nonce = uint64(buf.decVarint());
             } else {
                 buf.skipValue(wire);

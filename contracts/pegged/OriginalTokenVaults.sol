@@ -53,10 +53,9 @@ contract OriginalTokenVaults is ReentrancyGuard {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external {
-        sigsVerifier.verifySigs(_request, _sigs, _signers, _powers);
-        PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Withdraw"));
-        require(request.domain == domain, "Invalid domain");
+        sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
+        PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         bytes32 wdId = keccak256(
             abi.encodePacked(request.receiver, request.token, request.amount, request.burnChainId, request.nonce)
         );

@@ -56,7 +56,9 @@ contract Signers is Ownable, ISigsVerifier {
         address[] calldata _curSigners,
         uint256[] calldata _curPowers
     ) external {
+        // use trigger time for nonce protection, must be ascending
         require(_triggerTime > triggerTime, "Trigger time is not increasing");
+        // make sure triggerTime is not too large, as it cannot be decreased once set
         require(_triggerTime < block.timestamp + 3600, "Trigger time is too large");
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "UpdateSigners"));
         verifySigs(abi.encodePacked(domain, _triggerTime, _newSigners, _newPowers), _sigs, _curSigners, _curPowers);

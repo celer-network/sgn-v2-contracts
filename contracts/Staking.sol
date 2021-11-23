@@ -410,12 +410,10 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
     }
 
     function setGovContract(address _addr) external onlyOwner {
-        require(govContract == address(0), "gov contract already set");
         govContract = _addr;
     }
 
     function setRewardContract(address _addr) external onlyOwner {
-        require(rewardContract == address(0), "reward contract already set");
         rewardContract = _addr;
     }
 

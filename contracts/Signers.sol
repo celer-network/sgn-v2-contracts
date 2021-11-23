@@ -10,7 +10,7 @@ contract Signers is Ownable, ISigsVerifier {
     using ECDSA for bytes32;
 
     bytes32 public ssHash;
-    uint64 public seqNum;
+    uint256 public triggerTime; // timestamp when last update was triggered
 
     // reset can be called by the owner address for emergency recovery
     uint256 public resetTime;
@@ -49,18 +49,19 @@ contract Signers is Ownable, ISigsVerifier {
      * @param _curPowers powers of current signers
      */
     function updateSigners(
-        uint64 _seqNum,
+        uint256 _triggerTime,
         address[] calldata _newSigners,
         uint256[] calldata _newPowers,
         bytes[] calldata _sigs,
         address[] calldata _curSigners,
         uint256[] calldata _curPowers
     ) external {
-        require(_seqNum > seqNum, "Invalid seqNum");
+        require(_triggerTime > triggerTime, "Trigger time is not increasing");
+        require(_triggerTime < block.timestamp + 3600, "Trigger time is too large");
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "UpdateSigners"));
-        verifySigs(abi.encodePacked(domain, _seqNum, _newSigners, _newPowers), _sigs, _curSigners, _curPowers);
+        verifySigs(abi.encodePacked(domain, _triggerTime, _newSigners, _newPowers), _sigs, _curSigners, _curPowers);
         _updateSigners(_newSigners, _newPowers);
-        seqNum = _seqNum;
+        triggerTime = _triggerTime;
     }
 
     /**

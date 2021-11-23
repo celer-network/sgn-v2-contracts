@@ -19,7 +19,7 @@ function getAddrs(signers: Wallet[]) {
 }
 
 async function getUpdateSignersSigs(
-  seqNum: number,
+  triggerTime: number,
   newSignerAddrs: string[],
   newPowers: BigNumber[],
   currSigners: Wallet[],
@@ -27,7 +27,7 @@ async function getUpdateSignersSigs(
   contractAddress: string
 ) {
   const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'UpdateSigners']);
-  const data = pack(['bytes32', 'uint64', 'address[]', 'uint256[]'], [domain, seqNum, newSignerAddrs, newPowers]);
+  const data = pack(['bytes32', 'uint256', 'address[]', 'uint256[]'], [domain, triggerTime, newSignerAddrs, newPowers]);
   const hash = keccak256(['bytes'], [data]);
   const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
   return sigs;
@@ -65,9 +65,9 @@ describe('Bridge Tests', function () {
 
     let newSigners = [accounts[2], accounts[1], accounts[0], accounts[3]];
     let newPowers = [parseUnits('12'), parseUnits('11'), parseUnits('10'), parseUnits('9')];
-    let seqNum = 1;
+    let triggerTime = 1;
     let sigs = await getUpdateSignersSigs(
-      seqNum,
+      triggerTime,
       getAddrs(newSigners),
       newPowers,
       [accounts[0]],
@@ -75,44 +75,97 @@ describe('Bridge Tests', function () {
       bridge.address
     );
     await expect(
-      bridge.updateSigners(seqNum, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
+      bridge.updateSigners(triggerTime, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
     ).to.be.revertedWith('New signers not in ascending order');
 
     newSigners = [accounts[0], accounts[1], accounts[2], accounts[3]];
-    seqNum = 2;
-    sigs = await getUpdateSignersSigs(seqNum, getAddrs(newSigners), newPowers, [accounts[0]], chainId, bridge.address);
+    triggerTime = 2;
+    sigs = await getUpdateSignersSigs(
+      triggerTime,
+      getAddrs(newSigners),
+      newPowers,
+      [accounts[0]],
+      chainId,
+      bridge.address
+    );
     await expect(
-      bridge.updateSigners(seqNum, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
+      bridge.updateSigners(triggerTime, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
     )
       .to.emit(bridge, 'SignersUpdated')
       .withArgs(getAddrs(newSigners), newPowers);
 
     await expect(
-      bridge.updateSigners(seqNum, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('10')])
-    ).to.be.revertedWith('Invalid seqNum');
+      bridge.updateSigners(
+        triggerTime,
+        getAddrs(newSigners),
+        newPowers,
+        sigs,
+        [accounts[0].address],
+        [parseUnits('10')]
+      )
+    ).to.be.revertedWith('Trigger time is not increasing');
 
-    seqNum = 3;
     await expect(
-      bridge.updateSigners(seqNum, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('10')])
+      bridge.updateSigners(
+        parseUnits('1'),
+        getAddrs(newSigners),
+        newPowers,
+        sigs,
+        [accounts[0].address],
+        [parseUnits('10')]
+      )
+    ).to.be.revertedWith('Trigger time is too large');
+
+    triggerTime = 3;
+    await expect(
+      bridge.updateSigners(
+        triggerTime,
+        getAddrs(newSigners),
+        newPowers,
+        sigs,
+        [accounts[0].address],
+        [parseUnits('10')]
+      )
     ).to.be.revertedWith('Mismatch current signers');
 
     const curSigners = newSigners;
     const curPowers = newPowers;
     newSigners = [accounts[1], accounts[3]];
     newPowers = [parseUnits('15'), parseUnits('50')];
-    sigs = await getUpdateSignersSigs(seqNum, getAddrs(newSigners), newPowers, curSigners, chainId, bridge.address);
+    sigs = await getUpdateSignersSigs(
+      triggerTime,
+      getAddrs(newSigners),
+      newPowers,
+      curSigners,
+      chainId,
+      bridge.address
+    );
 
     await expect(
-      bridge.updateSigners(seqNum, getAddrs(newSigners), newPowers, [sigs[0], sigs[1]], getAddrs(curSigners), curPowers)
+      bridge.updateSigners(
+        triggerTime,
+        getAddrs(newSigners),
+        newPowers,
+        [sigs[0], sigs[1]],
+        getAddrs(curSigners),
+        curPowers
+      )
     ).to.be.revertedWith('quorum not reached');
 
     await expect(
-      bridge.updateSigners(seqNum, getAddrs(newSigners), newPowers, [sigs[1], sigs[0]], getAddrs(curSigners), curPowers)
+      bridge.updateSigners(
+        triggerTime,
+        getAddrs(newSigners),
+        newPowers,
+        [sigs[1], sigs[0]],
+        getAddrs(curSigners),
+        curPowers
+      )
     ).to.be.revertedWith('signers not in ascending order');
 
     await expect(
       bridge.updateSigners(
-        seqNum,
+        triggerTime,
         getAddrs(newSigners),
         newPowers,
         [sigs[0], sigs[1], sigs[2]],
@@ -323,11 +376,11 @@ describe('Bridge Tests', function () {
     await bridge.connect(account).addLiquidity(token.address, parseUnits('50'));
 
     const refId = keccak256(['string'], ['random']);
-    let seqnum = 1;
+    let triggerTime = 1;
     let amount = parseUnits('10');
     const req = await getWithdrawRequest(
       chainId,
-      seqnum,
+      triggerTime,
       account.address,
       token.address,
       amount,
@@ -337,10 +390,10 @@ describe('Bridge Tests', function () {
     );
     const wdId = keccak256(
       ['uint64', 'uint64', 'address', 'address', 'uint256'],
-      [chainId, seqnum, account.address, token.address, amount]
+      [chainId, triggerTime, account.address, token.address, amount]
     );
     await expect(bridge.withdraw(req.withdrawBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'WithdrawDone')
-      .withArgs(wdId, seqnum, account.address, token.address, amount, refId);
+      .withArgs(wdId, triggerTime, account.address, token.address, amount, refId);
   });
 });

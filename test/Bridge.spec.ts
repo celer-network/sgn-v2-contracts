@@ -8,7 +8,7 @@ import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20 } from '../typechain';
 import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
-import { calculateSignatures, getRelayRequest, hex2Bytes } from './lib/proto';
+import { calculateSignatures, getRelayRequest, getWithdrawRequest, hex2Bytes } from './lib/proto';
 
 function getAddrs(signers: Wallet[]) {
   const addrs: string[] = [];
@@ -280,5 +280,30 @@ describe('Bridge Tests', function () {
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
       .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('3'), chainId, srcXferId);
+  });
+
+  it('should withdraw liquidity correctly', async function () {
+    const signers = [accounts[0], accounts[1], accounts[2]];
+    const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
+    await expect(bridge.resetSigners(getAddrs(signers), powers))
+      .to.emit(bridge, 'SignersUpdated')
+      .withArgs(getAddrs(signers), powers);
+
+    const account = accounts[0];
+    const chainId = (await ethers.provider.getNetwork()).chainId;
+    await token.connect(account).approve(bridge.address, parseUnits('100'));
+    await bridge.connect(account).addLiquidity(token.address, parseUnits('50'));
+
+    const refId = keccak256(['string'], ['random']);
+    let seqnum = 1;
+    let amount = parseUnits('10');
+    const req = await getWithdrawRequest(chainId, seqnum, account.address, token.address, amount, refId, signers);
+    const wdId = keccak256(
+      ['uint64', 'uint64', 'address', 'address', 'uint256'],
+      [chainId, seqnum, account.address, token.address, amount]
+    );
+    await expect(bridge.withdraw(req.withdrawBytes, req.sigs, getAddrs(signers), powers))
+      .to.emit(bridge, 'WithdrawDone')
+      .withArgs(wdId, seqnum, account.address, token.address, amount, refId);
   });
 });

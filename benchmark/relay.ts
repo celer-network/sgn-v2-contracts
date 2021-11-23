@@ -129,7 +129,8 @@ describe('Relay Gas Benchmark', function () {
       chainId,
       chainId,
       srcXferId,
-      signers
+      signers,
+      bridge.address
     );
     const gasUsed = (await (await bridge.relay(relayBytes, sigs, addrs, powers)).wait()).gasUsed;
     fs.appendFileSync(GAS_USAGE_LOG, signerNum.toString() + '\t' + quorumSigNum.toString() + '\t' + gasUsed + '\n');

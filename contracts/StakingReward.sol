@@ -30,7 +30,8 @@ contract StakingReward is Pauser {
      * @param _sigs list of validator signatures
      */
     function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
-        staking.verifySignatures(_rewardRequest, _sigs);
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "StakingReward"));
+        staking.verifySignatures(abi.encodePacked(domain, _rewardRequest), _sigs);
         PbStaking.StakingReward memory reward = PbStaking.decStakingReward(_rewardRequest);
 
         uint256 cumulativeRewardAmount = reward.cumulativeRewardAmount;

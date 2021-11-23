@@ -74,7 +74,8 @@ contract SGN is Pauser {
      * @param _sigs list of validator signatures
      */
     function withdraw(bytes calldata _withdrawalRequest, bytes[] calldata _sigs) external whenNotPaused {
-        staking.verifySignatures(_withdrawalRequest, _sigs);
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Withdrawal"));
+        staking.verifySignatures(abi.encodePacked(domain, _withdrawalRequest), _sigs);
         PbSgn.Withdrawal memory withdrawal = PbSgn.decWithdrawal(_withdrawalRequest);
 
         uint256 amount = withdrawal.cumulativeAmount - withdrawnAmts[withdrawal.account][withdrawal.token];

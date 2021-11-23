@@ -22,6 +22,7 @@ describe('StakingReward Tests', function () {
   let celr: TestERC20;
   let validators: Wallet[];
   let signers: Wallet[];
+  let chainId: number;
 
   beforeEach(async () => {
     const res = await loadFixture(fixture);
@@ -41,6 +42,7 @@ describe('StakingReward Tests', function () {
       await staking.connect(validators[i]).bondValidator();
     }
     await reward.connect(validators[0]).contributeToRewardPool(100);
+    chainId = (await ethers.provider.getNetwork()).chainId;
   });
 
   it('should fail to contribute to reward pool when paused', async function () {
@@ -64,41 +66,71 @@ describe('StakingReward Tests', function () {
 
   it('should fail to claim reward when paused', async function () {
     await reward.pause();
-    const r = await getStakingRewardRequest(validators[0].address, parseUnits('100', 'wei'), signers);
+    const r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('100', 'wei'),
+      signers,
+      chainId,
+      reward.address
+    );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Pausable: paused');
   });
 
   it('should claim reward successfully', async function () {
-    let r = await getStakingRewardRequest(validators[0].address, parseUnits('40', 'wei'), signers);
+    let r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('40', 'wei'),
+      signers,
+      chainId,
+      reward.address
+    );
     await expect(reward.claimReward(r.rewardBytes, r.sigs))
       .to.emit(reward, 'StakingRewardClaimed')
       .withArgs(validators[0].address, 40);
 
-    r = await getStakingRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers);
+    r = await getStakingRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers, chainId, reward.address);
     await expect(reward.claimReward(r.rewardBytes, r.sigs))
       .to.emit(reward, 'StakingRewardClaimed')
       .withArgs(validators[0].address, 50);
   });
 
   it('should fail to claim reward more than amount in reward pool', async function () {
-    const r = await getStakingRewardRequest(validators[0].address, parseUnits('101', 'wei'), signers);
+    const r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('101', 'wei'),
+      signers,
+      chainId,
+      reward.address
+    );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
       'ERC20: transfer amount exceeds balance'
     );
   });
 
   it('should fail to claim reward if there is no new reward', async function () {
-    const r = await getStakingRewardRequest(validators[0].address, parseUnits('0'), signers);
+    const r = await getStakingRewardRequest(validators[0].address, parseUnits('0'), signers, chainId, reward.address);
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('No new reward');
   });
 
   it('should fail to claim reward with insufficient signatures', async function () {
-    const r = await getStakingRewardRequest(validators[0].address, parseUnits('10', 'wei'), [signers[0], signers[1]]);
+    const r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('10', 'wei'),
+      [signers[0], signers[1]],
+      chainId,
+      reward.address
+    );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
   });
 
   it('should fail to claim reward with disordered signatures', async function () {
-    const r = await getStakingRewardRequest(validators[0].address, parseUnits('10', 'wei'), signers);
+    const r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('10', 'wei'),
+      signers,
+      chainId,
+      reward.address
+    );
     await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]])).to.be.revertedWith(
       'Signers not in ascending order'
     );

@@ -91,7 +91,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external whenNotPaused {
-        verifySigs(_wdmsg, _sigs, _signers, _powers);
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "WithdrawMsg"));
+        verifySigs(abi.encodePacked(domain, _wdmsg), _sigs, _signers, _powers);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
         require(wdmsg.chainid == block.chainid, "dst chainId mismatch");

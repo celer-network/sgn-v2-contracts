@@ -173,7 +173,8 @@ export async function getRelayRequest(
   srcChainId: number,
   dstChainId: number,
   srcTransferId: string,
-  signers: Wallet[]
+  signers: Wallet[],
+  contractAddress: string
 ): Promise<{ relayBytes: Uint8Array; sigs: number[][] }> {
   const { Relay } = await getProtos();
   const relay = {
@@ -187,7 +188,10 @@ export async function getRelayRequest(
   };
   const relayProto = Relay.create(relay);
   const relayBytes = Relay.encode(relayProto).finish();
-  const relayBytesHash = keccak256(['bytes'], [relayBytes]);
+
+  const domain = keccak256(['uint256', 'address', 'string'], [dstChainId, contractAddress, 'Relay']);
+  const signedData = pack(['bytes32', 'bytes'], [domain, relayBytes]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
 
   const signerAddrs = [];
   for (let i = 0; i < signers.length; i++) {
@@ -195,7 +199,7 @@ export async function getRelayRequest(
   }
 
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  const sigs = await calculateSignatures(signers, hex2Bytes(relayBytesHash));
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
 
   return { relayBytes, sigs };
 }
@@ -207,7 +211,8 @@ export async function getWithdrawRequest(
   token: string,
   amount: BigNumber,
   refid: string,
-  signers: Wallet[]
+  signers: Wallet[],
+  contractAddress: string
 ): Promise<{ withdrawBytes: Uint8Array; sigs: number[][] }> {
   const { WithdrawMsg } = await getProtos();
   const withdraw = {
@@ -220,7 +225,10 @@ export async function getWithdrawRequest(
   };
   const withdrawProto = WithdrawMsg.create(withdraw);
   const withdrawBytes = WithdrawMsg.encode(withdrawProto).finish();
-  const withdrawBytesHash = keccak256(['bytes'], [withdrawBytes]);
+
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'WithdrawMsg']);
+  const signedData = pack(['bytes32', 'bytes'], [domain, withdrawBytes]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
 
   const signerAddrs = [];
   for (let i = 0; i < signers.length; i++) {
@@ -228,6 +236,6 @@ export async function getWithdrawRequest(
   }
 
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  const sigs = await calculateSignatures(signers, hex2Bytes(withdrawBytesHash));
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
   return { withdrawBytes, sigs };
 }

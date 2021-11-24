@@ -14,6 +14,8 @@ import "./Pauser.sol";
 
 interface IWETH {
     function withdraw(uint256) external;
+
+    function deposit() external payable;
 }
 
 contract Pool is Signers, ReentrancyGuard, Pauser {

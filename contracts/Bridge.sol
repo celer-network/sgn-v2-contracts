@@ -62,6 +62,7 @@ contract Bridge is Pool {
         uint32 _maxSlippage
     ) external payable nonReentrant whenNotPaused {
         require(msg.value == _amount, "Amount mismatch");
+        require(nativeWrap != address(0), "Native wrap not set");
         bytes32 transferId = _send(_receiver, nativeWrap, _amount, _dstChainId, _nonce, _maxSlippage);
         IWETH(nativeWrap).deposit{value: _amount}();
         emit Send(transferId, msg.sender, _receiver, nativeWrap, _amount, _dstChainId, _nonce, _maxSlippage);
@@ -116,14 +117,7 @@ contract Bridge is Pool {
         if (delayThreshold > 0 && request.amount > delayThreshold) {
             addDelayedTransfer(transferId, request.receiver, request.token, request.amount);
         } else {
-            if (request.token == nativeWrap) {
-                // withdraw then transfer native to receiver
-                IWETH(nativeWrap).withdraw(request.amount);
-                (bool sent, ) = request.receiver.call{value: request.amount, gas: 50000}("");
-                require(sent, "failed to relay native token");
-            } else {
-                IERC20(request.token).safeTransfer(request.receiver, request.amount);
-            }
+            sendToken(request.receiver, request.token, request.amount);
         }
 
         emit Relay(

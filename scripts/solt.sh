@@ -13,6 +13,9 @@ solFiles=(
   interfaces/ISigsVerifier
   miscs/Faucet
   miscs/MintableERC20
+  pegged/PeggedTokenBridge
+  pegged/PeggedToken
+  pegged/OriginalTokenVaults
 )
 
 run_solt_write() {

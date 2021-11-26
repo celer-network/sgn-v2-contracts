@@ -101,7 +101,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         verifySigs(abi.encodePacked(domain, _wdmsg), _sigs, _signers, _powers);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
-        require(wdmsg.chainid == block.chainid, "dst chainId mismatch");
         bytes32 wdId = keccak256(
             abi.encodePacked(wdmsg.chainid, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount)
         );

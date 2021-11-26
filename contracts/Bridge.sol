@@ -49,6 +49,33 @@ contract Bridge is Pool {
         uint64 _nonce,
         uint32 _maxSlippage // slippage * 1M, eg. 0.5% -> 5000
     ) external nonReentrant whenNotPaused {
+        bytes32 transferId = _send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
+    }
+
+    function sendNative(
+        address _receiver,
+        uint256 _amount,
+        uint64 _dstChainId,
+        uint64 _nonce,
+        uint32 _maxSlippage
+    ) external payable nonReentrant whenNotPaused {
+        require(msg.value == _amount, "Amount mismatch");
+        require(nativeWrap != address(0), "Native wrap not set");
+        bytes32 transferId = _send(_receiver, nativeWrap, _amount, _dstChainId, _nonce, _maxSlippage);
+        IWETH(nativeWrap).deposit{value: _amount}();
+        emit Send(transferId, msg.sender, _receiver, nativeWrap, _amount, _dstChainId, _nonce, _maxSlippage);
+    }
+
+    function _send(
+        address _receiver,
+        address _token,
+        uint256 _amount,
+        uint64 _dstChainId,
+        uint64 _nonce,
+        uint32 _maxSlippage
+    ) private returns (bytes32) {
         require(_amount > minSend[_token], "amount too small");
         require(maxSend[_token] == 0 || _amount <= maxSend[_token], "amount too large");
         require(_maxSlippage > minimalMaxSlippage, "max slippage too small");
@@ -58,9 +85,7 @@ contract Bridge is Pool {
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-
-        emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
+        return transferId;
     }
 
     function relay(
@@ -90,14 +115,7 @@ contract Bridge is Pool {
         if (delayThreshold > 0 && request.amount > delayThreshold) {
             addDelayedTransfer(transferId, request.receiver, request.token, request.amount);
         } else {
-            if (request.token == nativeWrap) {
-                // withdraw then transfer native to receiver
-                IWETH(nativeWrap).withdraw(request.amount);
-                (bool sent, ) = request.receiver.call{value: request.amount, gas: 50000}("");
-                require(sent, "failed to relay native token");
-            } else {
-                IERC20(request.token).safeTransfer(request.receiver, request.amount);
-            }
+            sendToken(request.receiver, request.token, request.amount);
         }
 
         emit Relay(

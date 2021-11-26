@@ -5,16 +5,13 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./interfaces/IWETH.sol";
 import "./libraries/PbPool.sol";
 import "./Signers.sol";
 import "./Pauser.sol";
 
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
-
-interface IWETH {
-    function withdraw(uint256) external;
-}
 
 contract Pool is Signers, ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
@@ -79,10 +76,19 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     }
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
-        addseq += 1;
         require(_amount > minAdd[_token], "amount too small");
+        addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);
+    }
+
+    function addNativeLiquidity(uint256 _amount) external payable nonReentrant whenNotPaused {
+        require(msg.value == _amount, "Amount mismatch");
+        require(nativeWrap != address(0), "Native wrap not set");
+        require(_amount > minAdd[nativeWrap], "amount too small");
+        addseq += 1;
+        IWETH(nativeWrap).deposit{value: _amount}();
+        emit LiquidityAdded(addseq, msg.sender, nativeWrap, _amount);
     }
 
     function withdraw(
@@ -105,7 +111,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         if (delayThreshold > 0 && wdmsg.amount > delayThreshold) {
             addDelayedTransfer(wdId, wdmsg.receiver, wdmsg.token, wdmsg.amount);
         } else {
-            IERC20(wdmsg.token).safeTransfer(wdmsg.receiver, wdmsg.amount);
+            sendToken(wdmsg.receiver, wdmsg.token, wdmsg.amount);
         }
         emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
     }
@@ -115,14 +121,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         require(transfer.timestamp > 0, "transfer not exist");
         require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
         delete delayedTransfers[id];
-        if (transfer.token == nativeWrap && withdraws[id] == false) {
-            // withdraw then transfer native to receiver
-            IWETH(nativeWrap).withdraw(transfer.amount);
-            (bool sent, ) = transfer.receiver.call{value: transfer.amount, gas: 50000}("");
-            require(sent, "failed to relay native token");
-        } else {
-            IERC20(transfer.token).safeTransfer(transfer.receiver, transfer.amount);
-        }
+        sendToken(transfer.receiver, transfer.token, transfer.amount);
         emit DelayedTransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
     }
 
@@ -157,6 +156,21 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
         for (uint256 i = 0; i < _tokens.length; i++) {
             minAdd[_tokens[i]] = _amounts[i];
             emit MinAddUpdated(_tokens[i], _amounts[i]);
+        }
+    }
+
+    function sendToken(
+        address _receiver,
+        address _token,
+        uint256 _amount
+    ) internal {
+        if (_token == nativeWrap) {
+            // withdraw then transfer native to receiver
+            IWETH(nativeWrap).withdraw(_amount);
+            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            require(sent, "failed to send native token");
+        } else {
+            IERC20(_token).safeTransfer(_receiver, _amount);
         }
     }
 

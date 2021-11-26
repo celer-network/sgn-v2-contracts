@@ -76,8 +76,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     }
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
-        addseq += 1;
         require(_amount > minAdd[_token], "amount too small");
+        addseq += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);
     }
@@ -85,8 +85,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     function addNativeLiquidity(uint256 _amount) external payable nonReentrant whenNotPaused {
         require(msg.value == _amount, "Amount mismatch");
         require(nativeWrap != address(0), "Native wrap not set");
-        addseq += 1;
         require(_amount > minAdd[nativeWrap], "amount too small");
+        addseq += 1;
         IWETH(nativeWrap).deposit{value: _amount}();
         emit LiquidityAdded(addseq, msg.sender, nativeWrap, _amount);
     }

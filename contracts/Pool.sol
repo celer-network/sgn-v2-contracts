@@ -84,14 +84,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl, Dela
         if (delayThreshold > 0 && wdmsg.amount > delayThreshold) {
             _addDelayedTransfer(wdId, wdmsg.receiver, wdmsg.token, wdmsg.amount);
         } else {
-            sendToken(wdmsg.receiver, wdmsg.token, wdmsg.amount);
+            _sendToken(wdmsg.receiver, wdmsg.token, wdmsg.amount);
         }
         emit WithdrawDone(wdId, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount, wdmsg.refid);
     }
 
     function executeDelayedTransfer(bytes32 id) external whenNotPaused {
         delayedTransfer memory transfer = _executeDelayedTransfer(id);
-        sendToken(transfer.receiver, transfer.token, transfer.amount);
+        _sendToken(transfer.receiver, transfer.token, transfer.amount);
     }
 
     function setMinAdd(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
@@ -102,7 +102,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl, Dela
         }
     }
 
-    function sendToken(
+    function _sendToken(
         address _receiver,
         address _token,
         uint256 _amount

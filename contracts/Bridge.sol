@@ -115,7 +115,7 @@ contract Bridge is Pool {
         if (delayThreshold > 0 && request.amount > delayThreshold) {
             _addDelayedTransfer(transferId, request.receiver, request.token, request.amount);
         } else {
-            sendToken(request.receiver, request.token, request.amount);
+            _sendToken(request.receiver, request.token, request.amount);
         }
 
         emit Relay(

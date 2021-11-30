@@ -41,7 +41,6 @@ contract DelayedTransfer is Governor {
         uint256 amount
     ) internal {
         // note: rely on caller for id uniquess
-        // current ids are relay transfer id and withdrawal id
         delayedTransfers[id] = delayedTransfer({
             receiver: receiver,
             token: token,

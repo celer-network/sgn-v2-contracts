@@ -23,15 +23,15 @@ contract Governor is Ownable {
         return governors[_account];
     }
 
-    function addGovener(address _account) public onlyOwner {
+    function addGovernor(address _account) public onlyOwner {
         _addGovernor(_account);
     }
 
-    function removeGovener(address _account) public onlyOwner {
+    function removeGovernor(address _account) public onlyOwner {
         _removeGovernor(_account);
     }
 
-    function renounceGovener() public {
+    function renounceGovernor() public {
         _removeGovernor(msg.sender);
     }
 

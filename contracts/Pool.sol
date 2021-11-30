@@ -9,12 +9,13 @@ import "./interfaces/IWETH.sol";
 import "./libraries/PbPool.sol";
 import "./safeguard/Pauser.sol";
 import "./safeguard/Governor.sol";
+import "./safeguard/VolumeControl.sol";
 import "./Signers.sol";
 
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
-contract Pool is Signers, ReentrancyGuard, Pauser, Governor {
+contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
@@ -22,11 +23,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor {
 
     // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
-
-    uint256 public epochLength; // seconds
-    mapping(address => uint256) public epochVolumes; // key is token
-    mapping(address => uint256) public epochVolumeCaps; // key is token
-    mapping(address => uint256) public lastOpTimestamps; // key is token
 
     struct delayedTransfer {
         address receiver;
@@ -62,8 +58,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor {
     event DelayedTransferAdded(bytes32 id);
     event DelayedTransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
     // gov events
-    event EpochLengthUpdated(uint256 length);
-    event EpochVolumeUpdated(address token, uint256 cap);
     event DelayPeriodUpdated(uint256 period);
     event DelayThresholdUpdated(address token, uint256 threshold);
     event MinAddUpdated(address token, uint256 amount);
@@ -118,19 +112,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor {
         emit DelayedTransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
     }
 
-    function setEpochLength(uint256 _length) external onlyGovernor {
-        epochLength = _length;
-        emit EpochLengthUpdated(_length);
-    }
-
-    function setEpochVolumeCaps(address[] calldata _tokens, uint256[] calldata _caps) external onlyGovernor {
-        require(_tokens.length == _caps.length, "length mismatch");
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            epochVolumeCaps[_tokens[i]] = _caps[i];
-            emit EpochVolumeUpdated(_tokens[i], _caps[i]);
-        }
-    }
-
     function setDelayThresholds(address[] calldata _tokens, uint256[] calldata _thresholds) external onlyGovernor {
         require(_tokens.length == _thresholds.length, "length mismatch");
         for (uint256 i = 0; i < _tokens.length; i++) {
@@ -165,27 +146,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor {
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
         }
-    }
-
-    function updateVolume(address _token, uint256 _amount) internal {
-        if (epochLength == 0) {
-            return;
-        }
-        uint256 cap = epochVolumeCaps[_token];
-        if (cap == 0) {
-            return;
-        }
-        uint256 volume = epochVolumes[_token];
-        uint256 timestamp = block.timestamp;
-        uint256 epochStartTime = (timestamp / epochLength) * epochLength;
-        if (lastOpTimestamps[_token] < epochStartTime) {
-            volume = _amount;
-        } else {
-            volume += _amount;
-        }
-        require(volume <= cap, "volume exceeds cap");
-        epochVolumes[_token] = volume;
-        lastOpTimestamps[_token] = timestamp;
     }
 
     function addDelayedTransfer(

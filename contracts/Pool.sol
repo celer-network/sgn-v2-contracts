@@ -7,13 +7,14 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IWETH.sol";
 import "./libraries/PbPool.sol";
+import "./safeguard/Pauser.sol";
+import "./safeguard/Governor.sol";
 import "./Signers.sol";
-import "./Pauser.sol";
 
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
-contract Pool is Signers, ReentrancyGuard, Pauser {
+contract Pool is Signers, ReentrancyGuard, Pauser, Governor {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
@@ -43,8 +44,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     // is all 0 address, guarantee fail
     address public nativeWrap;
 
-    mapping(address => bool) public governors;
-
     // liquidity events
     event LiquidityAdded(
         uint64 seqnum,
@@ -63,17 +62,11 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     event DelayedTransferAdded(bytes32 id);
     event DelayedTransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
     // gov events
-    event GovernorAdded(address account);
-    event GovernorRemoved(address account);
     event EpochLengthUpdated(uint256 length);
     event EpochVolumeUpdated(address token, uint256 cap);
     event DelayPeriodUpdated(uint256 period);
     event DelayThresholdUpdated(address token, uint256 threshold);
     event MinAddUpdated(address token, uint256 amount);
-
-    constructor() {
-        _addGovernor(msg.sender);
-    }
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
         require(_amount > minAdd[_token], "amount too small");
@@ -215,38 +208,5 @@ contract Pool is Signers, ReentrancyGuard, Pauser {
     // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver
     function setWrap(address _weth) external onlyOwner {
         nativeWrap = _weth;
-    }
-
-    modifier onlyGovernor() {
-        require(isGovernor(msg.sender), "Caller is not governor");
-        _;
-    }
-
-    function isGovernor(address _account) public view returns (bool) {
-        return governors[_account];
-    }
-
-    function addGovener(address _account) public onlyOwner {
-        _addGovernor(_account);
-    }
-
-    function removeGovener(address _account) public onlyOwner {
-        _removeGovernor(_account);
-    }
-
-    function renounceGovener() public {
-        _removeGovernor(msg.sender);
-    }
-
-    function _addGovernor(address _account) private {
-        require(!isGovernor(_account), "Account is already governor");
-        governors[_account] = true;
-        emit GovernorAdded(_account);
-    }
-
-    function _removeGovernor(address _account) private {
-        require(isGovernor(_account), "Account is not governor");
-        governors[_account] = false;
-        emit GovernorRemoved(_account);
     }
 }

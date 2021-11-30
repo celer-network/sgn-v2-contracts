@@ -12,8 +12,8 @@ library PbPegged {
         address token; // tag: 1
         address account; // tag: 2
         uint256 amount; // tag: 3
-        uint64 refchain; // tag: 4
-        bytes32 refid; // tag: 5
+        uint64 refChainId; // tag: 4
+        bytes32 refId; // tag: 5
     } // end struct Mint
 
     function decMint(bytes memory raw) internal pure returns (Mint memory m) {
@@ -32,9 +32,9 @@ library PbPegged {
             } else if (tag == 3) {
                 m.amount = Pb._uint256(buf.decBytes());
             } else if (tag == 4) {
-                m.refchain = uint64(buf.decVarint());
+                m.refChainId = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.refid = Pb._bytes32(buf.decBytes());
+                m.refId = Pb._bytes32(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag
@@ -45,8 +45,8 @@ library PbPegged {
         address token; // tag: 1
         address receiver; // tag: 2
         uint256 amount; // tag: 3
-        uint64 refchain; // tag: 4
-        bytes32 refid; // tag: 5
+        uint64 refChainId; // tag: 4
+        bytes32 refId; // tag: 5
     } // end struct Withdraw
 
     function decWithdraw(bytes memory raw) internal pure returns (Withdraw memory m) {
@@ -65,9 +65,9 @@ library PbPegged {
             } else if (tag == 3) {
                 m.amount = Pb._uint256(buf.decBytes());
             } else if (tag == 4) {
-                m.refchain = uint64(buf.decVarint());
+                m.refChainId = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.refid = Pb._bytes32(buf.decBytes());
+                m.refId = Pb._bytes32(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

@@ -16,19 +16,20 @@ contract OriginalTokenVaults is ReentrancyGuard {
 
     ISigsVerifier public immutable sigsVerifier;
 
-    // TODO: may remove valuts as records are kept in sgn
-    mapping(address => mapping(uint256 => uint256)) public vaults; // token -> chainId -> amount
     mapping(bytes32 => bool) public records;
 
-    event Deposited(
-        bytes32 depositId,
-        address account,
+    // TODO: may remove valuts as records are kept in sgn
+    mapping(address => mapping(uint256 => uint256)) public vaults; // token -> chainId -> amount
+
+    event Deposited(bytes32 depositId, address account, address token, uint256 amount, uint64 mintChainId);
+    event Withdrawn(
+        bytes32 withdrawId,
+        address receiver,
         address token,
         uint256 amount,
-        uint64 mintChainId,
-        uint64 nonce
+        uint64 refChainId,
+        bytes32 refId
     );
-    event Withdrawn(bytes32 redeemId, address receiver, address token, uint256 amount, uint64 refchain, bytes32 refid);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -39,7 +40,7 @@ contract OriginalTokenVaults is ReentrancyGuard {
      * @param _token local token address
      * @param _amount locked token amount
      * @param _mintChainId destination chainId to mint tokens
-     * @param _nonce user input seq to guarantee uniqueness
+     * @param _nonce user input to guarantee unique depositId
      */
     function deposit(
         address _token,
@@ -48,13 +49,13 @@ contract OriginalTokenVaults is ReentrancyGuard {
         uint64 _nonce
     ) external nonReentrant {
         bytes32 depId = keccak256(
-            abi.encodePacked(msg.sender, _token, _amount, _mintChainId, _nonce, uint64(block.chainid), address(this))
+            abi.encodePacked(msg.sender, _token, _amount, _mintChainId, _nonce, uint64(block.chainid))
         );
         require(records[depId] == false, "record exists");
         records[depId] = true;
         vaults[_token][_mintChainId] += _amount;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        emit Deposited(depId, msg.sender, _token, _amount, _mintChainId, _nonce);
+        emit Deposited(depId, msg.sender, _token, _amount, _mintChainId);
     }
 
     /**
@@ -70,12 +71,12 @@ contract OriginalTokenVaults is ReentrancyGuard {
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         bytes32 wdId = keccak256(
-            abi.encodePacked(request.receiver, request.token, request.amount, request.refchain, request.refid)
+            abi.encodePacked(request.receiver, request.token, request.amount, request.refChainId, request.refId)
         );
         require(records[wdId] == false, "record exists");
         records[wdId] = true;
-        vaults[request.token][request.refchain] -= request.amount;
+        vaults[request.token][request.refChainId] -= request.amount;
         IERC20(request.token).safeTransfer(request.receiver, request.amount);
-        emit Withdrawn(wdId, request.receiver, request.token, request.amount, request.refchain, request.refid);
+        emit Withdrawn(wdId, request.receiver, request.token, request.amount, request.refChainId, request.refId);
     }
 }

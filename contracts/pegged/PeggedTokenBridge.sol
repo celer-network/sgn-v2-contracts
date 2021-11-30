@@ -14,8 +14,8 @@ contract PeggedTokenBridge {
 
     mapping(bytes32 => bool) public records;
 
-    event Mint(bytes32 mintId, address token, address account, uint256 amount, uint64 refchain, bytes32 refid);
-    event Burn(bytes32 burnId, address token, address account, uint256 amount, uint64 withdrawChainId, uint64 nonce);
+    event Mint(bytes32 mintId, address token, address account, uint256 amount, uint64 refChainId, bytes32 refId);
+    event Burn(bytes32 burnId, address token, address account, uint256 amount, uint64 withdrawChainId);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -34,12 +34,12 @@ contract PeggedTokenBridge {
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Mint memory request = PbPegged.decMint(_request);
         bytes32 mintId = keccak256(
-            abi.encodePacked(request.account, request.token, request.amount, request.refchain, request.refid)
+            abi.encodePacked(request.account, request.token, request.amount, request.refChainId, request.refId)
         );
         require(records[mintId] == false, "record exists");
         records[mintId] = true;
         PeggedToken(request.token).mint(request.account, request.amount);
-        emit Mint(mintId, request.token, request.account, request.amount, request.refchain, request.refid);
+        emit Mint(mintId, request.token, request.account, request.amount, request.refChainId, request.refId);
     }
 
     /**
@@ -52,19 +52,11 @@ contract PeggedTokenBridge {
         uint64 _nonce
     ) external {
         bytes32 burnId = keccak256(
-            abi.encodePacked(
-                msg.sender,
-                _token,
-                _amount,
-                _withdrawChainId,
-                _nonce,
-                uint64(block.chainid),
-                address(this)
-            )
+            abi.encodePacked(msg.sender, _token, _amount, _withdrawChainId, _nonce, uint64(block.chainid))
         );
         require(records[burnId] == false, "record exists");
         records[burnId] = true;
         PeggedToken(_token).burn(msg.sender, _amount);
-        emit Burn(burnId, _token, msg.sender, _amount, _withdrawChainId, _nonce);
+        emit Burn(burnId, _token, msg.sender, _amount, _withdrawChainId);
     }
 }

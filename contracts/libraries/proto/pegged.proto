@@ -9,17 +9,22 @@ extend google.protobuf.FieldOptions {
   string soltype = 1004;
 }
 
+// mint pegged token
+// triggered by deposit at the original token vaults
 message Mint {
   bytes token = 1 [(soltype) = "address"];
   bytes account = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
-  uint64 nonce = 4;
+  uint64 refchain = 4; // common: deposit chain ; when refund: this chain
+  bytes refid = 5 [(soltype) = "bytes32"]; // common: depositId ; when refund: burnId
 }
 
+// withdraw locked original tokens
+// triggered by burn at the pegged bridge
 message Withdraw {
-  bytes receiver = 1 [(soltype) = "address"];
-  bytes token = 2 [(soltype) = "address"];
+  bytes token = 1 [(soltype) = "address"];
+  bytes receiver = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
-  uint64 burnChainId = 4;
-  uint64 nonce = 5;
+  uint64 refchain = 4; // common: burn chain ; when refund: this chain ; when claim fee: this chain
+  bytes refid = 5 [(soltype) = "bytes32"]; // common: burnId ; when refund: depositId ; when claim fee: 0x1
 }

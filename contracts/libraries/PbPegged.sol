@@ -12,7 +12,8 @@ library PbPegged {
         address token; // tag: 1
         address account; // tag: 2
         uint256 amount; // tag: 3
-        uint64 nonce; // tag: 4
+        uint64 refchain; // tag: 4
+        bytes32 refid; // tag: 5
     } // end struct Mint
 
     function decMint(bytes memory raw) internal pure returns (Mint memory m) {
@@ -31,7 +32,9 @@ library PbPegged {
             } else if (tag == 3) {
                 m.amount = Pb._uint256(buf.decBytes());
             } else if (tag == 4) {
-                m.nonce = uint64(buf.decVarint());
+                m.refchain = uint64(buf.decVarint());
+            } else if (tag == 5) {
+                m.refid = Pb._bytes32(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag
@@ -39,11 +42,11 @@ library PbPegged {
     } // end decoder Mint
 
     struct Withdraw {
-        address receiver; // tag: 1
-        address token; // tag: 2
+        address token; // tag: 1
+        address receiver; // tag: 2
         uint256 amount; // tag: 3
-        uint64 burnChainId; // tag: 4
-        uint64 nonce; // tag: 5
+        uint64 refchain; // tag: 4
+        bytes32 refid; // tag: 5
     } // end struct Withdraw
 
     function decWithdraw(bytes memory raw) internal pure returns (Withdraw memory m) {
@@ -56,15 +59,15 @@ library PbPegged {
             if (false) {}
             // solidity has no switch/case
             else if (tag == 1) {
-                m.receiver = Pb._address(buf.decBytes());
-            } else if (tag == 2) {
                 m.token = Pb._address(buf.decBytes());
+            } else if (tag == 2) {
+                m.receiver = Pb._address(buf.decBytes());
             } else if (tag == 3) {
                 m.amount = Pb._uint256(buf.decBytes());
             } else if (tag == 4) {
-                m.burnChainId = uint64(buf.decVarint());
+                m.refchain = uint64(buf.decVarint());
             } else if (tag == 5) {
-                m.nonce = uint64(buf.decVarint());
+                m.refid = Pb._bytes32(buf.decBytes());
             } else {
                 buf.skipValue(wire);
             } // skip value of unknown tag

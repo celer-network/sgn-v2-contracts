@@ -14,11 +14,8 @@ contract PeggedTokenBridge {
 
     mapping(bytes32 => bool) public records;
 
-    enum Action {
-        Mint,
-        Burn
-    }
-    event LogRecord(Action action, address token, address account, uint256 amount, uint64 nonce);
+    event Mint(bytes32 mintId, address token, address account, uint256 amount, uint64 refchain, bytes32 refid);
+    event Burn(bytes32 burnId, address token, address account, uint256 amount, uint64 withdrawChainId, uint64 nonce);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -36,25 +33,38 @@ contract PeggedTokenBridge {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Mint"));
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Mint memory request = PbPegged.decMint(_request);
-        bytes32 id = keccak256(abi.encodePacked("mint", request.token, request.account, request.amount, request.nonce));
-        require(records[id] == false, "record exists");
-        records[id] = true;
+        bytes32 mintId = keccak256(
+            abi.encodePacked(request.account, request.token, request.amount, request.refchain, request.refid)
+        );
+        require(records[mintId] == false, "record exists");
+        records[mintId] = true;
         PeggedToken(request.token).mint(request.account, request.amount);
-        emit LogRecord(Action.Mint, request.token, request.account, request.amount, request.nonce);
+        emit Mint(mintId, request.token, request.account, request.amount, request.refchain, request.refid);
     }
 
     /**
-     * @notice burn tokens to trigger withdrawal of locked tokens at the remote chain
+     * @notice burn tokens to trigger redemption of locked tokens at the remote chain
      */
     function burn(
         address _token,
         uint256 _amount,
+        uint64 _withdrawChainId,
         uint64 _nonce
     ) external {
-        bytes32 id = keccak256(abi.encodePacked("burn", _token, msg.sender, _amount, _nonce));
-        require(records[id] == false, "record exists");
-        records[id] = true;
+        bytes32 burnId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                _token,
+                _amount,
+                _withdrawChainId,
+                _nonce,
+                uint64(block.chainid),
+                address(this)
+            )
+        );
+        require(records[burnId] == false, "record exists");
+        records[burnId] = true;
         PeggedToken(_token).burn(msg.sender, _amount);
-        emit LogRecord(Action.Burn, _token, msg.sender, _amount, _nonce);
+        emit Burn(burnId, _token, msg.sender, _amount, _withdrawChainId, _nonce);
     }
 }

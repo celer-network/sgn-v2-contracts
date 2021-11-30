@@ -10,12 +10,13 @@ import "./libraries/PbPool.sol";
 import "./safeguard/Pauser.sol";
 import "./safeguard/Governor.sol";
 import "./safeguard/VolumeControl.sol";
+import "./safeguard/DelayedTransfer.sol";
 import "./Signers.sol";
 
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
-contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
+contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl, DelayedTransfer {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1
@@ -23,16 +24,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
 
     // map of successful withdraws, if true means already withdrew money or added to delayedTransfers
     mapping(bytes32 => bool) public withdraws;
-
-    struct delayedTransfer {
-        address receiver;
-        address token;
-        uint256 amount;
-        uint256 timestamp;
-    }
-    mapping(bytes32 => delayedTransfer) public delayedTransfers;
-    mapping(address => uint256) public delayThresholds;
-    uint256 public delayPeriod; // in seconds
 
     // erc20 wrap of gas token of this chain, eg. WETH, when relay ie. pay out,
     // if request.token equals this, will withdraw and send native token to receiver
@@ -55,11 +46,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
         uint256 amount,
         bytes32 refid
     );
-    event DelayedTransferAdded(bytes32 id);
-    event DelayedTransferExecuted(bytes32 id, address receiver, address token, uint256 amount);
-    // gov events
-    event DelayPeriodUpdated(uint256 period);
-    event DelayThresholdUpdated(address token, uint256 threshold);
     event MinAddUpdated(address token, uint256 amount);
 
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
@@ -96,7 +82,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
         updateVolume(wdmsg.token, wdmsg.amount);
         uint256 delayThreshold = delayThresholds[wdmsg.token];
         if (delayThreshold > 0 && wdmsg.amount > delayThreshold) {
-            addDelayedTransfer(wdId, wdmsg.receiver, wdmsg.token, wdmsg.amount);
+            _addDelayedTransfer(wdId, wdmsg.receiver, wdmsg.token, wdmsg.amount);
         } else {
             sendToken(wdmsg.receiver, wdmsg.token, wdmsg.amount);
         }
@@ -104,25 +90,8 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
     }
 
     function executeDelayedTransfer(bytes32 id) external whenNotPaused {
-        delayedTransfer memory transfer = delayedTransfers[id];
-        require(transfer.timestamp > 0, "transfer not exist");
-        require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
-        delete delayedTransfers[id];
+        delayedTransfer memory transfer = _executeDelayedTransfer(id);
         sendToken(transfer.receiver, transfer.token, transfer.amount);
-        emit DelayedTransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
-    }
-
-    function setDelayThresholds(address[] calldata _tokens, uint256[] calldata _thresholds) external onlyGovernor {
-        require(_tokens.length == _thresholds.length, "length mismatch");
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            delayThresholds[_tokens[i]] = _thresholds[i];
-            emit DelayThresholdUpdated(_tokens[i], _thresholds[i]);
-        }
-    }
-
-    function setDelayPeriod(uint256 _period) external onlyGovernor {
-        delayPeriod = _period;
-        emit DelayPeriodUpdated(_period);
     }
 
     function setMinAdd(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
@@ -146,23 +115,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl {
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
         }
-    }
-
-    function addDelayedTransfer(
-        bytes32 id,
-        address receiver,
-        address token,
-        uint256 amount
-    ) internal {
-        // note: rely on caller for id uniquess
-        // current ids are relay transfer id and withdrawal id
-        delayedTransfers[id] = delayedTransfer({
-            receiver: receiver,
-            token: token,
-            amount: amount,
-            timestamp: block.timestamp
-        });
-        emit DelayedTransferAdded(id);
     }
 
     // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver

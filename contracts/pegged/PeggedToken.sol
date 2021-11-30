@@ -7,16 +7,20 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract PeggedToken is ERC20 {
     address public immutable controller;
 
+    uint8 private _decimals;
+
     modifier onlyController() {
         require(msg.sender == controller, "caller is not controller");
         _;
     }
 
     constructor(
-        string memory _name,
-        string memory _symbol,
+        string memory name_,
+        string memory symbol_,
+        uint8 decimals_,
         address _controller
-    ) ERC20(_name, _symbol) {
+    ) ERC20(name_, symbol_) {
+        _decimals = decimals_;
         controller = _controller;
     }
 
@@ -26,5 +30,9 @@ contract PeggedToken is ERC20 {
 
     function burn(address _from, uint256 _amount) external onlyController {
         _burn(_from, _amount);
+    }
+
+    function decimals() public view override returns (uint8) {
+        return _decimals;
     }
 }

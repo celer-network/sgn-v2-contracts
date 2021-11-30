@@ -43,7 +43,7 @@ contract PeggedTokenBridge {
     }
 
     /**
-     * @notice burn tokens to trigger redemption of locked tokens at the remote chain
+     * @notice burn tokens to trigger withdrawal of locked tokens at the remote chain
      */
     function burn(
         address _token,

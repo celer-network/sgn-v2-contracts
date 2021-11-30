@@ -31,6 +31,9 @@ const optimismTestPrivateKey = process.env.OPTIMISM_TEST_PRIVATE_KEY || DEFAULT_
 const fantomTestEndpoint = process.env.FANTOM_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const fantomTestPrivateKey = process.env.FANTOM_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const avalancheTestEndpoint = process.env.AVALANCHE_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const avalancheTestPrivateKey = process.env.AVALANCHE_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -80,6 +83,10 @@ const config: HardhatUserConfig = {
     optimismTest: {
       url: optimismTestEndpoint,
       accounts: [`0x${optimismTestPrivateKey}`]
+    },
+    avalancheTest: {
+      url: avalancheTestEndpoint,
+      accounts: [`0x${avalancheTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,

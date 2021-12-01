@@ -26,7 +26,7 @@ abstract contract VolumeControl is Governor {
         }
     }
 
-    function updateVolume(address _token, uint256 _amount) internal {
+    function _updateVolume(address _token, uint256 _amount) internal {
         if (epochLength == 0) {
             return;
         }

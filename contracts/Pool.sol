@@ -79,7 +79,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl, Dela
         );
         require(withdraws[wdId] == false, "withdraw already succeeded");
         withdraws[wdId] = true;
-        updateVolume(wdmsg.token, wdmsg.amount);
+        _updateVolume(wdmsg.token, wdmsg.amount);
         uint256 delayThreshold = delayThresholds[wdmsg.token];
         if (delayThreshold > 0 && wdmsg.amount > delayThreshold) {
             _addDelayedTransfer(wdId, wdmsg.receiver, wdmsg.token, wdmsg.amount);

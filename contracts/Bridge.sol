@@ -110,7 +110,7 @@ contract Bridge is Pool {
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
-        updateVolume(request.token, request.amount);
+        _updateVolume(request.token, request.amount);
         uint256 delayThreshold = delayThresholds[request.token];
         if (delayThreshold > 0 && request.amount > delayThreshold) {
             _addDelayedTransfer(transferId, request.receiver, request.token, request.amount);

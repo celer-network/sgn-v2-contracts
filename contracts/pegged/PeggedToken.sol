@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract PeggedToken is ERC20 {
     address public immutable controller;
 
-    uint8 private _decimals;
+    uint8 private immutable _decimals;
 
     modifier onlyController() {
         require(msg.sender == controller, "caller is not controller");

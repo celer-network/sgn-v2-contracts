@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 
 import "./Governor.sol";
 
-contract DelayedTransfer is Governor {
+abstract contract DelayedTransfer is Governor {
     struct delayedTransfer {
         address receiver;
         address token;

@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 
 import "./Governor.sol";
 
-contract VolumeControl is Governor {
+abstract contract VolumeControl is Governor {
     uint256 public epochLength; // seconds
     mapping(address => uint256) public epochVolumes; // key is token
     mapping(address => uint256) public epochVolumeCaps; // key is token

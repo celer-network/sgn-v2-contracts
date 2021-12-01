@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/IWETH.sol";
 import "./libraries/PbPool.sol";
 import "./safeguard/Pauser.sol";
-import "./safeguard/Governor.sol";
 import "./safeguard/VolumeControl.sol";
 import "./safeguard/DelayedTransfer.sol";
 import "./Signers.sol";

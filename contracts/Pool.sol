@@ -16,7 +16,7 @@ import "./Signers.sol";
 // add liquidity and withdraw
 // withdraw can be used by user or liquidity provider
 
-contract Pool is Signers, ReentrancyGuard, Pauser, Governor, VolumeControl, DelayedTransfer {
+contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfer {
     using SafeERC20 for IERC20;
 
     uint64 public addseq; // ensure unique LiquidityAdded event, start from 1

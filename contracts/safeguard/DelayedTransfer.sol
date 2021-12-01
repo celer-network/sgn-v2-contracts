@@ -40,7 +40,7 @@ abstract contract DelayedTransfer is Governor {
         address token,
         uint256 amount
     ) internal {
-        // note: rely on caller for id uniquess
+        require(delayedTransfers[id].timestamp == 0, "delayed transfer already exists");
         delayedTransfers[id] = delayedTransfer({
             receiver: receiver,
             token: token,
@@ -53,8 +53,8 @@ abstract contract DelayedTransfer is Governor {
     // caller needs to do the actual token transfer
     function _executeDelayedTransfer(bytes32 id) internal returns (delayedTransfer memory) {
         delayedTransfer memory transfer = delayedTransfers[id];
-        require(transfer.timestamp > 0, "transfer not exist");
-        require(block.timestamp > transfer.timestamp + delayPeriod, "transfer still locked");
+        require(transfer.timestamp > 0, "delayed transfer not exist");
+        require(block.timestamp > transfer.timestamp + delayPeriod, "delayed transfer still locked");
         delete delayedTransfers[id];
         emit DelayedTransferExecuted(id, transfer.receiver, transfer.token, transfer.amount);
         return transfer;

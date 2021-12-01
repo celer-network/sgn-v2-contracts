@@ -15,7 +15,7 @@ contract PeggedTokenBridge {
     mapping(bytes32 => bool) public records;
 
     event Mint(bytes32 mintId, address token, address account, uint256 amount, uint64 refChainId, bytes32 refId);
-    event Burn(bytes32 burnId, address token, address account, uint256 amount, uint64 withdrawChainId);
+    event Burn(bytes32 burnId, address token, address account, uint256 amount);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -48,15 +48,12 @@ contract PeggedTokenBridge {
     function burn(
         address _token,
         uint256 _amount,
-        uint64 _withdrawChainId,
         uint64 _nonce
     ) external {
-        bytes32 burnId = keccak256(
-            abi.encodePacked(msg.sender, _token, _amount, _withdrawChainId, _nonce, uint64(block.chainid))
-        );
+        bytes32 burnId = keccak256(abi.encodePacked(msg.sender, _token, _amount, _nonce, uint64(block.chainid)));
         require(records[burnId] == false, "record exists");
         records[burnId] = true;
         PeggedToken(_token).burn(msg.sender, _amount);
-        emit Burn(burnId, _token, msg.sender, _amount, _withdrawChainId);
+        emit Burn(burnId, _token, msg.sender, _amount);
     }
 }

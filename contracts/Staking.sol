@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbStaking.sol";
-import "./Whitelist.sol";
-import "./Pauser.sol";
+import "./safeguard/Pauser.sol";
+import "./safeguard/Whitelist.sol";
 
 /**
  * @title A Staking contract shared by all external sidechains and apps

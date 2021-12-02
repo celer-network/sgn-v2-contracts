@@ -12,7 +12,8 @@ import "../safeguard/VolumeControl.sol";
 import "../safeguard/DelayedTransfer.sol";
 
 /**
- * @title the vaults to lock original tokens at the source chain
+ * @title the vaults to deposit and withdraw original tokens
+ * @dev Work togher with PeggedTokenBridge contracts deployed at remote chains
  */
 contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedTransfer {
     using SafeERC20 for IERC20;
@@ -36,7 +37,7 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
     }
 
     /**
-     * @notice Lock original tokens to trigger mint at a remote chain
+     * @notice Lock original tokens to trigger mint at a remote chain's PeggedTokenBridge
      * @param _token local token address
      * @param _amount locked token amount
      * @param _mintChainId destination chainId to mint tokens
@@ -58,7 +59,7 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
     }
 
     /**
-     * @notice Withdraw locked tokens triggered by token burn at the remote chain
+     * @notice Withdraw locked tokens triggered by burn at a remote chain's PeggedTokenBridge
      */
     function withdraw(
         bytes calldata _request,

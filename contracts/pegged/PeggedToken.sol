@@ -4,7 +4,11 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
+/**
+ * @title Pegged ERC20 token
+ */
 contract PeggedToken is ERC20 {
+    // controller should be PeggedTokenBridge
     address public immutable controller;
 
     uint8 private immutable _decimals;

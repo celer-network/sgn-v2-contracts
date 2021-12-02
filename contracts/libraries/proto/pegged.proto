@@ -15,9 +15,9 @@ message Mint {
   bytes token = 1 [(soltype) = "address"];
   bytes account = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
-  // reference chain Id. common: deposit chain ; when refund: this chain
+  // reference chain Id. common: deposit chain
   uint64 ref_chain_id = 4;
-  // unique reference Id. common: depositId ; when refund: burnId
+  // unique reference Id. common: depositId
   bytes ref_id = 5 [(soltype) = "bytes32"];
 }
 

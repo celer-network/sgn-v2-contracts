@@ -4,21 +4,21 @@ pragma solidity 0.8.9;
 
 import "../interfaces/ISigsVerifier.sol";
 import "../libraries/PbPegged.sol";
+import "../safeguard/Pauser.sol";
+import "../safeguard/VolumeControl.sol";
+import "../safeguard/DelayedTransfer.sol";
 import "./PeggedToken.sol";
 
 /**
  * @title The bridge to mint and burn pegged tokens at this chain
  */
-contract PeggedTokenBridge {
+contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     ISigsVerifier public immutable sigsVerifier;
 
     mapping(bytes32 => bool) public records;
 
-    enum Action {
-        Mint,
-        Burn
-    }
-    event LogRecord(Action action, address token, address account, uint256 amount, uint64 nonce);
+    event Mint(bytes32 mintId, address token, address account, uint256 amount, uint64 refChainId, bytes32 refId);
+    event Burn(bytes32 burnId, address token, address account, uint256 amount);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -32,15 +32,23 @@ contract PeggedTokenBridge {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external {
+    ) external whenNotPaused {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Mint"));
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Mint memory request = PbPegged.decMint(_request);
-        bytes32 id = keccak256(abi.encodePacked("mint", request.token, request.account, request.amount, request.nonce));
-        require(records[id] == false, "record exists");
-        records[id] = true;
-        PeggedToken(request.token).mint(request.account, request.amount);
-        emit LogRecord(Action.Mint, request.token, request.account, request.amount, request.nonce);
+        bytes32 mintId = keccak256(
+            abi.encodePacked(request.account, request.token, request.amount, request.refChainId, request.refId)
+        );
+        require(records[mintId] == false, "record exists");
+        records[mintId] = true;
+        _updateVolume(request.token, request.amount);
+        uint256 delayThreshold = delayThresholds[request.token];
+        if (delayThreshold > 0 && request.amount > delayThreshold) {
+            _addDelayedTransfer(mintId, request.account, request.token, request.amount);
+        } else {
+            PeggedToken(request.token).mint(request.account, request.amount);
+        }
+        emit Mint(mintId, request.token, request.account, request.amount, request.refChainId, request.refId);
     }
 
     /**
@@ -50,11 +58,16 @@ contract PeggedTokenBridge {
         address _token,
         uint256 _amount,
         uint64 _nonce
-    ) external {
-        bytes32 id = keccak256(abi.encodePacked("burn", _token, msg.sender, _amount, _nonce));
-        require(records[id] == false, "record exists");
-        records[id] = true;
+    ) external whenNotPaused {
+        bytes32 burnId = keccak256(abi.encodePacked(msg.sender, _token, _amount, _nonce, uint64(block.chainid)));
+        require(records[burnId] == false, "record exists");
+        records[burnId] = true;
         PeggedToken(_token).burn(msg.sender, _amount);
-        emit LogRecord(Action.Burn, _token, msg.sender, _amount, _nonce);
+        emit Burn(burnId, _token, msg.sender, _amount);
+    }
+
+    function executeDelayedTransfer(bytes32 id) external whenNotPaused {
+        delayedTransfer memory transfer = _executeDelayedTransfer(id);
+        PeggedToken(transfer.token).mint(transfer.receiver, transfer.amount);
     }
 }

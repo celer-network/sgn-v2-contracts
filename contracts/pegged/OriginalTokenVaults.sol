@@ -21,9 +21,6 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
 
     mapping(bytes32 => bool) public records;
 
-    // TODO: may remove valuts as records are kept in sgn
-    mapping(address => mapping(uint256 => uint256)) public vaults; // token -> chainId -> amount
-
     event Deposited(bytes32 depositId, address account, address token, uint256 amount, uint64 mintChainId);
     event Withdrawn(
         bytes32 withdrawId,
@@ -56,7 +53,6 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
         );
         require(records[depId] == false, "record exists");
         records[depId] = true;
-        vaults[_token][_mintChainId] += _amount;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         emit Deposited(depId, msg.sender, _token, _amount, _mintChainId);
     }
@@ -79,7 +75,6 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
         require(records[wdId] == false, "record exists");
         records[wdId] = true;
         _updateVolume(request.token, request.amount);
-        vaults[request.token][request.refChainId] -= request.amount;
         uint256 delayThreshold = delayThresholds[request.token];
         if (delayThreshold > 0 && request.amount > delayThreshold) {
             _addDelayedTransfer(wdId, request.receiver, request.token, request.amount);

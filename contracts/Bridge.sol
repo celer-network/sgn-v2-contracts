@@ -81,6 +81,7 @@ contract Bridge is Pool {
         require(_maxSlippage > minimalMaxSlippage, "max slippage too small");
         bytes32 transferId = keccak256(
             // uint64(block.chainid) for consistency as entire system uses uint64 for chain id
+            // len = 20 + 20 + 20 + 32 + 8 + 8 + 8 = 116
             abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
         );
         require(transfers[transferId] == false, "transfer exists");
@@ -97,6 +98,7 @@ contract Bridge is Pool {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Relay"));
         verifySigs(abi.encodePacked(domain, _relayRequest), _sigs, _signers, _powers);
         PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
+        // len = 20 + 20 + 20 + 32 + 8 + 8 + 32 = 140
         bytes32 transferId = keccak256(
             abi.encodePacked(
                 request.sender,

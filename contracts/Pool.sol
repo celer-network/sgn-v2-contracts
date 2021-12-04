@@ -73,6 +73,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
         verifySigs(abi.encodePacked(domain, _wdmsg), _sigs, _signers, _powers);
         // decode and check wdmsg
         PbPool.WithdrawMsg memory wdmsg = PbPool.decWithdrawMsg(_wdmsg);
+        // len = 8 + 8 + 20 + 20 + 32 = 88
         bytes32 wdId = keccak256(
             abi.encodePacked(wdmsg.chainid, wdmsg.seqnum, wdmsg.receiver, wdmsg.token, wdmsg.amount)
         );

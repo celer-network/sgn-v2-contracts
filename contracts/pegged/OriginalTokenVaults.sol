@@ -27,8 +27,8 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
         address depositor,
         address token,
         uint256 amount,
-        uint64 toChainId,
-        address toAccount
+        uint64 mintChainId,
+        address mintAccount
     );
     event Withdrawn(
         bytes32 withdrawId,
@@ -48,25 +48,25 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
      * @notice Lock original tokens to trigger mint at a remote chain's PeggedTokenBridge
      * @param _token local token address
      * @param _amount locked token amount
-     * @param _toChainId destination chainId to mint tokens
-     * @param _toAccount destination account to receive minted tokens
+     * @param _mintChainId destination chainId to mint tokens
+     * @param _mintAccount destination account to receive minted tokens
      * @param _nonce user input to guarantee unique depositId
      */
     function deposit(
         address _token,
         uint256 _amount,
-        uint64 _toChainId,
-        address _toAccount,
+        uint64 _mintChainId,
+        address _mintAccount,
         uint64 _nonce
     ) external nonReentrant whenNotPaused {
         bytes32 depId = keccak256(
             // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 = 128
-            abi.encodePacked(msg.sender, _token, _amount, _toChainId, _toAccount, _nonce, uint64(block.chainid))
+            abi.encodePacked(msg.sender, _token, _amount, _mintChainId, _mintAccount, _nonce, uint64(block.chainid))
         );
         require(records[depId] == false, "record exists");
         records[depId] = true;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        emit Deposited(depId, msg.sender, _token, _amount, _toChainId, _toAccount);
+        emit Deposited(depId, msg.sender, _token, _amount, _mintChainId, _mintAccount);
     }
 
     /**

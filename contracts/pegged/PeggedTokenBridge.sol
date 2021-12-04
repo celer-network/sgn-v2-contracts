@@ -21,13 +21,13 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     event Mint(
         bytes32 mintId,
         address token,
-        address toAccount,
+        address account,
         uint256 amount,
         uint64 refChainId,
         bytes32 refId,
         address depositor
     );
-    event Burn(bytes32 burnId, address token, address fromAccount, uint256 amount, address toAccount);
+    event Burn(bytes32 burnId, address token, address account, uint256 amount, address withdrawAccount);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -80,23 +80,23 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
      * @notice Burn tokens to trigger withdrawal at a remote chain's OriginalTokenVaults
      * @param _token local token address
      * @param _amount locked token amount
-     * @param _toAccount account who receives original tokens on the remote chain
+     * @param _withdrawAccount account who withdraw original tokens on the remote chain
      * @param _nonce user input to guarantee unique depositId
      */
     function burn(
         address _token,
         uint256 _amount,
-        address _toAccount,
+        address _withdrawAccount,
         uint64 _nonce
     ) external whenNotPaused {
         bytes32 burnId = keccak256(
             // len = 20 + 20 + 32 + 20 + 8 + 8 = 108
-            abi.encodePacked(msg.sender, _token, _amount, _toAccount, _nonce, uint64(block.chainid))
+            abi.encodePacked(msg.sender, _token, _amount, _withdrawAccount, _nonce, uint64(block.chainid))
         );
         require(records[burnId] == false, "record exists");
         records[burnId] = true;
         IPeggedToken(_token).burn(msg.sender, _amount);
-        emit Burn(burnId, _token, msg.sender, _amount, _toAccount);
+        emit Burn(burnId, _token, msg.sender, _amount, _withdrawAccount);
     }
 
     function executeDelayedTransfer(bytes32 id) external whenNotPaused {

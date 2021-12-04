@@ -22,14 +22,22 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
 
     mapping(bytes32 => bool) public records;
 
-    event Deposited(bytes32 depositId, address account, address token, uint256 amount, uint64 mintChainId);
+    event Deposited(
+        bytes32 depositId,
+        address depositor,
+        address token,
+        uint256 amount,
+        uint64 toChainId,
+        address toAccount
+    );
     event Withdrawn(
         bytes32 withdrawId,
         address receiver,
         address token,
         uint256 amount,
         uint64 refChainId,
-        bytes32 refId
+        bytes32 refId,
+        address burnAccount
     );
 
     constructor(ISigsVerifier _sigsVerifier) {
@@ -40,22 +48,25 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
      * @notice Lock original tokens to trigger mint at a remote chain's PeggedTokenBridge
      * @param _token local token address
      * @param _amount locked token amount
-     * @param _mintChainId destination chainId to mint tokens
+     * @param _toChainId destination chainId to mint tokens
+     * @param _toAccount destination account to receive minted tokens
      * @param _nonce user input to guarantee unique depositId
      */
     function deposit(
         address _token,
         uint256 _amount,
-        uint64 _mintChainId,
+        uint64 _toChainId,
+        address _toAccount,
         uint64 _nonce
     ) external nonReentrant whenNotPaused {
         bytes32 depId = keccak256(
-            abi.encodePacked(msg.sender, _token, _amount, _mintChainId, _nonce, uint64(block.chainid))
+            // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 = 128
+            abi.encodePacked(msg.sender, _token, _amount, _toChainId, _toAccount, _nonce, uint64(block.chainid))
         );
         require(records[depId] == false, "record exists");
         records[depId] = true;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        emit Deposited(depId, msg.sender, _token, _amount, _mintChainId);
+        emit Deposited(depId, msg.sender, _token, _amount, _toChainId, _toAccount);
     }
 
     /**
@@ -71,7 +82,15 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         bytes32 wdId = keccak256(
-            abi.encodePacked(request.receiver, request.token, request.amount, request.refChainId, request.refId)
+            // len = 20 + 20 + 32 + 20 + 8 + 32 = 132
+            abi.encodePacked(
+                request.receiver,
+                request.token,
+                request.amount,
+                request.burnAccount,
+                request.refChainId,
+                request.refId
+            )
         );
         require(records[wdId] == false, "record exists");
         records[wdId] = true;
@@ -82,7 +101,15 @@ contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedT
         } else {
             IERC20(request.token).safeTransfer(request.receiver, request.amount);
         }
-        emit Withdrawn(wdId, request.receiver, request.token, request.amount, request.refChainId, request.refId);
+        emit Withdrawn(
+            wdId,
+            request.receiver,
+            request.token,
+            request.amount,
+            request.refChainId,
+            request.refId,
+            request.burnAccount
+        );
     }
 
     function executeDelayedTransfer(bytes32 id) external whenNotPaused {

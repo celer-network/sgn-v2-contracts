@@ -55,6 +55,9 @@ const avalanchePrivateKey = process.env.AVALANCHE_PRIVATE_KEY || DEFAULT_PRIVATE
 const optimismEndpoint = process.env.OPTIMISM_ENDPOINT || DEFAULT_ENDPOINT;
 const optimismPrivateKey = process.env.OPTIMISM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const harmonyEndpoint = process.env.HARMONY_ENDPOINT || DEFAULT_ENDPOINT;
+const harmonyPrivateKey = process.env.HARMONY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -115,6 +118,10 @@ const config: HardhatUserConfig = {
     optimism: {
       url: optimismEndpoint,
       accounts: [`0x${optimismPrivateKey}`]
+    },
+    harmony: {
+      url: harmonyEndpoint,
+      accounts: [`0x${harmonyPrivateKey}`]
     }
   },
   namedAccounts: {

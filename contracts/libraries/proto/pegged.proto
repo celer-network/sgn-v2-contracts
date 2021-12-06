@@ -15,10 +15,12 @@ message Mint {
   bytes token = 1 [(soltype) = "address"];
   bytes account = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
+  // account who made deposit at the original token chain
+  bytes depositor = 4 [(soltype) = "address"];
   // reference chain Id. common: deposit chain
-  uint64 ref_chain_id = 4;
+  uint64 ref_chain_id = 5;
   // unique reference Id. common: depositId
-  bytes ref_id = 5 [(soltype) = "bytes32"];
+  bytes ref_id = 6 [(soltype) = "bytes32"];
 }
 
 // withdraw locked original tokens
@@ -27,8 +29,10 @@ message Withdraw {
   bytes token = 1 [(soltype) = "address"];
   bytes receiver = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
+  // account who burned the pegged token
+  bytes burn_account = 4 [(soltype) = "address"];
   // reference chain Id. common: burn chain ; when refund: this chain ; when claim fee: zero
-  uint64 ref_chain_id = 4;
+  uint64 ref_chain_id = 5;
   // unique reference Id. common: burnId ; when refund: depositId ; when claim fee: seqnum
-  bytes ref_id = 5 [(soltype) = "bytes32"];
+  bytes ref_id = 6 [(soltype) = "bytes32"];
 }

@@ -15,7 +15,7 @@ solFiles=(
   miscs/MintableERC20
   pegged/PeggedTokenBridge
   pegged/PeggedToken
-  pegged/OriginalTokenVaults
+  pegged/OriginalTokenVault
 )
 
 run_solt_write() {

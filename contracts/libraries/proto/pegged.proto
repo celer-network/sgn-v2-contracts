@@ -10,7 +10,7 @@ extend google.protobuf.FieldOptions {
 }
 
 // mint pegged token
-// triggered by deposit at the original token vaults
+// triggered by deposit at the original token vault
 message Mint {
   bytes token = 1 [(soltype) = "address"];
   bytes account = 2 [(soltype) = "address"];

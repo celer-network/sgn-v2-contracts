@@ -11,7 +11,7 @@ import "../safeguard/DelayedTransfer.sol";
 
 /**
  * @title The bridge contract to mint and burn pegged tokens
- * @dev Work together with OriginalTokenVaults deployed at remote chains.
+ * @dev Work together with OriginalTokenVault deployed at remote chains.
  */
 contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     ISigsVerifier public immutable sigsVerifier;
@@ -34,7 +34,7 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     }
 
     /**
-     * @notice Mint tokens triggered by deposit at a remote chain's OriginalTokenVaults
+     * @notice Mint tokens triggered by deposit at a remote chain's OriginalTokenVault
      */
     function mint(
         bytes calldata _request,
@@ -77,7 +77,7 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     }
 
     /**
-     * @notice Burn tokens to trigger withdrawal at a remote chain's OriginalTokenVaults
+     * @notice Burn tokens to trigger withdrawal at a remote chain's OriginalTokenVault
      * @param _token local token address
      * @param _amount locked token amount
      * @param _withdrawAccount account who withdraw original tokens on the remote chain

@@ -12,7 +12,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deploy('OriginalTokenVault', {
     from: deployer,
     log: true,
-    args: [process.env.ORIGINAL_TOKEN_VAULTS_SIGS_VERIFIER]
+    args: [process.env.ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER]
   });
 };
 

@@ -12,7 +12,7 @@ import "../safeguard/VolumeControl.sol";
 import "../safeguard/DelayedTransfer.sol";
 
 /**
- * @title the vaults to deposit and withdraw original tokens
+ * @title the vault to deposit and withdraw original tokens
  * @dev Work togher with PeggedTokenBridge contracts deployed at remote chains
  */
 contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTransfer {

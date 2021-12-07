@@ -55,6 +55,9 @@ const avalanchePrivateKey = process.env.AVALANCHE_PRIVATE_KEY || DEFAULT_PRIVATE
 const optimismEndpoint = process.env.OPTIMISM_ENDPOINT || DEFAULT_ENDPOINT;
 const optimismPrivateKey = process.env.OPTIMISM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const bobaEndpoint = process.env.BOBA_ENDPOINT || DEFAULT_ENDPOINT;
+const bobaPrivateKey = process.env.BOBA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const harmonyEndpoint = process.env.HARMONY_ENDPOINT || DEFAULT_ENDPOINT;
 const harmonyPrivateKey = process.env.HARMONY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -118,6 +121,10 @@ const config: HardhatUserConfig = {
     optimism: {
       url: optimismEndpoint,
       accounts: [`0x${optimismPrivateKey}`]
+    },
+    boba: {
+      url: bobaEndpoint,
+      accounts: [`0x${bobaPrivateKey}`]
     },
     harmony: {
       url: harmonyEndpoint,

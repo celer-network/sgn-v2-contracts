@@ -15,7 +15,7 @@ import "../safeguard/DelayedTransfer.sol";
  * @title the vaults to deposit and withdraw original tokens
  * @dev Work togher with PeggedTokenBridge contracts deployed at remote chains
  */
-contract OriginalTokenVaults is ReentrancyGuard, Pauser, VolumeControl, DelayedTransfer {
+contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTransfer {
     using SafeERC20 for IERC20;
 
     ISigsVerifier public immutable sigsVerifier;

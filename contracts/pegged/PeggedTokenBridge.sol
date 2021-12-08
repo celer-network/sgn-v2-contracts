@@ -18,6 +18,9 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
 
     mapping(bytes32 => bool) public records;
 
+    mapping(address => uint256) public minBurn;
+    mapping(address => uint256) public maxBurn;
+
     event Mint(
         bytes32 mintId,
         address token,
@@ -28,6 +31,8 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
         address depositor
     );
     event Burn(bytes32 burnId, address token, address account, uint256 amount, address withdrawAccount);
+    event MinBurnUpdated(address token, uint256 amount);
+    event MaxBurnUpdated(address token, uint256 amount);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -89,6 +94,8 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
         address _withdrawAccount,
         uint64 _nonce
     ) external whenNotPaused {
+        require(_amount > minBurn[_token], "amount too small");
+        require(maxBurn[_token] == 0 || _amount <= maxBurn[_token], "amount too large");
         bytes32 burnId = keccak256(
             // len = 20 + 20 + 32 + 20 + 8 + 8 = 108
             abi.encodePacked(msg.sender, _token, _amount, _withdrawAccount, _nonce, uint64(block.chainid))
@@ -102,5 +109,21 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     function executeDelayedTransfer(bytes32 id) external whenNotPaused {
         delayedTransfer memory transfer = _executeDelayedTransfer(id);
         IPeggedToken(transfer.token).mint(transfer.receiver, transfer.amount);
+    }
+
+    function setMinBurn(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
+        require(_tokens.length == _amounts.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            minBurn[_tokens[i]] = _amounts[i];
+            emit MinBurnUpdated(_tokens[i], _amounts[i]);
+        }
+    }
+
+    function setMaxBurn(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
+        require(_tokens.length == _amounts.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            maxBurn[_tokens[i]] = _amounts[i];
+            emit MaxBurnUpdated(_tokens[i], _amounts[i]);
+        }
     }
 }

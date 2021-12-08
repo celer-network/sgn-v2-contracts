@@ -376,8 +376,8 @@ describe('Bridge Tests', function () {
     await bridge.connect(account).addLiquidity(token.address, parseUnits('50'));
 
     const refId = keccak256(['string'], ['random']);
-    let triggerTime = 1;
-    let amount = parseUnits('10');
+    const triggerTime = 1;
+    const amount = parseUnits('10');
     const req = await getWithdrawRequest(
       chainId,
       triggerTime,

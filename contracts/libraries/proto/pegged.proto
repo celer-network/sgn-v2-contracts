@@ -15,11 +15,16 @@ message Mint {
   bytes token = 1 [(soltype) = "address"];
   bytes account = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
-  // account who made deposit at the original token chain
+  // depositor defines the account address that made deposit at the original token chain.
+  // Not applicable to governance-triggered mints.
   bytes depositor = 4 [(soltype) = "address"];
-  // reference chain Id. common: deposit chain
+  // ref_chain_id defines the reference chain ID, taking values of:
+  // 1. The common case of deposit-mint: the chain ID on which the corresponding deposit happened;
+  // 2. Governance-triggered mint: the chain ID on which the minting will happen.
   uint64 ref_chain_id = 5;
-  // unique reference Id. common: depositId
+  // ref_id defines a unique reference ID, taking values of:
+  // 1. The common case of deposit-mint: the deposit ID;
+  // 2. Governance-triggered mint: ID as needed.
   bytes ref_id = 6 [(soltype) = "bytes32"];
 }
 
@@ -29,10 +34,18 @@ message Withdraw {
   bytes token = 1 [(soltype) = "address"];
   bytes receiver = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
-  // account who burned the pegged token
+  // burn_account defines the account that burned the pegged token.
+  // Not applicable to fee claims and governance-triggered withdrawals.
   bytes burn_account = 4 [(soltype) = "address"];
-  // reference chain Id. common: burn chain ; when refund: this chain ; when claim fee: zero
+  // ref_chain_id defines the reference chain ID, taking values of:
+  // 1. The common case of burn-withdraw: the chain ID on which the corresponding burn happened;
+  // 2. Pegbridge fee claim: zero / Not applicable;
+  // 3. Other governance-triggered withdrawals: the chain ID on which the withdrawal will happen.
   uint64 ref_chain_id = 5;
-  // unique reference Id. common: burnId ; when refund: depositId ; when claim fee: seqnum
+  // ref_id defines a unique reference ID, taking values of:
+  // 1. The common case of burn-withdraw: the burn ID;
+  // 2. Pegbridge fee claim: a per-account nonce;
+  // 3. Refund for wrong deposit: the deposit ID;
+  // 4. Governance-triggered withdrawal: ID as needed.
   bytes ref_id = 6 [(soltype) = "bytes32"];
 }

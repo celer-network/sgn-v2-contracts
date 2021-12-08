@@ -12,7 +12,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deploy('PeggedTokenBridge', {
     from: deployer,
     log: true,
-    args: [process.env.PEGGED_TOKEN_BRIDGE_SIGS_VERIFIER]
+    args: [process.env.PEGGED_TOKEN_BRIDGE_SIGS_VERIFIER, process.env.CHAIN_ID]
   });
 };
 

@@ -22,24 +22,25 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       process.env.MIN_SELF_DELEGATION,
       process.env.ADVANCE_NOTICE_PERIOD,
       process.env.VALIDATOR_BOND_INTERVAL,
-      process.env.MAX_SLASH_FACTOR
+      process.env.MAX_SLASH_FACTOR,
+      process.env.CHAIN_ID
     ]
   });
   const staking = await deployments.get('Staking');
   await deploy('SGN', {
     from: deployer,
     log: true,
-    args: [staking.address]
+    args: [staking.address, process.env.CHAIN_ID]
   });
   await deploy('StakingReward', {
     from: deployer,
     log: true,
-    args: [staking.address]
+    args: [staking.address, process.env.CHAIN_ID]
   });
   await deploy('FarmingRewards', {
     from: deployer,
     log: true,
-    args: [staking.address]
+    args: [staking.address, process.env.CHAIN_ID]
   });
   const stakingReward = await deployments.get('StakingReward');
   await deploy('Govern', {

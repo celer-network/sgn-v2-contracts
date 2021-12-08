@@ -33,6 +33,8 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
     address public rewardContract;
     uint256 public forfeiture;
 
+    uint256 public immutable chainId;
+
     /* Events */
     event ValidatorNotice(address indexed valAddr, string key, bytes data, address from);
     event ValidatorStatusUpdate(address indexed valAddr, dt.ValidatorStatus indexed status);
@@ -59,6 +61,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
      * @param _advanceNoticePeriod the wait time after the announcement and prior to the effective date of an update
      * @param _validatorBondInterval min interval between bondValidator
      * @param _maxSlashFactor maximal slashing factor (1e6 = 100%)
+     * @param _chainId The chain ID
      */
     constructor(
         address _celerTokenAddress,
@@ -70,7 +73,8 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         uint256 _minSelfDelegation,
         uint256 _advanceNoticePeriod,
         uint256 _validatorBondInterval,
-        uint256 _maxSlashFactor
+        uint256 _maxSlashFactor,
+        uint256 _chainId
     ) {
         CELER_TOKEN = IERC20(_celerTokenAddress);
 
@@ -83,6 +87,8 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         params[dt.ParamName.AdvanceNoticePeriod] = _advanceNoticePeriod;
         params[dt.ParamName.ValidatorBondInterval] = _validatorBondInterval;
         params[dt.ParamName.MaxSlashFactor] = _maxSlashFactor;
+
+        chainId = _chainId;
     }
 
     receive() external payable {}
@@ -325,7 +331,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
      * @param _sigs list of validator signatures
      */
     function slash(bytes calldata _slashRequest, bytes[] calldata _sigs) external whenNotPaused {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Slash"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "Slash"));
         verifySignatures(abi.encodePacked(domain, _slashRequest), _sigs);
 
         PbStaking.Slash memory request = PbStaking.decSlash(_slashRequest);

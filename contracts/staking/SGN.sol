@@ -16,6 +16,7 @@ contract SGN is Pauser {
     using SafeERC20 for IERC20;
 
     Staking public immutable staking;
+    uint256 public immutable chainId;
     bytes32[] public deposits;
     // account -> (token -> amount)
     mapping(address => mapping(address => uint256)) public withdrawnAmts;
@@ -30,9 +31,11 @@ contract SGN is Pauser {
      * @notice SGN constructor
      * @dev Need to deploy Staking contract first before deploying SGN contract
      * @param _staking address of Staking Contract
+     * @param _chainId The chain ID.
      */
-    constructor(Staking _staking) {
+    constructor(Staking _staking, uint256 _chainId) {
         staking = _staking;
+        chainId = _chainId;
     }
 
     /**
@@ -74,7 +77,7 @@ contract SGN is Pauser {
      * @param _sigs list of validator signatures
      */
     function withdraw(bytes calldata _withdrawalRequest, bytes[] calldata _sigs) external whenNotPaused {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Withdrawal"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "Withdrawal"));
         staking.verifySignatures(abi.encodePacked(domain, _withdrawalRequest), _sigs);
         PbSgn.Withdrawal memory withdrawal = PbSgn.decWithdrawal(_withdrawalRequest);
 

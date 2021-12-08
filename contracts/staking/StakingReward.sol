@@ -15,6 +15,7 @@ contract StakingReward is Pauser {
     using SafeERC20 for IERC20;
 
     Staking public immutable staking;
+    uint256 public immutable chainId;
 
     // recipient => CELR reward amount
     mapping(address => uint256) public claimedRewardAmounts;
@@ -22,8 +23,9 @@ contract StakingReward is Pauser {
     event StakingRewardClaimed(address indexed recipient, uint256 reward);
     event StakingRewardContributed(address indexed contributor, uint256 contribution);
 
-    constructor(Staking _staking) {
+    constructor(Staking _staking, uint256 _chainId) {
         staking = _staking;
+        chainId = _chainId;
     }
 
     /**
@@ -33,7 +35,7 @@ contract StakingReward is Pauser {
      * @param _sigs list of validator signatures
      */
     function claimReward(bytes calldata _rewardRequest, bytes[] calldata _sigs) external whenNotPaused {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "StakingReward"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "StakingReward"));
         staking.verifySignatures(abi.encodePacked(domain, _rewardRequest), _sigs);
         PbStaking.StakingReward memory reward = PbStaking.decStakingReward(_rewardRequest);
 

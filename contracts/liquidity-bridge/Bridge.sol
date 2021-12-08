@@ -44,6 +44,10 @@ contract Bridge is Pool {
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
     uint32 public minimalMaxSlippage;
 
+    constructor(uint256 _chainId) {
+        chainId = _chainId;
+    }
+
     /**
      * @notice Send a cross-chain transfer via the liquidity pool-based bridge.
      * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
@@ -105,9 +109,9 @@ contract Bridge is Pool {
         require(maxSend[_token] == 0 || _amount <= maxSend[_token], "amount too large");
         require(_maxSlippage > minimalMaxSlippage, "max slippage too small");
         bytes32 transferId = keccak256(
-            // uint64(block.chainid) for consistency as entire system uses uint64 for chain id
+            // uint64(chainId) for consistency as entire system uses uint64 for chain id
             // len = 20 + 20 + 20 + 32 + 8 + 8 + 8 = 116
-            abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
+            abi.encodePacked(msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, uint64(chainId))
         );
         require(transfers[transferId] == false, "transfer exists");
         transfers[transferId] = true;
@@ -128,7 +132,7 @@ contract Bridge is Pool {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external whenNotPaused {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Relay"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "Relay"));
         verifySigs(abi.encodePacked(domain, _relayRequest), _sigs, _signers, _powers);
         PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
         // len = 20 + 20 + 20 + 32 + 8 + 8 + 32 = 140

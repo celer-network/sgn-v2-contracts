@@ -60,6 +60,9 @@ const darwiniaPangolinTestPrivateKey = process.env.DARWINIA_PANGOLIN_TEST_PRIVAT
 const platonTestEndpoint = process.env.PLATON_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const platonTestPrivateKey = process.env.PLATON_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const harmonyTestEndpoint = process.env.HARMONY_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const harmonyTestPrivateKey = process.env.HARMONY_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -212,6 +215,10 @@ const config: HardhatUserConfig = {
     platonTest: {
       url: platonTestEndpoint,
       accounts: [`0x${platonTestPrivateKey}`]
+    },
+    harmonyTest: {
+      url: harmonyTestEndpoint,
+      accounts: [`0x${harmonyTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,

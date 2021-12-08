@@ -15,6 +15,7 @@ contract FarmingRewards is Pauser {
     using SafeERC20 for IERC20;
 
     ISigsVerifier public immutable sigsVerifier;
+    uint256 public immutable chainId;
 
     // recipient => tokenAddress => amount
     mapping(address => mapping(address => uint256)) public claimedRewardAmounts;
@@ -22,8 +23,9 @@ contract FarmingRewards is Pauser {
     event FarmingRewardClaimed(address indexed recipient, address indexed token, uint256 reward);
     event FarmingRewardContributed(address indexed contributor, address indexed token, uint256 contribution);
 
-    constructor(ISigsVerifier _sigsVerifier) {
+    constructor(ISigsVerifier _sigsVerifier, uint256 _chainId) {
         sigsVerifier = _sigsVerifier;
+        chainId = _chainId;
     }
 
     /**
@@ -40,7 +42,7 @@ contract FarmingRewards is Pauser {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external whenNotPaused {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "FarmingRewards"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "FarmingRewards"));
         sigsVerifier.verifySigs(abi.encodePacked(domain, _rewardsRequest), _sigs, _signers, _powers);
         PbFarming.FarmingRewards memory rewards = PbFarming.decFarmingRewards(_rewardsRequest);
         bool hasNewReward;

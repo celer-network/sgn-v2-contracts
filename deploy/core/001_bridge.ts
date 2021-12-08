@@ -11,7 +11,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   await deploy('Bridge', {
     from: deployer,
-    log: true
+    log: true,
+    args: [process.env.CHAIN_ID]
   });
 };
 

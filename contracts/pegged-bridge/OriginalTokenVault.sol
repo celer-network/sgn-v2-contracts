@@ -20,6 +20,7 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     using SafeERC20 for IERC20;
 
     ISigsVerifier public immutable sigsVerifier;
+    uint256 public immutable chainId;
 
     mapping(bytes32 => bool) public records;
 
@@ -56,8 +57,9 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     event MinDepositUpdated(address token, uint256 amount);
     event MaxDepositUpdated(address token, uint256 amount);
 
-    constructor(ISigsVerifier _sigsVerifier) {
+    constructor(ISigsVerifier _sigsVerifier, uint256 _chainId) {
         sigsVerifier = _sigsVerifier;
+        chainId = _chainId;
     }
 
     /**
@@ -134,7 +136,7 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external whenNotPaused {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Withdraw"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "Withdraw"));
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         bytes32 wdId = keccak256(

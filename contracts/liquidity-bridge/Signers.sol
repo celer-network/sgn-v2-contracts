@@ -20,6 +20,8 @@ contract Signers is Ownable, ISigsVerifier {
     uint256 public noticePeriod; // advance notice period as seconds for reset
     uint256 constant MAX_INT = 2**256 - 1;
 
+    uint256 public chainId;
+
     event SignersUpdated(address[] _signers, uint256[] _powers);
 
     event ResetNotification(uint256 resetTime);
@@ -63,7 +65,7 @@ contract Signers is Ownable, ISigsVerifier {
         require(_triggerTime > triggerTime, "Trigger time is not increasing");
         // make sure triggerTime is not too large, as it cannot be decreased once set
         require(_triggerTime < block.timestamp + 3600, "Trigger time is too large");
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "UpdateSigners"));
+        bytes32 domain = keccak256(abi.encodePacked(chainId, address(this), "UpdateSigners"));
         verifySigs(abi.encodePacked(domain, _triggerTime, _newSigners, _newPowers), _sigs, _curSigners, _curPowers);
         _updateSigners(_newSigners, _newPowers);
         triggerTime = _triggerTime;

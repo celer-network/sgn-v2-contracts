@@ -22,6 +22,9 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
 
     mapping(bytes32 => bool) public records;
 
+    mapping(address => uint256) public minDeposit;
+    mapping(address => uint256) public maxDeposit;
+
     event Deposited(
         bytes32 depositId,
         address depositor,
@@ -39,6 +42,8 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         bytes32 refId,
         address burnAccount
     );
+    event MinDepositUpdated(address token, uint256 amount);
+    event MaxDepositUpdated(address token, uint256 amount);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -59,6 +64,8 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         address _mintAccount,
         uint64 _nonce
     ) external nonReentrant whenNotPaused {
+        require(_amount > minDeposit[_token], "amount too small");
+        require(maxDeposit[_token] == 0 || _amount <= maxDeposit[_token], "amount too large");
         bytes32 depId = keccak256(
             // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 = 128
             abi.encodePacked(msg.sender, _token, _amount, _mintChainId, _mintAccount, _nonce, uint64(block.chainid))
@@ -115,5 +122,21 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     function executeDelayedTransfer(bytes32 id) external whenNotPaused {
         delayedTransfer memory transfer = _executeDelayedTransfer(id);
         IERC20(transfer.token).safeTransfer(transfer.receiver, transfer.amount);
+    }
+
+    function setMinDeposit(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
+        require(_tokens.length == _amounts.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            minDeposit[_tokens[i]] = _amounts[i];
+            emit MinDepositUpdated(_tokens[i], _amounts[i]);
+        }
+    }
+
+    function setMaxDeposit(address[] calldata _tokens, uint256[] calldata _amounts) external onlyGovernor {
+        require(_tokens.length == _amounts.length, "length mismatch");
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            maxDeposit[_tokens[i]] = _amounts[i];
+            emit MaxDepositUpdated(_tokens[i], _amounts[i]);
+        }
     }
 }

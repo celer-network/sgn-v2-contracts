@@ -61,6 +61,9 @@ const bobaPrivateKey = process.env.BOBA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const harmonyEndpoint = process.env.HARMONY_ENDPOINT || DEFAULT_ENDPOINT;
 const harmonyPrivateKey = process.env.HARMONY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const moonriverEndpoint = process.env.MOONRIVER_ENDPOINT || DEFAULT_ENDPOINT;
+const moonriverPrivateKey = process.env.MOONRIVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -129,6 +132,10 @@ const config: HardhatUserConfig = {
     harmony: {
       url: harmonyEndpoint,
       accounts: [`0x${harmonyPrivateKey}`]
+    },
+    moonriver: {
+      url: moonriverEndpoint,
+      accounts: [`0x${moonriverPrivateKey}`]
     }
   },
   namedAccounts: {

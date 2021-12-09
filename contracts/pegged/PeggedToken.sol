@@ -3,14 +3,15 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IPeggedToken.sol";
 
 /**
  * @title Example Pegged ERC20 token
  */
-contract PeggedToken is IPeggedToken, ERC20 {
+contract PeggedToken is IPeggedToken, ERC20, Ownable {
     // controller should be PeggedTokenBridge
-    address public immutable controller;
+    address public controller;
 
     uint8 private immutable _decimals;
 
@@ -39,5 +40,9 @@ contract PeggedToken is IPeggedToken, ERC20 {
 
     function decimals() public view override returns (uint8) {
         return _decimals;
+    }
+
+    function updateController(address _controller) external onlyOwner {
+        controller = _controller;
     }
 }

@@ -14,6 +14,8 @@ contract PeggedToken is IPeggedToken, ERC20, Ownable {
 
     uint8 private immutable _decimals;
 
+    event BridgeUpdated(address bridge);
+
     modifier onlyBridge() {
         require(msg.sender == bridge, "caller is not bridge");
         _;
@@ -43,5 +45,6 @@ contract PeggedToken is IPeggedToken, ERC20, Ownable {
 
     function updateBridge(address _bridge) external onlyOwner {
         bridge = _bridge;
+        emit BridgeUpdated(bridge);
     }
 }

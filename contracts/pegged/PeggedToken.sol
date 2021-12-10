@@ -10,13 +10,12 @@ import "../interfaces/IPeggedToken.sol";
  * @title Example Pegged ERC20 token
  */
 contract PeggedToken is IPeggedToken, ERC20, Ownable {
-    // controller should be PeggedTokenBridge
-    address public controller;
+    address public bridge;
 
     uint8 private immutable _decimals;
 
-    modifier onlyController() {
-        require(msg.sender == controller, "caller is not controller");
+    modifier onlyBridge() {
+        require(msg.sender == bridge, "caller is not bridge");
         _;
     }
 
@@ -24,17 +23,17 @@ contract PeggedToken is IPeggedToken, ERC20, Ownable {
         string memory name_,
         string memory symbol_,
         uint8 decimals_,
-        address _controller
+        address _bridge
     ) ERC20(name_, symbol_) {
         _decimals = decimals_;
-        controller = _controller;
+        bridge = _bridge;
     }
 
-    function mint(address _to, uint256 _amount) external onlyController {
+    function mint(address _to, uint256 _amount) external onlyBridge {
         _mint(_to, _amount);
     }
 
-    function burn(address _from, uint256 _amount) external onlyController {
+    function burn(address _from, uint256 _amount) external onlyBridge {
         _burn(_from, _amount);
     }
 
@@ -42,7 +41,7 @@ contract PeggedToken is IPeggedToken, ERC20, Ownable {
         return _decimals;
     }
 
-    function updateController(address _controller) external onlyOwner {
-        controller = _controller;
+    function updateBridge(address _bridge) external onlyOwner {
+        bridge = _bridge;
     }
 }

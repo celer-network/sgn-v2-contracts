@@ -4,12 +4,12 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IPeggedToken.sol";
+import "../../interfaces/IPeggedToken.sol";
 
 /**
  * @title Example Pegged ERC20 token
  */
-contract PeggedToken is IPeggedToken, ERC20, Ownable {
+contract SingleBridgePeggedToken is IPeggedToken, ERC20, Ownable {
     address public bridge;
 
     uint8 private immutable _decimals;

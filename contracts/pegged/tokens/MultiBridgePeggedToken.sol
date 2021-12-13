@@ -46,9 +46,7 @@ contract MultiBridgePeggedToken is IPeggedToken, ERC20, Ownable {
     }
 
     function updateBridge(address _bridge, uint256 _cap) external onlyOwner {
-        Supply storage b = bridges[_bridge];
-        require(_cap >= b.total, "new cap must larger than current total");
-        b.cap = _cap;
+        bridges[_bridge].cap = _cap;
         emit BridgeUpdated(_bridge, _cap);
     }
 }

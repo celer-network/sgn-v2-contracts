@@ -41,7 +41,7 @@ Deploy Bridge contract:
 hardhat deploy --network <network>  --tags Bridge
 ```
 
-3. Verifying contracts on explorers
+### Verify contracts on explorers
 
 #### On Etherscan variants via hardhat etherscan-verify:
 
@@ -65,7 +65,7 @@ run_solt_write
 Then try:
 
 ```sh
-solt verify --license 3 --network <network> solc-input-<contract>.json <deployed address> <contract name>
+solt verify --license 5 --network <network> solc-input-<contract>.json <deployed address> <contract name>
 ```
 
 If the second step fails, go to Etherscan and manually verify using the standard JSON input files.

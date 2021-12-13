@@ -12,7 +12,12 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deploy('PeggedToken', {
     from: deployer,
     log: true,
-    args: [process.env.PEGGED_TOKEN_NAME, process.env.PEGGED_TOKEN_SYMBOL, process.env.PEGGED_TOKEN_CONTROLLER]
+    args: [
+      process.env.PEGGED_TOKEN_NAME,
+      process.env.PEGGED_TOKEN_SYMBOL,
+      process.env.PEGGED_TOKEN_DECIMALS,
+      process.env.PEGGED_TOKEN_BRIDGE
+    ]
   });
 };
 

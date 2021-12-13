@@ -34,6 +34,9 @@ const fantomTestPrivateKey = process.env.FANTOM_TEST_PRIVATE_KEY || DEFAULT_PRIV
 const avalancheTestEndpoint = process.env.AVALANCHE_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const avalancheTestPrivateKey = process.env.AVALANCHE_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const celoAlfajoresTestEndpoint = process.env.CELO_ALFAJORES_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const celoAlfajoresTestPrivateKey = process.env.CELO_ALFAJORES_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -96,6 +99,10 @@ const config: HardhatUserConfig = {
     avalancheTest: {
       url: avalancheTestEndpoint,
       accounts: [`0x${avalancheTestPrivateKey}`]
+    },
+    celoAlfajoresTest: {
+      url: celoAlfajoresTestEndpoint,
+      accounts: [`0x${celoAlfajoresTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,

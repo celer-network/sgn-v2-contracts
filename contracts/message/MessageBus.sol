@@ -19,7 +19,7 @@ contract MessageBus {
         bytes32 _srcTransferId,
         bytes calldata _message
     ) external {
-        // SGN needs to verify 
+        // SGN needs to verify
         // 1. msg.sender matches sender of the src transfer
         // 2. dstChainId matches dstChainId of the src transfer
         emit TransferMessage(msg.sender, _receiver, _dstChainId, _bridge, _srcTransferId, _message);

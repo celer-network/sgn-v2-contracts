@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+
+package samples;
+
+extend google.protobuf.FieldOptions {
+  string soltype = 1004;
+}
+
+message AcctAmts {
+  repeated AcctAmtPair pairs = 1;
+}
+
+message AcctAmtPair {
+  bytes account = 1 [(soltype) = "address"];
+  bytes amount = 2 [(soltype) = "uint256"];
+}

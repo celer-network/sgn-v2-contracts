@@ -9,18 +9,18 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('PeggedToken', {
+  await deploy('SingleBridgeToken', {
     from: deployer,
     log: true,
     args: [
-      process.env.PEGGED_TOKEN_NAME,
-      process.env.PEGGED_TOKEN_SYMBOL,
-      process.env.PEGGED_TOKEN_DECIMALS,
-      process.env.PEGGED_TOKEN_BRIDGE
+      process.env.SINGLE_BRIDGE_TOKEN_NAME,
+      process.env.SINGLE_BRIDGE_TOKEN_SYMBOL,
+      process.env.SINGLE_BRIDGE_TOKEN_DECIMALS,
+      process.env.SINGLE_BRIDGE_TOKEN_BRIDGE
     ]
   });
 };
 
-deployFunc.tags = ['PeggedToken'];
+deployFunc.tags = ['SingleBridgeToken'];
 deployFunc.dependencies = [];
 export default deployFunc;

@@ -6,9 +6,9 @@ import { keccak256, pack } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Bridge, TestERC20 } from '../typechain';
+import { Bridge, TestERC20, PeggedTokenBridge, SingleBridgeTokenPermit } from '../typechain';
 import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
-import { calculateSignatures, getRelayRequest, getWithdrawRequest, hex2Bytes } from './lib/proto';
+import { calculateSignatures, getMintRequest, getRelayRequest, getWithdrawRequest, hex2Bytes } from './lib/proto';
 
 function getAddrs(signers: Wallet[]) {
   const addrs: string[] = [];
@@ -41,12 +41,14 @@ async function getBlockTime() {
 
 describe('Bridge Tests', function () {
   async function fixture([admin]: Wallet[]) {
-    const { bridge, token } = await deployBridgeContracts(admin);
-    return { admin, bridge, token };
+    const { bridge, token, pegBridge, pegToken } = await deployBridgeContracts(admin);
+    return { admin, bridge, token, pegBridge, pegToken };
   }
 
   let bridge: Bridge;
   let token: TestERC20;
+  let pegBridge: PeggedTokenBridge;
+  let pegToken: SingleBridgeTokenPermit;
   let accounts: Wallet[];
   let chainId: number;
 
@@ -54,6 +56,8 @@ describe('Bridge Tests', function () {
     const res = await loadFixture(fixture);
     bridge = res.bridge;
     token = res.token;
+    pegBridge = res.pegBridge;
+    pegToken = res.pegToken;
     accounts = await getAccounts(res.admin, [token], 4);
     chainId = (await ethers.provider.getNetwork()).chainId;
   });
@@ -376,11 +380,11 @@ describe('Bridge Tests', function () {
     await bridge.connect(account).addLiquidity(token.address, parseUnits('50'));
 
     const refId = keccak256(['string'], ['random']);
-    const triggerTime = 1;
+    const seqnum = 1;
     const amount = parseUnits('10');
     const req = await getWithdrawRequest(
       chainId,
-      triggerTime,
+      seqnum,
       account.address,
       token.address,
       amount,
@@ -390,10 +394,43 @@ describe('Bridge Tests', function () {
     );
     const wdId = keccak256(
       ['uint64', 'uint64', 'address', 'address', 'uint256'],
-      [chainId, triggerTime, account.address, token.address, amount]
+      [chainId, seqnum, account.address, token.address, amount]
     );
     await expect(bridge.withdraw(req.withdrawBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'WithdrawDone')
-      .withArgs(wdId, triggerTime, account.address, token.address, amount, refId);
+      .withArgs(wdId, seqnum, account.address, token.address, amount, refId);
+  });
+
+  it('should mint successfully', async function () {
+    const signers = [accounts[0], accounts[1], accounts[2]];
+    const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
+    await expect(bridge.resetSigners(getAddrs(signers), powers))
+      .to.emit(bridge, 'SignersUpdated')
+      .withArgs(getAddrs(signers), powers);
+
+    const account = accounts[0];
+    const amount = parseUnits('10');
+    const refChainId = 101;
+    const refId = keccak256(['string'], ['random']);
+    const req = await getMintRequest(
+      pegToken.address,
+      account.address,
+      amount,
+      account.address,
+      refChainId,
+      refId,
+      signers,
+      chainId,
+      pegBridge.address
+    );
+
+    const mintId = keccak256(
+      ['address', 'address', 'uint256', 'address', 'uint64', 'bytes32'],
+      [account.address, pegToken.address, amount, account.address, refChainId, refId]
+    );
+
+    await expect(pegBridge.mint(req.mintBytes, req.sigs, getAddrs(signers), powers))
+      .to.emit(pegBridge, 'Mint')
+      .withArgs(mintId, pegToken.address, account.address, amount, refChainId, refId, account.address);
   });
 });

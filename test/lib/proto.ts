@@ -14,6 +14,7 @@ interface Proto {
   AcctAmtPair: protobuf.Type;
   Relay: protobuf.Type;
   WithdrawMsg: protobuf.Type;
+  Mint: protobuf.Type;
 }
 
 async function getProtos(): Promise<Proto> {
@@ -21,6 +22,7 @@ async function getProtos(): Promise<Proto> {
   const farming = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/farming.proto`);
   const bridge = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/bridge.proto`);
   const pool = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/pool.proto`);
+  const pegged = await protobuf.load(`${__dirname}/../../contracts/libraries/proto/pegged.proto`);
 
   const Slash = staking.lookupType('staking.Slash');
   const StakingReward = staking.lookupType('staking.StakingReward');
@@ -29,6 +31,7 @@ async function getProtos(): Promise<Proto> {
 
   const Relay = bridge.lookupType('bridge.Relay');
   const WithdrawMsg = pool.lookupType('pool.WithdrawMsg');
+  const Mint = pegged.lookupType('pegged.Mint');
 
   return {
     Slash,
@@ -36,7 +39,8 @@ async function getProtos(): Promise<Proto> {
     FarmingRewards,
     AcctAmtPair,
     Relay,
-    WithdrawMsg
+    WithdrawMsg,
+    Mint
   };
 }
 
@@ -238,4 +242,41 @@ export async function getWithdrawRequest(
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
   const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
   return { withdrawBytes, sigs };
+}
+
+export async function getMintRequest(
+  token: string,
+  account: string,
+  amount: BigNumber,
+  depositor: string,
+  refChainId: number,
+  refId: string,
+  signers: Wallet[],
+  chainId: number,
+  contractAddress: string
+): Promise<{ mintBytes: Uint8Array; sigs: number[][] }> {
+  const { Mint } = await getProtos();
+  const mint = {
+    token: hex2Bytes(token),
+    account: hex2Bytes(account),
+    amount: uint2Bytes(amount),
+    depositor: hex2Bytes(depositor),
+    refChainId: refChainId,
+    refId: hex2Bytes(refId)
+  };
+  const mintProto = Mint.create(mint);
+  const mintBytes = Mint.encode(mintProto).finish();
+
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Mint']);
+  const signedData = pack(['bytes32', 'bytes'], [domain, mintBytes]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+
+  const signerAddrs = [];
+  for (let i = 0; i < signers.length; i++) {
+    signerAddrs.push(signers[i].address);
+  }
+
+  signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  return { mintBytes, sigs };
 }

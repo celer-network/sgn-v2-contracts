@@ -11,6 +11,10 @@ import {
   FarmingRewards__factory,
   Govern,
   Govern__factory,
+  PeggedTokenBridge,
+  PeggedTokenBridge__factory,
+  SingleBridgeTokenPermit,
+  SingleBridgeTokenPermit__factory,
   SGN,
   SGN__factory,
   Staking,
@@ -89,6 +93,8 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
 interface BridgeInfo {
   bridge: Bridge;
   token: TestERC20;
+  pegBridge: PeggedTokenBridge;
+  pegToken: SingleBridgeTokenPermit;
 }
 
 export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {
@@ -100,7 +106,17 @@ export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> 
   const bridge = await bridgeFactory.connect(admin).deploy();
   await bridge.deployed();
 
-  return { bridge, token };
+  const pegBridgeFactory = (await ethers.getContractFactory('PeggedTokenBridge')) as PeggedTokenBridge__factory;
+  const pegBridge = await pegBridgeFactory.connect(admin).deploy(bridge.address);
+  await pegBridge.deployed();
+
+  const pegTokenFactory = (await ethers.getContractFactory(
+    'SingleBridgeTokenPermit'
+  )) as SingleBridgeTokenPermit__factory;
+  const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.address);
+  await pegToken.deployed();
+
+  return { bridge, token, pegBridge, pegToken };
 }
 
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {

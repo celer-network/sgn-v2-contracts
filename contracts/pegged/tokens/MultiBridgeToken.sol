@@ -4,12 +4,11 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../../interfaces/IPeggedToken.sol";
 
 /**
  * @title Example Multi-Bridge Pegged ERC20 token
  */
-contract MultiBridgePeggedToken is IPeggedToken, ERC20, Ownable {
+contract MultiBridgeToken is ERC20, Ownable {
     struct Supply {
         uint256 cap;
         uint256 total;
@@ -28,25 +27,32 @@ contract MultiBridgePeggedToken is IPeggedToken, ERC20, Ownable {
         _decimals = decimals_;
     }
 
-    function mint(address _to, uint256 _amount) external {
+    function mint(address _to, uint256 _amount) external returns (bool) {
         Supply storage b = bridges[msg.sender];
         b.total += _amount;
         require(b.total <= b.cap, "exceeds bridge supply cap");
         _mint(_to, _amount);
+        return true;
     }
 
-    function burn(address _from, uint256 _amount) external {
+    function burn(address _from, uint256 _amount) external returns (bool) {
         Supply storage b = bridges[msg.sender];
         b.total -= _amount;
         _burn(_from, _amount);
+        return true;
     }
 
-    function decimals() public view override returns (uint8) {
+    function decimals() public view virtual override returns (uint8) {
         return _decimals;
     }
 
     function updateBridge(address _bridge, uint256 _cap) external onlyOwner {
         bridges[_bridge].cap = _cap;
         emit BridgeUpdated(_bridge, _cap);
+    }
+
+    // to make compatible with BEP20
+    function getOwner() external view returns (address) {
+        return owner();
     }
 }

@@ -4,15 +4,16 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./MessageBus.sol";
 import "../interfaces/IBridge.sol";
+import "../libraries/PbBridge.sol";
+import "./MessageBus.sol";
 
 abstract contract AppTemplate {
     using SafeERC20 for IERC20;
 
     address public bridge;
     address public msgBus;
-    uint64 nonce;
+    uint64 transferNonce;
 
     mapping(bytes32 => bool) public transfers;
 
@@ -32,48 +33,82 @@ abstract contract AppTemplate {
         uint32 _maxSlippage,
         bytes memory _message
     ) internal {
-        nonce += 1;
+        transferNonce += 1;
         IERC20(_token).safeIncreaseAllowance(address(bridge), _amount);
-        IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage);
-        bytes32 srcTransferId = computeSrcTransferId(_receiver, _token, _amount, _dstChainId, nonce);
-        MessageBus(msgBus).sendTransferMessage(_receiver, _dstChainId, bridge, srcTransferId, _message);
+        IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, transferNonce, _maxSlippage);
+        bytes32 srcTransferId = computeSrcTransferId(_receiver, _token, _amount, _dstChainId, transferNonce);
+        MessageBus(msgBus).sendMessageWithTransfer(_receiver, _dstChainId, bridge, srcTransferId, _message);
+    }
+
+    function sendMessage(
+        address _receiver,
+        uint64 _dstChainId,
+        bytes memory _message
+    ) internal {
+        MessageBus(msgBus).sendMessage(_receiver, _dstChainId, _message);
     }
 
     // ============== functions on destination chain ==============
 
     // called by external executor on destination chain
-    function executeTransferMessage(
-        bytes32 _dstTransferId,
+    function executeMessageWithTransfer(
         bytes calldata _message,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
-        address _sender,
-        address _receiver,
-        address _token,
-        uint256 _amount,
-        uint64 _srcChainId,
-        bytes32 _srcTransferId
+        bytes calldata _relayTransfer
     ) external {
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "TransferMessage"));
-        IBridge(bridge).verifySigs(abi.encodePacked(domain, _dstTransferId, _message), _sigs, _signers, _powers);
-        bytes32 dstTransferId = computeDstTransferId(_sender, _receiver, _token, _amount, _srcChainId, _srcTransferId);
-        require(dstTransferId == _dstTransferId, "dst transfer id not match");
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
+        PbBridge.Relay memory relay = PbBridge.decRelay(_relayTransfer);
+        bytes32 dstTransferId = computeDstTransferId(
+            relay.sender,
+            relay.receiver,
+            relay.token,
+            relay.amount,
+            relay.srcChainId,
+            relay.srcTransferId
+        );
+        bytes memory data = abi.encodePacked(domain, dstTransferId, _message);
+        IBridge(bridge).verifySigs(data, _sigs, _signers, _powers);
         require(IBridge(bridge).transfers(dstTransferId) == true, "relay not exist");
-        require(_receiver == address(this), "transfer receiver is not this contract");
+        require(relay.receiver == address(this), "transfer receiver is not this contract");
         require(transfers[dstTransferId] == false, "transfer already processed");
         transfers[dstTransferId] = true;
-        handleRelayMessage(_sender, _token, _amount, _srcChainId, _message);
+        handleMessageWithTransfer(relay, _message);
+    }
+
+    // avoid stack too deep
+    function handleMessageWithTransfer(PbBridge.Relay memory _relay, bytes calldata _message) private {
+        handleMessageWithTransfer(_relay.sender, _relay.token, _relay.amount, _relay.srcChainId, _message);
     }
 
     // internal application logic to handle transfer message
-    function handleRelayMessage(
+    function handleMessageWithTransfer(
         address _sender,
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
     ) internal virtual;
+
+    function executeMessage(
+        address _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
+    ) external {
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
+        IBridge(bridge).verifySigs(abi.encodePacked(domain, _sender, _srcChainId, _message), _sigs, _signers, _powers);
+        handleMessage(_sender, _srcChainId, _message);
+    }
+
+    function handleMessage(
+        address _sender,
+        uint64 _srcChainId,
+        bytes memory _message
+    ) internal virtual {}
 
     // ============== private utils ==============
 

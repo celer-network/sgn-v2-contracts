@@ -2,11 +2,13 @@
 
 pragma solidity 0.8.9;
 
-import "./proto/PbSamples.sol";
+import "../../libraries/PbSamples.sol";
 import "../AppTemplate.sol";
 
-abstract contract BatchTransfer is AppTemplate {
+contract BatchTransfer is AppTemplate {
     using SafeERC20 for IERC20;
+
+    constructor(address _bridge, address _msgBus) AppTemplate(_bridge, _msgBus) {}
 
     // ============== functions on source chain ==============
 
@@ -31,7 +33,7 @@ abstract contract BatchTransfer is AppTemplate {
 
     // ============== functions on destination chain ==============
 
-    function handleRelayMessage(
+    function handleMessageWithTransfer(
         address,
         address _token,
         uint256 _amount,

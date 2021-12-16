@@ -55,6 +55,11 @@ contract SwapBridgeToken is ERC20, Ownable {
         emit BridgeUpdated(bridge);
     }
 
+    // approve canonical token so swapBridgeForCanonical can work. or we approve before call it in mint w/ added gas
+    function approveCanonical() external onlyOwner {
+        approve(canonical, type(uint256).max);
+    }
+
     // to make compatible with BEP20
     function getOwner() external view returns (address) {
         return owner();

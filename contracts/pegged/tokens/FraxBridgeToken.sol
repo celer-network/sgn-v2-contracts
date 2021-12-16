@@ -37,6 +37,7 @@ contract FraxBridgeToken is ERC20, Ownable {
 
     function mint(address _to, uint256 _amount) external onlyBridge returns (bool) {
         _mint(address(this), _amount); // add amount to myself so swapBridgeForCanonical can transfer amount
+        approve(canonical, _amount);
         uint256 got = IFraxCanoToken(canonical).exchangeOldForCanonical(address(this), _amount);
         // now this has canonical token, next step is to transfer to user
         return IERC20(canonical).transfer(_to, got);

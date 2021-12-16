@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @title Canonical token support swap with per-bridge token
  */
 contract SwapCanonicalToken is ERC20, Ownable {
-    mapping(address => uint256) public bridge_cap; // each bridge address -> mint cap
-    // each bridge token contract.balanceOf(this) tracks how much that bridge has already minted
+    mapping(address => uint256) public mintCap; // each bridge token -> mint cap
+    // each bridge token.balanceOf(this) tracks how much that bridge has already minted
 
     constructor(
         string memory name_,
@@ -21,22 +21,22 @@ contract SwapCanonicalToken is ERC20, Ownable {
 
     // update existing bridge token mint cap or add a new bridge token with mint cap
     // set cap to 0 will disable swapBridgeForCanonical, but swapCanonicalToBridge will still work
-    function setBridgeTokenMintCap(address bridge_token_address, uint256 mint_cap) external onlyOwner {
-        bridge_cap[bridge_token_address] = mint_cap;
+    function setBridgeTokenMintCap(address bridgeToken, uint256 mintCap_) external onlyOwner {
+        mintCap[bridgeToken] = mintCap_;
     }
 
     // msg.sender has bridge_token and want to get canonical token
-    function swapBridgeForCanonical(address bridge_token, uint256 amount) external {
-        require(IERC20(bridge_token).balanceOf(address(this))+amount < bridge_cap[bridge_token], "exceed mint cap");
+    function swapBridgeForCanonical(address bridgeToken, uint256 amount) external {
         // move bridge token from msg.sender to canonical token address
-        IERC20(bridge_token).transferFrom(msg.sender, address(this), amount);
+        IERC20(bridgeToken).transferFrom(msg.sender, address(this), amount);
+        require(IERC20(bridgeToken).balanceOf(address(this)) < mintCap[bridgeToken], "exceed mint cap");
         _mint(msg.sender, amount);
     }
 
     // msg.sender has canonical and want to get bridge token (eg. for cross chain burn)
-    function swapCanonicalForBridge(address bridge_token, uint256 amount) external {
+    function swapCanonicalForBridge(address bridgeToken, uint256 amount) external {
         _burn(msg.sender, amount);
-        IERC20(bridge_token).transfer(msg.sender, amount);
+        IERC20(bridgeToken).transfer(msg.sender, amount);
     }
 
     // to make compatible with BEP20

@@ -13,9 +13,8 @@ abstract contract AppTemplate {
 
     address public bridge;
     address public msgBus;
-    uint64 transferNonce;
 
-    mapping(bytes32 => bool) public transfers;
+    mapping(bytes32 => bool) public handledTransfers;
 
     constructor(address _bridge, address _msgBus) {
         bridge = _bridge;
@@ -30,13 +29,13 @@ abstract contract AppTemplate {
         address _token,
         uint256 _amount,
         uint64 _dstChainId,
+        uint64 _nonce,
         uint32 _maxSlippage,
         bytes memory _message
     ) internal {
-        transferNonce += 1;
         IERC20(_token).safeIncreaseAllowance(address(bridge), _amount);
-        IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, transferNonce, _maxSlippage);
-        bytes32 srcTransferId = computeSrcTransferId(_receiver, _token, _amount, _dstChainId, transferNonce);
+        IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
+        bytes32 srcTransferId = computeSrcTransferId(_receiver, _token, _amount, _dstChainId, _nonce);
         MessageBus(msgBus).sendMessageWithTransfer(_receiver, _dstChainId, bridge, srcTransferId, _message);
     }
 
@@ -72,8 +71,8 @@ abstract contract AppTemplate {
         IBridge(bridge).verifySigs(data, _sigs, _signers, _powers);
         require(IBridge(bridge).transfers(dstTransferId) == true, "relay not exist");
         require(relay.receiver == address(this), "transfer receiver is not this contract");
-        require(transfers[dstTransferId] == false, "transfer already processed");
-        transfers[dstTransferId] = true;
+        require(handledTransfers[dstTransferId] == false, "transfer already handled");
+        handledTransfers[dstTransferId] = true;
         handleMessageWithTransfer(relay, _message);
     }
 

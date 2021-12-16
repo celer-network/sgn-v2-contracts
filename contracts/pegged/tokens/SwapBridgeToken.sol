@@ -14,7 +14,7 @@ interface ISwapCanoToken {
 /**
  * @title Per bridge token support swap with canonical.
  */
-contract SingleBridgeToken is ERC20, Ownable {
+contract SwapBridgeToken is ERC20, Ownable {
     address public bridge;
     address public canonical; // canonical token that support swap
 

@@ -86,4 +86,4 @@ This is used if the Blockscout variant requires a single source file, or in gene
 hardhat flatten <path-to-contract> > flattened.sol
 ```
 
-Edit `flattened.out` to remove the duplicate `SPDX-License-Identifier` lines and submit to Blockscout. Sometimes you also need to remove the duplicate `pragma solidity` lines.
+Edit `flattened.sol` to remove the duplicate `SPDX-License-Identifier` lines and submit to Blockscout. Sometimes you also need to remove the duplicate `pragma solidity` lines.

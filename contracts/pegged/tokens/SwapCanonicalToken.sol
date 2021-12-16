@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 contract SwapCanonicalToken is ERC20, Ownable {
     mapping(address => uint256) public bridge_cap; // each bridge address -> mint cap
-    mapping(address => uint256) public minted; // how much each bridge has minted
+    // each bridge token contract.balanceOf(this) tracks how much that bridge has already minted
 
     constructor(
         string memory name_,
@@ -27,17 +27,15 @@ contract SwapCanonicalToken is ERC20, Ownable {
 
     // msg.sender has bridge_token and want to get canonical token
     function swapBridgeForCanonical(address bridge_token, uint256 amount) external {
-        require(minted[bridge_token]+amount < bridge_cap[bridge_token], "exceed mint cap");
+        require(IERC20(bridge_token).balanceOf(address(this))+amount < bridge_cap[bridge_token], "exceed mint cap");
         // move bridge token from msg.sender to canonical token address
         IERC20(bridge_token).transferFrom(msg.sender, address(this), amount);
         _mint(msg.sender, amount);
-        minted[bridge_token] += amount;
     }
 
     // msg.sender has canonical and want to get bridge token (eg. for cross chain burn)
     function swapCanonicalForBridge(address bridge_token, uint256 amount) external {
         _burn(msg.sender, amount);
-        minted[bridge_token] -= amount;
         IERC20(bridge_token).transfer(msg.sender, amount);
     }
 

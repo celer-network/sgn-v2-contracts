@@ -7,14 +7,6 @@ import "../AppTemplate.sol";
 contract BatchTransfer is AppTemplate {
     using SafeERC20 for IERC20;
 
-    uint64 nonce;
-
-    struct TransferStatus {
-        bytes32 h; // hash(receiver, dstChainId)
-        bool done;
-    }
-    mapping(uint64 => TransferStatus) public status;
-
     struct TransferRequest {
         uint64 nonce;
         address[] accounts;
@@ -28,7 +20,15 @@ contract BatchTransfer is AppTemplate {
 
     constructor(address _bridge, address _msgBus) AppTemplate(_bridge, _msgBus) {}
 
-    // ============== functions on source chain ==============
+    // ============== functions and states on source chain ==============
+
+    uint64 nonce;
+
+    struct BatchTransferStatus {
+        bytes32 h; // hash(receiver, dstChainId)
+        bool done;
+    }
+    mapping(uint64 => BatchTransferStatus) public status; // nonce -> BatchTransferStatus
 
     function batchTransfer(
         address _receiver,
@@ -46,7 +46,7 @@ contract BatchTransfer is AppTemplate {
         uint256 minRecv = _amount - (_amount * _maxSlippage) / 1e6;
         require(minRecv > totalAmt, "invalid maxSlippage");
         nonce += 1;
-        status[nonce] = TransferStatus({h: keccak256(abi.encodePacked(_receiver, _dstChainId)), done: false});
+        status[nonce] = BatchTransferStatus({h: keccak256(abi.encodePacked(_receiver, _dstChainId)), done: false});
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         TransferRequest memory transfer = TransferRequest({
             nonce: nonce,
@@ -54,9 +54,11 @@ contract BatchTransfer is AppTemplate {
             amounts: _amounts,
             sender: msg.sender
         });
+        // app template util function
         transferWithMessage(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage, abi.encode(transfer));
     }
 
+    // handler function required by app template
     function handleMessage(
         address _sender,
         uint64 _srcChainId,
@@ -69,6 +71,7 @@ contract BatchTransfer is AppTemplate {
 
     // ============== functions on destination chain ==============
 
+    // handler function required by app template
     function handleMessageWithTransfer(
         address _sender,
         address _token,
@@ -86,7 +89,8 @@ contract BatchTransfer is AppTemplate {
         if (_amount > totalAmt) {
             IERC20(_token).safeTransfer(transfer.sender, remainder);
         }
-        TransferReceipt memory receipt = TransferReceipt({nonce: nonce});
+        TransferReceipt memory receipt = TransferReceipt({nonce: transfer.nonce});
+        // app template util function
         sendMessage(_sender, _srcChainId, abi.encode(receipt));
     }
 }

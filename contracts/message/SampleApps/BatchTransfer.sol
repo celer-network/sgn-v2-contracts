@@ -48,14 +48,11 @@ contract BatchTransfer is AppTemplate {
         nonce += 1;
         status[nonce] = BatchTransferStatus({h: keccak256(abi.encodePacked(_receiver, _dstChainId)), done: false});
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        TransferRequest memory transfer = TransferRequest({
-            nonce: nonce,
-            accounts: _accounts,
-            amounts: _amounts,
-            sender: msg.sender
-        });
+        bytes memory message = abi.encode(
+            TransferRequest({nonce: nonce, accounts: _accounts, amounts: _amounts, sender: msg.sender})
+        );
         // app template util function
-        transferWithMessage(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage, abi.encode(transfer));
+        transferWithMessage(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage, message);
     }
 
     // handler function required by app template
@@ -65,7 +62,7 @@ contract BatchTransfer is AppTemplate {
         bytes memory _message
     ) internal override {
         TransferReceipt memory receipt = abi.decode((_message), (TransferReceipt));
-        require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)));
+        require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)), "invalid message");
         status[receipt.nonce].done = true;
     }
 
@@ -89,8 +86,8 @@ contract BatchTransfer is AppTemplate {
         if (_amount > totalAmt) {
             IERC20(_token).safeTransfer(transfer.sender, remainder);
         }
-        TransferReceipt memory receipt = TransferReceipt({nonce: transfer.nonce});
+        bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce}));
         // app template util function
-        sendMessage(_sender, _srcChainId, abi.encode(receipt));
+        sendMessage(_sender, _srcChainId, message);
     }
 }

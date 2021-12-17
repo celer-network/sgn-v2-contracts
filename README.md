@@ -57,18 +57,20 @@ hardhat etherscan-verify --network <network> --license "GPL-3.0" --force-license
 
 This is useful since most testnet Etherscan variants don't offer verification via the API.
 
+1. Generate the standard JSON input files:
+
 ```sh
 source scripts/solt.sh
 run_solt_write
 ```
 
-Then try:
+2. Then try:
 
 ```sh
 solt verify --license 5 --network <network> solc-input-<contract>.json <deployed address> <contract name>
 ```
 
-If the second step fails, go to Etherscan and manually verify using the standard JSON input files.
+3. If the second step fails, go to Etherscan and manually verify using the standard JSON input files.
 
 #### On Blockscout variants via sourcify:
 
@@ -82,8 +84,18 @@ hardhat sourcify --network <network>
 
 This is used if the Blockscout variant requires a single source file, or in general as a last resort.
 
+1. Flatten the source files:
+
 ```sh
 hardhat flatten <path-to-contract> > flattened.sol
 ```
 
-Edit `flattened.sol` to remove the duplicate `SPDX-License-Identifier` lines and submit to Blockscout. Sometimes you also need to remove the duplicate `pragma solidity` lines.
+2. Edit `flattened.sol`. Remove the duplicate `SPDX-License-Identifier` lines, keeping a single copy of
+
+```
+// SPDX-License-Identifier: GPL-3.0-only
+```
+
+and submit to Blockscout.
+
+Sometimes you also need to remove the duplicate `pragma solidity` lines.

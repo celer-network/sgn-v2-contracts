@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity >= 0.8.9;
+pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -11,13 +11,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 contract SwapCanonicalToken is ERC20, Ownable {
     mapping(address => uint256) public mintCap; // each bridge token -> mint cap
+
     // each bridge token.balanceOf(this) tracks how much that bridge has already minted
 
-    constructor(
-        string memory name_,
-        string memory symbol_
-    ) ERC20(name_, symbol_) {
-    }
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
 
     // update existing bridge token mint cap or add a new bridge token with mint cap
     // set cap to 0 will disable swapBridgeForCanonical, but swapCanonicalToBridge will still work

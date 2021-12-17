@@ -2,9 +2,10 @@
 
 pragma solidity 0.8.9;
 
-import "../AppTemplate.sol";
+import "../framework/MessageSender.sol";
+import "../framework/MessageReceiver.sol";
 
-contract BatchTransfer is AppTemplate {
+contract BatchTransfer is MessageSender, MessageReceiver {
     using SafeERC20 for IERC20;
 
     struct TransferRequest {
@@ -18,7 +19,10 @@ contract BatchTransfer is AppTemplate {
         uint64 nonce;
     }
 
-    constructor(address _bridge, address _msgBus) AppTemplate(_bridge, _msgBus) {}
+    constructor(address _liquidityBridge, address _msgBus) {
+        liquidityBridge = _liquidityBridge;
+        msgBus = _msgBus;
+    }
 
     // ============== functions and states on source chain ==============
 
@@ -51,11 +55,11 @@ contract BatchTransfer is AppTemplate {
         bytes memory message = abi.encode(
             TransferRequest({nonce: nonce, accounts: _accounts, amounts: _amounts, sender: msg.sender})
         );
-        // app template util function
-        transferWithMessage(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage, message);
+        // MessageSender util function
+        sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage, message);
     }
 
-    // handler function required by app template
+    // handler function required by MessageReceiver
     function handleMessage(
         address _sender,
         uint64 _srcChainId,
@@ -68,7 +72,7 @@ contract BatchTransfer is AppTemplate {
 
     // ============== functions on destination chain ==============
 
-    // handler function required by app template
+    // handler function required by MessageReceiver
     function handleMessageWithTransfer(
         address _sender,
         address _token,
@@ -87,7 +91,7 @@ contract BatchTransfer is AppTemplate {
             IERC20(_token).safeTransfer(transfer.sender, remainder);
         }
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce}));
-        // app template util function
+        // MessageSender util function
         sendMessage(_sender, _srcChainId, message);
     }
 }

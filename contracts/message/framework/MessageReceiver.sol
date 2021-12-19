@@ -6,7 +6,7 @@ import "./IBridge.sol";
 import "./Addrs.sol";
 
 abstract contract MessageReceiver is Addrs {
-    mapping(bytes32 => bool) private records;
+    mapping(bytes32 => bool) private handledTransfers;
 
     enum TransferType {
         Invalid,
@@ -53,8 +53,7 @@ abstract contract MessageReceiver is Addrs {
     ) external {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         bytes32 transferId = verifyTransferId(_transfer);
-        bytes memory data = abi.encodePacked(domain, transferId, _message);
-        IBridge(liquidityBridge).verifySigs(data, _sigs, _signers, _powers);
+        IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, transferId, _message), _sigs, _signers, _powers);
         handleMessageWithTransfer(_transfer, _message);
     }
 
@@ -85,7 +84,7 @@ abstract contract MessageReceiver is Addrs {
 
     function verifyTransferId(TransferInfo memory _transfer) private returns (bytes32) {
         bytes32 transferId;
-        address bridge;
+        address bridgeAddr;
         if (_transfer.t == TransferType.LqSend) {
             transferId = keccak256(
                 abi.encodePacked(
@@ -98,8 +97,8 @@ abstract contract MessageReceiver is Addrs {
                     _transfer.refId
                 )
             );
-            bridge = liquidityBridge;
-            require(IBridge(bridge).transfers(transferId) == true, "bridge relay not exist");
+            bridgeAddr = liquidityBridge;
+            require(IBridge(bridgeAddr).transfers(transferId) == true, "bridge relay not exist");
         } else if (_transfer.t == TransferType.LqWithdraw) {
             transferId = keccak256(
                 abi.encodePacked(
@@ -110,8 +109,8 @@ abstract contract MessageReceiver is Addrs {
                     _transfer.amount
                 )
             );
-            bridge = liquidityBridge;
-            require(IBridge(bridge).withdraws(transferId) == true, "bridge withdraw not exist");
+            bridgeAddr = liquidityBridge;
+            require(IBridge(bridgeAddr).withdraws(transferId) == true, "bridge withdraw not exist");
         } else if (_transfer.t == TransferType.PegMint || _transfer.t == TransferType.PegWithdraw) {
             transferId = keccak256(
                 abi.encodePacked(
@@ -124,15 +123,15 @@ abstract contract MessageReceiver is Addrs {
                 )
             );
             if (_transfer.t == TransferType.PegMint) {
-                bridge = pegBridge;
+                bridgeAddr = pegBridge;
             } else {
-                bridge = pegVault;
+                bridgeAddr = pegVault;
             }
-            require(IBridge(bridge).records(transferId) == true, "peg record not exist");
+            require(IBridge(bridgeAddr).records(transferId) == true, "peg record not exist");
         }
-        bytes32 recordId = keccak256(abi.encodePacked(bridge, transferId));
-        require(records[recordId] == false, "transfer already handled");
-        records[recordId] = true;
+        bytes32 id = keccak256(abi.encodePacked(bridgeAddr, transferId));
+        require(handledTransfers[id] == false, "transfer already handled");
+        handledTransfers[id] = true;
         return transferId;
     }
 }

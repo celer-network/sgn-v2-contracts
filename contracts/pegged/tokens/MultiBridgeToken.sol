@@ -17,7 +17,7 @@ contract MultiBridgeToken is ERC20, Ownable {
 
     uint8 private immutable _decimals;
 
-    event BridgeUpdated(address bridge, uint256 supplyCap);
+    event BridgeSupplyCapUpdated(address bridge, uint256 supplyCap);
 
     constructor(
         string memory name_,
@@ -48,10 +48,10 @@ contract MultiBridgeToken is ERC20, Ownable {
         return _decimals;
     }
 
-    function updateBridge(address _bridge, uint256 _cap) external onlyOwner {
+    function updateBridgeSupplyCap(address _bridge, uint256 _cap) external onlyOwner {
         // cap == 0 means revoking bridge role
         bridges[_bridge].cap = _cap;
-        emit BridgeUpdated(_bridge, _cap);
+        emit BridgeSupplyCapUpdated(_bridge, _cap);
     }
 
     // to make compatible with BEP20

@@ -65,4 +65,8 @@ contract SwapBridgeToken is ERC20, Ownable {
     function getOwner() external view returns (address) {
         return owner();
     }
+
+    function decimals() public view virtual override returns (uint8) {
+        return ERC20(canonical).decimals();
+    }
 }

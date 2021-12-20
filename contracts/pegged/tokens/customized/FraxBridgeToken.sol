@@ -17,7 +17,7 @@ interface IFraxCanoToken {
  */
 contract FraxBridgeToken is ERC20, Ownable {
     address public bridge;
-    address public canonical; // canonical token that support swap
+    address public canonical; // canonical token that supports swap
 
     event BridgeUpdated(address bridge);
 
@@ -37,7 +37,7 @@ contract FraxBridgeToken is ERC20, Ownable {
     }
 
     function mint(address _to, uint256 _amount) external onlyBridge returns (bool) {
-        _mint(address(this), _amount); // add amount to myself so swapBridgeForCanonical can transfer amount
+        _mint(address(this), _amount); // add amount to myself so exchangeOldForCanonical can transfer amount
         approve(canonical, _amount);
         uint256 got = IFraxCanoToken(canonical).exchangeOldForCanonical(address(this), _amount);
         // now this has canonical token, next step is to transfer to user

@@ -29,6 +29,7 @@ contract MultiBridgeToken is ERC20, Ownable {
 
     function mint(address _to, uint256 _amount) external returns (bool) {
         Supply storage b = bridges[msg.sender];
+        require(b.cap > 0, "invalid caller");
         b.total += _amount;
         require(b.total <= b.cap, "exceeds bridge supply cap");
         _mint(_to, _amount);
@@ -37,6 +38,7 @@ contract MultiBridgeToken is ERC20, Ownable {
 
     function burn(address _from, uint256 _amount) external returns (bool) {
         Supply storage b = bridges[msg.sender];
+        require(b.cap > 0, "invalid caller");
         b.total -= _amount;
         _burn(_from, _amount);
         return true;
@@ -47,6 +49,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     function updateBridge(address _bridge, uint256 _cap) external onlyOwner {
+        // cap == 0 means revoking bridge role
         bridges[_bridge].cap = _cap;
         emit BridgeUpdated(_bridge, _cap);
     }

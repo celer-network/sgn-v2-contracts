@@ -70,6 +70,9 @@ const harmonyPrivateKey = process.env.HARMONY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY
 const moonriverEndpoint = process.env.MOONRIVER_ENDPOINT || DEFAULT_ENDPOINT;
 const moonriverPrivateKey = process.env.MOONRIVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const celoEndpoint = process.env.CELO_ENDPOINT || DEFAULT_ENDPOINT;
+const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -150,6 +153,10 @@ const config: HardhatUserConfig = {
     moonriver: {
       url: moonriverEndpoint,
       accounts: [`0x${moonriverPrivateKey}`]
+    },
+    celo: {
+      url: celoEndpoint,
+      accounts: [`0x${celoPrivateKey}`]
     }
   },
   namedAccounts: {

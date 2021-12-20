@@ -2,7 +2,6 @@
 
 pragma solidity >= 0.8.9;
 
-import "../framework/IBridge.sol";
 import "../framework/MessageSender.sol";
 import "../framework/MessageReceiver.sol";
 

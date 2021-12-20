@@ -22,7 +22,7 @@ contract CrossChainSwap is MessageSender, MessageReceiver {
     }
 
     constructor(address dex_) {
-
+        dex = dex_;
     }
     // ========== on start chain ==========
 

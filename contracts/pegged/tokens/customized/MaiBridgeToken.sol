@@ -4,6 +4,7 @@ pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IMaiBridgeHub {
@@ -19,6 +20,8 @@ interface IMaiBridgeHub {
  * @title bridge token support swap with Mai hub. note Mai hub is NOT canonical token, asset is set in hub constructor
  */
 contract MaiBridgeToken is ERC20, Ownable {
+    using SafeERC20 for IERC20;
+
     address public bridge;
     address public maihub; // mai hub address for swap
     address public asset; // acutal asset/canonical token
@@ -43,16 +46,16 @@ contract MaiBridgeToken is ERC20, Ownable {
 
     function mint(address _to, uint256 _amount) external onlyBridge returns (bool) {
         _mint(address(this), _amount); // add amount to myself so swapIn can transfer amount to hub
-        approve(maihub, _amount);
+        _approve(address(this), maihub, _amount);
         IMaiBridgeHub(maihub).swapIn(address(this), _amount);
         // now this has canonical token, next step is to transfer to user
-        return IERC20(asset).transfer(_to, _amount);
+        return IERC20(asset).safeTransfer(_to, _amount);
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
-        IERC20(asset).transferFrom(_from, address(this), _amount);
-        IMaiBridgeHub(maihub).swapOut(address(this), _amount);
         _burn(address(this), _amount);
+        IERC20(asset).safeTransferFrom(_from, address(this), _amount);
+        IMaiBridgeHub(maihub).swapOut(address(this), _amount);
         return true;
     }
 

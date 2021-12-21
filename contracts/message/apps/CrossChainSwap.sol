@@ -13,7 +13,7 @@ interface ISwapToken {
         address[] calldata,
         address,
         uint256
-    ) external;
+    ) external returns (uint[]);
     */
 }
 

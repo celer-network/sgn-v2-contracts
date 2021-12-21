@@ -49,7 +49,8 @@ contract MaiBridgeToken is ERC20, Ownable {
         _approve(address(this), maihub, _amount);
         IMaiBridgeHub(maihub).swapIn(address(this), _amount);
         // now this has canonical token, next step is to transfer to user
-        return IERC20(asset).safeTransfer(_to, _amount);
+        IERC20(asset).safeTransfer(_to, _amount);
+        return true;
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {

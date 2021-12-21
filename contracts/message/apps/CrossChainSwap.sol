@@ -7,6 +7,14 @@ import "../framework/MessageReceiver.sol";
 
 interface ISwapToken {
     function sellBase(address to) external returns (uint256);
+    /* function swapExactTokensForTokens(
+        uint256,
+        uint256,
+        address[] calldata,
+        address,
+        uint256
+    ) external;
+    */
 }
 
 contract CrossChainSwap is MessageSender, MessageReceiver {
@@ -17,6 +25,7 @@ contract CrossChainSwap is MessageSender, MessageReceiver {
     struct SwapInfo {
         address wantToken; // token user want to receive on dest chain
         address user;
+        bool sendBack; // if true, send wantToken back to start chain
         uint32 cbrMaxSlippage; // _maxSlippage for cbridge send
     }
 
@@ -45,7 +54,7 @@ contract CrossChainSwap is MessageSender, MessageReceiver {
 
 
     // ========== on swap chain ==========
-    uint64 nonce2;
+    uint64 nonce2; // if need to send back
     // do dex, send received asset to src chain via bridge
     function handleMessageWithTransfer(
         address _sender,
@@ -56,9 +65,13 @@ contract CrossChainSwap is MessageSender, MessageReceiver {
     ) internal override {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
         uint256 received = ISwapToken(dex).sellBase(swapInfo.wantToken);
-        nonce2 += 1;
-        // send received token back to start chain
-        IBridge(liquidityBridge).send(swapInfo.user, swapInfo.wantToken, received, _srcChainId, nonce2, swapInfo.cbrMaxSlippage);
+        if (swapInfo.sendBack) {
+            nonce2 += 1;
+            // send received token back to start chain
+            IBridge(liquidityBridge).send(swapInfo.user, swapInfo.wantToken, received, _srcChainId, nonce2, swapInfo.cbrMaxSlippage);
+        } else {
+            IERC20(swapInfo.wantToken).safeTransfer(swapInfo.user, received);
+        }
         // bytes memory notice; // send back to src chain to handleMessage
         // sendMessage(_sender, _srcChainId, notice);
     }

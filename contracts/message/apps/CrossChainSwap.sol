@@ -2,8 +2,8 @@
 
 pragma solidity >= 0.8.9;
 
-import "../framework/MessageSender.sol";
-import "../framework/MessageReceiver.sol";
+import "../framework/MsgSenderApp.sol";
+import "../framework/MsgReceiverApp.sol";
 
 interface ISwapToken {
     function sellBase(address to) external returns (uint256);
@@ -17,7 +17,7 @@ interface ISwapToken {
     */
 }
 
-contract CrossChainSwap is MessageSender, MessageReceiver {
+contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
     using SafeERC20 for IERC20;
 
     address public dex; // needed on swap chain

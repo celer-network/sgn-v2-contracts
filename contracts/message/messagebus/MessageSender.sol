@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-contract MessageBus {
+contract MessageSender {
     event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message);
 
     event MessageWithTransfer(

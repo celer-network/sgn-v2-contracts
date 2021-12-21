@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IBridge.sol";
 import "./Addrs.sol";
-import "../MessageBus.sol";
+import "../messagebus/MessageBus.sol";
 
-abstract contract MessageSender is Addrs {
+abstract contract MsgSenderApp is Addrs {
     using SafeERC20 for IERC20;
 
     // ============== functions called by apps ==============

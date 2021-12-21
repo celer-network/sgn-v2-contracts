@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
 pragma solidity 0.8.9;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 abstract contract Addrs is Ownable {
     address public msgBus;

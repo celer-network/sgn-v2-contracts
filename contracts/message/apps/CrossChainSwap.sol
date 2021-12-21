@@ -68,7 +68,9 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
     ) internal override {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
         IERC20(_token).approve(dex, _amount);
-        address[] memory path = [_token, swapInfo.wantToken];
+        address[] memory path = new address[](2);
+        path[0] = _token;
+        path[1] = swapInfo.wantToken;
         if (swapInfo.sendBack) {
             nonce += 1;
             uint256[] memory swapReturn = ISwapToken(dex).swapExactTokensForTokens(_amount, 0, path, address(this), type(uint256).max);

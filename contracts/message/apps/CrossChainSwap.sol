@@ -54,7 +54,6 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
 
 
     // ========== on swap chain ==========
-    uint64 nonce2; // if need to send back
     // do dex, send received asset to src chain via bridge
     function handleMessageWithTransfer(
         address _sender,
@@ -66,9 +65,9 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
         uint256 received = ISwapToken(dex).sellBase(swapInfo.wantToken);
         if (swapInfo.sendBack) {
-            nonce2 += 1;
+            nonce += 1;
             // send received token back to start chain
-            IBridge(liquidityBridge).send(swapInfo.user, swapInfo.wantToken, received, _srcChainId, nonce2, swapInfo.cbrMaxSlippage);
+            IBridge(liquidityBridge).send(swapInfo.user, swapInfo.wantToken, received, _srcChainId, nonce, swapInfo.cbrMaxSlippage);
         } else {
             IERC20(swapInfo.wantToken).safeTransfer(swapInfo.user, received);
         }

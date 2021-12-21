@@ -6,15 +6,15 @@ import "../framework/MsgSenderApp.sol";
 import "../framework/MsgReceiverApp.sol";
 
 interface ISwapToken {
-    function sellBase(address to) external returns (uint256);
-    /* function swapExactTokensForTokens(
+    // function sellBase(address to) external returns (uint256);
+    // uniswap v2
+    function swapExactTokensForTokens(
         uint256,
         uint256,
         address[] calldata,
         address,
         uint256
-    ) external returns (uint[]);
-    */
+    ) external returns (uint256[]);
 }
 
 contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
@@ -63,13 +63,15 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
         bytes memory _message
     ) internal override {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
-        uint256 received = ISwapToken(dex).sellBase(swapInfo.wantToken);
+        IERC20(_token).approve(dex, _amount);
         if (swapInfo.sendBack) {
             nonce += 1;
-            // send received token back to start chain
-            IBridge(liquidityBridge).send(swapInfo.user, swapInfo.wantToken, received, _srcChainId, nonce, swapInfo.cbrMaxSlippage);
+            uint256[] memory swapReturn = ISwapToken(dex).swapExactTokensForTokens(_amount, 0, [_token, swapInfo.wantToken], address(this), type(uint256).max);
+            // send received token back to start chain. swapReturn[1] is amount of wantToken
+            IBridge(liquidityBridge).send(swapInfo.user, swapInfo.wantToken, swapReturn[1], _srcChainId, nonce, swapInfo.cbrMaxSlippage);
         } else {
-            IERC20(swapInfo.wantToken).safeTransfer(swapInfo.user, received);
+            // swap to wantToken and send to user
+            ISwapToken(dex).swapExactTokensForTokens(_amount, 0, [_token, swapInfo.wantToken], swapInfo.user, type(uint256).max);
         }
         // bytes memory notice; // send back to src chain to handleMessage
         // sendMessage(_sender, _srcChainId, notice);

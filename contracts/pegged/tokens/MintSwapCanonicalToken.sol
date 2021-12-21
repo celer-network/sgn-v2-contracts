@@ -11,8 +11,8 @@ import "./MultiBridgeToken.sol";
 contract MintSwapCanonicalToken is MultiBridgeToken {
     using SafeERC20 for IERC20;
 
-    // bridge token -> cap of total swapped amount, can be tracked by each bridge token.balanceOf(this)
-    mapping(address => uint256) public totalSwapCap;
+    // bridge token address -> minted amount and cap for each bridge
+    mapping(address => Supply) public swapSupplies;
 
     event TokenSwapCapUpdated(address token, uint256 cap);
 
@@ -22,26 +22,48 @@ contract MintSwapCanonicalToken is MultiBridgeToken {
         uint8 decimals_
     ) MultiBridgeToken(name_, symbol_, decimals_) {}
 
-    // msg.sender has bridge token and want to get canonical token
+    /**
+     * @notice msg.sender has bridge token and wants to get canonical token.
+     * @param _bridgeToken The intermediary token address for a particular bridge.
+     * @param _amount The amount.
+     */
     function swapBridgeForCanonical(address _bridgeToken, uint256 _amount) external returns (uint256) {
+        Supply storage supply = swapSupplies[_bridgeToken];
+        require(supply.cap > 0, "invalid bridge token");
+        require(supply.total + _amount < supply.cap, "exceed swap cap");
+
+        supply.total += _amount;
+        _mint(msg.sender, _amount);
+
         // move bridge token from msg.sender to canonical token _amount
         IERC20(_bridgeToken).safeTransferFrom(msg.sender, address(this), _amount);
-        require(IERC20(_bridgeToken).balanceOf(address(this)) < totalSwapCap[_bridgeToken], "exceed swap cap");
-        _mint(msg.sender, _amount);
         return _amount;
     }
 
-    // msg.sender has canonical and want to get bridge token (eg. for cross chain burn)
+    /**
+     * @notice msg.sender has canonical token and wants to get bridge token (eg. for cross chain burn).
+     * @param _bridgeToken The intermediary token address for a particular bridge.
+     * @param _amount The amount.
+     */
     function swapCanonicalForBridge(address _bridgeToken, uint256 _amount) external returns (uint256) {
+        Supply storage supply = swapSupplies[_bridgeToken];
+        require(supply.cap > 0, "invalid bridge token");
+
+        supply.total -= _amount;
         _burn(msg.sender, _amount);
+
         IERC20(_bridgeToken).safeTransfer(msg.sender, _amount);
         return _amount;
     }
 
-    // update existing bridge token swap cap or add a new bridge token with swap cap
-    // set cap to 0 will disable swapBridgeForCanonical, but swapCanonicalToBridge will still work
+    /**
+     * @dev Update existing bridge token swap cap or add a new bridge token with swap cap.
+     * Setting cap to 0 will disable the bridge token.
+     * @param _bridgeToken The intermediary token address for a particular bridge.
+     * @param _swapCap The new swap cap.
+     */
     function setBridgeTokenSwapCap(address _bridgeToken, uint256 _swapCap) external onlyOwner {
-        totalSwapCap[_bridgeToken] = _swapCap;
+        swapSupplies[_bridgeToken].cap = _swapCap;
         emit TokenSwapCapUpdated(_bridgeToken, _swapCap);
     }
 }

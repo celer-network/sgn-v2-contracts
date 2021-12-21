@@ -14,7 +14,7 @@ interface ISwapToken {
         address[] calldata,
         address,
         uint256
-    ) external returns (uint256[]);
+    ) external returns (uint256[] memory);
 }
 
 contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
@@ -42,7 +42,7 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _dstChainId,
-        SwapInfo swapInfo // wantToken on destChain and actual user address as receiver when send back
+        SwapInfo calldata swapInfo // wantToken on destChain and actual user address as receiver when send back
     ) external {
         nonce += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);

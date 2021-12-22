@@ -1,10 +1,11 @@
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
-import * as dotenv from 'dotenv';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
+
+import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';
 
 dotenv.config();
@@ -74,6 +75,9 @@ const moonriverPrivateKey = process.env.MOONRIVER_PRIVATE_KEY || DEFAULT_PRIVATE
 
 const celoEndpoint = process.env.CELO_ENDPOINT || DEFAULT_ENDPOINT;
 const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasisEmeraldEndpoint = process.env.OASIS_EMERALD_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -163,6 +167,10 @@ const config: HardhatUserConfig = {
     celo: {
       url: celoEndpoint,
       accounts: [`0x${celoPrivateKey}`]
+    },
+    oasisEmerald: {
+      url: oasisEmeraldEndpoint,
+      accounts: [`0x${oasisEmeraldPrivateKey}`]
     }
   },
   namedAccounts: {

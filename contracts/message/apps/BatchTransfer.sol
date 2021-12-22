@@ -43,6 +43,11 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
     }
     mapping(uint64 => BatchTransferStatus) public status; // nonce -> BatchTransferStatus
 
+    modifier onlyEOA() {
+        require(msg.sender == tx.origin, "Not EOA");
+        _;
+    }
+
     function batchTransfer(
         address _receiver,
         address _token,
@@ -51,7 +56,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint32 _maxSlippage,
         address[] calldata _accounts,
         uint256[] calldata _amounts
-    ) external {
+    ) external onlyEOA {
         uint256 totalAmt;
         for (uint256 i = 0; i < _amounts.length; i++) {
             totalAmt += _amounts[i];

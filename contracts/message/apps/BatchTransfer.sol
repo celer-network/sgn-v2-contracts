@@ -115,7 +115,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
 
     // handler function required by MsgReceiverApp
     // called only if handleMessageWithTransfer above was reverted
-    function executeFailedMessageWithTransfer(
+    function executeMessageWithTransferFallback(
         address _sender,
         address _token,
         uint256 _amount,

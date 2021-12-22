@@ -28,8 +28,9 @@ contract MessageReceiver is Ownable {
 
     enum TxStatus {
         Null,
-        Completed,
-        Reverted
+        Success,
+        Fail,
+        Fallback
     }
     mapping(bytes32 => TxStatus) private executedTransfers; // messages with associated transfer
     mapping(bytes32 => TxStatus) private executedMessages; // messages without associated transfer
@@ -54,10 +55,14 @@ contract MessageReceiver is Ownable {
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, transferId, _message), _sigs, _signers, _powers);
         bool ok = executeMessageWithTransfer(_transfer, _message);
         if (ok) {
-            executedTransfers[transferId] = TxStatus.Completed;
+            executedTransfers[transferId] = TxStatus.Success;
         } else {
-            executedTransfers[transferId] = TxStatus.Reverted;
-            executeFailedMessageWithTransfer(_transfer, _message);
+            ok = executeMessageWithTransferFallback(_transfer, _message);
+            if (ok) {
+                executedTransfers[transferId] = TxStatus.Fallback;
+            } else {
+                executedTransfers[transferId] = TxStatus.Fail;
+            }
         }
     }
 
@@ -79,9 +84,9 @@ contract MessageReceiver is Ownable {
             abi.encodeWithSelector(MsgReceiverApp.executeMessage.selector, _sender, _srcChainId, _message)
         );
         if (ok) {
-            executedTransfers[messageId] = TxStatus.Completed;
+            executedTransfers[messageId] = TxStatus.Success;
         } else {
-            executedTransfers[messageId] = TxStatus.Reverted;
+            executedTransfers[messageId] = TxStatus.Fail;
         }
     }
 
@@ -102,13 +107,13 @@ contract MessageReceiver is Ownable {
         return ok;
     }
 
-    function executeFailedMessageWithTransfer(TransferInfo memory _transfer, bytes memory _message)
+    function executeMessageWithTransferFallback(TransferInfo memory _transfer, bytes memory _message)
         private
         returns (bool)
     {
         (bool ok, ) = address(_transfer.receiver).call(
             abi.encodeWithSelector(
-                MsgReceiverApp.executeFailedMessageWithTransfer.selector,
+                MsgReceiverApp.executeMessageWithTransferFallback.selector,
                 _transfer.sender,
                 _transfer.token,
                 _transfer.amount,

@@ -26,24 +26,36 @@ contract MessageReceiver is Ownable {
         bytes32 refId;
     }
 
+    struct RouteInfo {
+        address sender;
+        address receiver;
+        uint64 srcChainId;
+    }
+
     enum TxStatus {
         Null,
         Success,
         Fail,
         Fallback
     }
-    mapping(bytes32 => TxStatus) private executedTransfers; // messages with associated transfer
-    mapping(bytes32 => TxStatus) private executedMessages; // messages without associated transfer
+    mapping(bytes32 => TxStatus) public executedTransfers; // messages with associated transfer
+    mapping(bytes32 => TxStatus) public executedMessages; // messages without associated transfer
 
     address public liquidityBridge; // liquidity bridge address
     address public pegBridge; // peg bridge address
     address public pegVault; // peg original vault address
 
+    enum MsgType {
+        MessageWithTransfer,
+        Message
+    }
+    event Executed(MsgType msgType, bytes32 id, TxStatus status);
+
     // ============== functions called by executor ==============
 
     function executeMessageWithTransfer(
         bytes calldata _message,
-        TransferInfo memory _transfer,
+        TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -53,47 +65,51 @@ contract MessageReceiver is Ownable {
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, transferId, _message), _sigs, _signers, _powers);
+        TxStatus status;
         bool ok = executeMessageWithTransfer(_transfer, _message);
         if (ok) {
-            executedTransfers[transferId] = TxStatus.Success;
+            status = TxStatus.Success;
         } else {
             ok = executeMessageWithTransferFallback(_transfer, _message);
             if (ok) {
-                executedTransfers[transferId] = TxStatus.Fallback;
+                status = TxStatus.Fallback;
             } else {
-                executedTransfers[transferId] = TxStatus.Fail;
+                status = TxStatus.Fail;
             }
         }
+        executedTransfers[transferId] = status;
+        emit Executed(MsgType.MessageWithTransfer, transferId, status);
     }
 
     function executeMessage(
-        address _sender,
-        address _receiver,
-        uint64 _srcChainId,
         bytes calldata _message,
+        RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external {
-        bytes32 messageId = keccak256(abi.encodePacked(_sender, _receiver, _srcChainId, _message));
+        bytes32 messageId = ComputeMessageId(_route, _message);
         require(executedMessages[messageId] == TxStatus.Null, "message already executed");
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
-        (bool ok, ) = address(_receiver).call(
-            abi.encodeWithSelector(MsgReceiverApp.executeMessage.selector, _sender, _srcChainId, _message)
-        );
+        TxStatus status;
+        bool ok = executeMessage(_route, _message);
         if (ok) {
-            executedTransfers[messageId] = TxStatus.Success;
+            status = TxStatus.Success;
         } else {
-            executedTransfers[messageId] = TxStatus.Fail;
+            status = TxStatus.Fail;
         }
+        executedTransfers[messageId] = status;
+        emit Executed(MsgType.Message, messageId, status);
     }
 
-    // ================= utils =================
+    // ================= utils (to avoid stack too deep) =================
 
-    // to avoid stack too deep
-    function executeMessageWithTransfer(TransferInfo memory _transfer, bytes memory _message) private returns (bool) {
+    function executeMessageWithTransfer(TransferInfo calldata _transfer, bytes calldata _message)
+        private
+        returns (bool)
+    {
         (bool ok, ) = address(_transfer.receiver).call(
             abi.encodeWithSelector(
                 MsgReceiverApp.executeMessageWithTransfer.selector,
@@ -107,7 +123,7 @@ contract MessageReceiver is Ownable {
         return ok;
     }
 
-    function executeMessageWithTransferFallback(TransferInfo memory _transfer, bytes memory _message)
+    function executeMessageWithTransferFallback(TransferInfo calldata _transfer, bytes calldata _message)
         private
         returns (bool)
     {
@@ -124,7 +140,7 @@ contract MessageReceiver is Ownable {
         return ok;
     }
 
-    function verifyTransfer(TransferInfo memory _transfer) private view returns (bytes32) {
+    function verifyTransfer(TransferInfo calldata _transfer) private view returns (bytes32) {
         bytes32 transferId;
         address bridgeAddr;
         if (_transfer.t == TransferType.LqSend) {
@@ -173,6 +189,17 @@ contract MessageReceiver is Ownable {
         }
         transferId = keccak256(abi.encodePacked(bridgeAddr, transferId));
         return transferId;
+    }
+
+    function ComputeMessageId(RouteInfo calldata _route, bytes calldata _message) private pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_route.sender, _route.receiver, _route.srcChainId, _message));
+    }
+
+    function executeMessage(RouteInfo calldata _route, bytes calldata _message) private returns (bool) {
+        (bool ok, ) = address(_route.receiver).call(
+            abi.encodeWithSelector(MsgReceiverApp.executeMessage.selector, _route.sender, _route.srcChainId, _message)
+        );
+        return ok;
     }
 
     // ================= contract addr config =================

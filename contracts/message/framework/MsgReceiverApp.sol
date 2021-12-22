@@ -20,6 +20,16 @@ abstract contract MsgReceiverApp is Addrs {
         bytes memory _message
     ) internal virtual;
 
+    // previous attmpet of handleMessageWithTransfer was reverted
+    // need a fallback method (e.g., refund transfer) to handle failure
+    function handleFailedMessageWithTransfer(
+        address _sender,
+        address _token,
+        uint256 _amount,
+        uint64 _srcChainId,
+        bytes memory _message
+    ) internal virtual;
+
     function handleMessage(
         address _sender,
         uint64 _srcChainId,
@@ -36,6 +46,16 @@ abstract contract MsgReceiverApp is Addrs {
         bytes calldata _message
     ) external onlyMessagegBus {
         handleMessageWithTransfer(_sender, _token, _amount, _srcChainId, _message);
+    }
+
+    function executeFailedMessageWithTransfer(
+        address _sender,
+        address _token,
+        uint256 _amount,
+        uint64 _srcChainId,
+        bytes calldata _message
+    ) external onlyMessagegBus {
+        handleFailedMessageWithTransfer(_sender, _token, _amount, _srcChainId, _message);
     }
 
     function executeMessage(

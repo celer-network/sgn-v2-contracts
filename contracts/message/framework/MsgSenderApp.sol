@@ -39,32 +39,32 @@ abstract contract MsgSenderApp is Addrs {
     }
 
     function sendMessageWithPegDeposit(
+        address _receiver, // mintAccount
         address _token,
         uint256 _amount,
-        uint64 _mintChainId,
-        address _mintAccount,
+        uint64 _dstChainId, // mintChainId
         uint64 _nonce,
         bytes memory _message
     ) internal {
-        IBridge(pegVault).deposit(_token, _amount, _mintChainId, _mintAccount, _nonce);
+        IBridge(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         bytes32 depositId = keccak256(
-            abi.encodePacked(address(this), _token, _amount, _mintChainId, _mintAccount, _nonce, uint64(block.chainid))
+            abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
         );
-        MessageBus(msgBus).sendMessageWithTransfer(_mintAccount, _mintChainId, pegVault, depositId, _message);
+        MessageBus(msgBus).sendMessageWithTransfer(_receiver, _dstChainId, pegVault, depositId, _message);
     }
 
     function sendMessageWithPegBurn(
+        address _receiver, // withdrawAccount
         address _token,
         uint256 _amount,
-        uint64 _withdrawChainId,
-        address _withdrawAccount,
+        uint64 _dstChainId, // withdrawChainId
         uint64 _nonce,
         bytes memory _message
     ) internal {
-        IBridge(pegBridge).burn(_token, _amount, _withdrawAccount, _nonce);
+        IBridge(pegBridge).burn(_token, _amount, _receiver, _nonce);
         bytes32 burnId = keccak256(
-            abi.encodePacked(address(this), _token, _amount, _withdrawAccount, _nonce, uint64(block.chainid))
+            abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
         );
-        MessageBus(msgBus).sendMessageWithTransfer(_withdrawAccount, _withdrawChainId, pegVault, burnId, _message);
+        MessageBus(msgBus).sendMessageWithTransfer(_receiver, _dstChainId, pegBridge, burnId, _message);
     }
 }

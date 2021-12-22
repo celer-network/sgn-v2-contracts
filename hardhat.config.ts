@@ -1,11 +1,10 @@
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
+import * as dotenv from 'dotenv';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
-
-import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';
 
 dotenv.config();
@@ -36,6 +35,12 @@ const avalancheTestPrivateKey = process.env.AVALANCHE_TEST_PRIVATE_KEY || DEFAUL
 
 const celoAlfajoresTestEndpoint = process.env.CELO_ALFAJORES_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const celoAlfajoresTestPrivateKey = process.env.CELO_ALFAJORES_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasisEmeraldTestEndpoint = process.env.OASIS_EMERALD_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisEmeraldTestPrivateKey = process.env.OASIS_EMERALD_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const moonbaseAlphaTestEndpoint = process.env.MOONBASE_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -106,6 +111,14 @@ const config: HardhatUserConfig = {
     celoAlfajoresTest: {
       url: celoAlfajoresTestEndpoint,
       accounts: [`0x${celoAlfajoresTestPrivateKey}`]
+    },
+    oasisEmeraldTest: {
+      url: oasisEmeraldTestEndpoint,
+      accounts: [`0x${oasisEmeraldTestPrivateKey}`]
+    },
+    moonbaseAlphaTest: {
+      url: moonbaseAlphaTestEndpoint,
+      accounts: [`0x${moonbaseAlphaTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,

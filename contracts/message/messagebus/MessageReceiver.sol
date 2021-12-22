@@ -52,11 +52,12 @@ contract MessageReceiver is Ownable {
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, transferId, _message), _sigs, _signers, _powers);
-        bool ok = handleMessageWithTransfer(_transfer, _message);
+        bool ok = executeMessageWithTransfer(_transfer, _message);
         if (ok) {
             executedTransfers[transferId] = TxStatus.Completed;
         } else {
             executedTransfers[transferId] = TxStatus.Reverted;
+            executeFailedMessageWithTransfer(_transfer, _message);
         }
     }
 
@@ -87,10 +88,27 @@ contract MessageReceiver is Ownable {
     // ================= utils =================
 
     // to avoid stack too deep
-    function handleMessageWithTransfer(TransferInfo memory _transfer, bytes memory _message) private returns (bool) {
+    function executeMessageWithTransfer(TransferInfo memory _transfer, bytes memory _message) private returns (bool) {
         (bool ok, ) = address(_transfer.receiver).call(
             abi.encodeWithSelector(
                 MsgReceiverApp.executeMessageWithTransfer.selector,
+                _transfer.sender,
+                _transfer.token,
+                _transfer.amount,
+                _transfer.srcChainId,
+                _message
+            )
+        );
+        return ok;
+    }
+
+    function executeFailedMessageWithTransfer(TransferInfo memory _transfer, bytes memory _message)
+        private
+        returns (bool)
+    {
+        (bool ok, ) = address(_transfer.receiver).call(
+            abi.encodeWithSelector(
+                MsgReceiverApp.executeFailedMessageWithTransfer.selector,
                 _transfer.sender,
                 _transfer.token,
                 _transfer.amount,

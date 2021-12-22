@@ -10,22 +10,6 @@ abstract contract MsgReceiverApp is Addrs {
         _;
     }
 
-    // ========= virtual functions to be implemented by apps =========
-
-    function handleMessageWithTransfer(
-        address _sender,
-        address _token,
-        uint256 _amount,
-        uint64 _srcChainId,
-        bytes memory _message
-    ) internal virtual;
-
-    function handleMessage(
-        address _sender,
-        uint64 _srcChainId,
-        bytes memory _message
-    ) internal virtual;
-
     // ============== functions called by the MessagegBus contract ==============
 
     function executeMessageWithTransfer(
@@ -34,15 +18,19 @@ abstract contract MsgReceiverApp is Addrs {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external onlyMessagegBus {
-        handleMessageWithTransfer(_sender, _token, _amount, _srcChainId, _message);
-    }
+    ) external virtual onlyMessagegBus {}
+
+    function executeFailedMessageWithTransfer(
+        address _sender,
+        address _token,
+        uint256 _amount,
+        uint64 _srcChainId,
+        bytes calldata _message
+    ) external virtual onlyMessagegBus {}
 
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external onlyMessagegBus {
-        handleMessage(_sender, _srcChainId, _message);
-    }
+    ) external virtual onlyMessagegBus {}
 }

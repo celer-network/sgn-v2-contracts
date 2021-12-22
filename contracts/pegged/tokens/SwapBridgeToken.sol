@@ -4,6 +4,7 @@ pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface ISwapCanoToken {
@@ -13,11 +14,13 @@ interface ISwapCanoToken {
 }
 
 /**
- * @title Per bridge token support swap with canonical.
+ * @title Per bridge intermediary token that supports swapping with a canonical token.
  */
 contract SwapBridgeToken is ERC20, Ownable {
+    using SafeERC20 for IERC20;
+
     address public bridge;
-    address public canonical; // canonical token that support swap
+    address public immutable canonical; // canonical token that support swap
 
     event BridgeUpdated(address bridge);
 
@@ -40,14 +43,14 @@ contract SwapBridgeToken is ERC20, Ownable {
         _mint(address(this), _amount); // add amount to myself so swapBridgeForCanonical can transfer amount
         ISwapCanoToken(canonical).swapBridgeForCanonical(address(this), _amount);
         // now this has canonical token, next step is to transfer to user
-        IERC20(canonical).transfer(_to, _amount);
+        IERC20(canonical).safeTransfer(_to, _amount);
         return true;
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
-        IERC20(canonical).transferFrom(_from, address(this), _amount);
-        ISwapCanoToken(canonical).swapCanonicalForBridge(address(this), _amount);
         _burn(address(this), _amount);
+        IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
+        ISwapCanoToken(canonical).swapCanonicalForBridge(address(this), _amount);
         return true;
     }
 
@@ -58,7 +61,11 @@ contract SwapBridgeToken is ERC20, Ownable {
 
     // approve canonical token so swapBridgeForCanonical can work. or we approve before call it in mint w/ added gas
     function approveCanonical() external onlyOwner {
-        approve(canonical, type(uint256).max);
+        _approve(address(this), canonical, type(uint256).max);
+    }
+
+    function revokeCanonical() external onlyOwner {
+        _approve(address(this), canonical, 0);
     }
 
     // to make compatible with BEP20

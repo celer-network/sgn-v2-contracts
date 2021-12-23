@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.9;
 
-import "./Addrs.sol";
+import "./MsgBusAddr.sol";
 
-abstract contract MsgReceiverApp is Addrs {
+abstract contract MsgReceiverApp is MsgBusAddr {
     modifier onlyMessagegBus() {
         require(msg.sender == msgBus, "caller is not message bus");
         _;

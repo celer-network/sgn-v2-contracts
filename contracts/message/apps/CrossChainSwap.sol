@@ -75,7 +75,7 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
                 type(uint256).max
             );
             // send received token back to start chain. swapReturn[1] is amount of wantToken
-            IBridge(liquidityBridge).send(
+            sendTokenTransfer(
                 swapInfo.user,
                 swapInfo.wantToken,
                 swapReturn[1],

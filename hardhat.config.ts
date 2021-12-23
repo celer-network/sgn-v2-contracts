@@ -79,6 +79,9 @@ const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const oasisEmeraldEndpoint = process.env.OASIS_EMERALD_ENDPOINT || DEFAULT_ENDPOINT;
 const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
+const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -171,6 +174,10 @@ const config: HardhatUserConfig = {
     oasisEmerald: {
       url: oasisEmeraldEndpoint,
       accounts: [`0x${oasisEmeraldPrivateKey}`]
+    },
+    metis: {
+      url: metisEndpoint,
+      accounts: [`0x${metisPrivateKey}`]
     }
   },
   namedAccounts: {

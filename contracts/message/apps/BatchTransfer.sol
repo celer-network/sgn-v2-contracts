@@ -61,7 +61,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         for (uint256 i = 0; i < _amounts.length; i++) {
             totalAmt += _amounts[i];
         }
-        // comented out the slippage check below to trigger failure case for handleFailedMessageWithTransfer testing
+        // commented out the slippage check below to trigger failure case for handleFailedMessageWithTransfer testing
         // uint256 minRecv = _amount - (_amount * _maxSlippage) / 1e6;
         // require(minRecv > totalAmt, "invalid maxSlippage");
         nonce += 1;
@@ -82,7 +82,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         address _sender,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessagegBus {
+    ) external override onlyMessageBus {
         TransferReceipt memory receipt = abi.decode((_message), (TransferReceipt));
         require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)), "invalid message");
         status[receipt.nonce].status = receipt.status;
@@ -97,7 +97,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessagegBus {
+    ) external override onlyMessageBus {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         uint256 totalAmt;
         for (uint256 i = 0; i < transfer.accounts.length; i++) {
@@ -121,7 +121,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessagegBus {
+    ) external override onlyMessageBus {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Fail}));

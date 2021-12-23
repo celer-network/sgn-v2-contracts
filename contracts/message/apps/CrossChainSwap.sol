@@ -59,7 +59,7 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessagegBus {
+    ) external override onlyMessageBus {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
         IERC20(_token).approve(dex, _amount);
         address[] memory path = new address[](2);

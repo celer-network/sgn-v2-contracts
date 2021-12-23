@@ -5,12 +5,12 @@ pragma solidity 0.8.9;
 import "./MsgBusAddr.sol";
 
 abstract contract MsgReceiverApp is MsgBusAddr {
-    modifier onlyMessagegBus() {
+    modifier onlyMessageBus() {
         require(msg.sender == msgBus, "caller is not message bus");
         _;
     }
 
-    // ============== functions called by the MessagegBus contract ==============
+    // ============== functions called by the MessageBus contract ==============
 
     function executeMessageWithTransfer(
         address _sender,
@@ -18,7 +18,7 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external virtual onlyMessagegBus {}
+    ) external virtual onlyMessageBus {}
 
     // only called if executeMessageWithTransfer was reverted
     // app needs to decide what to do with the received tokens
@@ -28,11 +28,11 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external virtual onlyMessagegBus {}
+    ) external virtual onlyMessageBus {}
 
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external virtual onlyMessagegBus {}
+    ) external virtual onlyMessageBus {}
 }

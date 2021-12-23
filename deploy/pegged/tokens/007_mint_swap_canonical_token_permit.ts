@@ -9,17 +9,17 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('MultiBridgeTokenPermit', {
+  await deploy('MintSwapCanonicalTokenPermit', {
     from: deployer,
     log: true,
     args: [
-      process.env.MULTI_BRIDGE_TOKEN_PERMIT_NAME,
+      process.env.MINT_SWAP_CANONICAL_TOKEN_PERMIT_NAME,
       process.env.MULTI_BRIDGE_TOKEN_PERMIT_SYMBOL,
       process.env.MULTI_BRIDGE_TOKEN_PERMIT_DECIMALS
     ]
   });
 };
 
-deployFunc.tags = ['MultiBridgeTokenPermit'];
+deployFunc.tags = ['MintSwapCanonicalTokenPermit'];
 deployFunc.dependencies = [];
 export default deployFunc;

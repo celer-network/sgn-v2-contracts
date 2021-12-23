@@ -4,6 +4,7 @@ pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IFraxCanoToken {
@@ -16,6 +17,8 @@ interface IFraxCanoToken {
  * @title Intermediary bridge token that supports swapping with the canonical Frax token.
  */
 contract FraxBridgeToken is ERC20, Ownable {
+    using SafeERC20 for IERC20;
+
     address public bridge;
     address public immutable canonical; // canonical token that supports swap
 
@@ -41,11 +44,12 @@ contract FraxBridgeToken is ERC20, Ownable {
         _approve(address(this), canonical, _amount);
         uint256 got = IFraxCanoToken(canonical).exchangeOldForCanonical(address(this), _amount);
         // now this has canonical token, next step is to transfer to user
-        return IERC20(canonical).transfer(_to, got);
+        IERC20(canonical).safeTransfer(_to, got);
+        return true;
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
-        IERC20(canonical).transferFrom(_from, address(this), _amount);
+        IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
         uint256 got = IFraxCanoToken(canonical).exchangeCanonicalForOld(address(this), _amount);
         _burn(address(this), got);
         return true;

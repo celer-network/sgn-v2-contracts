@@ -8,9 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface ISwapCanoToken {
-    function swapBridgeForCanonical(address, uint256) external;
+    function swapBridgeForCanonical(address, uint256) external returns (uint256);
 
-    function swapCanonicalForBridge(address, uint256) external;
+    function swapCanonicalForBridge(address, uint256) external returns (uint256);
 }
 
 /**
@@ -41,16 +41,16 @@ contract SwapBridgeToken is ERC20, Ownable {
 
     function mint(address _to, uint256 _amount) external onlyBridge returns (bool) {
         _mint(address(this), _amount); // add amount to myself so swapBridgeForCanonical can transfer amount
-        ISwapCanoToken(canonical).swapBridgeForCanonical(address(this), _amount);
+        uint256 got = ISwapCanoToken(canonical).swapBridgeForCanonical(address(this), _amount);
         // now this has canonical token, next step is to transfer to user
-        IERC20(canonical).safeTransfer(_to, _amount);
+        IERC20(canonical).safeTransfer(_to, got);
         return true;
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
-        _burn(address(this), _amount);
         IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
-        ISwapCanoToken(canonical).swapCanonicalForBridge(address(this), _amount);
+        uint256 got = ISwapCanoToken(canonical).swapCanonicalForBridge(address(this), _amount);
+        _burn(address(this), got);
         return true;
     }
 

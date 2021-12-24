@@ -11,10 +11,11 @@ typechain/
 *.log
 *.new
 *.bak
-solc-input-*.sol
 
 .DS_Store
 
 .vscode/
+.idea/
 .env
 solc-input-*.json
+flattened-*.sol

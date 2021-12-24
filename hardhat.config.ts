@@ -82,6 +82,9 @@ const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_
 const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
 const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -178,6 +181,10 @@ const config: HardhatUserConfig = {
     metis: {
       url: metisEndpoint,
       accounts: [`0x${metisPrivateKey}`]
+    },
+    reiTest: {
+      url: reiTestEndpoint,
+      accounts: [`0x${reiTestPrivateKey}`]
     }
   },
   namedAccounts: {

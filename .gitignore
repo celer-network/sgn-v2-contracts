@@ -11,6 +11,7 @@ typechain/
 *.log
 *.new
 *.bak
+*.sol
 
 .DS_Store
 

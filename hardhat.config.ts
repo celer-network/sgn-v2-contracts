@@ -39,6 +39,11 @@ const celoAlfajoresTestPrivateKey = process.env.CELO_ALFAJORES_TEST_PRIVATE_KEY 
 
 const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const oasisEmeraldTestEndpoint = process.env.OASIS_EMERALD_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisEmeraldTestPrivateKey = process.env.OASIS_EMERALD_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const moonbaseAlphaTestEndpoint = process.env.MOONBASE_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -72,6 +77,12 @@ const moonriverPrivateKey = process.env.MOONRIVER_PRIVATE_KEY || DEFAULT_PRIVATE
 
 const celoEndpoint = process.env.CELO_ENDPOINT || DEFAULT_ENDPOINT;
 const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasisEmeraldEndpoint = process.env.OASIS_EMERALD_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
+const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -111,8 +122,16 @@ const config: HardhatUserConfig = {
       accounts: [`0x${celoAlfajoresTestPrivateKey}`]
     },
     reiTest: {
-      url: reiTestEndpoint,
-      accounts: [`0x${reiTestPrivateKey}`]
+        url: reiTestEndpoint,
+        accounts: [`0x${reiTestPrivateKey}`]
+    },
+    oasisEmeraldTest: {
+      url: oasisEmeraldTestEndpoint,
+      accounts: [`0x${oasisEmeraldTestPrivateKey}`]
+    },
+    moonbaseAlphaTest: {
+      url: moonbaseAlphaTestEndpoint,
+      accounts: [`0x${moonbaseAlphaTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,
@@ -157,6 +176,14 @@ const config: HardhatUserConfig = {
     celo: {
       url: celoEndpoint,
       accounts: [`0x${celoPrivateKey}`]
+    },
+    oasisEmerald: {
+      url: oasisEmeraldEndpoint,
+      accounts: [`0x${oasisEmeraldPrivateKey}`]
+    },
+    metis: {
+      url: metisEndpoint,
+      accounts: [`0x${metisPrivateKey}`]
     }
   },
   namedAccounts: {

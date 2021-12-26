@@ -175,7 +175,7 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         address _receiver,
         address _token,
         uint256 _amount
-    ) internal {
+    ) private {
         if (_token == nativeWrap) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(_amount);
@@ -185,4 +185,6 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
             IERC20(_token).safeTransfer(_receiver, _amount);
         }
     }
+
+    receive() external payable {}
 }

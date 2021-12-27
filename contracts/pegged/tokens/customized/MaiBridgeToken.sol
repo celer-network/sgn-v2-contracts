@@ -25,9 +25,12 @@ interface IMaiBridgeHub {
 contract MaiBridgeToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
+    // The PeggedTokenBridge
     address public bridge;
-    address public maihub; // mai hub address for swap
-    address public asset; // actual asset/canonical token
+    // Mai hub for swapping
+    address public immutable maihub;
+    // The canonical Mai token
+    address public immutable asset;
 
     event BridgeUpdated(address bridge);
 

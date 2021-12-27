@@ -10,21 +10,24 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 interface IMaiBridgeHub {
     // send bridge token, get asset
     function swapIn(address, uint256) external;
+
     // send asset, get bridge token back
     function swapOut(address, uint256) external;
+
     // asset address
     function asset() external view returns (address);
 }
 
 /**
- * @title bridge token support swap with Mai hub. note Mai hub is NOT canonical token, asset is set in hub constructor
+ * @title Intermediary bridge token that supports swapping with the Mai hub.
+ * NOTE: Mai hub is NOT the canonical token itself. The asset is set in the hub constructor.
  */
 contract MaiBridgeToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
     address public bridge;
     address public maihub; // mai hub address for swap
-    address public asset; // acutal asset/canonical token
+    address public asset; // actual asset/canonical token
 
     event BridgeUpdated(address bridge);
 
@@ -54,9 +57,10 @@ contract MaiBridgeToken is ERC20, Ownable {
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
-        _burn(address(this), _amount);
         IERC20(asset).safeTransferFrom(_from, address(this), _amount);
+        IERC20(asset).approve(address(maihub), _amount);
         IMaiBridgeHub(maihub).swapOut(address(this), _amount);
+        _burn(address(this), _amount);
         return true;
     }
 

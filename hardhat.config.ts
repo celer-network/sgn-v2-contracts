@@ -43,6 +43,9 @@ const oasisEmeraldTestPrivateKey = process.env.OASIS_EMERALD_TEST_PRIVATE_KEY ||
 const moonbaseAlphaTestEndpoint = process.env.MOONBASE_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -82,8 +85,8 @@ const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_
 const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
 const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const auroraEndpoint = process.env.AURORA_ENDPOINT || DEFAULT_ENDPOINT;
+const auroraPrivateKey = process.env.AURORA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -129,6 +132,10 @@ const config: HardhatUserConfig = {
     moonbaseAlphaTest: {
       url: moonbaseAlphaTestEndpoint,
       accounts: [`0x${moonbaseAlphaTestPrivateKey}`]
+    },
+    reiTest: {
+      url: reiTestEndpoint,
+      accounts: [`0x${reiTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,
@@ -182,9 +189,9 @@ const config: HardhatUserConfig = {
       url: metisEndpoint,
       accounts: [`0x${metisPrivateKey}`]
     },
-    reiTest: {
-      url: reiTestEndpoint,
-      accounts: [`0x${reiTestPrivateKey}`]
+    aurora: {
+      url: auroraEndpoint,
+      accounts: [`0x${auroraPrivateKey}`]
     }
   },
   namedAccounts: {

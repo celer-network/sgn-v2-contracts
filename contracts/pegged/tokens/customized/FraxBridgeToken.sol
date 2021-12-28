@@ -19,8 +19,10 @@ interface IFraxCanoToken {
 contract FraxBridgeToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
+    // The PeggedTokenBridge
     address public bridge;
-    address public immutable canonical; // canonical token that supports swap
+    // The canonical Frax token that supports swapping
+    address public immutable canonical;
 
     event BridgeUpdated(address bridge);
 

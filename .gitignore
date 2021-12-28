@@ -15,5 +15,7 @@ typechain/
 .DS_Store
 
 .vscode/
+.idea/
 .env
 solc-input-*.json
+flattened-*.sol

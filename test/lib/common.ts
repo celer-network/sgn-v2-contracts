@@ -11,18 +11,22 @@ import {
   FarmingRewards__factory,
   Govern,
   Govern__factory,
+  MessageBus,
+  MessageBus__factory,
   PeggedTokenBridge,
   PeggedTokenBridge__factory,
-  SingleBridgeTokenPermit,
-  SingleBridgeTokenPermit__factory,
   SGN,
   SGN__factory,
+  SingleBridgeTokenPermit,
+  SingleBridgeTokenPermit__factory,
   Staking,
   Staking__factory,
   StakingReward,
   StakingReward__factory,
   TestERC20,
   TestERC20__factory,
+  TransferSwap,
+  TransferSwap__factory,
   Viewer,
   Viewer__factory
 } from '../../typechain';
@@ -95,6 +99,32 @@ interface BridgeInfo {
   token: TestERC20;
   pegBridge: PeggedTokenBridge;
   pegToken: SingleBridgeTokenPermit;
+}
+
+interface MessageInfo {
+  bus: MessageBus;
+  transferSwap: TransferSwap;
+  token: TestERC20;
+}
+
+export async function deplayMessageContracts(admin: Wallet): Promise<MessageInfo> {
+  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const token = await testERC20Factory.connect(admin).deploy();
+  await token.deployed();
+
+  const busFactory = (await ethers.getContractFactory('MessageBus')) as MessageBus__factory;
+  const bus = await busFactory.connect(admin).deploy();
+  await bus.deployed();
+
+  const transferSwapFactory = (await ethers.getContractFactory('TransferSwap')) as TransferSwap__factory;
+  const transferSwap = await transferSwapFactory.connect(admin).deploy();
+  await transferSwap.deployed();
+
+  const dexFactory = (await ethers.getContractFactory('DummyDex')) as TransferSwap__factory;
+  const dex = await transferSwapFactory.connect(admin).deploy();
+  await dex.deployed();
+
+  return { bus, token, transferSwap };
 }
 
 export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {

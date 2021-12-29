@@ -1,68 +1,133 @@
+import { expect } from 'chai';
+import { BigNumber } from 'ethers';
+import { parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
 
-import { BigNumber } from '@ethersproject/bignumber';
-import { keccak256, pack } from '@ethersproject/solidity';
+import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
 
-import { MessageBus, TestERC20, TransferSwap } from '../typechain';
-import { deplayMessageContracts, getAccounts, loadFixture } from './lib/common';
-import { calculateSignatures, hex2Bytes } from './lib/proto';
+import { Bridge, DummySwap, MessageBus, TestERC20, TransferSwap } from '../typechain';
+import { deplayMessageContracts as deployMessageContracts, getAccounts, loadFixture } from './lib/common';
 
-function getAddrs(signers: Wallet[]) {
-  const addrs: string[] = [];
-  for (let i = 0; i < signers.length; i++) {
-    addrs.push(signers[i].address);
-  }
-  return addrs;
+async function swapFixture([admin]: Wallet[]) {
+  const res = await deployMessageContracts(admin);
+  return { admin, ...res };
 }
 
-async function getUpdateSignersSigs(
-  triggerTime: number,
-  newSignerAddrs: string[],
-  newPowers: BigNumber[],
-  currSigners: Wallet[],
-  chainId: number,
-  contractAddress: string
+function computeId(sender: string, srcChainId: number, dstChainId: number, nonce: number, message: string) {
+  return keccak256(
+    ['address', 'uint64', 'uint64', 'uint64', 'bytes'],
+    [sender, srcChainId, dstChainId, nonce, message]
+  );
+}
+
+function encodeMessage(
+  dstSwap: { dex: string; path: string[]; deadline: BigNumber; minRecvAmt: BigNumber },
+  receiver: string
 ) {
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'UpdateSigners']);
-  const data = pack(['bytes32', 'uint256', 'address[]', 'uint256[]'], [domain, triggerTime, newSignerAddrs, newPowers]);
-  const hash = keccak256(['bytes'], [data]);
-  const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
-  return sigs;
+  return ethers.utils.defaultAbiCoder.encode(
+    ['Swap(address dex, address[] path, uint256 deadline, uint256 minRecvAmt) swap', 'address receiver'],
+    [dstSwap, receiver]
+  );
 }
 
-async function getBlockTime() {
-  const blockNumber = await ethers.provider.getBlockNumber();
-  const block = await ethers.provider.getBlock(blockNumber);
-  return block.timestamp;
-}
-
-describe('Bridge Tests', function () {
-  async function fixture([admin]: Wallet[]) {
-    const { bus, token, transferSwap } = await deplayMessageContracts(admin);
-    return { admin, bus, token, transferSwap };
-  }
-
+describe('Cross Chain Swap Tests', function () {
   let bus: MessageBus;
-  let token: TestERC20;
-  let transferSwap: TransferSwap;
+  let tokenA: TestERC20;
+  let tokenB: TestERC20;
+  let xswap: TransferSwap;
+  let dex: DummySwap;
+  let bridge: Bridge;
   let accounts: Wallet[];
-  let chainId: number;
 
   beforeEach(async () => {
-    const res = await loadFixture(fixture);
+    const res = await loadFixture(swapFixture);
     bus = res.bus;
-    token = res.token;
-    transferSwap = res.transferSwap;
-    accounts = await getAccounts(res.admin, [token], 4);
-    chainId = (await ethers.provider.getNetwork()).chainId;
+    tokenA = res.tokenA;
+    tokenB = res.tokenB;
+    xswap = res.transferSwap;
+    dex = res.swap;
+    bridge = res.bridge;
+    accounts = await getAccounts(res.admin, [tokenA], 4);
   });
 
-  it('should transfer with swap', async function () {
-    console.log("setting MessageBus address to TransferSwap")
-    await transferSwap.setMsgBus(bus.address);
-    const swap = {
-      dex: 
-    }
+  it('should emit SwapRequestSent and Send event on transferWithSwap', async function () {
+    console.log('setting MessageBus address to TransferSwap');
+    await xswap.setMsgBus(bus.address);
+    console.log('setting dex fake slippage to 5%');
+    await dex.setFakeSlippage(parseUnits('5'));
+
+    const amountIn = parseUnits('100');
+    const srcSwap = {
+      dex: dex.address,
+      path: [tokenA.address, tokenB.address],
+      deadline: BigNumber.from(0),
+      minRecvAmt: amountIn.mul(parseUnits('90')).div(parseUnits('100'))
+    };
+    const dstSwap = srcSwap;
+    const maxBridgeSlippage = parseUnits('1', 6); // 100%
+    const srcChainId = 1;
+    const dstChainId = 2; // doesn't matter
+    const sender = accounts[0];
+    const receiver = accounts[1];
+    const nonce = 0;
+
+    console.log('transferWithSwap');
+    const tx = await xswap.transferWithSwap(
+      receiver.address,
+      amountIn,
+      dstChainId,
+      srcSwap,
+      dstSwap,
+      maxBridgeSlippage,
+      nonce
+    );
+    const message = encodeMessage(dstSwap, receiver.address);
+    const id = computeId(sender.address, srcChainId, dstChainId, nonce, message);
+
+    // check TransferSwap's SwapRequestSent event
+    await expect(tx)
+      .to.emit(xswap, 'SwapRequestSent')
+      .withArgs(id, dstChainId, amountIn, srcSwap.path[0], dstSwap.path[1]);
+
+    // check Bridge's Send event
+    const srcXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'uint64'],
+      [sender.address, receiver.address, tokenB.address, amountIn, dstChainId, nonce, srcChainId]
+    );
+    const expectedSendAmt = amountIn.mul(parseUnits('95')).div(parseUnits('100'));
+    await expect(tx)
+      .to.emit(bridge, 'Send')
+      .withArgs(
+        srcXferId,
+        sender.address,
+        receiver.address,
+        tokenB.address,
+        expectedSendAmt,
+        dstChainId,
+        nonce,
+        maxBridgeSlippage
+      );
+  });
+
+  it('should emit SwapRequestDone on executeMessageWithTransfer', async function () {
+    const amount = parseUnits('100');
+    const srcChainId = 1;
+    const nonce = 0;
+    const dstSwap = {
+      dex: dex.address,
+      path: [tokenA.address, tokenB.address],
+      deadline: BigNumber.from(0),
+      minRecvAmt: amount.mul(parseUnits('90')).div(parseUnits('100'))
+    };
+    const message = ethers.utils.defaultAbiCoder.encode(
+      ['Swap(address dex, address[] path, uint256 deadline, uint256 minRecvAmt) swap', 'address receiver'],
+      [dstSwap, accounts[1]]
+    );
+    const tx = await xswap.executeMessageWithTransfer(accounts[0].address, tokenB.address, amount, srcChainId, message);
+
+    const id = computeId(accounts[0].address, srcChainId, srcChainId, nonce, message);
+    const dstAmount = amount.mul(parseUnits('95')).div(parseUnits('100'));
+    await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount);
   });
 });

@@ -7,6 +7,7 @@ import { Wallet } from '@ethersproject/wallet';
 import {
   Bridge,
   Bridge__factory,
+  DummySwap__factory,
   FarmingRewards,
   FarmingRewards__factory,
   Govern,
@@ -30,6 +31,7 @@ import {
   Viewer,
   Viewer__factory
 } from '../../typechain';
+import { DummySwap } from '../../typechain/DummySwap';
 import * as consts from './constants';
 
 // Workaround for https://github.com/nomiclabs/hardhat/issues/849
@@ -104,13 +106,24 @@ interface BridgeInfo {
 interface MessageInfo {
   bus: MessageBus;
   transferSwap: TransferSwap;
-  token: TestERC20;
+  tokenA: TestERC20;
+  tokenB: TestERC20;
+  bridge: Bridge;
+  swap: DummySwap;
 }
 
 export async function deplayMessageContracts(admin: Wallet): Promise<MessageInfo> {
-  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
-  const token = await testERC20Factory.connect(admin).deploy();
-  await token.deployed();
+  const testERC20FactoryA = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const tokenA = await testERC20FactoryA.connect(admin).deploy();
+  await tokenA.deployed();
+
+  const testERC20FactoryB = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const tokenB = await testERC20FactoryB.connect(admin).deploy();
+  await tokenB.deployed();
+
+  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridge = await bridgeFactory.connect(admin).deploy();
+  await bridge.deployed();
 
   const busFactory = (await ethers.getContractFactory('MessageBus')) as MessageBus__factory;
   const bus = await busFactory.connect(admin).deploy();
@@ -120,11 +133,11 @@ export async function deplayMessageContracts(admin: Wallet): Promise<MessageInfo
   const transferSwap = await transferSwapFactory.connect(admin).deploy();
   await transferSwap.deployed();
 
-  const dexFactory = (await ethers.getContractFactory('DummyDex')) as TransferSwap__factory;
-  const dex = await transferSwapFactory.connect(admin).deploy();
-  await dex.deployed();
+  const swapFactory = (await ethers.getContractFactory('DummySwap')) as DummySwap__factory;
+  const swap = await swapFactory.connect(admin).deploy(parseUnits('5')); // 5% fixed fake slippage
+  await swap.deployed();
 
-  return { bus, token, transferSwap };
+  return { bus, tokenA, tokenB, transferSwap, swap, bridge };
 }
 
 export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {

@@ -2,11 +2,14 @@
 
 pragma solidity >=0.8.9;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../framework/MsgSenderApp.sol";
 import "../framework/MsgReceiverApp.sol";
 import "../../interfaces/IUniswapV2.sol";
 
-contract TransferSwap is MsgSenderApp, MsgReceiverApp {
+contract TransferSwap is MsgSenderApp, MsgReceiverApp, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Swap {
@@ -21,7 +24,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         address receiver;
     }
 
-    uint64 SlippageDenominator = 1e6;
+    event SwapRequestSent(bytes32 id, uint64 dstChainId, uint256 srcAmount, address srcToken, address dstToken);
+    event SwapRequestDone(bytes32 id, uint256 dstAmount);
 
     function transferWithSwap(
         address _receiver,
@@ -58,8 +62,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             bridgeTokenAmt = amounts[amounts.length - 1];
         }
 
-        // bridge the intermediate token to destination chain with message
-        SwapRequest memory message = SwapRequest({swap: _dstSwap, receiver: _receiver});
+        // bridge the intermediate token to destination chain along with the message
+        bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: _receiver}));
         sendMessageWithTransfer(
             _receiver,
             bridgeToken,
@@ -67,33 +71,47 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             _dstChainId,
             _nonce,
             _maxBridgeSlippage,
-            abi.encode(message)
+            message
+        );
+
+        // compute id & emit event for gateway to track history
+        bytes32 id = keccak256(abi.encodePacked(msg.sender, block.chainid, _dstChainId, _nonce, message));
+        emit SwapRequestSent(
+            id,
+            _dstChainId,
+            bridgeTokenAmt,
+            _srcSwap.path[0],
+            _dstSwap.path[_dstSwap.path.length - 1]
         );
     }
 
     function executeMessageWithTransfer(
-        address, // _sender
+        address _sender,
         address _token,
         uint256 _amount,
-        uint64, // _srcChainId
+        uint64 _srcChainId,
         bytes memory _message
     ) external override onlyMessageBus {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
 
+        uint256 dstAmount;
         if (m.swap.path.length > 1) {
-            // swap intermediate token to the token user wants on the destination DEX
             IERC20(m.swap.path[0]).safeIncreaseAllowance(m.swap.dex, _amount);
-            IUniswapV2(m.swap.dex).swapExactTokensForTokens(
+            uint256[] memory amounts = IUniswapV2(m.swap.dex).swapExactTokensForTokens(
                 _amount,
                 m.swap.minRecvAmt,
                 m.swap.path,
                 m.receiver,
                 m.swap.deadline
             );
+            dstAmount = amounts[amounts.length - 1];
         } else {
             // no need to swap, directly send the bridged token to user
             IERC20(_token).safeTransfer(m.receiver, _amount);
+            dstAmount = _amount;
         }
+        bytes32 id = keccak256(abi.encodePacked(_sender, m.receiver, _srcChainId, block.chainid, _message));
+        emit SwapRequestDone(id, dstAmount);
     }
 }

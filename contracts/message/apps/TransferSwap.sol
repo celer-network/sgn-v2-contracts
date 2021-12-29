@@ -45,9 +45,9 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         // pull source token from user
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
 
-        // swap original token for intermediate token on the source DEX
+        // swap source token for intermediate token on the source DEX
         if (_srcSwap.path.length > 1) {
-            IERC20(_srcSwap.path[0]).approve(_srcSwap.dex, _amountIn);
+            IERC20(_srcSwap.path[0]).safeIncreaseAllowance(_srcSwap.dex, _amountIn);
             uint256[] memory amounts = IUniswapV2(_srcSwap.dex).swapExactTokensForTokens(
                 _amountIn,
                 _srcSwap.minRecvAmt,
@@ -83,7 +83,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
 
         if (m.swap.path.length > 1) {
             // swap intermediate token to the token user wants on the destination DEX
-            IERC20(m.swap.path[0]).approve(m.swap.dex, _amount);
+            IERC20(m.swap.path[0]).safeIncreaseAllowance(m.swap.dex, _amount);
             IUniswapV2(m.swap.dex).swapExactTokensForTokens(
                 _amount,
                 m.swap.minRecvAmt,
@@ -93,7 +93,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             );
         } else {
             // no need to swap, directly send the bridged token to user
-            IERC20(_token).transfer(m.receiver, _amount);
+            IERC20(_token).safeTransfer(m.receiver, _amount);
         }
     }
 }

@@ -36,15 +36,13 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp, ReentrancyGuard {
         uint32 _maxBridgeSlippage,
         uint64 _nonce
     ) external {
-        address bridgeToken = _srcSwap.path[_srcSwap.path.length - 1];
-        uint256 bridgeTokenAmt = _amountIn;
-
         require(_srcSwap.path.length > 0, "empty src swap path");
         require(_dstSwap.path.length > 0, "empty dst swap path");
-        require(
-            bridgeToken == _dstSwap.path[0],
-            "the last token in _srcSwapPath and the first token in dstPath must be the same"
-        );
+
+        address bridgeToken = _srcSwap.path[_srcSwap.path.length - 1];
+        require(bridgeToken == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
+
+        uint256 bridgeTokenAmt = _amountIn;
 
         // pull source token from user
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);

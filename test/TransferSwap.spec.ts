@@ -49,14 +49,62 @@ describe('Cross Chain Swap Tests', function () {
     dex = res.swap;
     bridge = res.bridge;
     accounts = await getAccounts(res.admin, [tokenA], 4);
-  });
 
-  it('should emit SwapRequestSent and Send event on transferWithSwap', async function () {
-    console.log('setting MessageBus address to TransferSwap');
     await xswap.setMsgBus(bus.address);
     console.log('setting dex fake slippage to 5%');
     await dex.setFakeSlippage(parseUnits('5'));
+  });
 
+  it('should revert if paths are empty', async function () {
+    const amountIn = parseUnits('100');
+    const srcSwap = {
+      dex: dex.address,
+      path: [] as string[],
+      deadline: BigNumber.from(0),
+      minRecvAmt: amountIn.mul(parseUnits('90')).div(parseUnits('100'))
+    };
+    const dstSwap = {
+      dex: dex.address,
+      path: [tokenA.address, tokenB.address],
+      deadline: BigNumber.from(0),
+      minRecvAmt: amountIn.mul(parseUnits('90')).div(parseUnits('100'))
+    };
+    const maxBridgeSlippage = parseUnits('1', 6); // 100%
+    const dstChainId = 2; // doesn't matter
+    const receiver = accounts[1];
+    const nonce = 0;
+
+    await expect(
+      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, nonce)
+    ).to.be.revertedWith('empty src swap path');
+
+    srcSwap.path = [tokenA.address, tokenB.address];
+    dstSwap.path = [];
+    await expect(
+      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, nonce)
+    ).to.be.revertedWith('empty dst swap path');
+  });
+
+  it('should revert if path token addresses mismatch', async function () {
+    const amountIn = parseUnits('100');
+    const srcSwap = {
+      dex: dex.address,
+      path: [tokenA.address, tokenB.address],
+      deadline: BigNumber.from(0),
+      minRecvAmt: amountIn.mul(parseUnits('90')).div(parseUnits('100'))
+    };
+    const dstSwap = srcSwap;
+    const maxBridgeSlippage = parseUnits('1', 6); // 100%
+    const dstChainId = 2; // doesn't matter
+    const receiver = accounts[1];
+    const nonce = 0;
+    console.log('transferWithSwap');
+    await expect(
+      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, nonce)
+    ).to.be.revertedWith('srcSwap.path[len - 1] and dstSwap.path[0] must be the same');
+  });
+
+  it('should emit SwapRequestSent and Send event on transferWithSwap', async function () {
     const amountIn = parseUnits('100');
     const srcSwap = {
       dex: dex.address,

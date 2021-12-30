@@ -29,7 +29,7 @@ We provide the [message bus contract](./messagebus) and [application framework](
 
 ### Example 1: [Batch Token Transfer](<(./apps/BatchTransfer.sol)>)
 
-This example applications use a single cross-chain token transfer a send tokens from one sender at the source chain to multiple receivers at the destination chain. The high-level workflow consists of three steps:
+This example application sends tokens from one sender at the source chain to multiple receivers at the destination chain through a single cross-chain token transfer. The high-level workflow consists of three steps:
 
 1. Sender side calls `batchTransfer` at source chain, which internally calls app framework's `sendMessageWithTransfer` to send message and tokens.
 2. Receiver side implements the `executeMessageWithTransfer` interface to handle the batch transfer message, and distribute tokens to receiver accounts according to the message content. It also internally calls app framework's `sendMessage` to send a receipt to the source app.
@@ -37,7 +37,7 @@ This example applications use a single cross-chain token transfer a send tokens 
 
 ### Example 2: [Cross Chain Swap](./apps/CrossChainSwap.sol)
 
-This example swap one token at chain A to another token at chain B through cBridge and a dex on chain B.
+This example swaps one token at chain A to another token at chain B through cBridge and a dex on chain B.
 
 ## Fee Mechanism
 

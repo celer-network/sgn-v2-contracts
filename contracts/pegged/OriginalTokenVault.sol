@@ -53,12 +53,13 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     }
 
     /**
-     * @notice Lock original tokens to trigger mint at a remote chain's PeggedTokenBridge
-     * @param _token local token address
-     * @param _amount locked token amount
-     * @param _mintChainId destination chainId to mint tokens
-     * @param _mintAccount destination account to receive minted tokens
-     * @param _nonce user input to guarantee unique depositId
+     * @notice Lock original tokens to trigger cross-chain mint of pegged tokens at a remote chain's PeggedTokenBridge.
+     * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
+     * @param _token The original token address.
+     * @param _amount The amount to deposit.
+     * @param _mintChainId The destination chain ID to mint tokens.
+     * @param _mintAccount The destination account to receive the minted pegged tokens.
+     * @param _nonce A number input to guarantee unique depositId. Can be timestamp in practice.
      */
     function deposit(
         address _token,
@@ -72,6 +73,14 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         emit Deposited(depId, msg.sender, _token, _amount, _mintChainId, _mintAccount);
     }
 
+    /**
+     * @notice Lock native token as original token to trigger cross-chain mint of pegged tokens at a remote chain's
+     * PeggedTokenBridge.
+     * @param _amount The amount to deposit.
+     * @param _mintChainId The destination chain ID to mint tokens.
+     * @param _mintAccount The destination account to receive the minted pegged tokens.
+     * @param _nonce A number input to guarantee unique depositId. Can be timestamp in practice.
+     */
     function depositNative(
         uint256 _amount,
         uint64 _mintChainId,
@@ -104,7 +113,12 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     }
 
     /**
-     * @notice Withdraw locked tokens triggered by burn at a remote chain's PeggedTokenBridge
+     * @notice Withdraw locked original tokens triggered by a burn at a remote chain's PeggedTokenBridge.
+     * @param _request The serialized Withdraw protobuf.
+     * @param _sigs The list of signatures sorted by signing addresses. A relay must be signed-off by +2/3 of the
+     * bridge's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
      */
     function withdraw(
         bytes calldata _request,

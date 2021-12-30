@@ -49,8 +49,9 @@ contract Bridge is Pool {
      * @param _amount The amount of the transfer.
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
-     * @param _maxSlippage The accepted max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the transfer can be refunded.
+     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
+     * transfer can be refunded.
      */
     function send(
         address _receiver,
@@ -71,8 +72,9 @@ contract Bridge is Pool {
      * @param _amount The amount of the transfer.
      * @param _dstChainId The destination chain ID.
      * @param _nonce A unique number. Can be timestamp in practice.
-     * @param _maxSlippage The accepted max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the transfer can be refunded.
+     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
+     * transfer can be refunded.
      */
     function sendNative(
         address _receiver,

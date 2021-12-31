@@ -48,7 +48,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     event MinAddUpdated(address token, uint256 amount);
 
     /**
-     * @notice Adds liquidity to the pool-based bridge.
+     * @notice Add liquidity to the pool-based bridge.
      * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
      * NOTE: ONLY call this from an EOA. DO NOT call from a contract address.
      * @param _token The address of the token.
@@ -62,7 +62,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     }
 
     /**
-     * @notice Adds native token liquidity to the pool-based bridge.
+     * @notice Add native token liquidity to the pool-based bridge.
      * NOTE: ONLY call this from an EOA. DO NOT call from a contract address.
      * @param _amount The amount to add.
      */

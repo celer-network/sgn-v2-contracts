@@ -11,7 +11,7 @@ import "../../interfaces/IUniswapV2.sol";
 contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     using SafeERC20 for IERC20;
 
-    struct Swap {
+    struct SwapInfo {
         // if this array has only one element, it means no need to swap
         address[] path;
         // only needed if path.length > 1
@@ -21,9 +21,16 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     }
 
     struct SwapRequest {
-        Swap swap;
+        SwapInfo swap;
         address receiver;
         uint64 nonce;
+    }
+
+    enum SwapStatus {
+        Null,
+        Succeeded,
+        Failed,
+        Fallback
     }
 
     // emitted when requested dstChainId == srcChainId, no bridging
@@ -36,7 +43,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         address tokenOut
     );
     event SwapRequestSent(bytes32 id, uint64 dstChainId, uint256 srcAmount, address srcToken, address dstToken);
-    event SwapRequestDone(bytes32 id, uint256 dstAmount);
+    event SwapRequestDone(bytes32 id, uint256 dstAmount, SwapStatus status);
 
     mapping(address => uint256) minSwapAmounts;
     uint64 nonce;
@@ -45,8 +52,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         address _receiver,
         uint256 _amountIn,
         uint64 _dstChainId,
-        Swap calldata _srcSwap,
-        Swap calldata _dstSwap,
+        SwapInfo calldata _srcSwap,
+        SwapInfo calldata _dstSwap,
         uint32 _maxBridgeSlippage
     ) external {
         require(_srcSwap.path.length > 0, "empty src swap path");
@@ -63,8 +70,10 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
 
         // swap source token for intermediate token on the source DEX
+        bool ok = true;
         if (_srcSwap.path.length > 1) {
-            srcAmtOut = _doSwap(_srcSwap, address(this), _amountIn);
+            (ok, srcAmtOut) = _trySwap(_srcSwap, address(this), _amountIn);
+            if (!ok) revert("src swap failed");
         }
 
         bytes32 id; // id is only a means for history tracking
@@ -78,9 +87,9 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             require(_dstSwap.path.length > 0, "empty dst swap path");
             require(srcTokenOut == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
             bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: _receiver, nonce: nonce}));
+            id = _computeSwapMessageId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
             sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
-            id = _computSwapMessageId(msg.sender, chainId, _dstChainId, message);
             emit SwapRequestSent(id, _dstChainId, srcAmtOut, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
         }
     }
@@ -94,36 +103,61 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     ) external override onlyMessageBus {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
-
+        bytes32 id = _computeSwapMessageId(_sender, _srcChainId, uint64(block.chainid), _message);
         uint256 dstAmount;
+        SwapStatus status;
+
         if (m.swap.path.length > 1) {
-            dstAmount = _doSwap(m.swap, m.receiver, _amount);
+            bool ok = true;
+            (ok, dstAmount) = _trySwap(m.swap, m.receiver, _amount);
+            // handle swap failure, send the received token directly to receiver
+            if (!ok) {
+                IERC20(_token).safeTransfer(m.receiver, _amount);
+                status = SwapStatus.Fallback;
+            }
         } else {
             // no need to swap, directly send the bridged token to user
             IERC20(_token).safeTransfer(m.receiver, _amount);
             dstAmount = _amount;
+            status = SwapStatus.Succeeded;
         }
-        bytes32 id = _computSwapMessageId(_sender, _srcChainId, uint64(block.chainid), _message);
-        emit SwapRequestDone(id, dstAmount);
+        emit SwapRequestDone(id, dstAmount, status);
     }
 
-    function _doSwap(
-        Swap memory _swap,
+    function executeMessageWithTransferFallback(
+        address _sender,
+        address, // _token
+        uint256, // _amount
+        uint64 _srcChainId,
+        bytes memory _message
+    ) external override onlyMessageBus {
+        bytes32 id = _computeSwapMessageId(_sender, _srcChainId, uint64(block.chainid), _message);
+        emit SwapRequestDone(id, 0, SwapStatus.Failed);
+    }
+
+    function _trySwap(
+        SwapInfo memory _swap,
         address _receiver,
         uint256 _amount
-    ) private returns (uint256 amountOut) {
+    ) private returns (bool ok, uint256 amountOut) {
         IERC20(_swap.path[0]).safeIncreaseAllowance(_swap.dex, _amount);
-        uint256[] memory amounts = IUniswapV2(_swap.dex).swapExactTokensForTokens(
-            _amount,
-            _swap.minRecvAmt,
-            _swap.path,
-            _receiver,
-            _swap.deadline
-        );
-        return amounts[amounts.length - 1];
+        try
+            IUniswapV2(_swap.dex).swapExactTokensForTokens(
+                _amount,
+                _swap.minRecvAmt,
+                _swap.path,
+                _receiver,
+                _swap.deadline
+            )
+        returns (uint256[] memory amounts) {
+            return (true, amounts[amounts.length - 1]);
+        } catch {
+            uint256 zero;
+            return (false, zero);
+        }
     }
 
-    function _computSwapMessageId(
+    function _computeSwapMessageId(
         address _sender,
         uint64 _srcChainId,
         uint64 _dstChainId,

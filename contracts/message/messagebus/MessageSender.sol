@@ -66,11 +66,11 @@ contract MessageSender is Ownable {
         require(sent, "failed to withdraw fee");
     }
 
-    function setFeePerByte(uint256 _fee) external {
+    function setFeePerByte(uint256 _fee) external onlyOwner {
         feePerByte = _fee;
     }
 
-    function setFeeBase(uint256 _fee) external {
+    function setFeeBase(uint256 _fee) external onlyOwner {
         feeBase = _fee;
     }
 }

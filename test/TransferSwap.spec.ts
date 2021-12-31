@@ -46,8 +46,10 @@ let bridge: Bridge;
 let accounts: Wallet[];
 let admin: Wallet;
 let chainId: number;
+let sender: Wallet;
+let receiver: Wallet;
 
-const amountIn = parseUnits('100');
+let amountIn: BigNumber;
 const maxBridgeSlippage = parseUnits('100', 4); // 100%
 interface Swap {
   dex: string;
@@ -69,6 +71,9 @@ async function prepare() {
   bridge = res.bridge;
   accounts = await getAccounts(res.admin, [tokenA, tokenB], 4);
   chainId = (await ethers.provider.getNetwork()).chainId;
+  sender = accounts[0];
+  receiver = accounts[1];
+  amountIn = parseUnits('100');
 
   srcSwap = {
     dex: dex.address,
@@ -87,6 +92,7 @@ async function prepare() {
   await xswap.setLiquidityBridge(bridge.address);
   await xswap.setTokenBridgeType(tokenA.address, 1);
   await xswap.setTokenBridgeType(tokenB.address, 1);
+  await xswap.setMinSwapAmount(tokenA.address, parseUnits('10'));
 
   await dex.setFakeSlippage(parseUnits('5', 4));
 
@@ -96,8 +102,12 @@ async function prepare() {
 }
 
 describe('Test transferWithSwap', function () {
+  let srcChainId: number;
+  const dstChainId = 2; // doesn't matter
+
   beforeEach(async () => {
     await prepare();
+    srcChainId = chainId;
   });
 
   it('should revert if paths are empty', async function () {
@@ -105,8 +115,6 @@ describe('Test transferWithSwap', function () {
     dstSwap.path = [tokenA.address, tokenB.address];
 
     const maxBridgeSlippage = parseUnits('1', 6); // 100%
-    const dstChainId = 2; // doesn't matter
-    const receiver = accounts[1];
 
     await expect(
       xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
@@ -122,21 +130,23 @@ describe('Test transferWithSwap', function () {
   it('should revert if path token addresses mismatch', async function () {
     srcSwap.path = [tokenA.address, tokenB.address];
     dstSwap.path = [tokenA.address, tokenB.address];
-    const dstChainId = 2; // doesn't matter
-    const receiver = accounts[1];
-    console.log('transferWithSwap');
     await expect(
       xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
     ).to.be.revertedWith('srcSwap.path[len - 1] and dstSwap.path[0] must be the same');
   });
 
+  it('should revert if min swap amount is not satisfied', async function () {
+    amountIn = parseUnits('5');
+    srcSwap.path = [tokenA.address, tokenB.address];
+    dstSwap.path = [tokenB.address, tokenA.address];
+    await expect(
+      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
+    ).to.be.revertedWith('amount has to be greateer than min swap amount');
+  });
+
   it('should swap and send', async function () {
     srcSwap.path = [tokenA.address, tokenB.address];
     dstSwap.path = [tokenB.address, tokenA.address];
-    const srcChainId = chainId;
-    const dstChainId = 2; // doesn't matter
-    const sender = accounts[0];
-    const receiver = accounts[1];
 
     await tokenA.connect(sender).approve(xswap.address, amountIn);
     const tx = await xswap
@@ -172,10 +182,6 @@ describe('Test transferWithSwap', function () {
   it('should directly send', async function () {
     srcSwap.path = [tokenB.address];
     dstSwap.path = [tokenB.address, tokenA.address];
-    const srcChainId = chainId;
-    const dstChainId = 2; // doesn't matter
-    const sender = accounts[0];
-    const receiver = accounts[1];
 
     await tokenB.connect(sender).approve(xswap.address, amountIn);
     const tx = await xswap
@@ -211,32 +217,33 @@ describe('Test transferWithSwap', function () {
 describe('Test executeMessageWithTransfer', function () {
   beforeEach(async () => {
     await prepare();
+    // impersonate msgbus as admin to gain access to calling executeMessageWithTransfer
+    await xswap.connect(admin).setMsgBus(admin.address);
   });
 
+  const srcChainId = 1;
+  const nonce = 1;
+
   it('should swap', async function () {
-    const srcChainId = 1;
-    const nonce = 1;
     dstSwap.path = [tokenA.address, tokenB.address];
-    const receiver = accounts[1];
     const message = encodeMessage(dstSwap, receiver.address, nonce);
-    await xswap.connect(admin).setMsgBus(admin.address); // impersonate msgbus as admin to gain access to calling executeMessageWithTransfer
+
+    const bridgeBalBefore = await tokenB.connect(admin).balanceOf(receiver.address);
     await tokenA.connect(admin).transfer(xswap.address, amountIn);
     const tx = await xswap
       .connect(admin)
       .executeMessageWithTransfer(accounts[0].address, tokenA.address, amountIn, srcChainId, message);
+    const bridgeBalAfter = await tokenB.connect(admin).balanceOf(receiver.address);
 
     const id = computeId(accounts[0].address, srcChainId, chainId, message);
-    const dstAmount = amountIn.mul(parseUnits('95')).div(parseUnits('100'));
+    const dstAmount = slip(amountIn, 5);
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount);
+    await expect(bridgeBalAfter).to.equal(bridgeBalBefore.add(dstAmount));
   });
 
   it('should directly transfer to receiver', async function () {
-    const srcChainId = 1;
-    const nonce = 1;
     dstSwap.path = [tokenA.address];
-    const receiver = accounts[1];
     const message = encodeMessage(dstSwap, receiver.address, nonce);
-    await xswap.connect(admin).setMsgBus(admin.address); // impersonate msgbus as admin to gain access to calling executeMessageWithTransfer
     await tokenA.connect(admin).transfer(xswap.address, amountIn);
 
     const recvBalBefore = await tokenA.connect(receiver).balanceOf(receiver.address);

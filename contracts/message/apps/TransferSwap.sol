@@ -12,8 +12,10 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     using SafeERC20 for IERC20;
 
     struct Swap {
-        address dex;
+        // single element in this array means no need to swap
         address[] path;
+        // only needed if path.length > 1
+        address dex;
         uint256 deadline;
         uint256 minRecvAmt;
     }
@@ -30,6 +32,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     event SwapRequestSent(bytes32 id, uint64 dstChainId, uint256 srcAmount, address srcToken, address dstToken);
     event SwapRequestDone(bytes32 id, uint256 dstAmount);
 
+    mapping(address => uint256) minSwapAmounts;
     uint64 nonce;
 
     function transferWithSwap(
@@ -45,6 +48,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
 
         address bridgeToken = _srcSwap.path[_srcSwap.path.length - 1];
         require(bridgeToken == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
+        require(_amountIn > minSwapAmounts[_srcSwap.path[0]], "amount has to be greateer than min swap amount");
 
         nonce += 1;
 
@@ -127,5 +131,9 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         }
         bytes32 id = keccak256(abi.encodePacked(_sender, _srcChainId, uint64(block.chainid), _message));
         emit SwapRequestDone(id, dstAmount);
+    }
+
+    function setMinSwapAmount(address token, uint256 _minSwapAmount) external onlyOwner {
+        minSwapAmounts[token] = _minSwapAmount;
     }
 }

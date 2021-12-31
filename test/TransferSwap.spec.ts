@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { BigNumber } from 'ethers';
 import { parseUnits } from 'ethers/lib/utils';
 import { ethers } from 'hardhat';
+import { Address } from 'hardhat-deploy/types';
 
 import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
@@ -20,6 +21,15 @@ function computeId(sender: string, srcChainId: number, dstChainId: number, messa
   return keccak256(['address', 'uint64', 'uint64', 'bytes'], [sender, srcChainId, dstChainId, message]);
 }
 
+function computeDirectSwapId(sender: string, srcChainId: number, receiver: Address, nonce: number, swap: Swap) {
+  const swapStruct = [swap.path, swap.dex, swap.deadline, swap.minRecvAmt];
+  const encoded = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'uint64', 'address', 'uint64', '(address[], address, uint256, uint256)'],
+    [sender, srcChainId, receiver, nonce, swapStruct]
+  );
+  return keccak256(['bytes'], [encoded]);
+}
+
 function encodeMessage(
   dstSwap: { dex: string; path: string[]; deadline: BigNumber; minRecvAmt: BigNumber },
   receiver: string,
@@ -29,7 +39,6 @@ function encodeMessage(
     ['((address[], address , uint256, uint256), address, uint64)'],
     [[[dstSwap.path, dstSwap.dex, dstSwap.deadline, dstSwap.minRecvAmt], receiver, nonce]]
   );
-  console.log('encoded', encoded);
   return encoded;
 }
 
@@ -114,25 +123,31 @@ describe('Test transferWithSwap', function () {
   it('should revert if paths are empty', async function () {
     srcSwap.path = [];
     dstSwap.path = [tokenA.address, tokenB.address];
-
-    const maxBridgeSlippage = parseUnits('1', 6); // 100%
-
+    await tokenA.connect(sender).approve(xswap.address, amountIn);
     await expect(
-      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
+      xswap
+        .connect(sender)
+        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
     ).to.be.revertedWith('empty src swap path');
 
     srcSwap.path = [tokenA.address, tokenB.address];
     dstSwap.path = [];
+    await tokenA.connect(sender).approve(xswap.address, amountIn);
     await expect(
-      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
+      xswap
+        .connect(sender)
+        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
     ).to.be.revertedWith('empty dst swap path');
   });
 
   it('should revert if path token addresses mismatch', async function () {
     srcSwap.path = [tokenA.address, tokenB.address];
     dstSwap.path = [tokenA.address, tokenB.address];
+    await tokenA.connect(sender).approve(xswap.address, amountIn);
     await expect(
-      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
+      xswap
+        .connect(sender)
+        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
     ).to.be.revertedWith('srcSwap.path[len - 1] and dstSwap.path[0] must be the same');
   });
 
@@ -140,9 +155,12 @@ describe('Test transferWithSwap', function () {
     amountIn = parseUnits('5');
     srcSwap.path = [tokenA.address, tokenB.address];
     dstSwap.path = [tokenB.address, tokenA.address];
+    await tokenA.connect(sender).approve(xswap.address, amountIn);
     await expect(
-      xswap.transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
-    ).to.be.revertedWith('amount has to be greateer than min swap amount');
+      xswap
+        .connect(sender)
+        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
+    ).to.be.revertedWith('amount must be greateer than min swap amount');
   });
 
   it('should swap and send', async function () {
@@ -212,6 +230,37 @@ describe('Test transferWithSwap', function () {
         expectedNonce,
         maxBridgeSlippage
       );
+  });
+
+  it('should directly swap', async function () {
+    srcSwap.path = [tokenA.address, tokenB.address];
+    dstSwap.path = [];
+
+    await tokenA.connect(sender).approve(xswap.address, amountIn);
+    const recvBalBefore = await tokenB.connect(receiver).balanceOf(receiver.address);
+    const tx = await xswap
+      .connect(sender)
+      .transferWithSwap(receiver.address, amountIn, chainId, srcSwap, dstSwap, maxBridgeSlippage);
+    const recvBalAfter = await tokenB.connect(receiver).balanceOf(receiver.address);
+    const expectedNonce = 1;
+    const expectId = computeDirectSwapId(sender.address, srcChainId, receiver.address, expectedNonce, srcSwap);
+
+    await expect(tx).to.not.emit(xswap, 'SwapRequestSent');
+    await expect(tx).to.not.emit(bridge, 'Send');
+    await expect(tx)
+      .to.emit(xswap, 'DirectSwap')
+      .withArgs(expectId, chainId, amountIn, tokenA.address, slip(amountIn, 5), tokenB.address);
+    await expect(recvBalAfter).equal(recvBalBefore.add(slip(amountIn, 5)));
+  });
+
+  it('should revert if the tx results in a noop', async function () {
+    srcSwap.path = [tokenA.address];
+    dstSwap.path = [];
+
+    await tokenA.connect(sender).approve(xswap.address, amountIn);
+    await expect(
+      xswap.connect(sender).transferWithSwap(receiver.address, amountIn, chainId, srcSwap, dstSwap, maxBridgeSlippage)
+    ).to.be.revertedWith('noop is not allowed');
   });
 });
 

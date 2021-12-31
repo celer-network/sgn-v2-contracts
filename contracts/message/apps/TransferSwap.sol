@@ -26,6 +26,15 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         uint64 nonce;
     }
 
+    // emitted when requested dstChainId == srcChainId, no bridging
+    event DirectSwap(
+        bytes32 id,
+        uint64 srcChainId,
+        uint256 amountIn,
+        address tokenIn,
+        uint256 amountOut,
+        address tokenOut
+    );
     event SwapRequestSent(bytes32 id, uint64 dstChainId, uint256 srcAmount, address srcToken, address dstToken);
     event SwapRequestDone(bytes32 id, uint256 dstAmount);
 
@@ -41,46 +50,39 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         uint32 _maxBridgeSlippage
     ) external {
         require(_srcSwap.path.length > 0, "empty src swap path");
-        require(_dstSwap.path.length > 0, "empty dst swap path");
+        address srcTokenOut = _srcSwap.path[_srcSwap.path.length - 1];
 
-        address bridgeToken = _srcSwap.path[_srcSwap.path.length - 1];
-        require(bridgeToken == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
-        require(_amountIn > minSwapAmounts[_srcSwap.path[0]], "amount has to be greateer than min swap amount");
+        require(_amountIn > minSwapAmounts[_srcSwap.path[0]], "amount must be greateer than min swap amount");
+        uint64 chainId = uint64(block.chainid);
+        require(_srcSwap.path.length > 1 || _dstChainId != chainId, "noop is not allowed"); // revert early to save gas
 
+        uint256 srcAmtOut = _amountIn;
         nonce += 1;
-
-        uint256 bridgeTokenAmt = _amountIn;
 
         // pull source token from user
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
 
         // swap source token for intermediate token on the source DEX
         if (_srcSwap.path.length > 1) {
-            bridgeTokenAmt = _doSwap(_srcSwap, address(this), _amountIn);
+            srcAmtOut = _doSwap(_srcSwap, address(this), _amountIn);
         }
 
-        bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: _receiver, nonce: nonce}));
-        // bridge the intermediate token to destination chain along with the message
-        sendMessageWithTransfer(
-            _receiver,
-            bridgeToken,
-            bridgeTokenAmt,
-            _dstChainId,
-            nonce,
-            _maxBridgeSlippage,
-            message
-        );
-
-        // compute id & emit event for gateway to track history
-        // use uint64 for chainid to be consistent with other components in the system
-        bytes32 id = _computSwapMessageId(msg.sender, uint64(block.chainid), _dstChainId, message);
-        emit SwapRequestSent(
-            id,
-            _dstChainId,
-            bridgeTokenAmt,
-            _srcSwap.path[0],
-            _dstSwap.path[_dstSwap.path.length - 1]
-        );
+        bytes32 id; // id is only a means for history tracking
+        if (_dstChainId == chainId) {
+            // no need to bridge, directly send the tokens to user
+            IERC20(srcTokenOut).safeTransfer(_receiver, srcAmtOut);
+            // use uint64 for chainid to be consistent with other components in the system
+            id = keccak256(abi.encode(msg.sender, chainId, _receiver, nonce, _srcSwap));
+            emit DirectSwap(id, chainId, _amountIn, _srcSwap.path[0], srcAmtOut, srcTokenOut);
+        } else {
+            require(_dstSwap.path.length > 0, "empty dst swap path");
+            require(srcTokenOut == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
+            bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: _receiver, nonce: nonce}));
+            // bridge the intermediate token to destination chain along with the message
+            sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
+            id = _computSwapMessageId(msg.sender, chainId, _dstChainId, message);
+            emit SwapRequestSent(id, _dstChainId, srcAmtOut, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
+        }
     }
 
     function executeMessageWithTransfer(
@@ -103,10 +105,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         }
         bytes32 id = _computSwapMessageId(_sender, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, dstAmount);
-    }
-
-    function setMinSwapAmount(address token, uint256 _minSwapAmount) external onlyOwner {
-        minSwapAmounts[token] = _minSwapAmount;
     }
 
     function _doSwap(
@@ -132,5 +130,9 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         bytes memory _message
     ) private pure returns (bytes32) {
         return keccak256(abi.encodePacked(_sender, _srcChainId, _dstChainId, _message));
+    }
+
+    function setMinSwapAmount(address token, uint256 _minSwapAmount) external onlyOwner {
+        minSwapAmounts[token] = _minSwapAmount;
     }
 }

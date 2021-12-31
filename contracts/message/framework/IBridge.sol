@@ -26,7 +26,7 @@ interface IBridge {
     /**
      * @notice Verifies that a message is signed by a quorum among the signers.
      * @param _msg signed message
-     * @param _sigs list of signatures sorted by signer addresses
+     * @param _sigs list of signatures sorted by signer addresses in ascending order
      * @param _signers sorted list of current signers
      * @param _powers powers of current signers
      */

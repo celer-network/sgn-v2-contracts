@@ -115,8 +115,8 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     /**
      * @notice Withdraw locked original tokens triggered by a burn at a remote chain's PeggedTokenBridge.
      * @param _request The serialized Withdraw protobuf.
-     * @param _sigs The list of signatures sorted by signing addresses. A relay must be signed-off by +2/3 of the
-     * bridge's current signing power to be delivered.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
+     * +2/3 of the bridge's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
      */

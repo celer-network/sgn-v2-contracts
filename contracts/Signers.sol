@@ -25,7 +25,7 @@ contract Signers is Ownable, ISigsVerifier {
      * @notice Verifies that a message is signed by a quorum among the signers
      * The sigs must be sorted by signer addresses in ascending order.
      * @param _msg signed message
-     * @param _sigs list of signatures sorted by signer addresses
+     * @param _sigs list of signatures sorted by signer addresses in ascending order
      * @param _signers sorted list of current signers
      * @param _powers powers of current signers
      */
@@ -44,7 +44,7 @@ contract Signers is Ownable, ISigsVerifier {
      * @notice Update new signers.
      * @param _newSigners sorted list of new signers
      * @param _curPowers powers of new signers
-     * @param _sigs list of signatures sorted by signer addresses
+     * @param _sigs list of signatures sorted by signer addresses in ascending order
      * @param _curSigners sorted list of current signers
      * @param _curPowers powers of current signers
      */

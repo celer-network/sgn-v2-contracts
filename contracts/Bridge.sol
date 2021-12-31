@@ -112,10 +112,10 @@ contract Bridge is Pool {
     }
 
     /**
-     * @notice Relay a cross-chain transfer sent via another liquidity pool-based bridge.
+     * @notice Relay a cross-chain transfer sent from a liquidity pool-based bridge on another chain.
      * @param _relayRequest The serialized Relay protobuf.
-     * @param _sigs The list of signatures sorted by signing addresses. A relay must be signed-off by +2/3 of the
-     * bridge's current signing power to be delivered.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
+     * +2/3 of the bridge's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
      */

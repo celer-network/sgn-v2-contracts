@@ -47,6 +47,13 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     );
     event MinAddUpdated(address token, uint256 amount);
 
+    /**
+     * @notice Adds liquidity to the pool-based bridge.
+     * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
+     * NOTE: ONLY call this from an EOA. DO NOT call from a contract address.
+     * @param _token The address of the token.
+     * @param _amount The amount to add.
+     */
     function addLiquidity(address _token, uint256 _amount) external nonReentrant whenNotPaused {
         require(_amount > minAdd[_token], "amount too small");
         addseq += 1;
@@ -54,6 +61,11 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
         emit LiquidityAdded(addseq, msg.sender, _token, _amount);
     }
 
+    /**
+     * @notice Adds native token liquidity to the pool-based bridge.
+     * NOTE: ONLY call this from an EOA. DO NOT call from a contract address.
+     * @param _amount The amount to add.
+     */
     function addNativeLiquidity(uint256 _amount) external payable nonReentrant whenNotPaused {
         require(msg.value == _amount, "Amount mismatch");
         require(nativeWrap != address(0), "Native wrap not set");
@@ -63,6 +75,14 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
         emit LiquidityAdded(addseq, msg.sender, nativeWrap, _amount);
     }
 
+    /**
+     * @notice Withdraw funds from the bridge pool.
+     * @param _wdmsg The serialized Withdraw protobuf.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A withdrawal must be
+     * signed-off by +2/3 of the bridge's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     */
     function withdraw(
         bytes calldata _wdmsg,
         bytes[] calldata _sigs,

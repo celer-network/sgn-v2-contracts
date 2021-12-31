@@ -41,6 +41,18 @@ contract Bridge is Pool {
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
     uint32 public minimalMaxSlippage;
 
+    /**
+     * @notice Send a cross-chain transfer via the liquidity pool-based bridge.
+     * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
+     * @param _receiver The address of the receiver.
+     * @param _token The address of the token.
+     * @param _amount The amount of the transfer.
+     * @param _dstChainId The destination chain ID.
+     * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
+     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
+     * transfer can be refunded.
+     */
     function send(
         address _receiver,
         address _token,
@@ -54,6 +66,16 @@ contract Bridge is Pool {
         emit Send(transferId, msg.sender, _receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
     }
 
+    /**
+     * @notice Send a cross-chain transfer via the liquidity pool-based bridge using the native token.
+     * @param _receiver The address of the receiver.
+     * @param _amount The amount of the transfer.
+     * @param _dstChainId The destination chain ID.
+     * @param _nonce A unique number. Can be timestamp in practice.
+     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
+     * transfer can be refunded.
+     */
     function sendNative(
         address _receiver,
         uint256 _amount,
@@ -89,6 +111,14 @@ contract Bridge is Pool {
         return transferId;
     }
 
+    /**
+     * @notice Relay a cross-chain transfer sent via another liquidity pool-based bridge.
+     * @param _relayRequest The serialized Relay protobuf.
+     * @param _sigs The list of signatures sorted by signing addresses. A relay must be signed-off by +2/3 of the
+     * bridge's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     */
     function relay(
         bytes calldata _relayRequest,
         bytes[] calldata _sigs,

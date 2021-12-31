@@ -727,7 +727,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
     }
 
     /**
-     * @notice Check if one validator as too much power
+     * @notice Check if one validator has too much power
      * @param _valTokens token amounts of the validator
      */
     function _decentralizationCheck(uint256 _valTokens) private view {

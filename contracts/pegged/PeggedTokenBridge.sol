@@ -39,7 +39,12 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     }
 
     /**
-     * @notice Mint tokens triggered by deposit at a remote chain's OriginalTokenVault
+     * @notice Mint tokens triggered by deposit at a remote chain's OriginalTokenVault.
+     * @param _request The serialized Mint protobuf.
+     * @param _sigs The list of signatures sorted by signing addresses. A relay must be signed-off by +2/3 of the
+     * sigsVerifier's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
      */
     function mint(
         bytes calldata _request,
@@ -82,11 +87,13 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
     }
 
     /**
-     * @notice Burn tokens to trigger withdrawal at a remote chain's OriginalTokenVault
-     * @param _token local token address
-     * @param _amount locked token amount
-     * @param _withdrawAccount account who withdraw original tokens on the remote chain
-     * @param _nonce user input to guarantee unique depositId
+     * @notice Burn pegged tokens to trigger a cross-chain withdrawal of the original tokens at a remote chain's
+     * OriginalTokenVault.
+     * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
+     * @param _token The pegged token address.
+     * @param _amount The amount to burn.
+     * @param _withdrawAccount The account to receive the original tokens withdrawn on the remote chain.
+     * @param _nonce A number to guarantee unique depositId. Can be timestamp in practice.
      */
     function burn(
         address _token,

@@ -26,9 +26,10 @@ function encodeMessage(
   nonce: number
 ) {
   const encoded = ethers.utils.defaultAbiCoder.encode(
-    ['(address, address[], uint256, uint256, address, uint64)'],
-    [[dstSwap.dex, dstSwap.path, dstSwap.deadline, dstSwap.minRecvAmt, receiver, nonce]]
+    ['((address[], address , uint256, uint256), address, uint64)'],
+    [[[dstSwap.path, dstSwap.dex, dstSwap.deadline, dstSwap.minRecvAmt], receiver, nonce]]
   );
+  console.log('encoded', encoded);
   return encoded;
 }
 
@@ -154,12 +155,12 @@ describe('Test transferWithSwap', function () {
       .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage);
     const expectedNonce = 1;
     const message = encodeMessage(dstSwap, receiver.address, expectedNonce);
-    const id = computeId(sender.address, srcChainId, dstChainId, message);
+    const expectId = computeId(sender.address, srcChainId, dstChainId, message);
 
     const expectedSendAmt = slip(amountIn, 5);
     await expect(tx)
       .to.emit(xswap, 'SwapRequestSent')
-      .withArgs(id, dstChainId, expectedSendAmt, srcSwap.path[0], dstSwap.path[1]);
+      .withArgs(expectId, dstChainId, expectedSendAmt, srcSwap.path[0], dstSwap.path[1]);
 
     const srcXferId = keccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'uint64'],

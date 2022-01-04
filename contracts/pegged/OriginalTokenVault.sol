@@ -104,7 +104,7 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         require(_amount > minDeposit[_token], "amount too small");
         require(maxDeposit[_token] == 0 || _amount <= maxDeposit[_token], "amount too large");
         bytes32 depId = keccak256(
-            // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 = 128
+            // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 = 116
             abi.encodePacked(msg.sender, _token, _amount, _mintChainId, _mintAccount, _nonce, uint64(block.chainid))
         );
         require(records[depId] == false, "record exists");

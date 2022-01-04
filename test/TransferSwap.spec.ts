@@ -8,7 +8,7 @@ import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, DummySwap, MessageBus, TestERC20, TransferSwap } from '../typechain';
-import { deplayMessageContracts as deployMessageContracts, getAccounts, loadFixture } from './lib/common';
+import { deployMessageContracts as deployMessageContracts, getAccounts, loadFixture } from './lib/common';
 
 const UINT64_MAX = '9223372036854775807';
 

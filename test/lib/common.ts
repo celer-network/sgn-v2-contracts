@@ -112,7 +112,7 @@ interface MessageInfo {
   swap: DummySwap;
 }
 
-export async function deplayMessageContracts(admin: Wallet): Promise<MessageInfo> {
+export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo> {
   const testERC20FactoryA = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
   const tokenA = await testERC20FactoryA.connect(admin).deploy();
   await tokenA.deployed();

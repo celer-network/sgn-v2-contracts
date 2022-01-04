@@ -87,7 +87,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             require(_dstSwap.path.length > 0, "empty dst swap path");
             require(srcTokenOut == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
             bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: _receiver, nonce: nonce}));
-            id = _computeSwapMessageId(msg.sender, chainId, _dstChainId, message);
+            id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
             sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
             emit SwapRequestSent(id, _dstChainId, srcAmtOut, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
@@ -103,9 +103,9 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     ) external override onlyMessageBus {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
-        bytes32 id = _computeSwapMessageId(_sender, _srcChainId, uint64(block.chainid), _message);
+        bytes32 id = _computeSwapRequestId(_sender, _srcChainId, uint64(block.chainid), _message);
         uint256 dstAmount;
-        SwapStatus status;
+        SwapStatus status = SwapStatus.Succeeded;
 
         if (m.swap.path.length > 1) {
             bool ok = true;
@@ -113,6 +113,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             // handle swap failure, send the received token directly to receiver
             if (!ok) {
                 IERC20(_token).safeTransfer(m.receiver, _amount);
+                dstAmount = _amount;
                 status = SwapStatus.Fallback;
             }
         } else {
@@ -131,7 +132,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         uint64 _srcChainId,
         bytes memory _message
     ) external override onlyMessageBus {
-        bytes32 id = _computeSwapMessageId(_sender, _srcChainId, uint64(block.chainid), _message);
+        bytes32 id = _computeSwapRequestId(_sender, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
     }
 
@@ -157,7 +158,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         }
     }
 
-    function _computeSwapMessageId(
+    function _computeSwapRequestId(
         address _sender,
         uint64 _srcChainId,
         uint64 _dstChainId,

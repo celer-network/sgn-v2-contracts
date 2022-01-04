@@ -46,6 +46,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     event SwapRequestDone(bytes32 id, uint256 dstAmount, SwapStatus status);
 
     mapping(address => uint256) minSwapAmounts;
+    mapping(address => bool) supportedDex;
     uint64 nonce;
 
     function transferWithSwap(
@@ -141,6 +142,10 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         address _receiver,
         uint256 _amount
     ) private returns (bool ok, uint256 amountOut) {
+        uint256 zero;
+        if (!supportedDex[_swap.dex]) {
+            return (false, zero);
+        }
         IERC20(_swap.path[0]).safeIncreaseAllowance(_swap.dex, _amount);
         try
             IUniswapV2(_swap.dex).swapExactTokensForTokens(
@@ -153,7 +158,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         returns (uint256[] memory amounts) {
             return (true, amounts[amounts.length - 1]);
         } catch {
-            uint256 zero;
             return (false, zero);
         }
     }
@@ -167,7 +171,11 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         return keccak256(abi.encodePacked(_sender, _srcChainId, _dstChainId, _message));
     }
 
-    function setMinSwapAmount(address token, uint256 _minSwapAmount) external onlyOwner {
-        minSwapAmounts[token] = _minSwapAmount;
+    function setMinSwapAmount(address _token, uint256 _minSwapAmount) external onlyOwner {
+        minSwapAmounts[_token] = _minSwapAmount;
+    }
+
+    function setSupportedDex(address _dex, bool _enabled) external onlyOwner {
+        supportedDex[_dex] = _enabled;
     }
 }

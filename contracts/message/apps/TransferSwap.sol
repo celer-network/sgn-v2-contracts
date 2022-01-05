@@ -49,6 +49,18 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     mapping(address => bool) supportedDex;
     uint64 nonce;
 
+    /**
+     * @notice Sends a cross-chain transfer via the liquidity pool-based bridge and sends a message specifying a wanted swap action on the 
+               destination chain via the message bus
+     * @param _receiver the app contract that implements the MessageReceiver abstract contract
+     * @param _amountIn the input amount that the user wants to swap and/or bridge
+     * @param _dstChainId destination chain ID
+     * @param _srcSwap a struct containing swap related requirements
+     * @param _dstSwap a struct containing swap related requirements
+     * @param _maxBridgeSlippage the max acceptable slippage at bridge, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
+     *        transfer can be refunded.
+     */
     function transferWithSwap(
         address _receiver,
         uint256 _amountIn,
@@ -95,6 +107,16 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         }
     }
 
+    /**
+     * @notice called by MessageBus when the tokens are checked to be arrived at this contract's address.
+               sends the amount received to the receiver. swaps beforehand if swap behavior is defined in message
+     * NOTE: if the swap fails, it sends the tokens received directly to the receiver as fallback behavior
+     * @param _sender the address originator of the whole message passing process (the user)
+     * @param _token the address of the token sent through the bridge
+     * @param _amount the amount of tokens received at this contract through the cross-chain bridge
+     * @param _srcChainId source chain ID
+     * @param _message SwapRequest message that defines the swap behavior on this destination chain
+     */
     function executeMessageWithTransfer(
         address _sender,
         address _token,
@@ -126,6 +148,12 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         emit SwapRequestDone(id, dstAmount, status);
     }
 
+    /**
+     * @notice called by MessageBus when the executeMessageWithTransfer call fails. does nothing but emitting a "fail" event
+     * @param _sender the address originator of the whole message passing process (the user)
+     * @param _srcChainId source chain ID
+     * @param _message SwapRequest message that defines the swap behavior on this destination chain
+     */
     function executeMessageWithTransferFallback(
         address _sender,
         address, // _token

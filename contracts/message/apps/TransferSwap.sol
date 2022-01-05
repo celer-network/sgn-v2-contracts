@@ -111,7 +111,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         if (m.swap.path.length > 1) {
             bool ok = true;
             (ok, dstAmount) = _trySwap(m.swap, m.receiver, _amount);
-            // handle swap failure, send the received token directly to receiver
+            // handle swap failure, send the received token directly to receivr
             if (!ok) {
                 IERC20(_token).safeTransfer(m.receiver, _amount);
                 dstAmount = _amount;

@@ -28,7 +28,7 @@ contract FarmingRewards is Pauser {
      * @notice Claim rewards
      * @dev Here we use cumulative reward to make claim process idempotent
      * @param _rewardsRequest rewards request bytes coded in protobuf
-     * @param _sigs list of signatures sorted by signer addresses
+     * @param _sigs list of signatures sorted by signer addresses in ascending order
      * @param _signers sorted list of current signers
      * @param _powers powers of current signers
      */

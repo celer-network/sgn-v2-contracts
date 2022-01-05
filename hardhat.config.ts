@@ -13,6 +13,7 @@ dotenv.config();
 const DEFAULT_ENDPOINT = 'http://localhost:8545';
 const DEFAULT_PRIVATE_KEY = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
+// Testnets
 const kovanEndpoint = process.env.KOVAN_ENDPOINT || DEFAULT_ENDPOINT;
 const kovanPrivateKey = process.env.KOVAN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -46,6 +47,7 @@ const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY 
 const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+// Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -87,6 +89,15 @@ const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const auroraEndpoint = process.env.AURORA_ENDPOINT || DEFAULT_ENDPOINT;
 const auroraPrivateKey = process.env.AURORA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const xdaiEndpoint = process.env.XDAI_ENDPOINT || DEFAULT_ENDPOINT;
+const xdaiPrivateKey = process.env.XDAI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oecEndpoint = process.env.OEC_ENDPOINT || DEFAULT_ENDPOINT;
+const oecPrivateKey = process.env.OEC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const hecoEndpoint = process.env.HECO_ENDPOINT || DEFAULT_ENDPOINT;
+const hecoPrivateKey = process.env.HECO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -192,6 +203,18 @@ const config: HardhatUserConfig = {
     aurora: {
       url: auroraEndpoint,
       accounts: [`0x${auroraPrivateKey}`]
+    },
+    xdai: {
+      url: xdaiEndpoint,
+      accounts: [`0x${xdaiPrivateKey}`]
+    },
+    oec: {
+      url: oecEndpoint,
+      accounts: [`0x${oecPrivateKey}`]
+    },
+    heco: {
+      url: hecoEndpoint,
+      accounts: [`0x${hecoPrivateKey}`]
     }
   },
   namedAccounts: {

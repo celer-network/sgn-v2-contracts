@@ -18,8 +18,5 @@ jobs:
           node-version: 16.4.2
       - name: Installing dependencies
         run: yarn install --frozen-lockfile
-      # debug action
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
       - name: Running tests
         run: yarn test

@@ -105,6 +105,7 @@ async function prepare() {
   await xswap.setTokenBridgeType(tokenA.address, 1);
   await xswap.setTokenBridgeType(tokenB.address, 1);
   await xswap.setMinSwapAmount(tokenA.address, parseUnits('10'));
+  await xswap.setSupportedDex(dex.address, true);
 
   await dex.setFakeSlippage(parseUnits('5', 4));
 
@@ -131,15 +132,6 @@ describe('Test transferWithSwap', function () {
         .connect(sender)
         .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
     ).to.be.revertedWith('empty src swap path');
-
-    srcSwap.path = [tokenA.address, tokenB.address];
-    dstSwap.path = [];
-    await tokenA.connect(sender).approve(xswap.address, amountIn);
-    await expect(
-      xswap
-        .connect(sender)
-        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
-    ).to.be.revertedWith('empty dst swap path');
   });
 
   it('should revert if path token addresses mismatch', async function () {

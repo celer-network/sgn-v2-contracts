@@ -45,7 +45,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     event SwapRequestSent(bytes32 id, uint64 dstChainId, uint256 srcAmount, address srcToken, address dstToken);
     event SwapRequestDone(bytes32 id, uint256 dstAmount, SwapStatus status);
 
-    mapping(address => uint256) minSwapAmounts;
+    mapping(address => uint256) public minSwapAmounts;
     mapping(address => bool) supportedDex;
     uint64 nonce;
 

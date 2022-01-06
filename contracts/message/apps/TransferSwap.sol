@@ -11,6 +11,11 @@ import "../../interfaces/IUniswapV2.sol";
 contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     using SafeERC20 for IERC20;
 
+    modifier onlyEOA() {
+        require(msg.sender == tx.origin, "Not EOA");
+        _;
+    }
+
     struct SwapInfo {
         // if this array has only one element, it means no need to swap
         address[] path;
@@ -49,6 +54,10 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     mapping(address => bool) supportedDex;
     uint64 nonce;
 
+    constructor(address _msgbus) {
+        msgBus = _msgbus;
+    }
+
     /**
      * @notice Sends a cross-chain transfer via the liquidity pool-based bridge and sends a message specifying a wanted swap action on the 
                destination chain via the message bus
@@ -68,7 +77,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         SwapInfo calldata _srcSwap,
         SwapInfo calldata _dstSwap,
         uint32 _maxBridgeSlippage
-    ) external {
+    ) external onlyEOA {
         require(_srcSwap.path.length > 0, "empty src swap path");
         address srcTokenOut = _srcSwap.path[_srcSwap.path.length - 1];
 

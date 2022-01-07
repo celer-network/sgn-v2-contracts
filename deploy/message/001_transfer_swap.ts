@@ -11,7 +11,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   await deploy('TransferSwap', {
     from: deployer,
-    log: true
+    log: true,
+    args: [process.env.CC_SWAP_MSG_BUS]
   });
 };
 

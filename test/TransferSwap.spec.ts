@@ -134,17 +134,6 @@ describe('Test transferWithSwap', function () {
     ).to.be.revertedWith('empty src swap path');
   });
 
-  it('should revert if path token addresses mismatch', async function () {
-    srcSwap.path = [tokenA.address, tokenB.address];
-    dstSwap.path = [tokenA.address, tokenB.address];
-    await tokenA.connect(sender).approve(xswap.address, amountIn);
-    await expect(
-      xswap
-        .connect(sender)
-        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
-    ).to.be.revertedWith('srcSwap.path[len - 1] and dstSwap.path[0] must be the same');
-  });
-
   it('should revert if min swap amount is not satisfied', async function () {
     amountIn = parseUnits('5');
     srcSwap.path = [tokenA.address, tokenB.address];

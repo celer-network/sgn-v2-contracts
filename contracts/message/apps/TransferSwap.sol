@@ -107,7 +107,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             emit DirectSwap(id, chainId, _amountIn, _srcSwap.path[0], srcAmtOut, srcTokenOut);
         } else {
             require(_dstSwap.path.length > 0, "empty dst swap path");
-            require(srcTokenOut == _dstSwap.path[0], "srcSwap.path[len - 1] and dstSwap.path[0] must be the same");
             bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: _receiver, nonce: nonce}));
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message

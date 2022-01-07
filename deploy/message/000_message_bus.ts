@@ -11,7 +11,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   await deploy('MessageBus', {
     from: deployer,
-    log: true
+    log: true,
+    args: [process.env.MESSAGE_BUS_SIG_VERIFIER]
   });
 };
 

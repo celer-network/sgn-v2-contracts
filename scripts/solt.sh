@@ -25,6 +25,7 @@ solFiles=(
   pegged/tokens/SwapBridgeToken
   message/apps/TransferSwap
   test-helpers/DummySwap
+  message/messagebus/MessageBus
 )
 
 run_solt_write() {

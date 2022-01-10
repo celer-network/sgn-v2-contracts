@@ -18,7 +18,7 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external virtual onlyMessageBus {}
+    ) external virtual onlyMessageBus returns (bool) {}
 
     // only called if executeMessageWithTransfer was reverted
     // app needs to decide what to do with the received tokens
@@ -28,11 +28,11 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external virtual onlyMessageBus {}
+    ) external virtual onlyMessageBus returns (bool) {}
 
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external virtual onlyMessageBus {}
+    ) external virtual onlyMessageBus returns (bool) {}
 }

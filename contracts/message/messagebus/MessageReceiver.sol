@@ -68,12 +68,12 @@ contract MessageReceiver is Ownable {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
         TxStatus status;
-        bool ok = executeMessageWithTransfer(_transfer, _message);
-        if (ok) {
+        bool success = executeMessageWithTransfer(_transfer, _message);
+        if (success) {
             status = TxStatus.Success;
         } else {
-            ok = executeMessageWithTransferFallback(_transfer, _message);
-            if (ok) {
+            success = executeMessageWithTransferFallback(_transfer, _message);
+            if (success) {
                 status = TxStatus.Fallback;
             } else {
                 status = TxStatus.Fail;
@@ -98,8 +98,8 @@ contract MessageReceiver is Ownable {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
         TxStatus status;
-        bool ok = executeMessage(_route, _message);
-        if (ok) {
+        bool success = executeMessage(_route, _message);
+        if (success) {
             status = TxStatus.Success;
         } else {
             status = TxStatus.Fail;
@@ -114,7 +114,7 @@ contract MessageReceiver is Ownable {
         private
         returns (bool)
     {
-        (bool ok, ) = address(_transfer.receiver).call(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call(
             abi.encodeWithSelector(
                 MsgReceiverApp.executeMessageWithTransfer.selector,
                 _transfer.sender,
@@ -124,14 +124,18 @@ contract MessageReceiver is Ownable {
                 _message
             )
         );
-        return ok;
+        if (ok) {
+            bool success = abi.decode((res), (bool));
+            return success;
+        }
+        return false;
     }
 
     function executeMessageWithTransferFallback(TransferInfo calldata _transfer, bytes calldata _message)
         private
         returns (bool)
     {
-        (bool ok, ) = address(_transfer.receiver).call(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call(
             abi.encodeWithSelector(
                 MsgReceiverApp.executeMessageWithTransferFallback.selector,
                 _transfer.sender,
@@ -141,7 +145,11 @@ contract MessageReceiver is Ownable {
                 _message
             )
         );
-        return ok;
+        if (ok) {
+            bool success = abi.decode((res), (bool));
+            return success;
+        }
+        return false;
     }
 
     function verifyTransfer(TransferInfo calldata _transfer) private view returns (bytes32) {
@@ -202,10 +210,14 @@ contract MessageReceiver is Ownable {
     }
 
     function executeMessage(RouteInfo calldata _route, bytes calldata _message) private returns (bool) {
-        (bool ok, ) = address(_route.receiver).call(
+        (bool ok, bytes memory res) = address(_route.receiver).call(
             abi.encodeWithSelector(MsgReceiverApp.executeMessage.selector, _route.sender, _route.srcChainId, _message)
         );
-        return ok;
+        if (ok) {
+            bool success = abi.decode((res), (bool));
+            return success;
+        }
+        return false;
     }
 
     // ================= contract addr config =================

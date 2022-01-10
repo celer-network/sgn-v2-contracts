@@ -157,18 +157,18 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
 
     /**
      * @notice called by MessageBus when the executeMessageWithTransfer call fails. does nothing but emitting a "fail" event
-     * @param _sender the address originator of the whole message passing process (the user)
      * @param _srcChainId source chain ID
      * @param _message SwapRequest message that defines the swap behavior on this destination chain
      */
     function executeMessageWithTransferFallback(
-        address _sender,
+        address, // _sender
         address, // _token
         uint256, // _amount
         uint64 _srcChainId,
         bytes memory _message
     ) external override onlyMessageBus {
-        bytes32 id = _computeSwapRequestId(_sender, _srcChainId, uint64(block.chainid), _message);
+        SwapRequest memory m = abi.decode((_message), (SwapRequest));
+        bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
     }
 

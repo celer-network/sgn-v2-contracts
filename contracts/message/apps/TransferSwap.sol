@@ -99,8 +99,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
 
         // swap source token for intermediate token on the source DEX
-        bool ok = true;
         if (_srcSwap.path.length > 1) {
+            bool ok = true;
             (ok, srcAmtOut) = _trySwap(_srcSwap, address(this), _amountIn);
             if (!ok) revert("src swap failed");
         }
@@ -114,11 +114,13 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             emit DirectSwap(id, chainId, _amountIn, _srcSwap.path[0], srcAmtOut, srcTokenOut);
         } else {
             require(_dstSwap.path.length > 0, "empty dst swap path");
-            bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: _nonce}));
-            id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
-            // bridge the intermediate token to destination chain along with the message
-            uint64 nonce = _nonce; // TODO calculate nonce
-            sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
+            {
+                bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: _nonce}));
+                id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
+                // bridge the intermediate token to destination chain along with the message
+                uint64 nonce = _nonce; // TODO calculate nonce
+                sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
+            }
             emit SwapRequestSent(id, _dstChainId, _amountIn, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
         }
     }

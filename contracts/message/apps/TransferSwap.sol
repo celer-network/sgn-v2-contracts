@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../framework/MsgSenderApp.sol";
 import "../framework/MsgReceiverApp.sol";
+import "../../interfaces/IWETH.sol";
 import "../../interfaces/IUniswapV2.sol";
 
 contract TransferSwap is MsgSenderApp, MsgReceiverApp {
@@ -29,6 +30,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         SwapInfo swap;
         address receiver;
         uint64 nonce;
+        bool nativeOut;
     }
 
     enum SwapStatus {
@@ -53,16 +55,59 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     mapping(address => uint256) public minSwapAmounts;
     mapping(address => bool) supportedDex;
 
+    // erc20 wrap of gas token of this chain, eg. WETH
+    address public nativeWrap;
+
     constructor(
         address _msgbus,
         address _supportedDex,
         address _bridge,
-        address _bridgeToken
+        address _bridgeToken,
+        address _nativeWrap
     ) {
         msgBus = _msgbus;
         supportedDex[_supportedDex] = true;
         liquidityBridge = _bridge;
         tokenBridgeTypes[_bridgeToken] = BridgeType.Liquidity;
+        nativeWrap = _nativeWrap;
+    }
+
+    function transferWithSwapNative(
+        address _receiver,
+        uint256 _amountIn,
+        uint64 _dstChainId,
+        SwapInfo calldata _srcSwap,
+        SwapInfo calldata _dstSwap,
+        uint32 _maxBridgeSlippage,
+        uint64 _nonce,
+        bool _nativeOut
+    ) external payable onlyEOA {
+        require(msg.value == _amountIn, "Amount mismatch");
+        require(_srcSwap.path[0] == nativeWrap, "token mismatch");
+        IWETH(nativeWrap).deposit{value: _amountIn}();
+        _transferWithSwap(
+            _receiver,
+            _amountIn,
+            _dstChainId,
+            _srcSwap,
+            _dstSwap,
+            _maxBridgeSlippage,
+            _nonce,
+            _nativeOut
+        );
+    }
+
+    function transferWithSwap(
+        address _receiver,
+        uint256 _amountIn,
+        uint64 _dstChainId,
+        SwapInfo calldata _srcSwap,
+        SwapInfo calldata _dstSwap,
+        uint32 _maxBridgeSlippage,
+        uint64 _nonce
+    ) external onlyEOA {
+        IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
+        _transferWithSwap(_receiver, _amountIn, _dstChainId, _srcSwap, _dstSwap, _maxBridgeSlippage, _nonce, false);
     }
 
     /**
@@ -77,15 +122,16 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
      *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
      *        transfer can be refunded.
      */
-    function transferWithSwap(
+    function _transferWithSwap(
         address _receiver,
         uint256 _amountIn,
         uint64 _dstChainId,
-        SwapInfo calldata _srcSwap,
-        SwapInfo calldata _dstSwap,
+        SwapInfo memory _srcSwap,
+        SwapInfo memory _dstSwap,
         uint32 _maxBridgeSlippage,
-        uint64 _nonce
-    ) external onlyEOA {
+        uint64 _nonce,
+        bool _nativeOut
+    ) private {
         require(_srcSwap.path.length > 0, "empty src swap path");
         address srcTokenOut = _srcSwap.path[_srcSwap.path.length - 1];
 
@@ -94,9 +140,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         require(_srcSwap.path.length > 1 || _dstChainId != chainId, "noop is not allowed"); // revert early to save gas
 
         uint256 srcAmtOut = _amountIn;
-
-        // pull source token from user
-        IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
 
         // swap source token for intermediate token on the source DEX
         if (_srcSwap.path.length > 1) {
@@ -114,13 +157,21 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             emit DirectSwap(id, chainId, _amountIn, _srcSwap.path[0], srcAmtOut, srcTokenOut);
         } else {
             require(_dstSwap.path.length > 0, "empty dst swap path");
-            {
-                bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: _nonce}));
-                id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
-                // bridge the intermediate token to destination chain along with the message
-                uint64 nonce = _nonce; // TODO calculate nonce
-                sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
-            }
+            bytes memory message = abi.encode(
+                SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: _nonce, nativeOut: _nativeOut})
+            );
+            id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
+            // bridge the intermediate token to destination chain along with the message
+            // TODO calculate nonce
+            sendMessageWithTransfer(
+                _receiver,
+                srcTokenOut,
+                srcAmtOut,
+                _dstChainId,
+                _nonce,
+                _maxBridgeSlippage,
+                message
+            );
             emit SwapRequestSent(id, _dstChainId, _amountIn, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
         }
     }
@@ -158,9 +209,16 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             }
         } else {
             // no need to swap, directly send the bridged token to user
-            IERC20(_token).safeTransfer(m.receiver, _amount);
-            dstAmount = _amount;
-            status = SwapStatus.Succeeded;
+            if (m.nativeOut) {
+                require(m.swap.path[m.swap.path.length - 1] == nativeWrap, "token mismatch");
+                IWETH(nativeWrap).withdraw(_amount);
+                (bool sent, ) = m.receiver.call{value: _amount, gas: 50000}("");
+                require(sent, "failed to send native token");
+            } else {
+                IERC20(_token).safeTransfer(m.receiver, _amount);
+                dstAmount = _amount;
+                status = SwapStatus.Succeeded;
+            }
         }
         emit SwapRequestDone(id, dstAmount, status);
     }
@@ -223,4 +281,11 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     function setSupportedDex(address _dex, bool _enabled) external onlyOwner {
         supportedDex[_dex] = _enabled;
     }
+
+    function setNativeWrap(address _nativeWrap) external onlyOwner {
+        nativeWrap = _nativeWrap;
+    }
+
+    // This is needed to receive ETH when calling `IWETH.withdraw`
+    receive() external payable {}
 }

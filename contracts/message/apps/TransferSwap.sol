@@ -54,8 +54,16 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     mapping(address => bool) supportedDex;
     uint64 nonce;
 
-    constructor(address _msgbus) {
+    constructor(
+        address _msgbus,
+        address _supportedDex,
+        address _bridge,
+        address _bridgeToken
+    ) {
         msgBus = _msgbus;
+        supportedDex[_supportedDex] = true;
+        liquidityBridge = _bridge;
+        tokenBridgeTypes[_bridgeToken] = BridgeType.Liquidity;
     }
 
     /**
@@ -111,7 +119,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
             sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
-            emit SwapRequestSent(id, _dstChainId, srcAmtOut, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
+            emit SwapRequestSent(id, _dstChainId, _amountIn, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
         }
     }
 

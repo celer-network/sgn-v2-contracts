@@ -119,14 +119,13 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
      * @notice called by MessageBus when the tokens are checked to be arrived at this contract's address.
                sends the amount received to the receiver. swaps beforehand if swap behavior is defined in message
      * NOTE: if the swap fails, it sends the tokens received directly to the receiver as fallback behavior
-     * @param _sender the address originator of the whole message passing process (the user)
      * @param _token the address of the token sent through the bridge
      * @param _amount the amount of tokens received at this contract through the cross-chain bridge
      * @param _srcChainId source chain ID
      * @param _message SwapRequest message that defines the swap behavior on this destination chain
      */
     function executeMessageWithTransfer(
-        address _sender,
+        address, // _sender
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
@@ -134,7 +133,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     ) external override onlyMessageBus {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
-        bytes32 id = _computeSwapRequestId(_sender, _srcChainId, uint64(block.chainid), _message);
+        bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         uint256 dstAmount;
         SwapStatus status = SwapStatus.Succeeded;
 

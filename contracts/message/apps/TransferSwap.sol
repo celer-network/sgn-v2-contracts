@@ -52,7 +52,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
 
     mapping(address => uint256) public minSwapAmounts;
     mapping(address => bool) supportedDex;
-    uint64 nonce;
 
     constructor(
         address _msgbus,
@@ -84,7 +83,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         uint64 _dstChainId,
         SwapInfo calldata _srcSwap,
         SwapInfo calldata _dstSwap,
-        uint32 _maxBridgeSlippage
+        uint32 _maxBridgeSlippage,
+        uint64 _nonce
     ) external onlyEOA {
         require(_srcSwap.path.length > 0, "empty src swap path");
         address srcTokenOut = _srcSwap.path[_srcSwap.path.length - 1];
@@ -94,7 +94,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         require(_srcSwap.path.length > 1 || _dstChainId != chainId, "noop is not allowed"); // revert early to save gas
 
         uint256 srcAmtOut = _amountIn;
-        nonce += 1;
 
         // pull source token from user
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
@@ -111,13 +110,14 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             // no need to bridge, directly send the tokens to user
             IERC20(srcTokenOut).safeTransfer(_receiver, srcAmtOut);
             // use uint64 for chainid to be consistent with other components in the system
-            id = keccak256(abi.encode(msg.sender, chainId, _receiver, nonce, _srcSwap));
+            id = keccak256(abi.encode(msg.sender, chainId, _receiver, _nonce, _srcSwap));
             emit DirectSwap(id, chainId, _amountIn, _srcSwap.path[0], srcAmtOut, srcTokenOut);
         } else {
             require(_dstSwap.path.length > 0, "empty dst swap path");
-            bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: nonce}));
+            bytes memory message = abi.encode(SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: _nonce}));
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
+            uint64 nonce = _nonce; // TODO calculate nonce
             sendMessageWithTransfer(_receiver, srcTokenOut, srcAmtOut, _dstChainId, nonce, _maxBridgeSlippage, message);
             emit SwapRequestSent(id, _dstChainId, _amountIn, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);
         }

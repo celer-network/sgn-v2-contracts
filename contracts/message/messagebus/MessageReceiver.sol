@@ -59,7 +59,7 @@ contract MessageReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external {
-        // For message with token transfter, message Id is computed through transfer info
+        // For message with token transfer, message Id is computed through transfer info
         // in order to guarantee that each transfer can only be used once.
         // This also indicates that different transfers can carry the exact same messages.
         bytes32 messageId = verifyTransfer(_transfer);

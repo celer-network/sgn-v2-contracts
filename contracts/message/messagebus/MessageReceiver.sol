@@ -38,8 +38,7 @@ contract MessageReceiver is Ownable {
         Fail,
         Fallback
     }
-    mapping(bytes32 => TxStatus) public executedTransfers; // messages with associated transfer
-    mapping(bytes32 => TxStatus) public executedMessages; // messages without associated transfer
+    mapping(bytes32 => TxStatus) public executedMessages;
 
     address public liquidityBridge; // liquidity bridge address
     address public pegBridge; // peg bridge address
@@ -47,7 +46,7 @@ contract MessageReceiver is Ownable {
 
     enum MsgType {
         MessageWithTransfer,
-        Message
+        MessageOnly
     }
     event Executed(MsgType msgType, bytes32 id, TxStatus status);
 
@@ -60,11 +59,14 @@ contract MessageReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external {
-        bytes32 transferId = verifyTransfer(_transfer);
-        require(executedTransfers[transferId] == TxStatus.Null, "transfer already executed");
+        // For message with token transfter, message Id is computed through transfer info
+        // in order to guarantee that each transfer can only be used once.
+        // This also indicates that different transfers can carry the exact same messages.
+        bytes32 messageId = verifyTransfer(_transfer);
+        require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
-        IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, transferId, _message), _sigs, _signers, _powers);
+        IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
         TxStatus status;
         bool ok = executeMessageWithTransfer(_transfer, _message);
         if (ok) {
@@ -77,8 +79,8 @@ contract MessageReceiver is Ownable {
                 status = TxStatus.Fail;
             }
         }
-        executedTransfers[transferId] = status;
-        emit Executed(MsgType.MessageWithTransfer, transferId, status);
+        executedMessages[messageId] = status;
+        emit Executed(MsgType.MessageWithTransfer, messageId, status);
     }
 
     function executeMessage(
@@ -88,7 +90,9 @@ contract MessageReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external {
-        bytes32 messageId = ComputeMessageId(_route, _message);
+        // For message without associated token transfer, message Id is computed through message info,
+        // in order to guarantee that each message can only be applied once
+        bytes32 messageId = computeMessageOnlyId(_route, _message);
         require(executedMessages[messageId] == TxStatus.Null, "message already executed");
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
@@ -100,8 +104,8 @@ contract MessageReceiver is Ownable {
         } else {
             status = TxStatus.Fail;
         }
-        executedTransfers[messageId] = status;
-        emit Executed(MsgType.Message, messageId, status);
+        executedMessages[messageId] = status;
+        emit Executed(MsgType.MessageOnly, messageId, status);
     }
 
     // ================= utils (to avoid stack too deep) =================
@@ -187,12 +191,14 @@ contract MessageReceiver is Ownable {
             }
             require(IBridge(bridgeAddr).records(transferId) == true, "peg record not exist");
         }
-        transferId = keccak256(abi.encodePacked(bridgeAddr, transferId));
-        return transferId;
+        return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
 
-    function ComputeMessageId(RouteInfo calldata _route, bytes calldata _message) private pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_route.sender, _route.receiver, _route.srcChainId, _message));
+    function computeMessageOnlyId(RouteInfo calldata _route, bytes calldata _message) private pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(MsgType.MessageOnly, _route.sender, _route.receiver, _route.srcChainId, _message)
+            );
     }
 
     function executeMessage(RouteInfo calldata _route, bytes calldata _message) private returns (bool) {

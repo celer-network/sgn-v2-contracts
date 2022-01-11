@@ -30,6 +30,7 @@ import {
   TransferSwap__factory,
   Viewer,
   Viewer__factory,
+  WETH,
   WETH__factory
 } from '../../typechain';
 import { DummySwap } from '../../typechain/DummySwap';
@@ -111,6 +112,7 @@ interface MessageInfo {
   tokenB: TestERC20;
   bridge: Bridge;
   swap: DummySwap;
+  weth: WETH;
 }
 
 export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo> {
@@ -144,7 +146,7 @@ export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo
     .deploy(bus.address, swap.address, bridge.address, tokenB.address, weth.address);
   await transferSwap.deployed();
 
-  return { bus, tokenA, tokenB, transferSwap, swap, bridge };
+  return { bus, tokenA, tokenB, transferSwap, swap, bridge, weth };
 }
 
 export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {

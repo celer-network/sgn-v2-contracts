@@ -7,7 +7,7 @@ import { Address } from 'hardhat-deploy/types';
 import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Bridge, DummySwap, MessageBus, TestERC20, TransferSwap } from '../typechain';
+import { Bridge, DummySwap, MessageBus, TestERC20, TransferSwap, WETH } from '../typechain';
 import { deployMessageContracts as deployMessageContracts, getAccounts, loadFixture } from './lib/common';
 import { ZERO_ADDR } from './lib/constants';
 
@@ -60,6 +60,7 @@ let admin: Wallet;
 let chainId: number;
 let sender: Wallet;
 let receiver: Wallet;
+let weth: WETH;
 
 let amountIn: BigNumber;
 const maxBridgeSlippage = parseUnits('100', 4); // 100%
@@ -80,6 +81,7 @@ async function prepare() {
   bus = res.bus;
   tokenA = res.tokenA;
   tokenB = res.tokenB;
+  weth = res.weth;
   xswap = res.transferSwap;
   dex = res.swap;
   bridge = res.bridge;
@@ -113,6 +115,8 @@ async function prepare() {
 
   await tokenA.connect(res.admin).transfer(dex.address, parseUnits('1000'));
   await tokenB.connect(res.admin).transfer(dex.address, parseUnits('1000'));
+  await weth.connect(res.admin).deposit({ value: parseUnits('100') });
+  await weth.connect(res.admin).transfer(dex.address, parseUnits('100'));
   return { admin, bus, tokenA, tokenB, xswap, dex, bridge, accounts, chainId };
 }
 
@@ -248,6 +252,72 @@ describe('Test transferWithSwap', function () {
   });
 });
 
+describe('Test transferWithSwapNative', function () {
+  let srcChainId: number;
+  const dstChainId = 2; // doesn't matter
+
+  const amountIn2 = parseUnits('10');
+
+  beforeEach(async () => {
+    await prepare();
+    srcChainId = chainId;
+  });
+
+  it('should revert if native in does not match amountIn (native in)', async function () {
+    srcSwap.path = [weth.address, tokenB.address];
+    dstSwap.path = [tokenB.address, weth.address];
+
+    await expect(
+      xswap
+        .connect(sender)
+        .transferWithSwapNative(receiver.address, amountIn2, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1, true, {
+          value: amountIn2.div(2)
+        })
+    ).to.be.revertedWith('Amount mismatch');
+  });
+
+  it('should swap and send (native in)', async function () {
+    srcSwap.path = [weth.address, tokenB.address];
+    srcSwap.minRecvAmt = slip(amountIn2, 10);
+    dstSwap.path = [tokenB.address, weth.address];
+    dstSwap.minRecvAmt = slip(amountIn2, 10);
+
+    const balBefore = await sender.getBalance();
+    const tx = await xswap
+      .connect(sender)
+      .transferWithSwapNative(receiver.address, amountIn2, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1, true, {
+        value: amountIn2
+      });
+
+    const balAfter = await sender.getBalance();
+    await expect(balAfter.lte(balBefore.sub(amountIn2)));
+    const message = encodeMessage(dstSwap, sender.address, expectNonce, true);
+    const expectId = computeId(sender.address, srcChainId, dstChainId, message);
+
+    await expect(tx)
+      .to.emit(xswap, 'SwapRequestSent')
+      .withArgs(expectId, dstChainId, amountIn2, srcSwap.path[0], dstSwap.path[1]);
+
+    const expectedSendAmt = slip(amountIn2, 5);
+    const srcXferId = keccak256(
+      ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'uint64'],
+      [xswap.address, receiver.address, tokenB.address, expectedSendAmt, dstChainId, expectNonce, srcChainId]
+    );
+    await expect(tx)
+      .to.emit(bridge, 'Send')
+      .withArgs(
+        srcXferId,
+        xswap.address,
+        receiver.address,
+        tokenB.address,
+        expectedSendAmt,
+        dstChainId,
+        expectNonce,
+        maxBridgeSlippage
+      );
+  });
+});
+
 describe('Test executeMessageWithTransfer', function () {
   beforeEach(async () => {
     await prepare();
@@ -272,6 +342,24 @@ describe('Test executeMessageWithTransfer', function () {
     const expectStatus = 1; // SwapStatus.Succeeded
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount, expectStatus);
     await expect(balB2).to.equal(balB1.add(dstAmount));
+  });
+
+  it('should swap and send native', async function () {
+    dstSwap.path = [tokenA.address, weth.address];
+    const amountIn2 = parseUnits('10');
+    dstSwap.minRecvAmt = slip(amountIn2, 10);
+    const message = encodeMessage(dstSwap, receiver.address, expectNonce, true);
+    const bal1 = await receiver.getBalance();
+    await tokenA.connect(admin).transfer(xswap.address, amountIn2);
+    const tx = await xswap
+      .connect(admin)
+      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn2, srcChainId, message);
+    const bal2 = await receiver.getBalance();
+    const id = computeId(receiver.address, srcChainId, chainId, message);
+    const dstAmount = slip(amountIn2, 5);
+    const expectStatus = 1; // SwapStatus.Succeeded
+    await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount, expectStatus);
+    await expect(bal2.eq(bal1.add(dstAmount)));
   });
 
   it('should send bridge token to receiver if no dst swap specified', async function () {

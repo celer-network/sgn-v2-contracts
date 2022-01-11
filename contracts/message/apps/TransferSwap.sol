@@ -144,7 +144,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         // swap source token for intermediate token on the source DEX
         if (_srcSwap.path.length > 1) {
             bool ok = true;
-            (ok, srcAmtOut) = _trySwap(_srcSwap, address(this), _amountIn);
+            (ok, srcAmtOut) = _trySwap(_srcSwap, _amountIn);
             if (!ok) revert("src swap failed");
         }
 
@@ -200,27 +200,39 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
 
         if (m.swap.path.length > 1) {
             bool ok = true;
-            (ok, dstAmount) = _trySwap(m.swap, m.receiver, _amount);
-            // handle swap failure, send the received token directly to receivr
-            if (!ok) {
-                IERC20(_token).safeTransfer(m.receiver, _amount);
+            (ok, dstAmount) = _trySwap(m.swap, _amount);
+            if (ok) {
+                _sendToken(m.swap.path[m.swap.path.length - 1], dstAmount, m.receiver, m.nativeOut);
+                status = SwapStatus.Succeeded;
+            } else {
+                // handle swap failure, send the received token directly to receivr
+                _sendToken(_token, _amount, m.receiver, false);
                 dstAmount = _amount;
                 status = SwapStatus.Fallback;
             }
         } else {
             // no need to swap, directly send the bridged token to user
-            if (m.nativeOut) {
-                require(m.swap.path[m.swap.path.length - 1] == nativeWrap, "token mismatch");
-                IWETH(nativeWrap).withdraw(_amount);
-                (bool sent, ) = m.receiver.call{value: _amount, gas: 50000}("");
-                require(sent, "failed to send native token");
-            } else {
-                IERC20(_token).safeTransfer(m.receiver, _amount);
-                dstAmount = _amount;
-                status = SwapStatus.Succeeded;
-            }
+            _sendToken(m.swap.path[0], _amount, m.receiver, m.nativeOut);
+            dstAmount = _amount;
+            status = SwapStatus.Succeeded;
         }
         emit SwapRequestDone(id, dstAmount, status);
+    }
+
+    function _sendToken(
+        address _token,
+        uint256 _amount,
+        address _receiver,
+        bool _nativeOut
+    ) private {
+        if (_nativeOut) {
+            require(_token == nativeWrap, "token mismatch");
+            IWETH(nativeWrap).withdraw(_amount);
+            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            require(sent, "failed to send native");
+        } else {
+            IERC20(_token).safeTransfer(_receiver, _amount);
+        }
     }
 
     /**
@@ -240,11 +252,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
     }
 
-    function _trySwap(
-        SwapInfo memory _swap,
-        address _receiver,
-        uint256 _amount
-    ) private returns (bool ok, uint256 amountOut) {
+    function _trySwap(SwapInfo memory _swap, uint256 _amount) private returns (bool ok, uint256 amountOut) {
         uint256 zero;
         if (!supportedDex[_swap.dex]) {
             return (false, zero);
@@ -255,7 +263,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
                 _amount,
                 _swap.minRecvAmt,
                 _swap.path,
-                _receiver,
+                address(this),
                 _swap.deadline
             )
         returns (uint256[] memory amounts) {

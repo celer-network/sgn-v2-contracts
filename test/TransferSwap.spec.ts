@@ -9,6 +9,7 @@ import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, DummySwap, MessageBus, TestERC20, TransferSwap } from '../typechain';
 import { deployMessageContracts as deployMessageContracts, getAccounts, loadFixture } from './lib/common';
+import { ZERO_ADDR } from './lib/constants';
 
 const UINT64_MAX = '9223372036854775807';
 
@@ -155,14 +156,14 @@ describe('Test transferWithSwap', function () {
     const tx = await xswap
       .connect(sender)
       .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1);
-    const message = encodeMessage(dstSwap, receiver.address, expectNonce, false);
+    const message = encodeMessage(dstSwap, sender.address, expectNonce, false);
     const expectId = computeId(sender.address, srcChainId, dstChainId, message);
 
-    const expectedSendAmt = slip(amountIn, 5);
     await expect(tx)
       .to.emit(xswap, 'SwapRequestSent')
-      .withArgs(expectId, dstChainId, expectedSendAmt, srcSwap.path[0], dstSwap.path[1]);
+      .withArgs(expectId, dstChainId, amountIn, srcSwap.path[0], dstSwap.path[1]);
 
+    const expectedSendAmt = slip(amountIn, 5);
     const srcXferId = keccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'uint64'],
       [xswap.address, receiver.address, tokenB.address, expectedSendAmt, dstChainId, expectNonce, srcChainId]
@@ -189,7 +190,7 @@ describe('Test transferWithSwap', function () {
     const tx = await xswap
       .connect(sender)
       .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1);
-    const message = encodeMessage(dstSwap, receiver.address, expectNonce, false);
+    const message = encodeMessage(dstSwap, sender.address, expectNonce, false);
     const id = computeId(sender.address, srcChainId, dstChainId, message);
 
     await expect(tx)
@@ -264,10 +265,9 @@ describe('Test executeMessageWithTransfer', function () {
     await tokenA.connect(admin).transfer(xswap.address, amountIn);
     const tx = await xswap
       .connect(admin)
-      .executeMessageWithTransfer(accounts[0].address, tokenA.address, amountIn, srcChainId, message);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn, srcChainId, message);
     const balB2 = await tokenB.connect(admin).balanceOf(receiver.address);
-
-    const id = computeId(accounts[0].address, srcChainId, chainId, message);
+    const id = computeId(receiver.address, srcChainId, chainId, message);
     const dstAmount = slip(amountIn, 5);
     const expectStatus = 1; // SwapStatus.Succeeded
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount, expectStatus);
@@ -282,9 +282,9 @@ describe('Test executeMessageWithTransfer', function () {
     const balA1 = await tokenA.connect(receiver).balanceOf(receiver.address);
     const tx = await xswap
       .connect(admin)
-      .executeMessageWithTransfer(accounts[0].address, tokenA.address, amountIn, srcChainId, message);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn, srcChainId, message);
     const balA2 = await tokenA.connect(receiver).balanceOf(receiver.address);
-    const id = computeId(accounts[0].address, srcChainId, chainId, message);
+    const id = computeId(receiver.address, srcChainId, chainId, message);
     const expectStatus = 1; // SwapStatus.Succeeded
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, amountIn, expectStatus);
     await expect(balA2).to.equal(balA1.add(amountIn));
@@ -301,8 +301,8 @@ describe('Test executeMessageWithTransfer', function () {
     await tokenB.connect(admin).transfer(xswap.address, bridgeAmount);
     const tx = xswap
       .connect(admin)
-      .executeMessageWithTransfer(sender.address, tokenB.address, bridgeAmount, srcChainId, msg);
-    const expectId = computeId(sender.address, srcChainId, chainId, msg);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenB.address, bridgeAmount, srcChainId, msg);
+    const expectId = computeId(receiver.address, srcChainId, chainId, msg);
     const expectStatus = 3; // SwapStatus.Fallback
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(expectId, slip(amountIn, 5), expectStatus);
     const balA2 = await tokenA.balanceOf(receiver.address);

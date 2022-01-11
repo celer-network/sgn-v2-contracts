@@ -29,7 +29,8 @@ import {
   TransferSwap,
   TransferSwap__factory,
   Viewer,
-  Viewer__factory
+  Viewer__factory,
+  WETH__factory
 } from '../../typechain';
 import { DummySwap } from '../../typechain/DummySwap';
 import * as consts from './constants';
@@ -129,13 +130,19 @@ export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo
   const bus = await busFactory.connect(admin).deploy(bridge.address);
   await bus.deployed();
 
-  const transferSwapFactory = (await ethers.getContractFactory('TransferSwap')) as TransferSwap__factory;
-  const transferSwap = await transferSwapFactory.connect(admin).deploy();
-  await transferSwap.deployed();
-
   const swapFactory = (await ethers.getContractFactory('DummySwap')) as DummySwap__factory;
   const swap = await swapFactory.connect(admin).deploy(parseUnits('5')); // 5% fixed fake slippage
   await swap.deployed();
+
+  const wethFactory = (await ethers.getContractFactory('WETH')) as WETH__factory;
+  const weth = await wethFactory.connect(admin).deploy();
+  await weth.deployed();
+
+  const transferSwapFactory = (await ethers.getContractFactory('TransferSwap')) as TransferSwap__factory;
+  const transferSwap = await transferSwapFactory
+    .connect(admin)
+    .deploy(bus.address, swap.address, bridge.address, tokenB.address, weth.address);
+  await transferSwap.deployed();
 
   return { bus, tokenA, tokenB, transferSwap, swap, bridge };
 }

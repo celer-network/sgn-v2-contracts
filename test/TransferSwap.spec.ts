@@ -130,8 +130,8 @@ describe('Test transferWithSwap', function () {
     await expect(
       xswap
         .connect(sender)
-        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
-    ).to.be.revertedWith('empty src swap path');
+        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1)
+    ).to.be.reverted;
   });
 
   it('should revert if min swap amount is not satisfied', async function () {
@@ -142,7 +142,7 @@ describe('Test transferWithSwap', function () {
     await expect(
       xswap
         .connect(sender)
-        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage)
+        .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1)
     ).to.be.revertedWith('amount must be greateer than min swap amount');
   });
 
@@ -153,7 +153,7 @@ describe('Test transferWithSwap', function () {
     await tokenA.connect(sender).approve(xswap.address, amountIn);
     const tx = await xswap
       .connect(sender)
-      .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage);
+      .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1);
     const message = encodeMessage(dstSwap, receiver.address, expectNonce);
     const expectId = computeId(sender.address, srcChainId, dstChainId, message);
 
@@ -187,7 +187,7 @@ describe('Test transferWithSwap', function () {
     await tokenB.connect(sender).approve(xswap.address, amountIn);
     const tx = await xswap
       .connect(sender)
-      .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage);
+      .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1);
     const message = encodeMessage(dstSwap, receiver.address, expectNonce);
     const id = computeId(sender.address, srcChainId, dstChainId, message);
 
@@ -221,7 +221,7 @@ describe('Test transferWithSwap', function () {
     const recvBalBefore = await tokenB.connect(receiver).balanceOf(receiver.address);
     const tx = await xswap
       .connect(sender)
-      .transferWithSwap(receiver.address, amountIn, chainId, srcSwap, dstSwap, maxBridgeSlippage);
+      .transferWithSwap(receiver.address, amountIn, chainId, srcSwap, dstSwap, maxBridgeSlippage, 1);
     const recvBalAfter = await tokenB.connect(receiver).balanceOf(receiver.address);
     const expectId = computeDirectSwapId(sender.address, srcChainId, receiver.address, expectNonce, srcSwap);
 
@@ -239,7 +239,9 @@ describe('Test transferWithSwap', function () {
 
     await tokenA.connect(sender).approve(xswap.address, amountIn);
     await expect(
-      xswap.connect(sender).transferWithSwap(receiver.address, amountIn, chainId, srcSwap, dstSwap, maxBridgeSlippage)
+      xswap
+        .connect(sender)
+        .transferWithSwap(receiver.address, amountIn, chainId, srcSwap, dstSwap, maxBridgeSlippage, 1)
     ).to.be.revertedWith('noop is not allowed');
   });
 });

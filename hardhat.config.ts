@@ -99,6 +99,9 @@ const oecPrivateKey = process.env.OEC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const hecoEndpoint = process.env.HECO_ENDPOINT || DEFAULT_ENDPOINT;
 const hecoPrivateKey = process.env.HECO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const moonbeamEndpoint = process.env.MOONBEAM_ENDPOINT || DEFAULT_ENDPOINT;
+const moonbeamPrivateKey = process.env.MOONBEAM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -215,6 +218,10 @@ const config: HardhatUserConfig = {
     heco: {
       url: hecoEndpoint,
       accounts: [`0x${hecoPrivateKey}`]
+    },
+    moonbeam: {
+      url: moonbeamEndpoint,
+      accounts: [`0x${moonbeamPrivateKey}`]
     }
   },
   namedAccounts: {

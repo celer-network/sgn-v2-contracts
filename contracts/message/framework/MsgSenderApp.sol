@@ -54,6 +54,7 @@ abstract contract MsgSenderApp is MsgBusAddr {
             );
         } else if (bt == BridgeType.PegDeposit) {
             bridge = pegVault;
+            IERC20(_token).safeIncreaseAllowance(pegVault, _amount);
             IBridge(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))

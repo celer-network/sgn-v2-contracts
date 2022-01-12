@@ -82,10 +82,11 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         address _sender,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus {
+    ) external override onlyMessageBus returns (bool) {
         TransferReceipt memory receipt = abi.decode((_message), (TransferReceipt));
         require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)), "invalid message");
         status[receipt.nonce].status = receipt.status;
+        return true;
     }
 
     // ============== functions on destination chain ==============
@@ -97,7 +98,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus {
+    ) external override onlyMessageBus returns (bool) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         uint256 totalAmt;
         for (uint256 i = 0; i < transfer.accounts.length; i++) {
@@ -111,6 +112,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Success}));
         // MsgSenderApp util function
         sendMessage(_sender, _srcChainId, message);
+        return true;
     }
 
     // handler function required by MsgReceiverApp
@@ -121,10 +123,11 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus {
+    ) external override onlyMessageBus returns (bool) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Fail}));
         sendMessage(_sender, _srcChainId, message);
+        return true;
     }
 }

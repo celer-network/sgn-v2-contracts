@@ -207,7 +207,6 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         uint256 dstAmount;
         SwapStatus status = SwapStatus.Succeeded;
-
         if (m.swap.path.length > 1) {
             bool ok = true;
             (ok, dstAmount) = _trySwap(m.swap, _amount);

@@ -35,7 +35,7 @@ This example application sends tokens from one sender at the source chain to mul
 2. Receiver side implements the `executeMessageWithTransfer` interface to handle the batch transfer message, and distribute tokens to receiver accounts according to the message content. It also internally calls app framework's `sendMessage` to send a receipt to the source app.
 3. Sender side implements the `executeMessage` interface to handle the receipt message.
 
-### Example 2: [Cross Chain Swap](./apps/CrossChainSwap.sol)
+### Example 2: [Cross Chain Swap](./apps/TransferSwap.sol)
 
 This example swaps one token at chain A to another token at chain B through cBridge and a dex on chain B.
 

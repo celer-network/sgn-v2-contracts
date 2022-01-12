@@ -10,8 +10,17 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         _;
     }
 
-    // ============== functions called by the MessageBus contract ==============
-
+    /**
+     * @notice called by MessageBus (MessageReceiver) if the process is originated from MessageBus (MessageSender)'s 
+     *         sendMessageWithTransfer it is only called when the tokens are checked to be arrived at this contract's address.
+     * @param _sender the address of the source app contract
+     * @param _token the address of the token that comes out of the bridge
+     * @param _amount the amount of tokens received at this contract through the cross-chain bridge. 
+              the contract that implements this contract can safely assume that the tokens will arrive before this
+              function is called.
+     * @param _srcChainId the source chain ID where the transfer is originated from
+     * @param _message arbitrary message bytes originated from and encoded by the source app contract
+     */
     function executeMessageWithTransfer(
         address _sender,
         address _token,
@@ -20,8 +29,12 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         bytes calldata _message
     ) external virtual onlyMessageBus returns (bool) {}
 
-    // only called if executeMessageWithTransfer was reverted
-    // app needs to decide what to do with the received tokens
+    /**
+     * @notice only called by MessageBus (MessageReceiver) if
+               1. executeMessageWithTransfer reverts, or
+               2. executeMessageWithTransfer returns false
+               the params are the same as executeMessageWithTransfer
+     */
     function executeMessageWithTransferFallback(
         address _sender,
         address _token,
@@ -30,6 +43,12 @@ abstract contract MsgReceiverApp is MsgBusAddr {
         bytes calldata _message
     ) external virtual onlyMessageBus returns (bool) {}
 
+    /**
+     * @notice called by MessageBus (MessageReceiver)
+     * @param _sender the address of the source app contract
+     * @param _srcChainId the source chain ID where the transfer is originated from
+     * @param _message arbitrary message bytes originated from and encoded by the source app contract
+     */
     function executeMessage(
         address _sender,
         uint64 _srcChainId,

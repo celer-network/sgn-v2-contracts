@@ -39,7 +39,7 @@ contract MessageSender is Ownable {
     function sendMessageWithTransfer(
         address _receiver,
         uint256 _dstChainId,
-        address _bridge,
+        address _srcBridge,
         bytes32 _srcTransferId,
         bytes calldata _message
     ) external payable {
@@ -48,7 +48,7 @@ contract MessageSender is Ownable {
         // 1. msg.sender matches sender of the src transfer
         // 2. dstChainId matches dstChainId of the src transfer
         // 3. bridge is either liquidity bridge, peg src vault, or peg dst bridge
-        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _bridge, _srcTransferId, _message);
+        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _srcBridge, _srcTransferId, _message);
     }
 
     function withdrawFee(

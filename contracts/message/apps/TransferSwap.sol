@@ -162,7 +162,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             );
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
-            // TODO calculate nonce
+            // TODO use a per user nonce so that it's less likely that two users would get the same nonce. currently this nonce is a timestamp supplied by frontend
             sendMessageWithTransfer(
                 _receiver,
                 srcTokenOut,

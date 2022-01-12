@@ -36,7 +36,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         // a nonce that is specified by the calling party (the user),
         uint64 nonce;
         // indicates whether the output token coming out of the swap on destination
-        // chain should be unwrapped
+        // chain should be unwrapped before sending to the user
         bool nativeOut;
     }
 

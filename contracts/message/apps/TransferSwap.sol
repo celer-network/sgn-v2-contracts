@@ -9,6 +9,8 @@ import "../framework/MsgReceiverApp.sol";
 import "../../interfaces/IWETH.sol";
 import "../../interfaces/IUniswapV2.sol";
 
+// demo application contract that facilitates swapping on a chain, transfering to another chain, 
+// and swapping another time on the destination chain before sending the result tokens to a user
 contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     using SafeERC20 for IERC20;
 
@@ -162,7 +164,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             );
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
-            // TODO use a per user nonce so that it's less likely that two users would get the same nonce. currently this nonce is a timestamp supplied by frontend
+            // NOTE In production, it's better use a per user nonce so that it's less likely transferId collision
+            // would happen at Bridge contract. Currently this nonce is a timestamp supplied by frontend
             sendMessageWithTransfer(
                 _receiver,
                 srcTokenOut,
@@ -191,7 +194,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus {
+    ) external override onlyMessageBus returns (bool) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
@@ -217,22 +220,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             status = SwapStatus.Succeeded;
         }
         emit SwapRequestDone(id, dstAmount, status);
-    }
-
-    function _sendToken(
-        address _token,
-        uint256 _amount,
-        address _receiver,
-        bool _nativeOut
-    ) private {
-        if (_nativeOut) {
-            require(_token == nativeWrap, "token mismatch");
-            IWETH(nativeWrap).withdraw(_amount);
-            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
-            require(sent, "failed to send native");
-        } else {
-            IERC20(_token).safeTransfer(_receiver, _amount);
-        }
+        // always return true since swap failure is already handled in-place
+        return true;
     }
 
     /**
@@ -246,10 +235,13 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         uint256, // _amount
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus {
+    ) external override onlyMessageBus returns (bool) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
+        // always return false to mark this transfer as failed since if this function is called then there nothing more
+        // we can do in this app as the swap failures are already handled in executeMessageWithTransfer
+        return false;
     }
 
     function _trySwap(SwapInfo memory _swap, uint256 _amount) private returns (bool ok, uint256 amountOut) {
@@ -270,6 +262,22 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             return (true, amounts[amounts.length - 1]);
         } catch {
             return (false, zero);
+        }
+    }
+
+    function _sendToken(
+        address _token,
+        uint256 _amount,
+        address _receiver,
+        bool _nativeOut
+    ) private {
+        if (_nativeOut) {
+            require(_token == nativeWrap, "token mismatch");
+            IWETH(nativeWrap).withdraw(_amount);
+            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            require(sent, "failed to send native");
+        } else {
+            IERC20(_token).safeTransfer(_receiver, _amount);
         }
     }
 

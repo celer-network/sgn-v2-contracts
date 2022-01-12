@@ -9,7 +9,7 @@ import "../framework/MsgReceiverApp.sol";
 import "../../interfaces/IWETH.sol";
 import "../../interfaces/IUniswapV2.sol";
 
-// demo application contract that facilitates swapping on a chain, transfering to another chain, 
+// demo application contract that facilitates swapping on a chain, transfering to another chain,
 // and swapping another time on the destination chain before sending the result tokens to a user
 contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     using SafeERC20 for IERC20;
@@ -22,16 +22,21 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     struct SwapInfo {
         // if this array has only one element, it means no need to swap
         address[] path;
-        // only needed if path.length > 1
-        address dex;
-        uint256 deadline;
-        uint256 minRecvAmt;
+        // the following fields are only needed if path.length > 1
+        address dex; // the DEX to use for the swap
+        uint256 deadline; // deadline for the swap
+        uint256 minRecvAmt; // minimum receive amount for the swap
     }
 
     struct SwapRequest {
         SwapInfo swap;
+        // the receiving party (the user) of the final output token
         address receiver;
+        // this field is best to be per-user per-transaction unique so that
+        // a nonce that is specified by the calling party (the user),
         uint64 nonce;
+        // indicates whether the output token coming out of the swap on destination
+        // chain should be unwrapped
         bool nativeOut;
     }
 
@@ -115,7 +120,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     /**
      * @notice Sends a cross-chain transfer via the liquidity pool-based bridge and sends a message specifying a wanted swap action on the 
                destination chain via the message bus
-     * @param _receiver the app contract that implements the MessageReceiver abstract contract
+     * @param _receiver the app contract that implements the MessageReceiver abstract contract 
+     *        NOTE not to be confused with the receiver field in SwapInfo which is an EOA address of a user
      * @param _amountIn the input amount that the user wants to swap and/or bridge
      * @param _dstChainId destination chain ID
      * @param _srcSwap a struct containing swap related requirements
@@ -164,7 +170,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             );
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
             // bridge the intermediate token to destination chain along with the message
-            // NOTE In production, it's better use a per user nonce so that it's less likely transferId collision
+            // NOTE In production, it's better use a per-user per-transaction nonce so that it's less likely transferId collision
             // would happen at Bridge contract. Currently this nonce is a timestamp supplied by frontend
             sendMessageWithTransfer(
                 _receiver,

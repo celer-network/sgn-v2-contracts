@@ -20,7 +20,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     }
 
     struct SwapInfo {
-        // if this array has only one element, it means no need to swap
+        // the token address path to take while swapping. simillar to the path var required in IUniswapV2.
+        // NOTE this path requires at least one element in it. if there's only one element, swapping is skipped.
         address[] path;
         // the following fields are only needed if path.length > 1
         address dex; // the DEX to use for the swap
@@ -31,12 +32,16 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     struct SwapRequest {
         SwapInfo swap;
         // the receiving party (the user) of the final output token
+        // NOTE not to be confused with the receiver param of _transferWithSwap which is the
+        // TransferSwap contract address on the destination chain
         address receiver;
         // this field is best to be per-user per-transaction unique so that
-        // a nonce that is specified by the calling party (the user),
+        // the same user's consecutive transactions would not result in the same
+        // transferId in thr Bridge contract
         uint64 nonce;
         // indicates whether the output token coming out of the swap on destination
         // chain should be unwrapped before sending to the user
+        // NOTE wrapping will fail if the destination SwapInfo's path[path.length - 1] doesn't match the nativeWrap
         bool nativeOut;
     }
 
@@ -142,21 +147,17 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     ) private {
         require(_srcSwap.path.length > 0, "empty src swap path");
         address srcTokenOut = _srcSwap.path[_srcSwap.path.length - 1];
-
         require(_amountIn > minSwapAmounts[_srcSwap.path[0]], "amount must be greateer than min swap amount");
         uint64 chainId = uint64(block.chainid);
         require(_srcSwap.path.length > 1 || _dstChainId != chainId, "noop is not allowed"); // revert early to save gas
-
         uint256 srcAmtOut = _amountIn;
-
         // swap source token for intermediate token on the source DEX
         if (_srcSwap.path.length > 1) {
             bool ok = true;
             (ok, srcAmtOut) = _trySwap(_srcSwap, _amountIn);
             if (!ok) revert("src swap failed");
         }
-
-        bytes32 id; // id is only a means for history tracking
+        bytes32 id;
         if (_dstChainId == chainId) {
             // no need to bridge, directly send the tokens to user
             IERC20(srcTokenOut).safeTransfer(_receiver, srcAmtOut);
@@ -164,12 +165,12 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
             id = keccak256(abi.encode(msg.sender, chainId, _receiver, _nonce, _srcSwap));
             emit DirectSwap(id, chainId, _amountIn, _srcSwap.path[0], srcAmtOut, srcTokenOut);
         } else {
+            // bridge the intermediate token to destination chain along with the message
             require(_dstSwap.path.length > 0, "empty dst swap path");
             bytes memory message = abi.encode(
                 SwapRequest({swap: _dstSwap, receiver: msg.sender, nonce: _nonce, nativeOut: _nativeOut})
             );
             id = _computeSwapRequestId(msg.sender, chainId, _dstChainId, message);
-            // bridge the intermediate token to destination chain along with the message
             // NOTE In production, it's better use a per-user per-transaction nonce so that it's less likely transferId collision
             // would happen at Bridge contract. Currently this nonce is a timestamp supplied by frontend
             sendMessageWithTransfer(
@@ -186,8 +187,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     }
 
     /**
-     * @notice called by MessageBus when the tokens are checked to be arrived at this contract's address.
-               sends the amount received to the receiver. swaps beforehand if swap behavior is defined in message
+     * @notice called by MessageBus when the tokens after the bridged tokens have been sent to this contract.
+               sends the amount received to the receiver user. swaps beforehand if swap behavior is defined in message
      * NOTE: if the swap fails, it sends the tokens received directly to the receiver as fallback behavior
      * @param _token the address of the token sent through the bridge
      * @param _amount the amount of tokens received at this contract through the cross-chain bridge
@@ -231,7 +232,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
     }
 
     /**
-     * @notice called by MessageBus when the executeMessageWithTransfer call fails. does nothing but emitting a "fail" event
+     * @notice called by MessageBus when the executeMessageWithTransfer call fails. does nothing but emitting a fail event
      * @param _srcChainId source chain ID
      * @param _message SwapRequest message that defines the swap behavior on this destination chain
      */
@@ -245,8 +246,8 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
-        // always return false to mark this transfer as failed since if this function is called then there nothing more
-        // we can do in this app as the swap failures are already handled in executeMessageWithTransfer
+        // always return false to mark this transfer as failed since the swap failures are already handled in
+        // executeMessageWithTransfer. any failures beyond that is unexpected and requires manual investigation
         return false;
     }
 
@@ -287,6 +288,7 @@ contract TransferSwap is MsgSenderApp, MsgReceiverApp {
         }
     }
 
+    // computes an id for transfer swap history tracking
     function _computeSwapRequestId(
         address _sender,
         uint64 _srcChainId,

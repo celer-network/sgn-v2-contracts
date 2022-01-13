@@ -21,7 +21,7 @@ contract MessageReceiver is Ownable {
         address receiver;
         address token;
         uint256 amount;
-        uint64 seqnum;
+        uint64 seqnum; // only needed for LqWithdraw
         uint64 srcChainId;
         bytes32 refId;
     }
@@ -78,6 +78,30 @@ contract MessageReceiver is Ownable {
             } else {
                 status = TxStatus.Fail;
             }
+        }
+        executedMessages[messageId] = status;
+        emit Executed(MsgType.MessageWithTransfer, messageId, status);
+    }
+
+    function executeMessageWithTransferRefund(
+        bytes calldata _message, // the same message associated with the original transfer
+        TransferInfo calldata _transfer,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
+    ) external {
+        // similiar with executeMessageWithTransfer
+        bytes32 messageId = verifyTransfer(_transfer);
+        require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
+
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransferRefund"));
+        IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
+        TxStatus status;
+        bool success = executeMessageWithTransferRefund(_transfer, _message);
+        if (success) {
+            status = TxStatus.Success;
+        } else {
+            status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
         emit Executed(MsgType.MessageWithTransfer, messageId, status);
@@ -142,6 +166,25 @@ contract MessageReceiver is Ownable {
                 _transfer.token,
                 _transfer.amount,
                 _transfer.srcChainId,
+                _message
+            )
+        );
+        if (ok) {
+            bool success = abi.decode((res), (bool));
+            return success;
+        }
+        return false;
+    }
+
+    function executeMessageWithTransferRefund(TransferInfo calldata _transfer, bytes calldata _message)
+        private
+        returns (bool)
+    {
+        (bool ok, bytes memory res) = address(_transfer.receiver).call(
+            abi.encodeWithSelector(
+                MsgReceiverApp.executeMessageWithTransferRefund.selector,
+                _transfer.token,
+                _transfer.amount,
                 _message
             )
         );

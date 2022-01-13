@@ -44,6 +44,18 @@ abstract contract MsgReceiverApp is MsgBusAddr {
     ) external virtual onlyMessageBus returns (bool) {}
 
     /**
+     * @notice called by MessageBus (MessageReceiver) to process refund of the original transfer from this contract
+     * @param _token the token address of the original transfer
+     * @param _amount the amount of the original transfer
+     * @param _message the same message associated with the original transfer
+     */
+    function executeMessageWithTransferRefund(
+        address _token,
+        uint256 _amount,
+        bytes calldata _message
+    ) external virtual onlyMessageBus returns (bool) {}
+
+    /**
      * @notice called by MessageBus (MessageReceiver)
      * @param _sender the address of the source app contract
      * @param _srcChainId the source chain ID where the transfer is originated from

@@ -3,10 +3,12 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../framework/IBridge.sol";
-import "../framework/MsgReceiverApp.sol";
+import "../../interfaces/IBridge.sol";
+import "../../interfaces/IOriginalTokenVault.sol";
+import "../../interfaces/IPeggedTokenBridge.sol";
+import "../interfaces/IMessageReceiverApp.sol";
 
-contract MessageReceiver is Ownable {
+contract MessageBusReceiver is Ownable {
     enum TransferType {
         Null,
         LqSend, // send through liquidity bridge
@@ -50,6 +52,16 @@ contract MessageReceiver is Ownable {
     }
     event Executed(MsgType msgType, bytes32 id, TxStatus status);
 
+    constructor(
+        address _liquidityBridge,
+        address _pegBridge,
+        address _pegVault
+    ) {
+        liquidityBridge = _liquidityBridge;
+        pegBridge = _pegBridge;
+        pegVault = _pegVault;
+    }
+
     // ============== functions called by executor ==============
 
     function executeMessageWithTransfer(
@@ -58,7 +70,7 @@ contract MessageReceiver is Ownable {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external {
+    ) external payable {
         // For message with token transfer, message Id is computed through transfer info
         // in order to guarantee that each transfer can only be used once.
         // This also indicates that different transfers can carry the exact same messages.
@@ -89,8 +101,8 @@ contract MessageReceiver is Ownable {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external {
-        // similiar with executeMessageWithTransfer
+    ) external payable {
+        // similar to executeMessageWithTransfer
         bytes32 messageId = verifyTransfer(_transfer);
         require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
 
@@ -113,7 +125,7 @@ contract MessageReceiver is Ownable {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external {
+    ) external payable {
         // For message without associated token transfer, message Id is computed through message info,
         // in order to guarantee that each message can only be applied once
         bytes32 messageId = computeMessageOnlyId(_route, _message);
@@ -138,9 +150,9 @@ contract MessageReceiver is Ownable {
         private
         returns (bool)
     {
-        (bool ok, bytes memory res) = address(_transfer.receiver).call(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
-                MsgReceiverApp.executeMessageWithTransfer.selector,
+                IMessageReceiverApp.executeMessageWithTransfer.selector,
                 _transfer.sender,
                 _transfer.token,
                 _transfer.amount,
@@ -159,9 +171,9 @@ contract MessageReceiver is Ownable {
         private
         returns (bool)
     {
-        (bool ok, bytes memory res) = address(_transfer.receiver).call(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
-                MsgReceiverApp.executeMessageWithTransferFallback.selector,
+                IMessageReceiverApp.executeMessageWithTransferFallback.selector,
                 _transfer.sender,
                 _transfer.token,
                 _transfer.amount,
@@ -180,9 +192,9 @@ contract MessageReceiver is Ownable {
         private
         returns (bool)
     {
-        (bool ok, bytes memory res) = address(_transfer.receiver).call(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
-                MsgReceiverApp.executeMessageWithTransferRefund.selector,
+                IMessageReceiverApp.executeMessageWithTransferRefund.selector,
                 _transfer.token,
                 _transfer.amount,
                 _message
@@ -237,10 +249,12 @@ contract MessageReceiver is Ownable {
             );
             if (_transfer.t == TransferType.PegMint) {
                 bridgeAddr = pegBridge;
+                require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
             } else {
+                // _transfer.t == TransferType.PegWithdraw
                 bridgeAddr = pegVault;
+                require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
-            require(IBridge(bridgeAddr).records(transferId) == true, "peg record not exist");
         }
         return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
@@ -253,8 +267,13 @@ contract MessageReceiver is Ownable {
     }
 
     function executeMessage(RouteInfo calldata _route, bytes calldata _message) private returns (bool) {
-        (bool ok, bytes memory res) = address(_route.receiver).call(
-            abi.encodeWithSelector(MsgReceiverApp.executeMessage.selector, _route.sender, _route.srcChainId, _message)
+        (bool ok, bytes memory res) = address(_route.receiver).call{value: msg.value}(
+            abi.encodeWithSelector(
+                IMessageReceiverApp.executeMessage.selector,
+                _route.sender,
+                _route.srcChainId,
+                _message
+            )
         );
         if (ok) {
             bool success = abi.decode((res), (bool));

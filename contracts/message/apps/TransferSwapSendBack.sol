@@ -2,8 +2,9 @@
 
 pragma solidity >=0.8.9;
 
-import "../framework/MsgSenderApp.sol";
-import "../framework/MsgReceiverApp.sol";
+import "../libraries/MessageSenderLib.sol";
+import "../framework/MessageSenderApp.sol";
+import "../framework/MessageReceiverApp.sol";
 
 interface ISwapToken {
     // function sellBase(address to) external returns (uint256);
@@ -17,7 +18,7 @@ interface ISwapToken {
     ) external returns (uint256[] memory);
 }
 
-contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
+contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
     using SafeERC20 for IERC20;
 
     address public dex; // needed on swap chain
@@ -44,11 +45,21 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _dstChainId,
         SwapInfo calldata swapInfo // wantToken on destChain and actual user address as receiver when send back
-    ) external {
+    ) external payable {
         nonce += 1;
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         bytes memory message = abi.encode(swapInfo);
-        sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, nonce, swapInfo.cbrMaxSlippage, message);
+        sendMessageWithTransfer(
+            _receiver,
+            _token,
+            _amount,
+            _dstChainId,
+            nonce,
+            swapInfo.cbrMaxSlippage,
+            message,
+            MessageSenderLib.BridgeType.Liquidity,
+            msg.value
+        );
     }
 
     // ========== on swap chain ==========
@@ -59,7 +70,7 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (bool) {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
         IERC20(_token).approve(dex, _amount);
         address[] memory path = new address[](2);
@@ -81,7 +92,8 @@ contract CrossChainSwap is MsgSenderApp, MsgReceiverApp {
                 swapReturn[1],
                 _srcChainId,
                 nonce,
-                swapInfo.cbrMaxSlippage
+                swapInfo.cbrMaxSlippage,
+                MessageSenderLib.BridgeType.Liquidity
             );
         } else {
             // swap to wantToken and send to user

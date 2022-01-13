@@ -104,10 +104,6 @@ async function prepare() {
     minRecvAmt: slip(amountIn, 10)
   };
 
-  await xswap.setMsgBus(bus.address);
-  await xswap.setLiquidityBridge(bridge.address);
-  await xswap.setTokenBridgeType(tokenA.address, 1);
-  await xswap.setTokenBridgeType(tokenB.address, 1);
   await xswap.setMinSwapAmount(tokenA.address, parseUnits('10'));
   await xswap.setSupportedDex(dex.address, true);
 
@@ -149,7 +145,7 @@ describe('Test transferWithSwap', function () {
       xswap
         .connect(sender)
         .transferWithSwap(receiver.address, amountIn, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1)
-    ).to.be.revertedWith('amount must be greateer than min swap amount');
+    ).to.be.revertedWith('amount must be greater than min swap amount');
   });
 
   it('should swap and send', async function () {
@@ -236,7 +232,7 @@ describe('Test transferWithSwap', function () {
     await expect(tx)
       .to.emit(xswap, 'DirectSwap')
       .withArgs(expectId, chainId, amountIn, tokenA.address, slip(amountIn, 5), tokenB.address);
-    await expect(recvBalAfter).equal(recvBalBefore.add(slip(amountIn, 5)));
+    expect(recvBalAfter).equal(recvBalBefore.add(slip(amountIn, 5)));
   });
 
   it('should revert if the tx results in a noop', async function () {
@@ -273,7 +269,7 @@ describe('Test transferWithSwapNative', function () {
         .transferWithSwapNative(receiver.address, amountIn2, dstChainId, srcSwap, dstSwap, maxBridgeSlippage, 1, true, {
           value: amountIn2.div(2)
         })
-    ).to.be.revertedWith('Amount mismatch');
+    ).to.be.revertedWith('Amount insufficient');
   });
 
   it('should swap and send (native in)', async function () {
@@ -290,7 +286,7 @@ describe('Test transferWithSwapNative', function () {
       });
 
     const balAfter = await sender.getBalance();
-    await expect(balAfter.lte(balBefore.sub(amountIn2)));
+    expect(balAfter.lte(balBefore.sub(amountIn2)));
     const message = encodeMessage(dstSwap, sender.address, expectNonce, true);
     const expectId = computeId(sender.address, srcChainId, dstChainId, message);
 
@@ -321,8 +317,8 @@ describe('Test transferWithSwapNative', function () {
 describe('Test executeMessageWithTransfer', function () {
   beforeEach(async () => {
     await prepare();
-    // impersonate msgbus as admin to gain access to calling executeMessageWithTransfer
-    await xswap.connect(admin).setMsgBus(admin.address);
+    // impersonate MessageBus as admin to gain access to calling executeMessageWithTransfer
+    await xswap.connect(admin).setMessageBus(admin.address);
   });
 
   const srcChainId = 1;
@@ -341,7 +337,7 @@ describe('Test executeMessageWithTransfer', function () {
     const dstAmount = slip(amountIn, 5);
     const expectStatus = 1; // SwapStatus.Succeeded
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount, expectStatus);
-    await expect(balB2).to.equal(balB1.add(dstAmount));
+    expect(balB2).to.equal(balB1.add(dstAmount));
   });
 
   it('should swap and send native', async function () {
@@ -359,7 +355,7 @@ describe('Test executeMessageWithTransfer', function () {
     const dstAmount = slip(amountIn2, 5);
     const expectStatus = 1; // SwapStatus.Succeeded
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, dstAmount, expectStatus);
-    await expect(bal2.eq(bal1.add(dstAmount)));
+    expect(bal2.eq(bal1.add(dstAmount)));
   });
 
   it('should send bridge token to receiver if no dst swap specified', async function () {
@@ -375,7 +371,7 @@ describe('Test executeMessageWithTransfer', function () {
     const id = computeId(receiver.address, srcChainId, chainId, message);
     const expectStatus = 1; // SwapStatus.Succeeded
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(id, amountIn, expectStatus);
-    await expect(balA2).to.equal(balA1.add(amountIn));
+    expect(balA2).to.equal(balA1.add(amountIn));
   });
 
   it('should send bridge token to receiver if swap fails on dst chain', async function () {
@@ -395,7 +391,7 @@ describe('Test executeMessageWithTransfer', function () {
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(expectId, slip(amountIn, 5), expectStatus);
     const balA2 = await tokenA.balanceOf(receiver.address);
     const balB2 = await tokenB.balanceOf(receiver.address);
-    await expect(balA2, 'balance A after').equals(balA1);
-    await expect(balB2, 'balance B after').equals(balB1.add(bridgeAmount));
+    expect(balA2, 'balance A after').equals(balA1);
+    expect(balB2, 'balance B after').equals(balB1.add(bridgeAmount));
   });
 });

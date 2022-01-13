@@ -2,9 +2,14 @@
 
 pragma solidity 0.8.9;
 
-import "./MessageSender.sol";
-import "./MessageReceiver.sol";
+import "./MessageBusSender.sol";
+import "./MessageBusReceiver.sol";
 
-contract MessageBus is MessageSender, MessageReceiver {
-    constructor(ISigsVerifier _sigsVerifier) MessageSender(_sigsVerifier) {}
+contract MessageBus is MessageBusSender, MessageBusReceiver {
+    constructor(
+        ISigsVerifier _sigsVerifier,
+        address _liquidityBridge,
+        address _pegBridge,
+        address _pegVault
+    ) MessageBusSender(_sigsVerifier) MessageBusReceiver(_liquidityBridge, _pegBridge, _pegVault) {}
 }

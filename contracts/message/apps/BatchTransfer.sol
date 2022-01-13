@@ -2,12 +2,11 @@
 
 pragma solidity 0.8.9;
 
-import "../framework/MsgSenderApp.sol";
-import "../framework/MsgReceiverApp.sol";
+import "../framework/MessageSenderApp.sol";
+import "../framework/MessageReceiverApp.sol";
 
-// sample app to test message passing flow, not for production use
-
-contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
+/** @title Sample app to test message passing flow, not for production use */
+contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
     using SafeERC20 for IERC20;
 
     struct TransferRequest {
@@ -28,9 +27,8 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         TransferStatus status;
     }
 
-    constructor(address _liquidityBridge, address _msgBus) {
-        liquidityBridge = _liquidityBridge;
-        msgBus = _msgBus;
+    constructor(address _messageBus) {
+        messageBus = _messageBus;
     }
 
     // ============== functions and states on source chain ==============
@@ -56,7 +54,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint32 _maxSlippage,
         address[] calldata _accounts,
         uint256[] calldata _amounts
-    ) external onlyEOA {
+    ) external payable onlyEOA {
         uint256 totalAmt;
         for (uint256 i = 0; i < _amounts.length; i++) {
             totalAmt += _amounts[i];
@@ -74,7 +72,17 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
             TransferRequest({nonce: nonce, accounts: _accounts, amounts: _amounts, sender: msg.sender})
         );
         // MsgSenderApp util function
-        sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, nonce, _maxSlippage, message);
+        sendMessageWithTransfer(
+            _receiver,
+            _token,
+            _amount,
+            _dstChainId,
+            nonce,
+            _maxSlippage,
+            message,
+            MessageSenderLib.BridgeType.Liquidity,
+            msg.value
+        );
     }
 
     // handler function required by MsgReceiverApp
@@ -82,7 +90,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         address _sender,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (bool) {
         TransferReceipt memory receipt = abi.decode((_message), (TransferReceipt));
         require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)), "invalid message");
         status[receipt.nonce].status = receipt.status;
@@ -98,7 +106,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (bool) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         uint256 totalAmt;
         for (uint256 i = 0; i < transfer.accounts.length; i++) {
@@ -111,7 +119,7 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         }
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Success}));
         // MsgSenderApp util function
-        sendMessage(_sender, _srcChainId, message);
+        sendMessage(_sender, _srcChainId, message, msg.value);
         return true;
     }
 
@@ -123,11 +131,11 @@ contract BatchTransfer is MsgSenderApp, MsgReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (bool) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Fail}));
-        sendMessage(_sender, _srcChainId, message);
+        sendMessage(_sender, _srcChainId, message, msg.value);
         return true;
     }
 }

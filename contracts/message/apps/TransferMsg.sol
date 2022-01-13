@@ -2,30 +2,28 @@
 
 pragma solidity >=0.8.9;
 
-import "../framework/MsgSenderApp.sol";
-import "../framework/MsgReceiverApp.sol";
+import "../framework/MessageSenderApp.sol";
+import "../framework/MessageReceiverApp.sol";
 
-// application to test msg only flow
-contract TransferMsg is MsgSenderApp, MsgReceiverApp {
-    constructor(
-        address _msgbus
-    ) {
-        msgBus = _msgbus;
+/** @title Application to test message only flow */
+contract TransferMessage is MessageSenderApp, MessageReceiverApp {
+    constructor(address _messageBus) {
+        messageBus = _messageBus;
     }
 
-    function transferMsg(
+    function transferMessage(
         address _receiver,
         uint64 _dstChainId,
         bytes memory _message
-    ) external {
-        sendMessage(_receiver, _dstChainId, _message);
+    ) external payable {
+        sendMessage(_receiver, _dstChainId, _message, msg.value);
     }
 
     function executeMessage(
         address,
         uint64,
         bytes calldata
-    ) external override view onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (bool) {
         return true;
     }
 }

@@ -61,7 +61,7 @@ contract MaiBridgeToken is ERC20, Ownable {
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
         IERC20(asset).safeTransferFrom(_from, address(this), _amount);
-        IERC20(asset).approve(address(maihub), _amount);
+        IERC20(asset).safeIncreaseAllowance(address(maihub), _amount);
         IMaiBridgeHub(maihub).swapOut(address(this), _amount);
         _burn(address(this), _amount);
         return true;

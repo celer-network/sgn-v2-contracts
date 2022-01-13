@@ -84,7 +84,7 @@ contract MessageReceiver is Ownable {
     }
 
     function executeMessageWithTransferRefund(
-        bytes calldata _message,
+        bytes calldata _message, // the same message associated with the original transfer
         TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,

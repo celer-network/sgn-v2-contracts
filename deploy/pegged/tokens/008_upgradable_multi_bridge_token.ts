@@ -23,6 +23,6 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   });
 };
 
-deployFunc.tags = ['MultiBridgeToken'];
+deployFunc.tags = ['UpgraddableMultiBridgeToken'];
 deployFunc.dependencies = [];
 export default deployFunc;

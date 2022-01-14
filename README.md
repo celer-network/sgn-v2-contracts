@@ -99,3 +99,17 @@ hardhat flatten <path-to-contract> > flattened.sol
 and submit to Blockscout.
 
 Sometimes you also need to remove the duplicate `pragma solidity` lines.
+
+## Make a contract upgradable via the proxy pattern
+### how it works
+proxy contract holds state and delegatecall all calls to actual impl contract. When upgrade, a new impl contract is deployed, and proxy is updated to point to the new contract. below from [openzeppelin doc](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#upgrading-via-the-proxy-pattern)
+```
+User ---- tx ---> Proxy ----------> Implementation_v0
+                     |
+                      ------------> Implementation_v1
+                     |
+                      ------------> Implementation_v2
+```
+
+### add upgradable contract
+To minimize code fork, we add a new contract that inherits existing contract, eg. `contract TokenUpgradable is Token`. Next we need to ensure that all states set in Token contract constructor (and its parent contracts) must be settable via a separate normal func like init. This will allow Proxy contract to delegeteCall init and set proper values in Proxy's state, not the impl contract state. See MintSwapCanonicalTokenUpgradable.sol for example. We also need to either shadow Ownable._owner because when proxy delegateCall, in proxy state, Ownable._owner is not set and there is no other way to set it. Or use our own Ownable.sol which has internal func initOwner

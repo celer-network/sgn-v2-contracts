@@ -24,8 +24,8 @@ SrcApp at source chain wants to send an arbitrary message to DstApp at destinati
 
 We provide the [message bus contract](./messagebus) and [application framework](./framework), which implement the common process of message passing, including sending, receiving, and validating messages and token transfers. After inherent the app framework contracts, **the app developers only need to focus on the app-specific logic.**
 
-- To send cross-chain message and token transfer, the app needs to inherent [MsgSenderApp.sol](./framework/MsgSenderApp.sol) and call the utils functions.
-- To receive cross-chain message and token transfer, the app needs to inherent [MsgReceiverApp.sol](./framework/MsgReceiverApp.sol) and implement its virtual functions.
+- To send cross-chain message and token transfer, the app needs to inherent [MsgSenderApp.sol](./framework/MessageSenderApp.sol) and call the utils functions.
+- To receive cross-chain message and token transfer, the app needs to inherent [MsgReceiverApp.sol](./framework/MessageReceiverApp.sol) and implement its virtual functions.
 
 ### Example 1: [Batch Token Transfer](<(./apps/BatchTransfer.sol)>)
 

@@ -15,5 +15,9 @@ message WithdrawMsg {
   bytes receiver = 3 [(soltype) = "address"];
   bytes token = 4 [(soltype) = "address"];
   bytes amount = 5 [(soltype) = "uint256"];
-  bytes refid = 6 [(soltype) = "bytes32"]; // reference id, if refund, set as xfer_id
+  // reference id
+  // 1. if refund, set as xfer_id
+  // 2. if claim free, set as 0x1
+  // 3. if LP withdraw liquidity, set as 0x0
+  bytes refid = 6 [(soltype) = "bytes32"];
 }

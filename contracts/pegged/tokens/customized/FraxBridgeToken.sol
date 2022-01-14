@@ -62,6 +62,10 @@ contract FraxBridgeToken is ERC20, Ownable {
         emit BridgeUpdated(bridge);
     }
 
+    function decimals() public view virtual override returns (uint8) {
+        return ERC20(canonical).decimals();
+    }
+
     // to make compatible with BEP20
     function getOwner() external view returns (address) {
         return owner();

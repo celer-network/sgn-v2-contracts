@@ -100,8 +100,8 @@ and submit to Blockscout.
 
 Sometimes you also need to remove the duplicate `pragma solidity` lines.
 
-## Make a contract upgradable via the proxy pattern
-### how it works
+## Upgradable contract via the proxy pattern
+### How it works
 proxy contract holds state and delegatecall all calls to actual impl contract. When upgrade, a new impl contract is deployed, and proxy is updated to point to the new contract. below from [openzeppelin doc](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#upgrading-via-the-proxy-pattern)
 ```
 User ---- tx ---> Proxy ----------> Implementation_v0
@@ -111,5 +111,27 @@ User ---- tx ---> Proxy ----------> Implementation_v0
                       ------------> Implementation_v2
 ```
 
-### add upgradable contract
-To minimize code fork, we add a new contract that inherits existing contract, eg. `contract TokenUpgradable is Token`. Next we need to ensure that all states set in Token contract constructor (and its parent contracts) must be settable via a separate normal func like init. This will allow Proxy contract to delegeteCall init and set proper values in Proxy's state, not the impl contract state. See MintSwapCanonicalTokenUpgradable.sol for example. We also need to either shadow Ownable._owner because when proxy delegateCall, in proxy state, Ownable._owner is not set and there is no other way to set it. Or use our own Ownable.sol which has internal func initOwner
+### Add upgradable contract
+To minimize code fork, we add a new contract that inherits existing contract, eg. `contract TokenUpgradable is Token`. Next we need to ensure that all states set in Token contract constructor (and its parent contracts) must be settable via a separate normal func like `init`. This will allow Proxy contract to delegeteCall init and set proper values in Proxy's state, not the impl contract state. See MintSwapCanonicalTokenUpgradable.sol for example. We also need to either shadow Ownable._owner because when proxy delegateCall, in proxy state, Ownable._owner is not set and there is no other way to set it. Or use our own Ownable.sol which has internal func initOwner
+
+### Add deploy scripts
+add a new ts file for deploy, in deploy options, add proxy section, make sure the methodName and args match actual upgradable contract
+```ts
+proxy: {
+    proxyContract: "OptimizedTransparentProxy",
+      execute: {
+        // only called when proxy is deployed, it'll call Token contract.init
+        // with proper args
+        init: {
+          methodName: 'init',
+          args: [
+            process.env.MINT_SWAP_CANONICAL_TOKEN_NAME,
+            process.env.MINT_SWAP_CANONICAL_TOKEN_SYMBOL]
+        }
+      }
+}
+```
+see deploy/pegged/tokens/008_mint_swap_canonical_token_upgradable.ts for example
+
+### Deploy and upgrade
+hardhat deploy plugin tries to be smart and deploy ProxyAdmin only once for each chain, deploy impl contract then proxy contract

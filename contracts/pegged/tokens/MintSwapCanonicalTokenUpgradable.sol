@@ -24,13 +24,14 @@ contract MintSwapCanonicalTokenUpgradable is MintSwapCanonicalToken {
     }
 
     // only to be called by Proxy via delegatecall and will modify Proxy state
+    // this func has no access control because initOwner only allows delegateCall
     function init(
         string memory name_,
         string memory symbol_
     ) external {
+        initOwner(); // this will fail if Ownable._owner is already set
         _name = name_;
         _symbol = symbol_;
-        initOwner(); // this will fail if Ownable._owner is already set
     }
 
     // override name, symbol and owner getters

@@ -32,6 +32,7 @@ abstract contract Ownable {
     /**
      * @dev Only to be called by inherit contracts, in their init func called by Proxy
      * we require _owner == address(0), which is only possible when it's a delegateCall
+     * because constructor sets _owner in contract state.
      */
     function initOwner() internal {
         require(_owner == address(0), "owner already set");

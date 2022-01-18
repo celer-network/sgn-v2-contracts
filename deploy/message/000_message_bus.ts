@@ -12,7 +12,27 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deploy('MessageBus', {
     from: deployer,
     log: true,
-    args: [process.env.MESSAGE_BUS_SIG_VERIFIER]
+    args: [
+      process.env.MESSAGE_BUS_SIG_VERIFIER,
+      process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE,
+      process.env.MESSAGE_BUS_PEG_BRIDGE,
+      process.env.MESSAGE_BUS_PEG_VAULT
+    ],
+    proxy: {
+      proxyContract: "OptimizedTransparentProxy",
+      execute: {
+        // only called when proxy is deployed, it'll call MessageBux contract.init
+        // with proper args
+        init: {
+          methodName: 'init',
+          args: [
+            process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE,
+            process.env.MESSAGE_BUS_PEG_BRIDGE,
+            process.env.MESSAGE_BUS_PEG_VAULT
+          ]
+        }
+      }
+    }
   });
 };
 

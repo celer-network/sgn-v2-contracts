@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../safeguard/Ownable.sol";
 
 abstract contract MessageBusAddress is Ownable {
     address public messageBus;

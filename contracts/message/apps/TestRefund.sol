@@ -7,6 +7,8 @@ import "../framework/MessageReceiverApp.sol";
 
 /** @title Application to test message with transfer refund flow */
 contract TestRefund is MessageSenderApp, MessageReceiverApp {
+    event Refunded(address token, uint256 amount, bytes message);
+
     constructor(address _messageBus) {
         messageBus = _messageBus;
     }
@@ -19,7 +21,7 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         uint64 _nonce,
         uint32 _maxSlippage,
         MessageSenderLib.BridgeType _bridgeType,
-        bytes memory _message
+        bytes calldata _message
     ) external payable {
         sendMessageWithTransfer(
             _receiver,
@@ -32,6 +34,15 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
             _bridgeType,
             0
         );
+    }
+
+    function executeMessageWithTransferRefund(
+        address _token,
+        uint256 _amount,
+        bytes calldata _message
+    ) external payable virtual override onlyMessageBus returns (bool) {
+        emit Refunded(_token, _amount, _message);
+        return true;
     }
 
     function executeMessage(

@@ -3,7 +3,7 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../safeguard/Ownable.sol";
 
 /**
  * @title Example Multi-Bridge Pegged ERC20 token

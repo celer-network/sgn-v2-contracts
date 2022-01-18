@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../safeguard/Ownable.sol";
 import "../../interfaces/ISigsVerifier.sol";
 
 contract MessageBusSender is Ownable {

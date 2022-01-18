@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../interfaces/IMessageReceiverApp.sol";
+import "../../safeguard/Ownable.sol";
 
 contract MessageBusReceiver is Ownable {
     enum TransferType {
@@ -57,6 +57,17 @@ contract MessageBusReceiver is Ownable {
         address _pegBridge,
         address _pegVault
     ) {
+        liquidityBridge = _liquidityBridge;
+        pegBridge = _pegBridge;
+        pegVault = _pegVault;
+    }
+
+    function initReceiver(
+        address _liquidityBridge,
+        address _pegBridge,
+        address _pegVault
+    ) internal {
+        require(liquidityBridge == address(0), "liquidityBridge already set");
         liquidityBridge = _liquidityBridge;
         pegBridge = _pegBridge;
         pegVault = _pegVault;

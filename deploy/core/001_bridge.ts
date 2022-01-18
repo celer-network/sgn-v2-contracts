@@ -1,4 +1,5 @@
 import * as dotenv from 'dotenv';
+import { BigNumber } from 'ethers';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -11,7 +12,9 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   await deploy('Bridge', {
     from: deployer,
-    log: true
+    log: true,
+    gasLimit: BigNumber.from('42032000'), // Mandala
+    gasPrice: BigNumber.from('200786445289'), // Mandala
   });
 };
 

@@ -17,6 +17,8 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         messageBus = _messageBus;
     }
 
+    bytes public lastMessage;
+
     function sendWithTransfer(
         address _receiver,
         address _token,
@@ -47,6 +49,7 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         bytes calldata _message
     ) external payable virtual override onlyMessageBus returns (bool) {
         emit Refunded(_token, _amount, _message);
+        lastMessage = _message;
         return true;
     }
 

@@ -64,6 +64,15 @@ contract MessageBusReceiver is Ownable {
 
     // ============== functions called by executor ==============
 
+    /**
+     * @notice Execute a message with a successful transfer.
+     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _transfer The transfer info.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
+     * +2/3 of the sigsVerifier's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     */
     function executeMessageWithTransfer(
         bytes calldata _message,
         TransferInfo calldata _transfer,
@@ -95,6 +104,15 @@ contract MessageBusReceiver is Ownable {
         emit Executed(MsgType.MessageWithTransfer, messageId, status);
     }
 
+    /**
+     * @notice Execute a message with a refunded transfer.
+     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _transfer The transfer info.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
+     * +2/3 of the sigsVerifier's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     */
     function executeMessageWithTransferRefund(
         bytes calldata _message, // the same message associated with the original transfer
         TransferInfo calldata _transfer,
@@ -119,6 +137,14 @@ contract MessageBusReceiver is Ownable {
         emit Executed(MsgType.MessageWithTransfer, messageId, status);
     }
 
+    /**
+     * @notice Execute a message not associated with a transfer.
+     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
+     * +2/3 of the sigsVerifier's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     */
     function executeMessage(
         bytes calldata _message,
         RouteInfo calldata _route,

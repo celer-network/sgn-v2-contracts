@@ -12,7 +12,7 @@ contract MessageBusSender is Ownable {
     uint256 public feePerByte;
     mapping(address => uint256) public withdrawnFees;
 
-    event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message);
+    event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message, uint256 fee);
 
     event MessageWithTransfer(
         address indexed sender,
@@ -20,22 +20,41 @@ contract MessageBusSender is Ownable {
         uint256 dstChainId,
         address bridge,
         bytes32 srcTransferId,
-        bytes message
+        bytes message,
+        uint256 fee
     );
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
     }
 
+    /**
+     * @notice Sends a message to an app on another chain via MessageBus without an associated transfer.
+     * A fee is charged in the native gas token.
+     * @param _receiver The address of the destination app contract.
+     * @param _dstChainId The destination chain ID.
+     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     */
     function sendMessage(
         address _receiver,
         uint256 _dstChainId,
         bytes calldata _message
     ) external payable {
-        require(msg.value >= feeBase + _message.length * feePerByte, "Insufficient fee");
-        emit Message(msg.sender, _receiver, _dstChainId, _message);
+        uint256 fee = calcFee(_message);
+        require(msg.value >= fee, "Insufficient fee");
+        emit Message(msg.sender, _receiver, _dstChainId, _message, fee);
     }
 
+    /**
+     * @notice Sends a message associated with a transfer to an app on another chain via MessageBus without an associated transfer.
+     * A fee is charged in the native token.
+     * @param _receiver The address of the destination app contract.
+     * @param _dstChainId The destination chain ID.
+     * @param _srcBridge The bridge contract to send the transfer with.
+     * @param _srcTransferId The transfer ID.
+     * @param _dstChainId The destination chain ID.
+     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     */
     function sendMessageWithTransfer(
         address _receiver,
         uint256 _dstChainId,
@@ -43,14 +62,24 @@ contract MessageBusSender is Ownable {
         bytes32 _srcTransferId,
         bytes calldata _message
     ) external payable {
-        require(msg.value >= feeBase + _message.length * feePerByte, "Insufficient fee");
+        uint256 fee = calcFee(_message);
+        require(msg.value >= fee, "Insufficient fee");
         // SGN needs to verify
         // 1. msg.sender matches sender of the src transfer
         // 2. dstChainId matches dstChainId of the src transfer
         // 3. bridge is either liquidity bridge, peg src vault, or peg dst bridge
-        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _srcBridge, _srcTransferId, _message);
+        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _srcBridge, _srcTransferId, _message, fee);
     }
 
+    /**
+     * @notice Withdraws message fee in the form of native gas token.
+     * @param _account The address receiving the fee.
+     * @param _cumulativeFee The cumulative fee credited to the account. Tracked by SGN.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A withdrawal must be
+     * signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     */
     function withdrawFee(
         address _account,
         uint256 _cumulativeFee,

@@ -19,9 +19,9 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       process.env.MESSAGE_BUS_PEG_VAULT
     ],
     proxy: {
-      proxyContract: "OptimizedTransparentProxy",
+      proxyContract: 'OptimizedTransparentProxy',
       execute: {
-        // only called when proxy is deployed, it'll call MessageBux contract.init
+        // only called when proxy is deployed, it'll call MessageBus contract.init
         // with proper args
         init: {
           methodName: 'init',

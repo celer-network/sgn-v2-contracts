@@ -49,11 +49,12 @@ library MessageSenderLib {
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded.
+     * transfer can be refunded. Only applicable to the {BridgeType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
      * @param _bridgeType One of the {BridgeType} enum.
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
+     * @return The transfer ID.
      */
     function sendMessageWithTransfer(
         address _receiver,
@@ -66,32 +67,44 @@ library MessageSenderLib {
         BridgeType _bridgeType,
         address _messageBus,
         uint256 _fee
-    ) internal {
+    ) internal returns (bytes32) {
         if (_bridgeType == BridgeType.Liquidity) {
-            sendMessageWithLiquidityBridgeTransfer(
-                _receiver,
-                _token,
-                _amount,
-                _dstChainId,
-                _nonce,
-                _maxSlippage,
-                _message,
-                _messageBus,
-                _fee
-            );
+            return
+                sendMessageWithLiquidityBridgeTransfer(
+                    _receiver,
+                    _token,
+                    _amount,
+                    _dstChainId,
+                    _nonce,
+                    _maxSlippage,
+                    _message,
+                    _messageBus,
+                    _fee
+                );
         } else if (_bridgeType == BridgeType.PegDeposit) {
-            sendMessageWithPegVaultDeposit(
-                _receiver,
-                _token,
-                _amount,
-                _dstChainId,
-                _nonce,
-                _message,
-                _messageBus,
-                _fee
-            );
+            return
+                sendMessageWithPegVaultDeposit(
+                    _receiver,
+                    _token,
+                    _amount,
+                    _dstChainId,
+                    _nonce,
+                    _message,
+                    _messageBus,
+                    _fee
+                );
         } else if (_bridgeType == BridgeType.PegBurn) {
-            sendMessageWithPegBridgeBurn(_receiver, _token, _amount, _dstChainId, _nonce, _message, _messageBus, _fee);
+            return
+                sendMessageWithPegBridgeBurn(
+                    _receiver,
+                    _token,
+                    _amount,
+                    _dstChainId,
+                    _nonce,
+                    _message,
+                    _messageBus,
+                    _fee
+                );
         } else {
             revert("bridge type not supported");
         }
@@ -110,6 +123,7 @@ library MessageSenderLib {
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
+     * @return The transfer ID.
      */
     function sendMessageWithLiquidityBridgeTransfer(
         address _receiver,
@@ -121,7 +135,7 @@ library MessageSenderLib {
         bytes memory _message,
         address _messageBus,
         uint256 _fee
-    ) internal {
+    ) internal returns (bytes32) {
         address bridge = MessageBus(_messageBus).liquidityBridge();
         IERC20(_token).safeIncreaseAllowance(bridge, _amount);
         IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
@@ -135,6 +149,7 @@ library MessageSenderLib {
             transferId,
             _message
         );
+        return transferId;
     }
 
     /**
@@ -147,6 +162,7 @@ library MessageSenderLib {
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
+     * @return The transfer ID.
      */
     function sendMessageWithPegVaultDeposit(
         address _receiver,
@@ -157,7 +173,7 @@ library MessageSenderLib {
         bytes memory _message,
         address _messageBus,
         uint256 _fee
-    ) internal {
+    ) internal returns (bytes32) {
         address pegVault = MessageBus(_messageBus).pegVault();
         IERC20(_token).safeIncreaseAllowance(pegVault, _amount);
         IOriginalTokenVault(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
@@ -171,6 +187,7 @@ library MessageSenderLib {
             transferId,
             _message
         );
+        return transferId;
     }
 
     /**
@@ -183,6 +200,7 @@ library MessageSenderLib {
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
+     * @return The transfer ID.
      */
     function sendMessageWithPegBridgeBurn(
         address _receiver,
@@ -193,7 +211,7 @@ library MessageSenderLib {
         bytes memory _message,
         address _messageBus,
         uint256 _fee
-    ) internal {
+    ) internal returns (bytes32) {
         address pegBridge = MessageBus(_messageBus).pegBridge();
         IPeggedTokenBridge(pegBridge).burn(_token, _amount, _receiver, _nonce);
         bytes32 transferId = keccak256(
@@ -206,6 +224,7 @@ library MessageSenderLib {
             transferId,
             _message
         );
+        return transferId;
     }
 
     /**

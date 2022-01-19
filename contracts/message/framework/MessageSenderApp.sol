@@ -39,10 +39,11 @@ abstract contract MessageSenderApp is MessageBusAddress {
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded.
+     * transfer can be refunded. Only applicable to the {BridgeType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
      * @param _bridgeType One of the {BridgeType} enum.
      * @param _fee The fee amount to pay to MessageBus.
+     * @return The transfer ID.
      */
     function sendMessageWithTransfer(
         address _receiver,
@@ -54,19 +55,20 @@ abstract contract MessageSenderApp is MessageBusAddress {
         bytes memory _message,
         MessageSenderLib.BridgeType _bridgeType,
         uint256 _fee
-    ) internal {
-        MessageSenderLib.sendMessageWithTransfer(
-            _receiver,
-            _token,
-            _amount,
-            _dstChainId,
-            _nonce,
-            _maxSlippage,
-            _message,
-            _bridgeType,
-            messageBus,
-            _fee
-        );
+    ) internal returns (bytes32) {
+        return
+            MessageSenderLib.sendMessageWithTransfer(
+                _receiver,
+                _token,
+                _amount,
+                _dstChainId,
+                _nonce,
+                _maxSlippage,
+                _message,
+                _bridgeType,
+                messageBus,
+                _fee
+            );
     }
 
     /**

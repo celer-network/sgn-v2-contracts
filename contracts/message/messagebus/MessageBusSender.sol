@@ -40,9 +40,9 @@ contract MessageBusSender is Ownable {
         uint256 _dstChainId,
         bytes calldata _message
     ) external payable {
-        uint256 fee = calcFee(_message);
-        require(msg.value >= fee, "Insufficient fee");
-        emit Message(msg.sender, _receiver, _dstChainId, _message, fee);
+        uint256 minFee = calcFee(_message);
+        require(msg.value >= minFee, "Insufficient fee");
+        emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);
     }
 
     /**
@@ -62,13 +62,13 @@ contract MessageBusSender is Ownable {
         bytes32 _srcTransferId,
         bytes calldata _message
     ) external payable {
-        uint256 fee = calcFee(_message);
-        require(msg.value >= fee, "Insufficient fee");
+        uint256 minFee = calcFee(_message);
+        require(msg.value >= minFee, "Insufficient fee");
         // SGN needs to verify
         // 1. msg.sender matches sender of the src transfer
         // 2. dstChainId matches dstChainId of the src transfer
         // 3. bridge is either liquidity bridge, peg src vault, or peg dst bridge
-        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _srcBridge, _srcTransferId, _message, fee);
+        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _srcBridge, _srcTransferId, _message, msg.value);
     }
 
     /**

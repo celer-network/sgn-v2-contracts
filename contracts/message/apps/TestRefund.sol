@@ -17,8 +17,6 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         messageBus = _messageBus;
     }
 
-    bytes public lastMessage;
-
     function sendWithTransfer(
         address _receiver,
         address _token,
@@ -26,21 +24,11 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage,
-        MessageSenderLib.BridgeType _bridgeType,
-        bytes calldata _message
+        MessageSenderLib.BridgeType _bridgeType
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        sendMessageWithTransfer(
-            _receiver,
-            _token,
-            _amount,
-            _dstChainId,
-            _nonce,
-            _maxSlippage,
-            _message,
-            _bridgeType,
-            0
-        );
+        bytes memory message = abi.encodePacked(_receiver);
+        sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage, message, _bridgeType, 0);
     }
 
     function executeMessageWithTransferRefund(
@@ -49,7 +37,8 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         bytes calldata _message
     ) external payable virtual override onlyMessageBus returns (bool) {
         emit Refunded(_token, _amount, _message);
-        lastMessage = _message;
+        address receiver = abi.decode((_message), (address));
+        IERC20(_token).safeTransfer(receiver, _amount);
         return true;
     }
 

@@ -32,9 +32,7 @@ contract WithdrawInbox {
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
     ) external {
-        require(_fromChains.length == _tokens.length, "length mismatch");
-        require(_ratios.length == _tokens.length, "length mismatch");
-        require(_slippages.length == _tokens.length, "length mismatch");
+        require(_tokens.length == _fromChains.length && _ratios.length == _fromChains.length && _slippages.length == _fromChains.length, "length mismatch");
         emit WithdrawalRequest(msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }
 

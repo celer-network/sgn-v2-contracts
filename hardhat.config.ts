@@ -105,6 +105,9 @@ const moonbeamPrivateKey = process.env.MOONBEAM_PRIVATE_KEY || DEFAULT_PRIVATE_K
 const astarEndpoint = process.env.ASTAR_ENDPOINT || DEFAULT_ENDPOINT;
 const astarPrivateKey = process.env.ASTAR_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const syscoinEndpoint = process.env.SYSCOIN_ENDPOINT || DEFAULT_ENDPOINT;
+const syscoinPrivateKey = process.env.SYSCOIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -230,6 +233,10 @@ const config: HardhatUserConfig = {
     astar: {
       url: astarEndpoint,
       accounts: [`0x${astarPrivateKey}`]
+    },
+    syscoin: {
+      url: syscoinEndpoint,
+      accounts: [`0x${syscoinPrivateKey}`]
     }
   },
   namedAccounts: {

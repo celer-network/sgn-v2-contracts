@@ -95,6 +95,11 @@ contract MessageBusSender is Ownable {
         require(sent, "failed to withdraw fee");
     }
 
+    /**
+     * @notice Calculates the required fee for the message.
+     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     @ @return The required fee.
+     */
     function calcFee(bytes calldata _message) public view returns (uint256) {
         return feeBase + _message.length * feePerByte;
     }

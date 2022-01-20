@@ -3,9 +3,8 @@
 pragma solidity 0.8.9;
 
 contract WithdrawInbox {
-
     // contract LP withdrawal request
-    event WithdrawalRequest (
+    event WithdrawalRequest(
         address sender,
         address receiver,
         uint64 toChain,
@@ -32,8 +31,12 @@ contract WithdrawInbox {
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
     ) external {
-        require(_tokens.length == _fromChains.length && _ratios.length == _fromChains.length && _slippages.length == _fromChains.length, "length mismatch");
+        require(
+            _tokens.length == _fromChains.length &&
+                _ratios.length == _fromChains.length &&
+                _slippages.length == _fromChains.length,
+            "length mismatch"
+        );
         emit WithdrawalRequest(msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }
-
 }

@@ -13,7 +13,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     from: deployer,
     log: true,
     args: [
-      process.env.MESSAGE_BUS_SIG_VERIFIER,
+      process.env.MESSAGE_BUS_SIGS_VERIFIER,
       process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE,
       process.env.MESSAGE_BUS_PEG_BRIDGE,
       process.env.MESSAGE_BUS_PEG_VAULT

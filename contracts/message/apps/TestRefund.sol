@@ -27,7 +27,7 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         MessageSenderLib.BridgeType _bridgeType
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        bytes memory message = abi.encodePacked(_receiver);
+        bytes memory message = abi.encode(_receiver);
         sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage, message, _bridgeType, 0);
     }
 

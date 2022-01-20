@@ -17,14 +17,12 @@ contract WithdrawInbox {
 
     /**
      * @notice Withdraw liquidity from the pool-based bridge.
-     * NOTE: ONLY call this from a contract address. DO NOT call from an EOA.
-     * NOTE: _fromChains, _tokens, _ratios, _slippages should have the same length.
      * @param _receiver The receiver address on _toChain.
-     * @param _toChain The chainId of chain to which withdrew tokens would be transferred.
-     * @param _fromChains THe chainId of chains from which withdrew tokens would be transferred.
-     * @param _tokens The tokens to be withdrew.
+     * @param _toChain The chain Id to receive the withdrawn tokens.
+     * @param _fromChains The chain Ids to withdraw tokens.
+     * @param _tokens The token to withdraw on each fromChain.
      * @param _ratios The withdrawal ratios of each token.
-     * @param _slippages The max slippages of each token for cross-chain transfer.
+     * @param _slippages The max slippages of each token for cross-chain withdraw.
      */
     function withdraw(
         address _receiver,
@@ -34,6 +32,9 @@ contract WithdrawInbox {
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
     ) external {
+        require(_fromChains.length == _tokens.length, "length mismatch");
+        require(_ratios.length == _tokens.length, "length mismatch");
+        require(_slippages.length == _tokens.length, "length mismatch");
         emit WithdrawalRequest(msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }
 

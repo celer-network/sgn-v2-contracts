@@ -27,8 +27,8 @@ contract WithdrawInbox {
      * @param _slippages The max slippages of each token for cross-chain transfer.
      */
     function withdraw(
-        address calldata _receiver,
-        uint64 calldata _toChain,
+        address _receiver,
+        uint64 _toChain,
         uint64[] calldata _fromChains,
         address[] calldata _tokens,
         uint32[] calldata _ratios,

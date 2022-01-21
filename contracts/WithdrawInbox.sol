@@ -18,7 +18,6 @@ contract WithdrawInbox {
 
     /**
      * @notice Withdraw liquidity from the pool-based bridge.
-     * @param _seqNum The unique sequence number to identify this withdrawal request.
      * @param _receiver The receiver address on _toChain.
      * @param _toChain The chain Id to receive the withdrawn tokens.
      * @param _fromChains The chain Ids to withdraw tokens.
@@ -41,16 +40,6 @@ contract WithdrawInbox {
             "length mismatch"
         );
         wdseq += 1;
-        emit WithdrawalRequest(
-            wdseq,
-            msg.sender,
-            _receiver,
-            _toChain,
-            _fromChains,
-            _tokens,
-            _ratios,
-            _slippages,
-            _seqNum
-        );
+        emit WithdrawalRequest(wdseq, msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }
 }

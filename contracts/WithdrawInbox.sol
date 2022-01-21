@@ -3,8 +3,10 @@
 pragma solidity 0.8.9;
 
 contract WithdrawInbox {
+    uint64 public wdseq; // ensure unique WithdrawalRequest event, start from 1
     // contract LP withdrawal request
     event WithdrawalRequest(
+        uint64 seqNum,
         address sender,
         address receiver,
         uint64 toChain,
@@ -16,6 +18,7 @@ contract WithdrawInbox {
 
     /**
      * @notice Withdraw liquidity from the pool-based bridge.
+     * @param _seqNum The unique sequence number to identify this withdrawal request.
      * @param _receiver The receiver address on _toChain.
      * @param _toChain The chain Id to receive the withdrawn tokens.
      * @param _fromChains The chain Ids to withdraw tokens.
@@ -37,6 +40,17 @@ contract WithdrawInbox {
                 _slippages.length == _fromChains.length,
             "length mismatch"
         );
-        emit WithdrawalRequest(msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
+        wdseq += 1;
+        emit WithdrawalRequest(
+            wdseq,
+            msg.sender,
+            _receiver,
+            _toChain,
+            _fromChains,
+            _tokens,
+            _ratios,
+            _slippages,
+            _seqNum
+        );
     }
 }

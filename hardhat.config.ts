@@ -75,6 +75,9 @@ const bobaPrivateKey = process.env.BOBA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const harmonyEndpoint = process.env.HARMONY_ENDPOINT || DEFAULT_ENDPOINT;
 const harmonyPrivateKey = process.env.HARMONY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const moonbeamEndpoint = process.env.MOONBEAM_ENDPOINT || DEFAULT_ENDPOINT;
+const moonbeamPrivateKey = process.env.MOONBEAM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const moonriverEndpoint = process.env.MOONRIVER_ENDPOINT || DEFAULT_ENDPOINT;
 const moonriverPrivateKey = process.env.MOONRIVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -99,11 +102,11 @@ const oecPrivateKey = process.env.OEC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const hecoEndpoint = process.env.HECO_ENDPOINT || DEFAULT_ENDPOINT;
 const hecoPrivateKey = process.env.HECO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const moonbeamEndpoint = process.env.MOONBEAM_ENDPOINT || DEFAULT_ENDPOINT;
-const moonbeamPrivateKey = process.env.MOONBEAM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
-
 const astarEndpoint = process.env.ASTAR_ENDPOINT || DEFAULT_ENDPOINT;
 const astarPrivateKey = process.env.ASTAR_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const shidenEndpoint = process.env.SHIDEN_ENDPOINT || DEFAULT_ENDPOINT;
+const shidenPrivateKey = process.env.SHIDEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const syscoinEndpoint = process.env.SYSCOIN_ENDPOINT || DEFAULT_ENDPOINT;
 const syscoinPrivateKey = process.env.SYSCOIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -194,6 +197,10 @@ const config: HardhatUserConfig = {
       url: harmonyEndpoint,
       accounts: [`0x${harmonyPrivateKey}`]
     },
+    moonbeam: {
+      url: moonbeamEndpoint,
+      accounts: [`0x${moonbeamPrivateKey}`]
+    },
     moonriver: {
       url: moonriverEndpoint,
       accounts: [`0x${moonriverPrivateKey}`]
@@ -226,13 +233,13 @@ const config: HardhatUserConfig = {
       url: hecoEndpoint,
       accounts: [`0x${hecoPrivateKey}`]
     },
-    moonbeam: {
-      url: moonbeamEndpoint,
-      accounts: [`0x${moonbeamPrivateKey}`]
-    },
     astar: {
       url: astarEndpoint,
       accounts: [`0x${astarPrivateKey}`]
+    },
+    shiden: {
+      url: shidenEndpoint,
+      accounts: [`0x${shidenPrivateKey}`]
     },
     syscoin: {
       url: syscoinEndpoint,

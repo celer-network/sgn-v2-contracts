@@ -22,7 +22,7 @@ contract ContractAsLP is ReentrancyGuard, Pauser {
 
     constructor(address _bridge, address _inbox) {
         bridge = _bridge;
-        _inbox = inbox;
+        inbox = _inbox;
     }
 
     /**

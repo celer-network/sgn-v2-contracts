@@ -11,7 +11,9 @@ import "../framework/MessageReceiverApp.sol";
 contract TestRefund is MessageSenderApp, MessageReceiverApp {
     using SafeERC20 for IERC20;
 
+    event MessageReceivedWithTransfer(address token, uint256 amount, bytes message, address sender, uint64 srcChainId);
     event Refunded(address token, uint256 amount, bytes message);
+    event MessageReceived(address receiver, uint64 dstChainId, bytes message);
 
     constructor(address _messageBus) {
         messageBus = _messageBus;
@@ -31,22 +33,46 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage, message, _bridgeType, 0);
     }
 
+    function executeMessageWithTransfer(
+        address _sender,
+        address _token,
+        uint256 _amount,
+        uint64 _srcChainId,
+        bytes memory _message
+    ) external payable override onlyMessageBus returns (bool) {
+        address receiver = abi.decode((_message), (address));
+        IERC20(_token).safeTransfer(receiver, _amount);
+        emit MessageReceivedWithTransfer(_token, _amount, _message, _sender, _srcChainId);
+        return true;
+    }
+
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,
         bytes calldata _message
-    ) external payable virtual override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (bool) {
         emit Refunded(_token, _amount, _message);
         address receiver = abi.decode((_message), (address));
         IERC20(_token).safeTransfer(receiver, _amount);
         return true;
     }
 
+    function send(
+        address _receiver,
+        uint64 _dstChainId,
+        bool _success
+    ) external payable {
+        bytes memory message = abi.encode(_success);
+        sendMessage(_receiver, _dstChainId, message, 0);
+    }
+
     function executeMessage(
-        address,
-        uint64,
-        bytes calldata
+        address _receiver,
+        uint64 _dstChainId,
+        bytes calldata _message
     ) external payable override onlyMessageBus returns (bool) {
-        return true;
+        bool success = abi.decode((_message), (bool));
+        emit MessageReceived(_receiver, _dstChainId, _message);
+        return success;
     }
 }

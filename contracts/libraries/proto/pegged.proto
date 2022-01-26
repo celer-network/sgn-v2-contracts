@@ -15,15 +15,16 @@ message Mint {
   bytes token = 1 [(soltype) = "address"];
   bytes account = 2 [(soltype) = "address"];
   bytes amount = 3 [(soltype) = "uint256"];
-  // depositor defines the account address that made deposit at the original token chain.
+  // depositor defines the account address that made deposit at the original token chain,
+  // or the account address that burned tokens at another remote chain
   // Not applicable to governance-triggered mints.
   bytes depositor = 4 [(soltype) = "address"];
   // ref_chain_id defines the reference chain ID, taking values of:
-  // 1. The common case of deposit-mint: the chain ID on which the corresponding deposit happened;
+  // 1. The common case: the chain ID on which the corresponding deposit or burn happened;
   // 2. Governance-triggered mint: the chain ID on which the minting will happen.
   uint64 ref_chain_id = 5;
   // ref_id defines a unique reference ID, taking values of:
-  // 1. The common case of deposit-mint: the deposit ID;
+  // 1. The common case of deposit/burn-mint: the deposit or burn ID;
   // 2. Governance-triggered mint: ID as needed.
   bytes ref_id = 6 [(soltype) = "bytes32"];
 }

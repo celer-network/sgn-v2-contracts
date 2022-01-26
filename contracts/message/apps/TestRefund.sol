@@ -51,9 +51,9 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         bytes calldata _message
     ) external payable override onlyMessageBus returns (bool) {
-        emit Refunded(_token, _amount, _message);
         address receiver = abi.decode((_message), (address));
         IERC20(_token).safeTransfer(receiver, _amount);
+        emit Refunded(_token, _amount, _message);
         return true;
     }
 

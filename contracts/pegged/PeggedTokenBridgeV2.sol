@@ -64,6 +64,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Mint memory request = PbPegged.decMint(_request);
         bytes32 mintId = keccak256(
+            // len = 20 + 20 + 32 + 20 + 8 + 32 + 20 = 152
             abi.encodePacked(
                 request.account,
                 request.token,
@@ -115,6 +116,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         require(_amount > minBurn[_token], "amount too small");
         require(maxBurn[_token] == 0 || _amount <= maxBurn[_token], "amount too large");
         bytes32 burnId = keccak256(
+            // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 + 20 = 136
             abi.encodePacked(
                 msg.sender,
                 _token,

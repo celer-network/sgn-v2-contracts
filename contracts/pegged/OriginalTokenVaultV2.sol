@@ -107,6 +107,7 @@ contract OriginalTokenVaultV2 is ReentrancyGuard, Pauser, VolumeControl, Delayed
         require(_amount > minDeposit[_token], "amount too small");
         require(maxDeposit[_token] == 0 || _amount <= maxDeposit[_token], "amount too large");
         bytes32 depId = keccak256(
+            // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 + 20 = 136
             abi.encodePacked(
                 msg.sender,
                 _token,
@@ -141,6 +142,7 @@ contract OriginalTokenVaultV2 is ReentrancyGuard, Pauser, VolumeControl, Delayed
         sigsVerifier.verifySigs(abi.encodePacked(domain, _request), _sigs, _signers, _powers);
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         bytes32 wdId = keccak256(
+            // len = 20 + 20 + 32 + 20 + 8 + 32 + 20 = 152
             abi.encodePacked(
                 request.receiver,
                 request.token,

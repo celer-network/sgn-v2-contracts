@@ -11,18 +11,12 @@ contract MessageBus is MessageBusSender, MessageBusReceiver {
         address _liquidityBridge,
         address _pegBridge,
         address _pegVault
-    ) MessageBusSender(_sigsVerifier) MessageBusReceiver(_liquidityBridge, _pegBridge, _pegVault) {}
+    ) MessageBusSender(_sigsVerifier) {}
 
     // this is only to be called by Proxy via delegateCall as initOwner will require _owner is 0.
     // so calling init on this contract directly will guarantee to fail
-    function init(
-        address _liquidityBridge,
-        address _pegBridge,
-        address _pegVault
-    ) external {
+    function init() external {
         // MUST manually call ownable init and must only call once
         initOwner();
-        // we don't need sender init as _sigsVerifier is immutable so already in the deployed code
-        initReceiver(_liquidityBridge, _pegBridge, _pegVault);
     }
 }

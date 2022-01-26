@@ -56,27 +56,6 @@ contract MessageBusReceiver is Ownable {
     }
     event Executed(MsgType msgType, bytes32 id, TxStatus status);
 
-    constructor(
-        address _liquidityBridge,
-        address _pegBridge,
-        address _pegVault
-    ) {
-        liquidityBridge = _liquidityBridge;
-        pegBridge = _pegBridge;
-        pegVault = _pegVault;
-    }
-
-    function initReceiver(
-        address _liquidityBridge,
-        address _pegBridge,
-        address _pegVault
-    ) internal {
-        require(liquidityBridge == address(0), "liquidityBridge already set");
-        liquidityBridge = _liquidityBridge;
-        pegBridge = _pegBridge;
-        pegVault = _pegVault;
-    }
-
     // ============== functions called by executor ==============
 
     /**

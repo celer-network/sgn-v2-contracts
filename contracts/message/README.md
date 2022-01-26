@@ -43,7 +43,7 @@ This example swaps one token at chain A to another token at chain B through cBri
 
 ### SGN Fee
 
-SGN charges fee to sync, store, and sign messages. Whoever calles `sendMessageWithTransfer` or `sendMessage` in [MessageBusSender](./message/messagebus/MessageBusSender.sol) should put same fee as `msg.value` in the transaction, which will later be distributed to SGN validators and delegators. The fee amount is calculated as `feeBase + _message.length * feePerByte`.
+SGN charges fee to sync, store, and sign messages. Whoever calles `sendMessageWithTransfer` or `sendMessage` in [MessageBusSender](./messagebus/MessageBusSender.sol) should put same fee as `msg.value` in the transaction, which will later be distributed to SGN validators and delegators. The fee amount is calculated as `feeBase + _message.length * feePerByte`.
 
 ### Executor Fee
 

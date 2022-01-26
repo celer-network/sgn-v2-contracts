@@ -20,15 +20,11 @@ contract MintSwapCanonicalTokenUpgradable is MintSwapCanonicalToken {
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    ) MintSwapCanonicalToken(name_, symbol_, decimals_) {
-    }
+    ) MintSwapCanonicalToken(name_, symbol_, decimals_) {}
 
     // only to be called by Proxy via delegatecall and will modify Proxy state
     // this func has no access control because initOwner only allows delegateCall
-    function init(
-        string memory name_,
-        string memory symbol_
-    ) external {
+    function init(string memory name_, string memory symbol_) external {
         initOwner(); // this will fail if Ownable._owner is already set
         _name = name_;
         _symbol = symbol_;
@@ -38,6 +34,7 @@ contract MintSwapCanonicalTokenUpgradable is MintSwapCanonicalToken {
     function name() public view virtual override returns (string memory) {
         return _name;
     }
+
     function symbol() public view virtual override returns (string memory) {
         return _symbol;
     }

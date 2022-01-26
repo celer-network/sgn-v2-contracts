@@ -13,7 +13,7 @@ pragma solidity ^0.8.0;
  * This module is used through inheritance. It will make available the modifier
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
- * 
+ *
  * This adds a normal func that setOwner if _owner is address(0). So we can't allow
  * renounceOwnership. So we can support Proxy based upgradable contract
  */
@@ -69,5 +69,3 @@ abstract contract Ownable {
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 }
-
-

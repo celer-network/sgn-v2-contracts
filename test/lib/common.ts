@@ -31,7 +31,7 @@ import {
   Viewer,
   Viewer__factory,
   WETH,
-  WETH__factory,
+  WETH__factory
 } from '../../typechain';
 import { DummySwap } from '../../typechain/DummySwap';
 import * as consts from './constants';
@@ -129,9 +129,7 @@ export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo
   await bridge.deployed();
 
   const busFactory = (await ethers.getContractFactory('MessageBus')) as MessageBus__factory;
-  const bus = await busFactory
-    .connect(admin)
-    .deploy(bridge.address, bridge.address, ethers.constants.AddressZero, ethers.constants.AddressZero);
+  const bus = await busFactory.connect(admin).deploy(bridge.address);
   await bus.deployed();
 
   const swapFactory = (await ethers.getContractFactory('DummySwap')) as DummySwap__factory;

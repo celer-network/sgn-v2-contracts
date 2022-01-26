@@ -43,8 +43,8 @@ This example swaps one token at chain A to another token at chain B through cBri
 
 ### SGN Fee
 
-SGN charges fee to sync, store, and sign messages. Whoever calles `sendMessageWithTransfer` or `sendMessage` in [MessageBusSender](./messagebus/MessageBusSender.sol) should put same fee as `msg.value` in the transaction, which will later be distributed to SGN validators and delegators. The fee amount is calculated as `feeBase + _message.length * feePerByte`.
+SGN charges fees to sync, store, and sign messages. Whoever calls `sendMessageWithTransfer` or `sendMessage` in [MessageBusSender](./messagebus/MessageBusSender.sol) should put some fee as `msg.value` in the transaction, which will later be distributed to SGN validators and delegators. The fee amount is calculated as `feeBase + _message.length * feePerByte`.
 
 ### Executor Fee
 
-Executor charges fee to submit execute message transactions. How to charge and distribute executor fees is entirely decided at the application level. Celer IM framework dos not enforce any executor fee mechanism.
+Executor charges fees to submit executeMessage transactions. How to charge and distribute executor fees is entirely decided at the application level. Celer IM framework does not enforce any executor fee mechanism.

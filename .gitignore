@@ -4,6 +4,7 @@ build/
 cache/
 deployments/
 genfiles/
+failing_metadata/
 node_modules/
 typechain/
 

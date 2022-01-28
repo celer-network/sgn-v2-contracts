@@ -70,7 +70,7 @@ tokenA -> swap -> tokenB -> bridge -> tokenB -> out
 
 4. just swap
 
-|--------chain1--------|-----SGN-----|---------chain2--------|
+|--------chain1--------|
 tokenA -> swap -> tokenB -> out
 ```
 

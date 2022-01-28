@@ -29,7 +29,7 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         MessageSenderLib.BridgeType _bridgeType
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        bytes memory message = abi.encode(_receiver);
+        bytes memory message = abi.encode(msg.sender);
         sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage, message, _bridgeType, 0);
     }
 
@@ -51,8 +51,8 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         bytes calldata _message
     ) external payable override onlyMessageBus returns (bool) {
-        address receiver = abi.decode((_message), (address));
-        IERC20(_token).safeTransfer(receiver, _amount);
+        address sender = abi.decode((_message), (address));
+        IERC20(_token).safeTransfer(sender, _amount);
         emit Refunded(_token, _amount, _message);
         return true;
     }

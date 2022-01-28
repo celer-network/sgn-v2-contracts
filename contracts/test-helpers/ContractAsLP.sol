@@ -12,8 +12,8 @@ import "../safeguard/Pauser.sol";
 contract ContractAsLP is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
-    mapping(address => mapping(address => uint256)) public ledger;
-    mapping(address => uint256) public balances;
+    mapping(address => mapping(address => uint256)) public ledger; // token => user => balance
+    mapping(address => uint256) public balances; // token => total balance
     address public bridge;
     address public inbox;
 
@@ -32,6 +32,8 @@ contract ContractAsLP is ReentrancyGuard, Pauser {
      */
     function deposit(address _token, uint256 _amount) external nonReentrant whenNotPaused {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        ledger[_token][msg.sender] += _amount;
+        balances[_token] += _amount;
         emit Deposited(msg.sender, _token, _amount);
     }
 
@@ -41,7 +43,10 @@ contract ContractAsLP is ReentrancyGuard, Pauser {
      * @param _amount The amount to withdraw.
      */
     function withdraw(address _token, uint256 _amount) external whenNotPaused {
-        require(ledger[msg.sender][_token] >= _amount, "insufficient balance");
+        require(ledger[_token][msg.sender] >= _amount, "insufficient balance");
+        require(balances[_token] >= _amount, "insufficient total balance");
+        ledger[_token][msg.sender] -= _amount;
+        balances[_token] -= _amount;
         IERC20(_token).safeTransfer(msg.sender, _amount);
         emit Withdrawn(msg.sender, _token, _amount);
     }
@@ -52,11 +57,9 @@ contract ContractAsLP is ReentrancyGuard, Pauser {
      * @param _token The address of the token.
      * @param _amount The amount to add.
      */
-    function addLiquidity(
-        address _token,
-        uint256 _amount
-    ) external whenNotPaused onlyOwner {
-        require(balances[_token] >= _amount, "insufficient balance");
+    function addLiquidity(address _token, uint256 _amount) external whenNotPaused onlyOwner {
+        require(balances[_token] >= _amount, "insufficient total balance");
+        balances[_token] -= _amount;
         IERC20(_token).safeIncreaseAllowance(bridge, _amount);
         IPool(bridge).addLiquidity(_token, _amount);
     }
@@ -81,14 +84,6 @@ contract ContractAsLP is ReentrancyGuard, Pauser {
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
     ) external whenNotPaused onlyOwner {
-        IWithdrawInbox(inbox).withdraw(
-            _wdSeq,
-            _receiver,
-            _toChain,
-            _fromChains,
-            _tokens,
-            _ratios,
-            _slippages
-        );
+        IWithdrawInbox(inbox).withdraw(_wdSeq, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }
 }

@@ -37,7 +37,45 @@ This example application sends tokens from one sender at the source chain to mul
 
 ### Example 2: [Cross Chain Swap](./apps/TransferSwap.sol)
 
-This example swaps one token at chain A to another token at chain B through cBridge and a dex on chain B.
+This example application allows swapping one token at chain 1 to another token at chain 2 through cBridge and a dex on chain 2.
+
+For the simplicity of explanation, let's say we deploy this contract on chain 1 and chain 2, and we want to input tokenA on chain 1 and gain tokenC on chain 2.
+
+Public functions `transferWithSwap` and `transferWithSwapNative` are called by a user to initiate the entire process. These functions takes in a `SwapInfo` struct that specifies the behavior or "route" of the execution, and execute the process in the following fashion:
+
+1. Swap tokenA on the source chain to gain tokenB
+2. Packages a `SwapRequest` as a "message", which indicates the swap behavior on chain 2
+3. `sendMessageWithTransfer` is then called internally to send the message along with the tokenB through the bridge to chain 2
+4. On chain 2, `executeMessageWithTransfer` is automatically called when the bridge determines that the execution conditions are met.
+5. This contract parses the message received to a `SwapRequest` struct, then executes the swap using the tokenB received to gain tokenC. (Note: when `executeMessageWithTransfer` is called, it is guaranteed that tokenB is already arrived at the TransferSwap contract address on chain 2. You can check out this part of verification logic in message/MessageBusReceiver.sol's `executeMessageWithTransfer`).
+6. If the execution of `executeMessageWithTransfer` of TransferSwap contract on chain 2 reverts, or if the `executeMessageWithTransfer` call returns `false`, then MessageBus would call `executeMessageWithTransferFallback`. This is the place where you implement logic to decide what to do with the received tokenB.
+
+The following is a more graphical explanation of all the supported flow of this demo app:
+
+```
+1. swap bridge swap
+
+|       chain 1        |              |        chain 2       |
+tokenA -> swap -> tokenB -> bridge -> tokenB -> swap -> tokenC -> out
+
+2. swap bridge
+
+|       chain 1        |              |        chain 2       |
+tokenA -> swap -> tokenB -> bridge -> tokenB -> out
+
+3. bridge swap
+
+|       chain 1        |              |        chain 2       |
+                  tokenA -> bridge -> tokenA -> swap -> tokenB -> out
+4. direct swap
+
+|       chain 1        |
+tokenA -> swap -> tokenB -> out
+```
+
+#### Caveats
+
+Since bridging tokens requires a nonce to deduplicate transactions with the same parameters, it is important that `sendMessageWithTransfer` is called with a nonce that is unique for every transaction at a per-contract per-chain level. Deplicated nonce will result in the call being reverted.
 
 ## Fee Mechanism
 

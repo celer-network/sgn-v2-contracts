@@ -54,6 +54,10 @@
   },
   "dependencies": {
     "@acala-network/eth-providers": "^2.1.11",
+    "@polkadot/api": "^6.11.1",
     "dotenv": "^10.0.0"
+  },
+  "resolutions": {
+    "@polkadot/api": "~6.11.1"
   }
 }

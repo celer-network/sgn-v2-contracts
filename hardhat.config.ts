@@ -158,6 +158,7 @@ const config: HardhatUserConfig = {
       accounts: [`0x${reiTestPrivateKey}`]
     },
     mandalaTest: {
+      timeout: 600000,
       url: mandalaTestEndpoint,
       accounts: [`0x${mandalaTestPrivateKey}`]
     },

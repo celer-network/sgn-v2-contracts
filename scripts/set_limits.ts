@@ -64,18 +64,13 @@ async function setBridgeLimits(): Promise<void> {
   const tokens = (process.env.BRIDGE_LIMIT_TOKENS as string).split(',');
   const decimals = (process.env.BRIDGE_LIMIT_DECIMALS as string).split(',');
 
-  const minAddEnv = process.env.BRIDGE_LIMIT_MIN_ADDS as string;
-  if (minAddEnv) {
-    const minAddStrs = minAddEnv.split(',');
-    if (minAddStrs.length > 0) {
-      const minAdds = minAddStrs.map(getParseUnitsCallback(decimals));
-      if (minAdds.some(gtZeroPredicate)) {
-        await (await bridge.setMinAdd(tokens, minAdds)).wait();
-        console.log('setMinAdd', tokens, minAdds);
-      }
-    }
-  }
-
+  await setLimitIfSpecified(
+    process.env.BRIDGE_LIMIT_MIN_ADDS as string,
+    tokens,
+    decimals,
+    'setMinAdd',
+    bridge.setMinAdd
+  );
   await setLimitIfSpecified(
     process.env.BRIDGE_LIMIT_MIN_SENDS as string,
     tokens,

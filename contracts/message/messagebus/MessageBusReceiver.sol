@@ -40,7 +40,8 @@ contract MessageBusReceiver is Ownable {
         Null,
         Success,
         Fail,
-        Fallback
+        Fallback,
+        Pending
     }
     mapping(bytes32 => TxStatus) public executedMessages;
 
@@ -79,6 +80,7 @@ contract MessageBusReceiver is Ownable {
         // This also indicates that different transfers can carry the exact same messages.
         bytes32 messageId = verifyTransfer(_transfer);
         require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
+        executedMessages[messageId] = TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
@@ -117,6 +119,7 @@ contract MessageBusReceiver is Ownable {
         // similar to executeMessageWithTransfer
         bytes32 messageId = verifyTransfer(_transfer);
         require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
+        executedMessages[messageId] = TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransferRefund"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
@@ -150,6 +153,7 @@ contract MessageBusReceiver is Ownable {
         // in order to guarantee that each message can only be applied once
         bytes32 messageId = computeMessageOnlyId(_route, _message);
         require(executedMessages[messageId] == TxStatus.Null, "message already executed");
+        executedMessages[messageId] = TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);

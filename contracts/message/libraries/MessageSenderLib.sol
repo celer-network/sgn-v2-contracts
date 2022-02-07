@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
-import "../messagebus/MessageBus.sol";
+import "../interfaces/IMessageBus.sol";
 
 library MessageSenderLib {
     using SafeERC20 for IERC20;
@@ -37,7 +37,7 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal {
-        MessageBus(_messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message);
+        IMessageBus(_messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message);
     }
 
     /**
@@ -136,13 +136,13 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal returns (bytes32) {
-        address bridge = MessageBus(_messageBus).liquidityBridge();
+        address bridge = IMessageBus(_messageBus).liquidityBridge();
         IERC20(_token).safeIncreaseAllowance(bridge, _amount);
         IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
         bytes32 transferId = keccak256(
             abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
         );
-        MessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
             bridge,
@@ -174,13 +174,13 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal returns (bytes32) {
-        address pegVault = MessageBus(_messageBus).pegVault();
+        address pegVault = IMessageBus(_messageBus).pegVault();
         IERC20(_token).safeIncreaseAllowance(pegVault, _amount);
         IOriginalTokenVault(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         bytes32 transferId = keccak256(
             abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
         );
-        MessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
             pegVault,
@@ -212,12 +212,12 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal returns (bytes32) {
-        address pegBridge = MessageBus(_messageBus).pegBridge();
+        address pegBridge = IMessageBus(_messageBus).pegBridge();
         IPeggedTokenBridge(pegBridge).burn(_token, _amount, _receiver, _nonce);
         bytes32 transferId = keccak256(
             abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
         );
-        MessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
             pegBridge,

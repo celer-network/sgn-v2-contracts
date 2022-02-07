@@ -74,12 +74,16 @@ contract MessageBusReceiver is Ownable {
     function initReceiver(
         address _liquidityBridge,
         address _pegBridge,
-        address _pegVault
+        address _pegVault,
+        address _pegBridgeV2,
+        address _pegVaultV2
     ) internal {
         require(liquidityBridge == address(0), "liquidityBridge already set");
         liquidityBridge = _liquidityBridge;
         pegBridge = _pegBridge;
         pegVault = _pegVault;
+        pegBridgeV2 = _pegBridgeV2;
+        pegVaultV2 = _pegVaultV2;
     }
 
     // ============== functions called by executor ==============
@@ -307,7 +311,8 @@ contract MessageBusReceiver is Ownable {
         } else if (_transfer.t == TransferType.PegMintV2 || _transfer.t == TransferType.PegWithdrawV2) {
             if (_transfer.t == TransferType.PegMintV2) {
                 bridgeAddr = pegBridge;
-            } else { // TransferType.PegWithdrawV2
+            } else {
+                // TransferType.PegWithdrawV2
                 bridgeAddr = pegVault;
             }
             transferId = keccak256(
@@ -323,7 +328,8 @@ contract MessageBusReceiver is Ownable {
             );
             if (_transfer.t == TransferType.PegMintV2) {
                 require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
-            } else { // TransferType.PegWithdrawV2
+            } else {
+                // TransferType.PegWithdrawV2
                 require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }

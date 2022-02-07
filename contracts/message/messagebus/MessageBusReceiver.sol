@@ -57,6 +57,31 @@ contract MessageBusReceiver is Ownable {
     }
     event Executed(MsgType msgType, bytes32 id, TxStatus status);
 
+    constructor(
+        address _liquidityBridge,
+        address _pegBridge,
+        address _pegVault,
+        address _pegBridgeV2,
+        address _pegVaultV2
+    ) {
+        liquidityBridge = _liquidityBridge;
+        pegBridge = _pegBridge;
+        pegVault = _pegVault;
+        pegBridgeV2 = _pegBridgeV2;
+        pegVaultV2 = _pegVaultV2;
+    }
+
+    function initReceiver(
+        address _liquidityBridge,
+        address _pegBridge,
+        address _pegVault
+    ) internal {
+        require(liquidityBridge == address(0), "liquidityBridge already set");
+        liquidityBridge = _liquidityBridge;
+        pegBridge = _pegBridge;
+        pegVault = _pegVault;
+    }
+
     // ============== functions called by executor ==============
 
     /**
@@ -282,8 +307,7 @@ contract MessageBusReceiver is Ownable {
         } else if (_transfer.t == TransferType.PegMintV2 || _transfer.t == TransferType.PegWithdrawV2) {
             if (_transfer.t == TransferType.PegMintV2) {
                 bridgeAddr = pegBridge;
-            } else {
-                // _transfer.t == TransferType.PegWithdraw
+            } else { // TransferType.PegWithdrawV2
                 bridgeAddr = pegVault;
             }
             transferId = keccak256(
@@ -299,8 +323,7 @@ contract MessageBusReceiver is Ownable {
             );
             if (_transfer.t == TransferType.PegMintV2) {
                 require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
-            } else {
-                // _transfer.t == TransferType.PegWithdraw
+            } else { // TransferType.PegWithdrawV2
                 require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }

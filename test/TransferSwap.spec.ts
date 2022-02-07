@@ -91,8 +91,6 @@ async function prepare() {
   receiver = accounts[1];
   amountIn = parseUnits('100');
 
-  await bus.setLiquidityBridge(bridge.address);
-
   srcSwap = {
     dex: dex.address,
     path: [] as string[],

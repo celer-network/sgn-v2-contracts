@@ -28,11 +28,11 @@ interface IMessageBus {
         uint64 srcChainId;
     }
 
-    function liquidityBridge() external returns (address);
+    function liquidityBridge() external view returns (address);
 
-    function pegBridge() external returns (address);
+    function pegBridge() external view returns (address);
 
-    function pegVault() external returns (address);
+    function pegVault() external view returns (address);
 
     /**
      * @notice Calculates the required fee for the message.

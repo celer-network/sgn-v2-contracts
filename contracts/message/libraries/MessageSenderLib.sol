@@ -7,7 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
+import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
+import "../../interfaces/IPeggedTokenBridgeV2.sol";
 import "../interfaces/IMessageBus.sol";
 
 library MessageSenderLib {
@@ -17,7 +19,9 @@ library MessageSenderLib {
         Null,
         Liquidity,
         PegDeposit,
-        PegBurn
+        PegBurn,
+        PegDepositV2,
+        PegBurnV2
     }
 
     // ============== Internal library functions called by apps ==============
@@ -81,9 +85,10 @@ library MessageSenderLib {
                     _messageBus,
                     _fee
                 );
-        } else if (_bridgeType == BridgeType.PegDeposit) {
+        } else if (_bridgeType == BridgeType.PegDeposit || _bridgeType == BridgeType.PegDepositV2) {
             return
                 sendMessageWithPegVaultDeposit(
+                    _bridgeType,
                     _receiver,
                     _token,
                     _amount,
@@ -93,9 +98,10 @@ library MessageSenderLib {
                     _messageBus,
                     _fee
                 );
-        } else if (_bridgeType == BridgeType.PegBurn) {
+        } else if (_bridgeType == BridgeType.PegBurn || _bridgeType == BridgeType.PegBurnV2) {
             return
                 sendMessageWithPegBridgeBurn(
+                    _bridgeType,
                     _receiver,
                     _token,
                     _amount,
@@ -165,6 +171,7 @@ library MessageSenderLib {
      * @return The transfer ID.
      */
     function sendMessageWithPegVaultDeposit(
+        BridgeType _bridgeType,
         address _receiver,
         address _token,
         uint256 _amount,
@@ -174,12 +181,22 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal returns (bytes32) {
-        address pegVault = IMessageBus(_messageBus).pegVault();
+        address pegVault;
+        if (_bridgeType == BridgeType.PegDeposit) {
+            pegVault = IMessageBus(_messageBus).pegVault();
+        } else {
+            pegVault = IMessageBus(_messageBus).pegVaultV2();
+        }
         IERC20(_token).safeIncreaseAllowance(pegVault, _amount);
-        IOriginalTokenVault(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-        bytes32 transferId = keccak256(
-            abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
-        );
+        bytes32 transferId;
+        if (_bridgeType == BridgeType.PegDeposit) {
+            IOriginalTokenVault(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
+            transferId = keccak256(
+                abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
+            );
+        } else {
+            transferId = IOriginalTokenVaultV2(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
+        }
         IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
@@ -203,6 +220,7 @@ library MessageSenderLib {
      * @return The transfer ID.
      */
     function sendMessageWithPegBridgeBurn(
+        BridgeType _bridgeType,
         address _receiver,
         address _token,
         uint256 _amount,
@@ -212,11 +230,21 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal returns (bytes32) {
-        address pegBridge = IMessageBus(_messageBus).pegBridge();
-        IPeggedTokenBridge(pegBridge).burn(_token, _amount, _receiver, _nonce);
-        bytes32 transferId = keccak256(
-            abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
-        );
+        address pegBridge;
+        if (_bridgeType == BridgeType.PegBurn) {
+            pegBridge = IMessageBus(_messageBus).pegBridge();
+        } else {
+            pegBridge = IMessageBus(_messageBus).pegBridgeV2();
+        }
+        bytes32 transferId;
+        if (_bridgeType == BridgeType.PegBurn) {
+            IPeggedTokenBridge(pegBridge).burn(_token, _amount, _receiver, _nonce);
+            transferId = keccak256(
+                abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
+            );
+        } else {
+            transferId = IPeggedTokenBridgeV2(pegBridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+        }
         IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
@@ -257,6 +285,11 @@ library MessageSenderLib {
             IOriginalTokenVault(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == BridgeType.PegBurn) {
             IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
+        } else if (_bridgeType == BridgeType.PegDepositV2) {
+            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
+            IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
+        } else if (_bridgeType == BridgeType.PegBurnV2) {
+            IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
         } else {
             revert("bridge type not supported");
         }

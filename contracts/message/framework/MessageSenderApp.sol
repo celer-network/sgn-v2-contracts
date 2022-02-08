@@ -99,6 +99,10 @@ abstract contract MessageSenderApp is MessageBusAddress {
             bridge = MessageBus(messageBus).pegVault();
         } else if (_bridgeType == MessageSenderLib.BridgeType.PegBurn) {
             bridge = MessageBus(messageBus).pegBridge();
+        } else if (_bridgeType == MessageSenderLib.BridgeType.PegDepositV2) {
+            bridge = MessageBus(messageBus).pegVaultV2();
+        } else if (_bridgeType == MessageSenderLib.BridgeType.PegBurnV2) {
+            bridge = MessageBus(messageBus).pegBridgeV2();
         } else {
             revert("bridge type not supported");
         }

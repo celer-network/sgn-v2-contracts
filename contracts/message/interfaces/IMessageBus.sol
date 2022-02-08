@@ -32,7 +32,11 @@ interface IMessageBus {
 
     function pegBridge() external view returns (address);
 
+    function pegBridgeV2() external view returns (address);
+
     function pegVault() external view returns (address);
+
+    function pegVaultV2() external view returns (address);
 
     /**
      * @notice Calculates the required fee for the message.

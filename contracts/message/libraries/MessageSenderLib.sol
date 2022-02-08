@@ -10,7 +10,7 @@ import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../../interfaces/IPeggedTokenBridgeV2.sol";
-import "../messagebus/MessageBus.sol";
+import "../interfaces/IMessageBus.sol";
 
 library MessageSenderLib {
     using SafeERC20 for IERC20;
@@ -41,7 +41,7 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal {
-        MessageBus(_messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message);
+        IMessageBus(_messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message);
     }
 
     /**
@@ -142,13 +142,13 @@ library MessageSenderLib {
         address _messageBus,
         uint256 _fee
     ) internal returns (bytes32) {
-        address bridge = MessageBus(_messageBus).liquidityBridge();
+        address bridge = IMessageBus(_messageBus).liquidityBridge();
         IERC20(_token).safeIncreaseAllowance(bridge, _amount);
         IBridge(bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
         bytes32 transferId = keccak256(
             abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
         );
-        MessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
             bridge,
@@ -183,9 +183,9 @@ library MessageSenderLib {
     ) internal returns (bytes32) {
         address pegVault;
         if (_bridgeType == BridgeType.PegDeposit) {
-            pegVault = MessageBus(_messageBus).pegVault();
+            pegVault = IMessageBus(_messageBus).pegVault();
         } else {
-            pegVault = MessageBus(_messageBus).pegVaultV2();
+            pegVault = IMessageBus(_messageBus).pegVaultV2();
         }
         IERC20(_token).safeIncreaseAllowance(pegVault, _amount);
         bytes32 transferId;
@@ -197,7 +197,7 @@ library MessageSenderLib {
         } else {
             transferId = IOriginalTokenVaultV2(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         }
-        MessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
             pegVault,
@@ -232,9 +232,9 @@ library MessageSenderLib {
     ) internal returns (bytes32) {
         address pegBridge;
         if (_bridgeType == BridgeType.PegBurn) {
-            pegBridge = MessageBus(_messageBus).pegBridge();
+            pegBridge = IMessageBus(_messageBus).pegBridge();
         } else {
-            pegBridge = MessageBus(_messageBus).pegBridgeV2();
+            pegBridge = IMessageBus(_messageBus).pegBridgeV2();
         }
         bytes32 transferId;
         if (_bridgeType == BridgeType.PegBurn) {
@@ -245,7 +245,7 @@ library MessageSenderLib {
         } else {
             transferId = IPeggedTokenBridgeV2(pegBridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
         }
-        MessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
             pegBridge,

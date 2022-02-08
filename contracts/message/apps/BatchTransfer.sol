@@ -86,6 +86,19 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         );
     }
 
+    // called on source chain for handling of bridge failures (bad liquidity, bad slippage, etc...)
+    function executeMessageWithTransferRefund(
+        address _token,
+        uint256 _amount,
+        bytes calldata _message
+    ) external payable override onlyMessageBus returns (bool) {
+        TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
+        IERC20(_token).safeTransfer(transfer.sender, _amount);
+        return true;
+    }
+
+    // ============== functions on destination chain ==============
+
     // handler function required by MsgReceiverApp
     function executeMessage(
         address _sender,
@@ -97,8 +110,6 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         status[receipt.nonce].status = receipt.status;
         return true;
     }
-
-    // ============== functions on destination chain ==============
 
     // handler function required by MsgReceiverApp
     function executeMessageWithTransfer(
@@ -116,6 +127,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         }
         uint256 remainder = _amount - totalAmt;
         if (_amount > totalAmt) {
+            // transfer the remainder of the money to sender as fee for executing this transfer
             IERC20(_token).safeTransfer(transfer.sender, remainder);
         }
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Success}));

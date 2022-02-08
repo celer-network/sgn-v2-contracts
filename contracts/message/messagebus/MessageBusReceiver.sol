@@ -14,7 +14,9 @@ contract MessageBusReceiver is Ownable {
         LqSend, // send through liquidity bridge
         LqWithdraw, // withdraw from liquidity bridge
         PegMint, // mint through pegged token bridge
-        PegWithdraw // withdraw from original token vault
+        PegWithdraw, // withdraw from original token vault
+        PegMintV2, // mint through pegged token bridge v2
+        PegWithdrawV2 // withdraw from original token vault v2
     }
 
     struct TransferInfo {
@@ -38,13 +40,16 @@ contract MessageBusReceiver is Ownable {
         Null,
         Success,
         Fail,
-        Fallback
+        Fallback,
+        Pending
     }
     mapping(bytes32 => TxStatus) public executedMessages;
 
     address public liquidityBridge; // liquidity bridge address
     address public pegBridge; // peg bridge address
     address public pegVault; // peg original vault address
+    address public pegBridgeV2; // peg bridge address
+    address public pegVaultV2; // peg original vault address
 
     enum MsgType {
         MessageWithTransfer,
@@ -55,22 +60,30 @@ contract MessageBusReceiver is Ownable {
     constructor(
         address _liquidityBridge,
         address _pegBridge,
-        address _pegVault
+        address _pegVault,
+        address _pegBridgeV2,
+        address _pegVaultV2
     ) {
         liquidityBridge = _liquidityBridge;
         pegBridge = _pegBridge;
         pegVault = _pegVault;
+        pegBridgeV2 = _pegBridgeV2;
+        pegVaultV2 = _pegVaultV2;
     }
 
     function initReceiver(
         address _liquidityBridge,
         address _pegBridge,
-        address _pegVault
+        address _pegVault,
+        address _pegBridgeV2,
+        address _pegVaultV2
     ) internal {
         require(liquidityBridge == address(0), "liquidityBridge already set");
         liquidityBridge = _liquidityBridge;
         pegBridge = _pegBridge;
         pegVault = _pegVault;
+        pegBridgeV2 = _pegBridgeV2;
+        pegVaultV2 = _pegVaultV2;
     }
 
     // ============== functions called by executor ==============
@@ -96,6 +109,7 @@ contract MessageBusReceiver is Ownable {
         // This also indicates that different transfers can carry the exact same messages.
         bytes32 messageId = verifyTransfer(_transfer);
         require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
+        executedMessages[messageId] = TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
@@ -134,6 +148,7 @@ contract MessageBusReceiver is Ownable {
         // similar to executeMessageWithTransfer
         bytes32 messageId = verifyTransfer(_transfer);
         require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
+        executedMessages[messageId] = TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransferRefund"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId, _message), _sigs, _signers, _powers);
@@ -167,6 +182,7 @@ contract MessageBusReceiver is Ownable {
         // in order to guarantee that each message can only be applied once
         bytes32 messageId = computeMessageOnlyId(_route, _message);
         require(executedMessages[messageId] == TxStatus.Null, "message already executed");
+        executedMessages[messageId] = TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
@@ -292,6 +308,30 @@ contract MessageBusReceiver is Ownable {
                 bridgeAddr = pegVault;
                 require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
+        } else if (_transfer.t == TransferType.PegMintV2 || _transfer.t == TransferType.PegWithdrawV2) {
+            if (_transfer.t == TransferType.PegMintV2) {
+                bridgeAddr = pegBridge;
+            } else {
+                // TransferType.PegWithdrawV2
+                bridgeAddr = pegVault;
+            }
+            transferId = keccak256(
+                abi.encodePacked(
+                    _transfer.receiver,
+                    _transfer.token,
+                    _transfer.amount,
+                    _transfer.sender,
+                    _transfer.srcChainId,
+                    _transfer.refId,
+                    bridgeAddr
+                )
+            );
+            if (_transfer.t == TransferType.PegMintV2) {
+                require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
+            } else {
+                // TransferType.PegWithdrawV2
+                require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
+            }
         }
         return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
@@ -331,5 +371,13 @@ contract MessageBusReceiver is Ownable {
 
     function setPegVault(address _addr) public onlyOwner {
         pegVault = _addr;
+    }
+
+    function setPegBridgeV2(address _addr) public onlyOwner {
+        pegBridgeV2 = _addr;
+    }
+
+    function setPegVaultV2(address _addr) public onlyOwner {
+        pegVaultV2 = _addr;
     }
 }

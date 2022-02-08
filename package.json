@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/celer-network/sgn-v2-contracts#readme",
   "devDependencies": {
+    "@acala-network/eth-providers": "^2.1.11",
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.4.2",
@@ -53,11 +54,6 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
-    "@acala-network/eth-providers": "^2.1.11",
-    "@polkadot/api": "^6.11.1",
     "dotenv": "^10.0.0"
-  },
-  "resolutions": {
-    "@polkadot/api": "~6.11.1"
   }
 }

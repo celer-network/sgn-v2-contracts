@@ -7,7 +7,6 @@ abstract contract Freezable {
     event Unfrozen(address account);
     mapping(address => bool) internal freezes;
 
-
     function isFrozen(address _account) public view virtual returns (bool) {
         return freezes[_account];
     }

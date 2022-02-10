@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity >=0.8.9;
+pragma solidity 0.8.9;
 
 import "./Freezable.sol";
 import "../MintSwapCanonicalTokenUpgradable.sol";
@@ -16,13 +16,14 @@ contract MintSwapCanonicalTokenUpgradableFreezable is MintSwapCanonicalTokenUpgr
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    ) MintSwapCanonicalTokenUpgradable(name_, symbol_, decimals_) {
-    }
+    ) MintSwapCanonicalTokenUpgradable(name_, symbol_, decimals_) {}
 
     // freezable related
-    function _beforeTokenTransfer(address from, address to, uint256 amount) 
-        internal virtual override 
-    {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
         require(!isFrozen(from), "ERC20Freezable: from account is frozen");
         require(!isFrozen(to), "ERC20Freezable: to account is frozen");

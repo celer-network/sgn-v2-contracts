@@ -10,8 +10,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     from: deployer,
     log: true,
     args: [
-      process.env.TEST_TOKEN_NAME,
-      process.env.TEST_TOKEN_SYMBOL,
+      process.env.CBRIDGE_ADDRESS,
+      process.env.WITHDRAW_INBOX_ADDRESS,
     ]
   });
 };

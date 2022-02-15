@@ -29,7 +29,11 @@ Check `reports/contract_sizes.txt`.
 
 1. `cp .env.template .env`, then ensure all environment variables are set in `.env`.
 
-2. Deploy SGN and Staking contracts:
+2. Replace `INFURA-PROJECT-ID` suffix of the network endpoint in `.env`, that you're going to use.
+
+3. Add private key of your account that would be used, in `.env`. Refer to `hardhat.config.ts` for env param key.
+
+4. Deploy SGN and Staking contracts:
 
 ```sh
 hardhat deploy --network <network> --tags SGNStaking

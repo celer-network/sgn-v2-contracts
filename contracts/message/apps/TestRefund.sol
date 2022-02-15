@@ -30,7 +30,17 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         bytes memory message = abi.encode(msg.sender);
-        sendMessageWithTransfer(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage, message, _bridgeType, 0);
+        sendMessageWithTransfer(
+            _receiver,
+            _token,
+            _amount,
+            _dstChainId,
+            _nonce,
+            _maxSlippage,
+            message,
+            _bridgeType,
+            msg.value
+        );
     }
 
     function executeMessageWithTransfer(
@@ -63,7 +73,7 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         bool _success
     ) external payable {
         bytes memory message = abi.encode(_success);
-        sendMessage(_receiver, _dstChainId, message, 0);
+        sendMessage(_receiver, _dstChainId, message, msg.value);
     }
 
     function executeMessage(

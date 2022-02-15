@@ -10,6 +10,7 @@ solFiles=(
   FarmingRewards
   Govern
   Viewer
+  WithdrawInbox
   interfaces/ISigsVerifier
   miscs/Faucet
   miscs/MintableERC20
@@ -25,6 +26,7 @@ solFiles=(
   pegged/tokens/SwapBridgeToken
   message/apps/TransferSwap
   test-helpers/DummySwap
+  test-helpers/ContractAsLP
   message/messagebus/MessageBus
 )
 

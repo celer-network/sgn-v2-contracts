@@ -35,6 +35,7 @@ contract WithdrawInbox {
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
     ) external {
+        require(_fromChains.length > 0, "empty withdrawal request");
         require(
             _tokens.length == _fromChains.length &&
                 _ratios.length == _fromChains.length &&

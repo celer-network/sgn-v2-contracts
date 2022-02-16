@@ -4,7 +4,9 @@ pragma solidity 0.8.9;
 
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
+import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
+import "../../interfaces/IPeggedTokenBridgeV2.sol";
 import "../interfaces/IMessageReceiverApp.sol";
 import "../../safeguard/Ownable.sol";
 
@@ -315,10 +317,10 @@ contract MessageBusReceiver is Ownable {
             }
         } else if (_transfer.t == TransferType.PegMintV2 || _transfer.t == TransferType.PegWithdrawV2) {
             if (_transfer.t == TransferType.PegMintV2) {
-                bridgeAddr = pegBridge;
+                bridgeAddr = pegBridgeV2;
             } else {
                 // TransferType.PegWithdrawV2
-                bridgeAddr = pegVault;
+                bridgeAddr = pegVaultV2;
             }
             transferId = keccak256(
                 abi.encodePacked(
@@ -332,10 +334,10 @@ contract MessageBusReceiver is Ownable {
                 )
             );
             if (_transfer.t == TransferType.PegMintV2) {
-                require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
+                require(IPeggedTokenBridgeV2(bridgeAddr).records(transferId) == true, "mint record not exist");
             } else {
                 // TransferType.PegWithdrawV2
-                require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
+                require(IOriginalTokenVaultV2(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }
         return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId));

@@ -18,6 +18,7 @@ contract WithdrawInbox {
     /**
      * @notice Withdraw liquidity from the pool-based bridge.
      * NOTE: Each of your withdrawal request should have different _wdSeq.
+     * NOTE: Tokens to withdraw within one withdrawal request should have the same symbol.
      * @param _wdSeq The unique sequence number to identify this withdrawal request.
      * @param _receiver The receiver address on _toChain.
      * @param _toChain The chain Id to receive the withdrawn tokens.

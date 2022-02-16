@@ -56,6 +56,11 @@ contract MessageBusReceiver is Ownable {
         MessageOnly
     }
     event Executed(MsgType msgType, bytes32 id, TxStatus status);
+    event LiquidityBridgeUpdated(address liquidityBridge);
+    event PegBridgeUpdated(address pegBridge);
+    event PegVaultUpdated(address pegVault);
+    event PegBridgeV2Updated(address pegBridgeV2);
+    event PegVaultV2Updated(address pegVaultV2);
 
     constructor(
         address _liquidityBridge,
@@ -362,22 +367,32 @@ contract MessageBusReceiver is Ownable {
     // ================= contract addr config =================
 
     function setLiquidityBridge(address _addr) public onlyOwner {
+        require(_addr != address(0), "invalid address");
         liquidityBridge = _addr;
+        emit LiquidityBridgeUpdated(liquidityBridge);
     }
 
     function setPegBridge(address _addr) public onlyOwner {
+        require(_addr != address(0), "invalid address");
         pegBridge = _addr;
+        emit PegBridgeUpdated(pegBridge);
     }
 
     function setPegVault(address _addr) public onlyOwner {
+        require(_addr != address(0), "invalid address");
         pegVault = _addr;
+        emit PegVaultUpdated(pegVault);
     }
 
     function setPegBridgeV2(address _addr) public onlyOwner {
+        require(_addr != address(0), "invalid address");
         pegBridgeV2 = _addr;
+        emit PegBridgeV2Updated(pegBridgeV2);
     }
 
     function setPegVaultV2(address _addr) public onlyOwner {
+        require(_addr != address(0), "invalid address");
         pegVaultV2 = _addr;
+        emit PegVaultV2Updated(pegVaultV2);
     }
 }

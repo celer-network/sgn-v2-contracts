@@ -24,6 +24,9 @@ contract MessageBusSender is Ownable {
         uint256 fee
     );
 
+    event FeeBaseUpdated(uint256 feeBase);
+    event FeePerByteUpdated(uint256 feePerByte);
+
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
     }
@@ -91,6 +94,7 @@ contract MessageBusSender is Ownable {
         sigsVerifier.verifySigs(abi.encodePacked(domain, _account, _cumulativeFee), _sigs, _signers, _powers);
         uint256 amount = _cumulativeFee - withdrawnFees[_account];
         require(amount > 0, "No new amount to withdraw");
+        withdrawnFees[_account] = _cumulativeFee;
         (bool sent, ) = _account.call{value: amount, gas: 50000}("");
         require(sent, "failed to withdraw fee");
     }
@@ -108,9 +112,11 @@ contract MessageBusSender is Ownable {
 
     function setFeePerByte(uint256 _fee) external onlyOwner {
         feePerByte = _fee;
+        emit FeePerByteUpdated(feePerByte);
     }
 
     function setFeeBase(uint256 _fee) external onlyOwner {
         feeBase = _fee;
+        emit FeeBaseUpdated(feeBase);
     }
 }

@@ -43,6 +43,9 @@ contract WithdrawInbox {
                 _slippages.length == _fromChains.length,
             "length mismatch"
         );
+        for (uint256 i = 0; i < _ratios.length; i++) {
+            require(_ratios[i] > 0 && _ratios[i] <= 1e8, "invalid ratio");
+        }
         emit WithdrawalRequest(_wdSeq, msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }
 }

@@ -41,7 +41,6 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
      * transfer can be refunded.
      * @param _bridgeType The type of bridge used by this transfer. One of the {BridgeType} enum.
-     * @param _bridgeAddr The address of used bridge.
      */
     function transfer(
         address _receiver,

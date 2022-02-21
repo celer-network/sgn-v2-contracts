@@ -97,13 +97,9 @@ library BridgeSenderLib {
         uint256[] calldata _powers,
         BridgeType _bridgeType,
         address _bridgeAddr
-    ) internal returns (bytes32 memory, address memory, uint256 memory, bytes32 memory) {
-        bytes32 memory refundId;
-        bytes32 memory refId;
-        address memory token;
-        uint256 memory amount;
+    ) internal returns (bytes32, address, uint256, bytes32) {
         if (_bridgeType == BridgeType.Liquidity) {
-            PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
+            PbBridge.Relay memory request = PbBridge.decRelay(_request);
             require(request.receiver == address(this), "invalid refund");
             // len = 20 + 20 + 20 + 32 + 8 + 8 + 32 = 140
             bytes32 refundId = keccak256(

@@ -50,7 +50,7 @@ contract WithdrawInbox is Pauser {
         );
         for (uint256 i = 0; i < _ratios.length; i++) {
             require(_ratios[i] > 0 && _ratios[i] <= 1e8, "invalid ratio");
-            require(_slippages[i] > minimalMaxSlippage, "slippage too small");
+            require(_slippages[i] >= minimalMaxSlippage, "slippage too small");
         }
         emit WithdrawalRequest(_wdSeq, msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
     }

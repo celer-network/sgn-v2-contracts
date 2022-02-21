@@ -51,9 +51,9 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
         BridgeSenderLib.BridgeType _bridgeType
-    ) external nonReentrant whenNotPaused returns (bytes32) {
-        address _bridge = bridges[_bridgeType];
-        require(_bridge != address(0), "unknown bridge type");
+    ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
+        address _bridgeAddr = bridges[_bridgeType];
+        require(_bridgeAddr != address(0), "unknown bridge type");
         bytes32 transferId = BridgeSenderLib.sendTransfer(
             _receiver,
             _token,
@@ -62,11 +62,42 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
             _nonce,
             _maxSlippage,
             _bridgeType,
-            _bridge
+            _bridgeAddr
         );
         require(records[transferId] == address(0), "record exists");
         records[transferId] = msg.sender;
         return transferId;
+    }
+
+    /**
+     * @notice Refund a failed cross-chain transfer.
+     * @param _request The serialized request protobuf.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A request must be signed-off by
+     * +2/3 of the bridge's current signing power to be delivered.
+     * @param _signers The sorted list of signers.
+     * @param _powers The signing powers of the signers.
+     * @param _bridgeType The type of bridge used by this failed transfer. One of the {BridgeType} enum.
+     */
+    function refund(
+        bytes calldata _request,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers,
+        BridgeSenderLib.BridgeType _bridgeType
+    ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
+        address _bridgeAddr = bridges[_bridgeType];
+        require(_bridgeAddr != address(0), "unknown bridge type");
+        (bytes32 refId, address token, uint256 amount, bytes32 refundId) = BridgeSenderLib.sendRefund(
+            _request,
+            _signs,
+            _signers,
+            _powers,
+            _bridgeType,
+            _bridgeAddr
+        );
+        require(records[refId] != address(0), "unknown transfer id");
+        IERC20(token).safeTransfer(records[refId], amount);
+        return refundId;
     }
 
     /**
@@ -79,48 +110,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         emit Deposited(msg.sender, _token, _amount);
     }
 
-    /**
-     * @notice Add liquidity to the pool-based bridge.
-     * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
-     * @param _token The address of the token.
-     * @param _amount The amount to add.
-     */
-    function addLiquidity(address _token, uint256 _amount) external whenNotPaused onlyOwner {
-        require(IERC20(_token).balanceOf(address(this)) >= _amount, "insufficient balance");
-        IERC20(_token).safeIncreaseAllowance(bridge, _amount);
-        IPool(bridge).addLiquidity(_token, _amount);
-    }
-
-    /**
-     * @notice Withdraw liquidity from the pool-based bridge.
-     * NOTE: Each of your withdrawal request should have different _wdSeq.
-     * NOTE: Tokens to withdraw within one withdrawal request should have the same symbol.
-     * @param _wdSeq The unique sequence number to identify this withdrawal request.
-     * @param _receiver The receiver address on _toChain.
-     * @param _toChain The chain Id to receive the withdrawn tokens.
-     * @param _fromChains The chain Ids to withdraw tokens.
-     * @param _tokens The token to withdraw on each fromChain.
-     * @param _ratios The withdrawal ratios of each token.
-     * @param _slippages The max slippages of each token for cross-chain withdraw.
-     */
-    function withdraw(
-        uint64 _wdSeq,
-        address _receiver,
-        uint64 _toChain,
-        uint64[] calldata _fromChains,
-        address[] calldata _tokens,
-        uint32[] calldata _ratios,
-        uint32[] calldata _slippages
-    ) external whenNotPaused onlyOwner {
-        IWithdrawInbox(inbox).withdraw(_wdSeq, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
-    }
-
-
     // ----------------------Admin operation-----------------------
-    function setBridge(address _bridge) external onlyOwner {
-        bridges[_bridgeType] = _bridge;
-        emit BridgeUpdated();
-    }
 
     function setLiquidityBridge(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");

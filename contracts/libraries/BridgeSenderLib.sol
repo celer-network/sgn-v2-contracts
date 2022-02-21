@@ -49,31 +49,31 @@ library BridgeSenderLib {
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
         BridgeType _bridgeType,
-        address _bridge
+        address _bridgeAddr
     ) internal returns (bytes32 memory) {
         bytes32 memory transferId;
         if (_bridgeType == BridgeType.Liquidity) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
-            IBridge(_bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
+            IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
+            IBridge(_bridgeAddr).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
             transferId = keccak256(
                 abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
             );
         } else if (_bridgeType == BridgeType.PegDeposit) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
-            IOriginalTokenVault(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
+            IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
+            IOriginalTokenVault(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
             );
         } else if (_bridgeType == BridgeType.PegBurn) {
-            IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
+            IPeggedTokenBridge(_bridgeAddr).burn(_token, _amount, _receiver, _nonce);
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
             );
         } else if (_bridgeType == BridgeType.PegDepositV2) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
-            transferId = IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
+            IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
+            transferId = IOriginalTokenVaultV2(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == BridgeType.PegBurnV2) {
-            transferId = IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+            transferId = IPeggedTokenBridgeV2(_bridgeAddr).burn(_token, _amount, _dstChainId, _receiver, _nonce);
         } else {
             revert("bridge type not supported");
         }
@@ -81,8 +81,8 @@ library BridgeSenderLib {
     }
 
     /**
-    * @notice Refund a failed cross-chain transfer.
-     * @param _relayRequest The serialized request protobuf.
+     * @notice Refund a failed cross-chain transfer.
+     * @param _request The serialized request protobuf.
      * @param _sigs The list of signatures sorted by signing addresses in ascending order. A request must be signed-off by
      * +2/3 of the bridge's current signing power to be delivered.
      * @param _signers The sorted list of signers.
@@ -90,19 +90,23 @@ library BridgeSenderLib {
      * @param _bridgeType The type of bridge used by this failed transfer. One of the {BridgeType} enum.
      * @param _bridgeAddr The address of used bridge.
      */
-    function refundTransfer(
+    function sendRefund(
         bytes calldata _request,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
         BridgeType _bridgeType,
-        address _bridge
-    ) internal returns (bytes32 memory, bytes32 memory) {
+        address _bridgeAddr
+    ) internal returns (bytes32 memory, address memory, uint256 memory, bytes32 memory) {
         bytes32 memory refundId;
+        bytes32 memory refId;
+        address memory token;
+        uint256 memory amount;
         if (_bridgeType == BridgeType.Liquidity) {
             PbBridge.Relay memory request = PbBridge.decRelay(_relayRequest);
+            require(request.receiver == address(this), "invalid refund");
             // len = 20 + 20 + 20 + 32 + 8 + 8 + 32 = 140
-            refundId = keccak256(
+            bytes32 refundId = keccak256(
                 abi.encodePacked(
                     request.sender,
                     request.receiver,
@@ -113,11 +117,12 @@ library BridgeSenderLib {
                     request.srcTransferId
                 )
             );
-            IBridge(_bridge).relay(_request, _sigs, _signers, _powers);
+            IBridge(_bridgeAddr).relay(_request, _sigs, _signers, _powers);
+            return (request.srcTransferId, request.token, request.amount, refundId);
         } else if (_bridgeType == BridgeType.PegDeposit) {
             PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
             require(request.receiver == address(this), "invalid refund");
-            refundId = keccak256(
+            bytes32 refundId = keccak256(
             // len = 20 + 20 + 32 + 20 + 8 + 32 = 132
                 abi.encodePacked(
                     request.receiver,
@@ -128,21 +133,36 @@ library BridgeSenderLib {
                     request.refId
                 )
             );
-            IOriginalTokenVault(_bridge).withdraw(_request, _sigs, _signers, _powers);
-
+            IOriginalTokenVault(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+            return (request.refId, request.token, request.amount, refundId);
         } else if (_bridgeType == BridgeType.PegBurn) {
-            IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
-            transferId = keccak256(
-                abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
+            PbPegged.Mint memory request = PbPegged.decMint(_request);
+            require(request.account == address(this), "invalid refund");
+            refundId = keccak256(
+            // len = 20 + 20 + 32 + 20 + 8 + 32 = 132
+                abi.encodePacked(
+                    request.account,
+                    request.token,
+                    request.amount,
+                    request.depositor,
+                    request.refChainId,
+                    request.refId
+                )
             );
+            IPeggedTokenBridge(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+            return (request.refId, request.token, request.amount, refundId);
         } else if (_bridgeType == BridgeType.PegDepositV2) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
-            transferId = IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
+            PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
+            require(request.receiver == address(this), "invalid refund");
+            bytes32 refundId = IOriginalTokenVaultV2(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+            return (request.refId, request.token, request.amount, refundId);
         } else if (_bridgeType == BridgeType.PegBurnV2) {
-            transferId = IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+            PbPegged.Mint memory request = PbPegged.decMint(_request);
+            require(request.account == address(this), "invalid refund");
+            bytes32 refundId = IPeggedTokenBridgeV2(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+            return (request.refId, request.token, request.amount, refundId);
         } else {
             revert("bridge type not supported");
         }
-        return transferId;
     }
 }

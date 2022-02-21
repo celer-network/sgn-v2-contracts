@@ -134,7 +134,7 @@ library BridgeSenderLib {
         } else if (_bridgeType == BridgeType.PegBurn) {
             PbPegged.Mint memory request = PbPegged.decMint(_request);
             require(request.account == address(this), "invalid refund");
-            refundId = keccak256(
+            bytes32 refundId = keccak256(
             // len = 20 + 20 + 32 + 20 + 8 + 32 = 132
                 abi.encodePacked(
                     request.account,

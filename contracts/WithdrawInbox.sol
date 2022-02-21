@@ -2,7 +2,12 @@
 
 pragma solidity 0.8.9;
 
-contract WithdrawInbox {
+import "./safeguard/Pauser.sol";
+
+contract WithdrawInbox is Pauser {
+    // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
+    uint32 public minimalMaxSlippage;
+
     // contract LP withdrawal request
     event WithdrawalRequest(
         uint64 seqNum,
@@ -35,7 +40,7 @@ contract WithdrawInbox {
         address[] calldata _tokens,
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
-    ) external {
+    ) external whenNotPaused {
         require(_fromChains.length > 0, "empty withdrawal request");
         require(
             _tokens.length == _fromChains.length &&
@@ -45,7 +50,12 @@ contract WithdrawInbox {
         );
         for (uint256 i = 0; i < _ratios.length; i++) {
             require(_ratios[i] > 0 && _ratios[i] <= 1e8, "invalid ratio");
+            require(_slippages[i] > minimalMaxSlippage, "slippage too small");
         }
         emit WithdrawalRequest(_wdSeq, msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
+    }
+
+    function setMinimalMaxSlippage(uint32 _minimalMaxSlippage) external onlyOwner {
+        minimalMaxSlippage = _minimalMaxSlippage;
     }
 }

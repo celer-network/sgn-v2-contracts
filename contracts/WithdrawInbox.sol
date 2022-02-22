@@ -24,7 +24,7 @@ contract WithdrawInbox is Ownable {
     );
 
     constructor() {
-        minimalMaxSlippage = 5000;
+        minimalMaxSlippage = 500;
         validityPeriod = 3600;
     }
 

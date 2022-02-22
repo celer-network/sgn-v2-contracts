@@ -2,11 +2,13 @@
 
 pragma solidity 0.8.9;
 
-import "./safeguard/Pauser.sol";
+import "./safeguard/Ownable.sol";
 
-contract WithdrawInbox is Pauser {
+contract WithdrawInbox is Ownable {
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
     uint32 public minimalMaxSlippage;
+    // the period of time during which a withdrawal request is intended to be valid
+    uint256 public validityPeriod;
 
     // contract LP withdrawal request
     event WithdrawalRequest(
@@ -17,8 +19,14 @@ contract WithdrawInbox is Pauser {
         uint64[] fromChains,
         address[] tokens,
         uint32[] ratios,
-        uint32[] slippages
+        uint32[] slippages,
+        uint256 deadline
     );
+
+    constructor() {
+        minimalMaxSlippage = 5000;
+        validityPeriod = 3600;
+    }
 
     /**
      * @notice Withdraw liquidity from the pool-based bridge.
@@ -40,7 +48,7 @@ contract WithdrawInbox is Pauser {
         address[] calldata _tokens,
         uint32[] calldata _ratios,
         uint32[] calldata _slippages
-    ) external whenNotPaused {
+    ) external {
         require(_fromChains.length > 0, "empty withdrawal request");
         require(
             _tokens.length == _fromChains.length &&
@@ -52,10 +60,27 @@ contract WithdrawInbox is Pauser {
             require(_ratios[i] > 0 && _ratios[i] <= 1e8, "invalid ratio");
             require(_slippages[i] >= minimalMaxSlippage, "slippage too small");
         }
-        emit WithdrawalRequest(_wdSeq, msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);
+        uint256 _deadline = block.timestamp + validityPeriod;
+        emit WithdrawalRequest(
+            _wdSeq,
+            msg.sender,
+            _receiver,
+            _toChain,
+            _fromChains,
+            _tokens,
+            _ratios,
+            _slippages,
+            _deadline
+        );
     }
+
+    // ------------------------Admin operations--------------------------
 
     function setMinimalMaxSlippage(uint32 _minimalMaxSlippage) external onlyOwner {
         minimalMaxSlippage = _minimalMaxSlippage;
+    }
+
+    function setValidityPeriod(uint256 _validityPeriod) external onlyOwner {
+        validityPeriod = _validityPeriod;
     }
 }

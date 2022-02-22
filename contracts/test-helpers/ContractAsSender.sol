@@ -93,8 +93,11 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
             _bridgeAddr
         );
         require(refundInfo.receiver == address(this), "invalid refund");
-        require(records[refundInfo.refundId] != address(0), "unknown transfer id");
-        IERC20(refundInfo.token).safeTransfer(records[refundInfo.refundId], refundInfo.amount);
+        require(records[refundInfo.refundId] == address(0), "already refunded");
+        address _receiver = records[refundInfo.transferId];
+        require(_receiver != address(0), "unknown transfer id");
+        records[refundInfo.refundId] = _receiver;
+        IERC20(refundInfo.token).safeTransfer(_receiver, refundInfo.amount);
         return refundInfo.refundId;
     }
 

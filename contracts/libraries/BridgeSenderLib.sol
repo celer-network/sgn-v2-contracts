@@ -155,7 +155,9 @@ library BridgeSenderLib {
         refund.receiver = request.receiver;
         refund.token = request.token;
         refund.amount = request.amount;
-        IBridge(_bridgeAddr).relay(_request, _sigs, _signers, _powers);
+        if (!IBridge(_bridgeAddr).withdraws(refund.refundId)) {
+            IBridge(_bridgeAddr).relay(_request, _sigs, _signers, _powers);
+        }
         return refund;
     }
 
@@ -192,7 +194,9 @@ library BridgeSenderLib {
         refund.receiver = request.receiver;
         refund.token = request.token;
         refund.amount = request.amount;
-        IOriginalTokenVault(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+        if (!IOriginalTokenVault(_bridgeAddr).records(refund.refundId)) {
+            IOriginalTokenVault(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+        }
         return refund;
     }
 
@@ -229,7 +233,9 @@ library BridgeSenderLib {
         refund.receiver = request.account;
         refund.token = request.token;
         refund.amount = request.amount;
-        IPeggedTokenBridge(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+        if (!IPeggedTokenBridge(_bridgeAddr).records(refund.refundId)) {
+            IPeggedTokenBridge(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+        }
         return refund;
     }
 
@@ -251,7 +257,22 @@ library BridgeSenderLib {
     ) internal returns (RefundInfo memory) {
         RefundInfo memory refund;
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
-        refund.refundId = IOriginalTokenVaultV2(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+        if (IOriginalTokenVaultV2(_bridgeAddr).records(request.refId)) {
+            refund.refundId = keccak256(
+                // len = 20 + 20 + 32 + 20 + 8 + 32 + 20 = 152
+                abi.encodePacked(
+                    request.receiver,
+                    request.token,
+                    request.amount,
+                    request.burnAccount,
+                    request.refChainId,
+                    request.refId,
+                    _bridgeAddr
+                )
+            );
+        } else {
+            refund.refundId = IOriginalTokenVaultV2(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+        }
         refund.transferId = request.refId;
         refund.receiver = request.receiver;
         refund.token = request.token;
@@ -277,7 +298,22 @@ library BridgeSenderLib {
     ) internal returns (RefundInfo memory) {
         RefundInfo memory refund;
         PbPegged.Mint memory request = PbPegged.decMint(_request);
-        refund.refundId = IPeggedTokenBridgeV2(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+        if (IPeggedTokenBridgeV2(_bridgeAddr).records(request.refId)) {
+            refund.refundId = keccak256(
+                // len = 20 + 20 + 32 + 20 + 8 + 32 + 20 = 152
+                abi.encodePacked(
+                    request.account,
+                    request.token,
+                    request.amount,
+                    request.depositor,
+                    request.refChainId,
+                    request.refId,
+                    _bridgeAddr
+                )
+            );
+        } else {
+            refund.refundId = IPeggedTokenBridgeV2(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+        }
         refund.transferId = request.refId;
         refund.receiver = request.account;
         refund.token = request.token;

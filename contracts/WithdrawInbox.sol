@@ -23,6 +23,11 @@ contract WithdrawInbox is Ownable {
         uint256 deadline
     );
 
+    constructor() {
+        // default validityPeriod is 1 hour
+        validityPeriod = 3600;
+    }
+
     /**
      * @notice Withdraw liquidity from the pool-based bridge.
      * NOTE: Each of your withdrawal request should have different _wdSeq.

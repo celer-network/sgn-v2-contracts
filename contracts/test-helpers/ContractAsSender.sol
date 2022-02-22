@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../libraries/BridgeSenderLib.sol";
-import "../interfaces/IPool.sol";
 import "../safeguard/Pauser.sol";
 
 contract ContractAsSender is ReentrancyGuard, Pauser {

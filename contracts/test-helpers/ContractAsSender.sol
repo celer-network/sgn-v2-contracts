@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../libraries/BridgeSenderLib.sol";
 import "../interfaces/IPool.sol";
-import "../interfaces/IWithdrawInbox.sol";
 import "../safeguard/Pauser.sol";
 
 contract ContractAsSender is ReentrancyGuard, Pauser {
@@ -24,10 +23,10 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     event PegBridgeV2Updated(address pegBridgeV2);
     event PegVaultV2Updated(address pegVaultV2);
 
-//    constructor(address _bridge, address _inbox) {
-//        bridge = _bridge;
-//        inbox = _inbox;
-//    }
+    //    constructor(address _bridge, address _inbox) {
+    //        bridge = _bridge;
+    //        inbox = _inbox;
+    //    }
 
     /**
      * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in form of mint/burn.
@@ -86,17 +85,18 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeType];
         require(_bridgeAddr != address(0), "unknown bridge type");
-        (bytes32 refId, address token, uint256 amount, bytes32 refundId) = BridgeSenderLib.sendRefund(
+        BridgeSenderLib.RefundInfo memory refundInfo = BridgeSenderLib.sendRefund(
             _request,
-            _signs,
+            _sigs,
             _signers,
             _powers,
             _bridgeType,
             _bridgeAddr
         );
-        require(records[refId] != address(0), "unknown transfer id");
-        IERC20(token).safeTransfer(records[refId], amount);
-        return refundId;
+        require(refundInfo.receiver == address(this), "invalid refund");
+        require(records[refundInfo.refundId] != address(0), "unknown transfer id");
+        IERC20(refundInfo.token).safeTransfer(records[refundInfo.refundId], refundInfo.amount);
+        return refundInfo.refundId;
     }
 
     /**
@@ -114,30 +114,30 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     function setLiquidityBridge(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[BridgeSenderLib.BridgeType.Liquidity] = _addr;
-        emit LiquidityBridgeUpdated(liquidityBridge);
+        emit LiquidityBridgeUpdated(_addr);
     }
 
     function setPegBridge(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[BridgeSenderLib.BridgeType.PegBurn] = _addr;
-        emit PegBridgeUpdated(pegBridge);
+        emit PegBridgeUpdated(_addr);
     }
 
     function setPegVault(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[BridgeSenderLib.BridgeType.PegDeposit] = _addr;
-        emit PegVaultUpdated(pegVault);
+        emit PegVaultUpdated(_addr);
     }
 
     function setPegBridgeV2(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[BridgeSenderLib.BridgeType.PegBurnV2] = _addr;
-        emit PegBridgeV2Updated(pegBridgeV2);
+        emit PegBridgeV2Updated(_addr);
     }
 
     function setPegVaultV2(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[BridgeSenderLib.BridgeType.PegDepositV2] = _addr;
-        emit PegVaultV2Updated(pegVaultV2);
+        emit PegVaultV2Updated(_addr);
     }
 }

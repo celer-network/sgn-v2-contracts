@@ -24,8 +24,8 @@ contract WithdrawInbox is Ownable {
     );
 
     constructor() {
-        // default validityPeriod is 1 hour
-        validityPeriod = 3600;
+        // default validityPeriod is 2 hours
+        validityPeriod = 7200;
     }
 
     /**

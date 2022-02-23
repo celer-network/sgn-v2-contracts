@@ -13,6 +13,7 @@ import "../interfaces/IOriginalTokenVaultV2.sol";
 import "../interfaces/IPeggedTokenBridge.sol";
 import "../interfaces/IPeggedTokenBridgeV2.sol";
 import "../interfaces/IPool.sol";
+import "./PbPool.sol";
 
 library BridgeSenderLib {
     using SafeERC20 for IERC20;
@@ -139,24 +140,16 @@ library BridgeSenderLib {
         address _bridgeAddr
     ) internal returns (RefundInfo memory) {
         RefundInfo memory refund;
-        PbBridge.Relay memory request = PbBridge.decRelay(_request);
-        // len = 20 + 20 + 20 + 32 + 8 + 8 + 32 = 140
+        PbPool.WithdrawMsg memory request = PbPool.decWithdrawMsg(_request);
+        // len = 8 + 8 + 20 + 20 + 32 = 88
         refund.refundId = keccak256(
-            abi.encodePacked(
-                request.sender,
-                request.receiver,
-                request.token,
-                request.amount,
-                request.srcChainId,
-                request.dstChainId,
-                request.srcTransferId
-            )
+            abi.encodePacked(request.chainid, request.seqnum, request.receiver, request.token, request.amount)
         );
-        refund.transferId = request.srcTransferId;
+        refund.transferId = request.refid;
         refund.receiver = request.receiver;
         refund.token = request.token;
         refund.amount = request.amount;
-        if (!IBridge(_bridgeAddr).withdraws(refund.refundId)) {
+        if (!IPool(_bridgeAddr).withdraws(refund.refundId)) {
             IPool(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
         }
         return refund;

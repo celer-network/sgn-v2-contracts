@@ -27,6 +27,7 @@ solFiles=(
   message/apps/TransferSwap
   test-helpers/DummySwap
   test-helpers/ContractAsLP
+  test-helpers/ContractAsSender
   message/messagebus/MessageBus
 )
 

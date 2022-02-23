@@ -155,7 +155,7 @@ library BridgeSenderLib {
         refund.receiver = request.receiver;
         refund.token = request.token;
         refund.amount = request.amount;
-        if (!IBridge(_bridgeAddr).withdraws(refund.refundId)) {
+        if (!IBridge(_bridgeAddr).transfers(refund.refundId)) {
             IBridge(_bridgeAddr).relay(_request, _sigs, _signers, _powers);
         }
         return refund;

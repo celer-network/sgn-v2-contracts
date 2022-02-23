@@ -5,15 +5,15 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./PbPegged.sol";
 import "./PbBridge.sol";
+import "./PbPegged.sol";
+import "./PbPool.sol";
 import "../interfaces/IBridge.sol";
 import "../interfaces/IOriginalTokenVault.sol";
 import "../interfaces/IOriginalTokenVaultV2.sol";
 import "../interfaces/IPeggedTokenBridge.sol";
 import "../interfaces/IPeggedTokenBridgeV2.sol";
 import "../interfaces/IPool.sol";
-import "./PbPool.sol";
 
 library BridgeSenderLib {
     using SafeERC20 for IERC20;

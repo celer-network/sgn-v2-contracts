@@ -22,11 +22,6 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     event PegBridgeV2Updated(address pegBridgeV2);
     event PegVaultV2Updated(address pegVaultV2);
 
-    //    constructor(address _bridge, address _inbox) {
-    //        bridge = _bridge;
-    //        inbox = _inbox;
-    //    }
-
     /**
      * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in form of mint/burn.
      * @param _receiver The address of the receiver.

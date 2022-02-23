@@ -12,6 +12,7 @@ import "../interfaces/IOriginalTokenVault.sol";
 import "../interfaces/IOriginalTokenVaultV2.sol";
 import "../interfaces/IPeggedTokenBridge.sol";
 import "../interfaces/IPeggedTokenBridgeV2.sol";
+import "../interfaces/IPool.sol";
 
 library BridgeSenderLib {
     using SafeERC20 for IERC20;
@@ -155,8 +156,8 @@ library BridgeSenderLib {
         refund.receiver = request.receiver;
         refund.token = request.token;
         refund.amount = request.amount;
-        if (!IBridge(_bridgeAddr).transfers(refund.refundId)) {
-            IBridge(_bridgeAddr).relay(_request, _sigs, _signers, _powers);
+        if (!IBridge(_bridgeAddr).withdraws(refund.refundId)) {
+            IPool(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
         }
         return refund;
     }

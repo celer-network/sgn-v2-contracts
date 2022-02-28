@@ -30,12 +30,14 @@ contract MessageBusReceiver is Ownable {
         uint64 seqnum; // only needed for LqWithdraw
         uint64 srcChainId;
         bytes32 refId;
+        bytes32 srcTxHash; // src chain msg tx hash
     }
 
     struct RouteInfo {
         address sender;
         address receiver;
         uint64 srcChainId;
+        bytes32 srcTxHash; // src chain msg tx hash
     }
 
     enum TxStatus {
@@ -57,7 +59,7 @@ contract MessageBusReceiver is Ownable {
         MessageWithTransfer,
         MessageOnly
     }
-    event Executed(MsgType msgType, bytes32 id, TxStatus status);
+    event Executed(MsgType msgType, bytes32 msgId, TxStatus status, uint64 srcChainId, bytes32 srcTxHash);
     event LiquidityBridgeUpdated(address liquidityBridge);
     event PegBridgeUpdated(address pegBridge);
     event PegVaultUpdated(address pegVault);
@@ -133,7 +135,7 @@ contract MessageBusReceiver is Ownable {
             }
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageWithTransfer, messageId, status);
+        emit Executed(MsgType.MessageWithTransfer, messageId, status, _transfer.srcChainId, _transfer.srcTxHash);
     }
 
     /**
@@ -167,7 +169,7 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageWithTransfer, messageId, status);
+        emit Executed(MsgType.MessageWithTransfer, messageId, status, _transfer.srcChainId, _transfer.srcTxHash);
     }
 
     /**
@@ -201,7 +203,7 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageOnly, messageId, status);
+        emit Executed(MsgType.MessageOnly, messageId, status, _route.srcChainId, _route.srcTxHash);
     }
 
     // ================= utils (to avoid stack too deep) =================
@@ -340,13 +342,20 @@ contract MessageBusReceiver is Ownable {
                 require(IOriginalTokenVaultV2(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }
-        return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId));
+        return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId, _transfer.srcTxHash));
     }
 
     function computeMessageOnlyId(RouteInfo calldata _route, bytes calldata _message) private pure returns (bytes32) {
         return
             keccak256(
-                abi.encodePacked(MsgType.MessageOnly, _route.sender, _route.receiver, _route.srcChainId, _message)
+                abi.encodePacked(
+                    MsgType.MessageOnly,
+                    _route.sender,
+                    _route.receiver,
+                    _route.srcChainId,
+                    _route.srcTxHash,
+                    _message
+                )
             );
     }
 

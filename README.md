@@ -92,8 +92,7 @@ Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
 
 ```sh
 hardhat deploy --network <network>  --tags PeggedTokenBridgeV2
-
-
+```
 ### Verify contracts on explorers
 
 #### On Etherscan variants via hardhat etherscan-verify:

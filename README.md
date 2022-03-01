@@ -49,7 +49,9 @@ Deploy OriginalTokenVault contract:
 
 Make sure to set ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER in .env to the Bridge address when deploying. 
 Such as:
-ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
+ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 
+
+Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
 ```sh
 hardhat deploy --network <network>  --tags OriginalTokenVault
 ```

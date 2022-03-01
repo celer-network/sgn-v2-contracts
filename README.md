@@ -54,33 +54,42 @@ ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22Whe
 hardhat deploy --network <network>  --tags OriginalTokenVault
 ```
 
-Deploy OriginalTokenVault contract:
+Deploy PeggedTokenBridge contract:
 
 Make sure to set ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER in .env to the Bridge address when deploying. 
 Such as:
+
 PEGGED_TOKEN_BRIDGE_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22
+
 Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
 ```sh
-hardhat deploy --network <network>  --tags OriginalTokenVault
+hardhat deploy --network <network>  --tags PeggedTokenBridge
 ```
 
 Deploy OriginalTokenVaultV2 contract:
 
 Make sure to set ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER in .env to the Bridge address when deploying. 
 Such as:
-ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
+
+ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22
+
+Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
+
 ```sh
-hardhat deploy --network <network>  --tags OriginalTokenVault
+hardhat deploy --network <network>  --tags OriginalTokenVaultV2
 ```
 
-Deploy OriginalTokenVaultV2 contract:
+Deploy PeggedTokenBridgeV2 contract:
 
 Make sure to set ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER in .env to the Bridge address when deploying. 
 Such as:
+
 PEGGED_TOKEN_BRIDGE_SIGS_VERIFIER=0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22
+
 Where 0x67E5E3E54B2E4433CeDB484eCF4ef0f35Fe3Fb22 is the Bridge contract address
+
 ```sh
-hardhat deploy --network <network>  --tags OriginalTokenVault
+hardhat deploy --network <network>  --tags PeggedTokenBridgeV2
 
 
 ### Verify contracts on explorers

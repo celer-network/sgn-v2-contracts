@@ -114,6 +114,9 @@ const syscoinPrivateKey = process.env.SYSCOIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY
 const milkomedaEndpoint = process.env.MILKOMEDA_ENDPOINT || DEFAULT_ENDPOINT;
 const milkomedaPrivateKey = process.env.MILKOMEDA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const evmosEndpoint = process.env.EVMOS_ENDPOINT || DEFAULT_ENDPOINT;
+const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -251,6 +254,10 @@ const config: HardhatUserConfig = {
     milkomeda: {
       url: milkomedaEndpoint,
       accounts: [`0x${milkomedaPrivateKey}`]
+    },
+    evmos: {
+      url: evmosEndpoint,
+      accounts: [`0x${evmosPrivateKey}`]
     }
   },
   namedAccounts: {

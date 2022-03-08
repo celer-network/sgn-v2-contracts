@@ -117,6 +117,9 @@ const milkomedaPrivateKey = process.env.MILKOMEDA_PRIVATE_KEY || DEFAULT_PRIVATE
 const evmosEndpoint = process.env.EVMOS_ENDPOINT || DEFAULT_ENDPOINT;
 const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const cloverEndpoint = process.env.CLOVER_ENDPOINT || DEFAULT_ENDPOINT;
+const cloverPrivateKey = process.env.CLOVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -258,6 +261,10 @@ const config: HardhatUserConfig = {
     evmos: {
       url: evmosEndpoint,
       accounts: [`0x${evmosPrivateKey}`]
+    },
+    clover: {
+      url: cloverEndpoint,
+      accounts: [`0x${cloverPrivateKey}`]
     }
   },
   namedAccounts: {

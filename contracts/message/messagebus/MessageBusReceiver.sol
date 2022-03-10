@@ -363,8 +363,8 @@ contract MessageBusReceiver is Ownable {
                     _route.receiver,
                     _route.srcChainId,
                     _route.srcTxHash,
-                    _message,
-                    uint64(block.chainid)
+                    uint64(block.chainid),
+                    _message
                 )
             );
     }

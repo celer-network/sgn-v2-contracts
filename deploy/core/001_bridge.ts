@@ -16,7 +16,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   console.log(storageByteDeposit, txFeePerGas)
   const ethParams = calcEthereumTransactionParams({
-    gasLimit: '21000000',
+    gasLimit: '31000000',
     validUntil: (blockNumber + 100).toString(),
     storageLimit: '64001',
     txFeePerGas,

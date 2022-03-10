@@ -27,7 +27,7 @@ contract MessageBusReceiver is Ownable {
         address receiver;
         address token;
         uint256 amount;
-        uint64 seqnum; // only needed for LqWithdraw
+        uint64 wdseq; // only needed for LqWithdraw (refund)
         uint64 srcChainId;
         bytes32 refId;
         bytes32 srcTxHash; // src chain msg tx hash
@@ -299,7 +299,7 @@ contract MessageBusReceiver is Ownable {
             transferId = keccak256(
                 abi.encodePacked(
                     uint64(block.chainid),
-                    _transfer.seqnum,
+                    _transfer.wdseq,
                     _transfer.receiver,
                     _transfer.token,
                     _transfer.amount

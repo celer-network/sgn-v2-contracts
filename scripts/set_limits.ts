@@ -1,12 +1,11 @@
 import 'hardhat-deploy';
-import '@nomiclabs/hardhat-ethers';
 
 import * as dotenv from 'dotenv';
 import { BigNumber } from 'ethers';
 import { ethers, getNamedAccounts } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
 import { Bridge__factory } from '../typechain/factories/Bridge__factory';
 import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';

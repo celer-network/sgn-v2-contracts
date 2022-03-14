@@ -111,6 +111,15 @@ const shidenPrivateKey = process.env.SHIDEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const syscoinEndpoint = process.env.SYSCOIN_ENDPOINT || DEFAULT_ENDPOINT;
 const syscoinPrivateKey = process.env.SYSCOIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const milkomedaEndpoint = process.env.MILKOMEDA_ENDPOINT || DEFAULT_ENDPOINT;
+const milkomedaPrivateKey = process.env.MILKOMEDA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const evmosEndpoint = process.env.EVMOS_ENDPOINT || DEFAULT_ENDPOINT;
+const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const cloverEndpoint = process.env.CLOVER_ENDPOINT || DEFAULT_ENDPOINT;
+const cloverPrivateKey = process.env.CLOVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -244,6 +253,18 @@ const config: HardhatUserConfig = {
     syscoin: {
       url: syscoinEndpoint,
       accounts: [`0x${syscoinPrivateKey}`]
+    },
+    milkomeda: {
+      url: milkomedaEndpoint,
+      accounts: [`0x${milkomedaPrivateKey}`]
+    },
+    evmos: {
+      url: evmosEndpoint,
+      accounts: [`0x${evmosPrivateKey}`]
+    },
+    clover: {
+      url: cloverEndpoint,
+      accounts: [`0x${cloverPrivateKey}`]
     }
   },
   namedAccounts: {

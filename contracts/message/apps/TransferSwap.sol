@@ -255,7 +255,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external payable override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
@@ -281,8 +281,8 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
             status = SwapStatus.Succeeded;
         }
         emit SwapRequestDone(id, dstAmount, status);
-        // always return true since swap failure is already handled in-place
-        return true;
+        // always return success since swap failure is already handled in-place
+        return ExecuctionStatus.Success;
     }
 
     /**
@@ -296,13 +296,13 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         uint256, // _amount
         uint64 _srcChainId,
         bytes memory _message
-    ) external payable override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
-        // always return false to mark this transfer as failed since if this function is called then there nothing more
+        // always return fail to mark this transfer as failed since if this function is called then there nothing more
         // we can do in this app as the swap failures are already handled in executeMessageWithTransfer
-        return false;
+        return ExecuctionStatus.Fail;
     }
 
     function _trySwap(SwapInfo memory _swap, uint256 _amount) private returns (bool ok, uint256 amountOut) {

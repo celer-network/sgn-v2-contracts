@@ -28,7 +28,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external payable virtual override onlyMessageBus returns (bool) {}
+    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
 
     /**
      * @notice Only called by MessageBus (MessageBusReceiver) if
@@ -48,7 +48,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external payable virtual override onlyMessageBus returns (bool) {}
+    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
 
     /**
      * @notice Called by MessageBus (MessageBusReceiver) to process refund of the original transfer from this contract
@@ -60,7 +60,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         address _token,
         uint256 _amount,
         bytes calldata _message
-    ) external payable virtual override onlyMessageBus returns (bool) {}
+    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
 
     /**
      * @notice Called by MessageBus (MessageBusReceiver)
@@ -72,5 +72,5 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         address _sender,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external payable virtual override onlyMessageBus returns (bool) {}
+    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
 }

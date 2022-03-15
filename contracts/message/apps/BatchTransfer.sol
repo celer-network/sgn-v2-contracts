@@ -91,10 +91,10 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         bytes calldata _message
-    ) external payable override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
-        return true;
+        return ExecuctionStatus.Success;
     }
 
     // ============== functions on destination chain ==============
@@ -104,11 +104,11 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         address _sender,
         uint64 _srcChainId,
         bytes memory _message
-    ) external payable override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferReceipt memory receipt = abi.decode((_message), (TransferReceipt));
         require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)), "invalid message");
         status[receipt.nonce].status = receipt.status;
-        return true;
+        return ExecuctionStatus.Success;
     }
 
     // handler function required by MsgReceiverApp
@@ -118,7 +118,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external payable override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         uint256 totalAmt;
         for (uint256 i = 0; i < transfer.accounts.length; i++) {
@@ -133,7 +133,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Success}));
         // MsgSenderApp util function
         sendMessage(_sender, _srcChainId, message, msg.value);
-        return true;
+        return ExecuctionStatus.Success;
     }
 
     // handler function required by MsgReceiverApp
@@ -144,11 +144,11 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes memory _message
-    ) external payable override onlyMessageBus returns (bool) {
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Fail}));
         sendMessage(_sender, _srcChainId, message, msg.value);
-        return true;
+        return ExecuctionStatus.Success;
     }
 }

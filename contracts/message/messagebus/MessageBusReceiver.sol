@@ -127,12 +127,15 @@ contract MessageBusReceiver is Ownable {
             _powers
         );
         TxStatus status;
-        bool success = executeMessageWithTransfer(_transfer, _message);
-        if (success) {
+        IMessageReceiverApp.ExecuctionStatus est = executeMessageWithTransfer(_transfer, _message);
+        if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
+        } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
+            // reset to null for later retry
+            status = TxStatus.Null;
         } else {
-            success = executeMessageWithTransferFallback(_transfer, _message);
-            if (success) {
+            est = executeMessageWithTransferFallback(_transfer, _message);
+            if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
                 status = TxStatus.Fallback;
             } else {
                 status = TxStatus.Fail;
@@ -171,9 +174,12 @@ contract MessageBusReceiver is Ownable {
             _powers
         );
         TxStatus status;
-        bool success = executeMessageWithTransferRefund(_transfer, _message);
-        if (success) {
+        IMessageReceiverApp.ExecuctionStatus est = executeMessageWithTransferRefund(_transfer, _message);
+        if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
+        } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
+            // reset to null for later retry
+            status = TxStatus.Null;
         } else {
             status = TxStatus.Fail;
         }
@@ -205,9 +211,12 @@ contract MessageBusReceiver is Ownable {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
         TxStatus status;
-        bool success = executeMessage(_route, _message);
-        if (success) {
+        IMessageReceiverApp.ExecuctionStatus est = executeMessage(_route, _message);
+        if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
+        } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
+            // reset to null for later retry
+            status = TxStatus.Null;
         } else {
             status = TxStatus.Fail;
         }
@@ -219,7 +228,7 @@ contract MessageBusReceiver is Ownable {
 
     function executeMessageWithTransfer(TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (bool)
+        returns (IMessageReceiverApp.ExecuctionStatus)
     {
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
@@ -232,15 +241,14 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            bool success = abi.decode((res), (bool));
-            return success;
+            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
-        return false;
+        return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
     function executeMessageWithTransferFallback(TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (bool)
+        returns (IMessageReceiverApp.ExecuctionStatus)
     {
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
@@ -253,15 +261,14 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            bool success = abi.decode((res), (bool));
-            return success;
+            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
-        return false;
+        return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
     function executeMessageWithTransferRefund(TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (bool)
+        returns (IMessageReceiverApp.ExecuctionStatus)
     {
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
@@ -272,10 +279,9 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            bool success = abi.decode((res), (bool));
-            return success;
+            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
-        return false;
+        return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
     function verifyTransfer(TransferInfo calldata _transfer) private view returns (bytes32) {
@@ -369,7 +375,10 @@ contract MessageBusReceiver is Ownable {
             );
     }
 
-    function executeMessage(RouteInfo calldata _route, bytes calldata _message) private returns (bool) {
+    function executeMessage(RouteInfo calldata _route, bytes calldata _message)
+        private
+        returns (IMessageReceiverApp.ExecuctionStatus)
+    {
         (bool ok, bytes memory res) = address(_route.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessage.selector,
@@ -379,10 +388,9 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            bool success = abi.decode((res), (bool));
-            return success;
+            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
-        return false;
+        return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
     // ================= contract addr config =================

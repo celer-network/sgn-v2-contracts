@@ -3,6 +3,12 @@
 pragma solidity >=0.8.0;
 
 interface IMessageReceiverApp {
+    enum ExecuctionStatus {
+        Fail,
+        Success,
+        Retry
+    }
+
     /**
      * @notice Called by MessageBus (MessageBusReceiver) if the process is originated from MessageBus (MessageBusSender)'s
      *         sendMessageWithTransfer it is only called when the tokens are checked to be arrived at this contract's address.
@@ -20,7 +26,7 @@ interface IMessageReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external payable returns (bool);
+    ) external payable returns (ExecuctionStatus);
 
     /**
      * @notice Only called by MessageBus (MessageBusReceiver) if
@@ -40,7 +46,7 @@ interface IMessageReceiverApp {
         uint256 _amount,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external payable returns (bool);
+    ) external payable returns (ExecuctionStatus);
 
     /**
      * @notice Called by MessageBus (MessageBusReceiver) to process refund of the original transfer from this contract
@@ -52,7 +58,7 @@ interface IMessageReceiverApp {
         address _token,
         uint256 _amount,
         bytes calldata _message
-    ) external payable returns (bool);
+    ) external payable returns (ExecuctionStatus);
 
     /**
      * @notice Called by MessageBus (MessageBusReceiver)
@@ -64,5 +70,5 @@ interface IMessageReceiverApp {
         address _sender,
         uint64 _srcChainId,
         bytes calldata _message
-    ) external payable returns (bool);
+    ) external payable returns (ExecuctionStatus);
 }

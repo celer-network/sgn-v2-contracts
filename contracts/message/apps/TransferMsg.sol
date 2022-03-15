@@ -23,7 +23,7 @@ contract TransferMessage is MessageSenderApp, MessageReceiverApp {
         address,
         uint64,
         bytes calldata
-    ) external payable override onlyMessageBus returns (bool) {
-        return true;
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+        return ExecuctionStatus.Success;
     }
 }

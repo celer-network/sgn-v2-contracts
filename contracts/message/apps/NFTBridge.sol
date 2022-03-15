@@ -9,25 +9,13 @@ interface INFT {
     function tokenURI(uint256 tokenId) external view returns (string memory);
     function ownerOf(uint256 tokenId) external view returns (address owner);
     // we do not support NFT that charges transfer fees
-    function transferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
+    function transferFrom(address from, address to, uint256 tokenId) external;
     // impl by NFToken contract, mint an NFT with id and uri to user or burn
     function mint(address to, uint256 id, string memory uri) external;
     function burn(uint256 id) external;
-
-    // ERC721TokenReceiver, needed if we use safeTransferFrom
-    // function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external returns(bytes4);
 }
 
 /** @title NFT Bridge */
-/**
-json config:
-  - array of chains, each chain has chainid, name, nft bridge addr (this could be put onchain)
-  - array of NFTs: name, symbol, website, orig:{chainid, addr}, peg:[{chainid, addr}]
-*/
 contract NFTBridge is MessageReceiverApp {
     /// per dest chain id executor fee in this chain's gas token
     mapping(uint64 => uint256) public destTxFee;
@@ -47,15 +35,16 @@ contract NFTBridge is MessageReceiverApp {
 
     /**
      * @notice totalFee returns gas token value to be set in user tx, includes both cbridge msg fee and executor fee on dest chain
-     * @dev we reuse address for not specified address fields as msg fee is by msg length so it's the same
+     * @dev we use _nft address for user as it's same length so same msg cost
      * @param _dstChid dest chain ID
      * @param _nft address of source NFT contract
      * @param _id token ID to bridge (need to get accurate tokenURI length)
      * @return total fee needed for user tx
      */
     function totalFee(uint64 _dstChid, address _nft, uint256 _id) external view returns (uint256) {
-        // buildMsg from nft, id and its tokenuri
-        // return IMessageBus(messageBus).calcFee(_message) + destTxFee[_dstChid];
+        string memory _uri = INFT(_nft).tokenURI(_id);
+        bytes memory message = abi.encode(NFTMsg(MsgType.Mint, _nft, _nft, _id, _uri));
+        return IMessageBus(messageBus).calcFee(message) + destTxFee[_dstChid];
     }
 
     // ===== called by user
@@ -76,15 +65,7 @@ contract NFTBridge is MessageReceiverApp {
     ) external payable {
         INFT(_nft).transferFrom(msg.sender, address(this), _id);
         require(INFT(_nft).ownerOf(_id)==address(this), "transfer NFT failed");
-        bytes memory message = abi.encode(
-            NFTMsg({
-                msgType: MsgType.Mint,
-                user: msg.sender,
-                nft: _dstNft,
-                id: _id,
-                uri: INFT(_nft).tokenURI(_id)
-            })
-        );
+        bytes memory message = abi.encode(NFTMsg(MsgType.Mint, msg.sender, _dstNft, _id, INFT(_nft).tokenURI(_id)));
         uint256 fee = IMessageBus(messageBus).calcFee(message);
         require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
@@ -111,14 +92,7 @@ contract NFTBridge is MessageReceiverApp {
     ) external payable {
         string memory _uri = INFT(_nft).tokenURI(_id);
         INFT(_nft).burn(_id);
-        // now build NFTMsg
-        NFTMsg memory nftMsg = NFTMsg({
-            msgType: MsgType.Mint,
-            user: msg.sender,
-            nft: _dstNft,
-            id: _id,
-            uri: _uri
-        });
+        NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, msg.sender, _dstNft, _id, _uri);
         if (_backToOrigin) {
             nftMsg.msgType = MsgType.Withdraw;
         }
@@ -143,11 +117,6 @@ contract NFTBridge is MessageReceiverApp {
         }
         return true;
     }
-
-    // satisfy IERC721Receiver so safeTransferFrom works. we could just use transferFrom in our code?
-    //function onERC721Received(address _operator, address _from, uint256 _tokenId, bytes calldata _data) external returns(bytes4) {
-    //    return INFT.onERC721Received.selector;
-    //}
 
     // only owner
     // set destTxFee

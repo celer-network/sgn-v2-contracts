@@ -60,6 +60,8 @@ contract MessageBusReceiver is Ownable {
         MessageOnly
     }
     event Executed(MsgType msgType, bytes32 msgId, TxStatus status, uint64 srcChainId, bytes32 srcTxHash);
+    event NeedRetry(MsgType msgType, bytes32 msgId, uint64 srcChainId, bytes32 srcTxHash);
+
     event LiquidityBridgeUpdated(address liquidityBridge);
     event PegBridgeUpdated(address pegBridge);
     event PegVaultUpdated(address pegVault);
@@ -131,8 +133,9 @@ contract MessageBusReceiver is Ownable {
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            // reset to null for later retry
-            status = TxStatus.Null;
+            delete executedMessages[messageId];
+            emit NeedRetry(MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
+            return;
         } else {
             est = executeMessageWithTransferFallback(_transfer, _message);
             if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
@@ -178,8 +181,9 @@ contract MessageBusReceiver is Ownable {
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            // reset to null for later retry
-            status = TxStatus.Null;
+            delete executedMessages[messageId];
+            emit NeedRetry(MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
+            return;
         } else {
             status = TxStatus.Fail;
         }
@@ -215,8 +219,9 @@ contract MessageBusReceiver is Ownable {
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            // reset to null for later retry
-            status = TxStatus.Null;
+            delete executedMessages[messageId];
+            emit NeedRetry(MsgType.MessageOnly, messageId, _route.srcChainId, _route.srcTxHash);
+            return;
         } else {
             status = TxStatus.Fail;
         }

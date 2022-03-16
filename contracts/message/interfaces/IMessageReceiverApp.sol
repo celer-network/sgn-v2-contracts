@@ -4,9 +4,9 @@ pragma solidity >=0.8.0;
 
 interface IMessageReceiverApp {
     enum ExecuctionStatus {
-        Fail,
-        Success,
-        Retry
+        Fail,    // execution failed, finalized
+        Success, // execution succeed, finalized
+        Retry   // execution rejected, can retry later
     }
 
     /**
@@ -19,7 +19,7 @@ interface IMessageReceiverApp {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address how submitted the execution transaction
+     * @param _executor Address who submitted the execution transaction
      */
     function executeMessageWithTransfer(
         address _sender,
@@ -33,7 +33,7 @@ interface IMessageReceiverApp {
     /**
      * @notice Only called by MessageBus (MessageBusReceiver) if
      *         1. executeMessageWithTransfer reverts, or
-     *         2. executeMessageWithTransfer returns false
+     *         2. executeMessageWithTransfer returns ExecuctionStatus.Fail
      * @param _sender The address of the source app contract
      * @param _token The address of the token that comes out of the bridge
      * @param _amount The amount of tokens received at this contract through the cross-chain bridge.
@@ -41,7 +41,7 @@ interface IMessageReceiverApp {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address how submitted the execution transaction
+     * @param _executor Address who submitted the execution transaction
      */
     function executeMessageWithTransferFallback(
         address _sender,
@@ -57,7 +57,7 @@ interface IMessageReceiverApp {
      * @param _token The token address of the original transfer
      * @param _amount The amount of the original transfer
      * @param _message The same message associated with the original transfer
-     * @param _executor Address how submitted the execution transaction
+     * @param _executor Address who submitted the execution transaction
      */
     function executeMessageWithTransferRefund(
         address _token,
@@ -71,7 +71,7 @@ interface IMessageReceiverApp {
      * @param _sender The address of the source app contract
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address how submitted the execution transaction
+     * @param _executor Address who submitted the execution transaction
      */
     function executeMessage(
         address _sender,

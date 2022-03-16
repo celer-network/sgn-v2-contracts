@@ -21,7 +21,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessageWithTransfer(
         address _sender,
@@ -43,7 +43,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessageWithTransferFallback(
         address _sender,
@@ -59,7 +59,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
      * @param _token The token address of the original transfer
      * @param _amount The amount of the original transfer
      * @param _message The same message associated with the original transfer
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessageWithTransferRefund(
         address _token,
@@ -73,7 +73,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
      * @param _sender The address of the source app contract
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessage(
         address _sender,

@@ -5,7 +5,7 @@ pragma solidity >=0.8.0;
 interface IMessageReceiverApp {
     enum ExecuctionStatus {
         Fail,    // execution failed, finalized
-        Success, // execution succeed, finalized
+        Success, // execution succeeded, finalized
         Retry   // execution rejected, can retry later
     }
 
@@ -19,7 +19,7 @@ interface IMessageReceiverApp {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessageWithTransfer(
         address _sender,
@@ -41,7 +41,7 @@ interface IMessageReceiverApp {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessageWithTransferFallback(
         address _sender,
@@ -57,7 +57,7 @@ interface IMessageReceiverApp {
      * @param _token The token address of the original transfer
      * @param _amount The amount of the original transfer
      * @param _message The same message associated with the original transfer
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessageWithTransferRefund(
         address _token,
@@ -71,7 +71,7 @@ interface IMessageReceiverApp {
      * @param _sender The address of the source app contract
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who submitted the execution transaction
+     * @param _executor Address who called the MessageBus execution function
      */
     function executeMessage(
         address _sender,

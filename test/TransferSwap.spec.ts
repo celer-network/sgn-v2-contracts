@@ -331,7 +331,7 @@ describe('Test executeMessageWithTransfer', function () {
     await tokenA.connect(admin).transfer(xswap.address, amountIn);
     const tx = await xswap
       .connect(admin)
-      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn, srcChainId, message);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn, srcChainId, message, ZERO_ADDR);
     const balB2 = await tokenB.connect(admin).balanceOf(receiver.address);
     const id = computeId(receiver.address, srcChainId, chainId, message);
     const dstAmount = slip(amountIn, 5);
@@ -349,7 +349,7 @@ describe('Test executeMessageWithTransfer', function () {
     await tokenA.connect(admin).transfer(xswap.address, amountIn2);
     const tx = await xswap
       .connect(admin)
-      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn2, srcChainId, message);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn2, srcChainId, message, ZERO_ADDR);
     const bal2 = await receiver.getBalance();
     const id = computeId(receiver.address, srcChainId, chainId, message);
     const dstAmount = slip(amountIn2, 5);
@@ -366,7 +366,7 @@ describe('Test executeMessageWithTransfer', function () {
     const balA1 = await tokenA.connect(receiver).balanceOf(receiver.address);
     const tx = await xswap
       .connect(admin)
-      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn, srcChainId, message);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenA.address, amountIn, srcChainId, message, ZERO_ADDR);
     const balA2 = await tokenA.connect(receiver).balanceOf(receiver.address);
     const id = computeId(receiver.address, srcChainId, chainId, message);
     const expectStatus = 1; // SwapStatus.Succeeded
@@ -385,7 +385,7 @@ describe('Test executeMessageWithTransfer', function () {
     await tokenB.connect(admin).transfer(xswap.address, bridgeAmount);
     const tx = xswap
       .connect(admin)
-      .executeMessageWithTransfer(ZERO_ADDR, tokenB.address, bridgeAmount, srcChainId, msg);
+      .executeMessageWithTransfer(ZERO_ADDR, tokenB.address, bridgeAmount, srcChainId, msg, ZERO_ADDR);
     const expectId = computeId(receiver.address, srcChainId, chainId, msg);
     const expectStatus = 3; // SwapStatus.Fallback
     await expect(tx).to.emit(xswap, 'SwapRequestDone').withArgs(expectId, slip(amountIn, 5), expectStatus);

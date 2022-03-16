@@ -4,9 +4,9 @@ pragma solidity >=0.8.0;
 
 interface IMessageReceiverApp {
     enum ExecuctionStatus {
-        Fail,    // execution failed, finalized
+        Fail, // execution failed, finalized
         Success, // execution succeeded, finalized
-        Retry   // execution rejected, can retry later
+        Retry // execution rejected, can retry later
     }
 
     /**

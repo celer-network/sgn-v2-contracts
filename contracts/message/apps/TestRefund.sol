@@ -48,7 +48,8 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes memory _message
+        bytes memory _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         address receiver = abi.decode((_message), (address));
         IERC20(_token).safeTransfer(receiver, _amount);
@@ -59,7 +60,8 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,
-        bytes calldata _message
+        bytes calldata _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         address sender = abi.decode((_message), (address));
         IERC20(_token).safeTransfer(sender, _amount);
@@ -79,7 +81,8 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
-        bytes calldata _message
+        bytes calldata _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         emit MessageReceived(_sender, _srcChainId, _message);
         return ExecuctionStatus.Success;

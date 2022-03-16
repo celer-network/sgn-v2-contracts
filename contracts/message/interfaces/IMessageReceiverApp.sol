@@ -19,13 +19,15 @@ interface IMessageReceiverApp {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _executor Address how submitted the execution transaction
      */
     function executeMessageWithTransfer(
         address _sender,
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes calldata _message
+        bytes calldata _message,
+        address _executor
     ) external payable returns (ExecuctionStatus);
 
     /**
@@ -39,13 +41,15 @@ interface IMessageReceiverApp {
      *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _executor Address how submitted the execution transaction
      */
     function executeMessageWithTransferFallback(
         address _sender,
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes calldata _message
+        bytes calldata _message,
+        address _executor
     ) external payable returns (ExecuctionStatus);
 
     /**
@@ -53,11 +57,13 @@ interface IMessageReceiverApp {
      * @param _token The token address of the original transfer
      * @param _amount The amount of the original transfer
      * @param _message The same message associated with the original transfer
+     * @param _executor Address how submitted the execution transaction
      */
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,
-        bytes calldata _message
+        bytes calldata _message,
+        address _executor
     ) external payable returns (ExecuctionStatus);
 
     /**
@@ -65,10 +71,12 @@ interface IMessageReceiverApp {
      * @param _sender The address of the source app contract
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _executor Address how submitted the execution transaction
      */
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
-        bytes calldata _message
+        bytes calldata _message,
+        address _executor
     ) external payable returns (ExecuctionStatus);
 }

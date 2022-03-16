@@ -90,7 +90,8 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,
-        bytes calldata _message
+        bytes calldata _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
@@ -103,7 +104,8 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
-        bytes memory _message
+        bytes memory _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferReceipt memory receipt = abi.decode((_message), (TransferReceipt));
         require(status[receipt.nonce].h == keccak256(abi.encodePacked(_sender, _srcChainId)), "invalid message");
@@ -117,7 +119,8 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes memory _message
+        bytes memory _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         uint256 totalAmt;
@@ -143,7 +146,8 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes memory _message
+        bytes memory _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);

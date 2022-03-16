@@ -254,7 +254,8 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes memory _message
+        bytes memory _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
@@ -295,7 +296,8 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         address, // _token
         uint256, // _amount
         uint64 _srcChainId,
-        bytes memory _message
+        bytes memory _message,
+        address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);

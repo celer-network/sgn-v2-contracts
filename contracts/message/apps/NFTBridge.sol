@@ -20,10 +20,6 @@ contract NFTBridge is MessageReceiverApp {
     /// per dest chain id executor fee in this chain's gas token
     mapping(uint64 => uint256) public destTxFee;
 
-    constructor(address _msgBus) {
-        messageBus = _msgBus;
-    }
-
     enum MsgType { Mint, Withdraw }
     struct NFTMsg {
         MsgType msgType; // mint or withdraw
@@ -32,6 +28,27 @@ contract NFTBridge is MessageReceiverApp {
         uint256 id; // token ID
         string uri; // tokenURI from source NFT
     }
+    // emit in deposit or burn
+    event Sent (
+        address sender,
+        address srcNft,
+        uint256 id,
+        uint64 dstChid,
+        address receiver,
+        address dstNft
+    );
+    // emit for mint or withdraw message
+    event Received (
+        address receiver,
+        address nft,
+        uint256 id,
+        uint64 srcChid
+    );
+
+    constructor(address _msgBus) {
+        messageBus = _msgBus;
+    }
+
 
     /**
      * @notice totalFee returns gas token value to be set in user tx, includes both cbridge msg fee and executor fee on dest chain
@@ -69,6 +86,7 @@ contract NFTBridge is MessageReceiverApp {
         uint256 fee = IMessageBus(messageBus).calcFee(message);
         require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
+        emit Sent(msg.sender, _nft, _id, _dstChid, msg.sender, _dstNft);
     }
 
     // burn to withdraw or mint on another chain, arg has backToOrig bool if dest chain is NFT's orig, set to true
@@ -100,12 +118,13 @@ contract NFTBridge is MessageReceiverApp {
         uint256 fee = IMessageBus(messageBus).calcFee(message);
         require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
+        emit Sent(msg.sender, _nft, _id, _dstChid, msg.sender, _dstNft);
     }
 
     // ===== called by msgbus
     function executeMessage(
         address,
-        uint64,
+        uint64 srcChid,
         bytes memory _message
     ) external payable override onlyMessageBus returns (bool) {
         // withdraw original locked nft back to user, or mint new nft depending on msg.type
@@ -114,7 +133,10 @@ contract NFTBridge is MessageReceiverApp {
             INFT(nftMsg.nft).mint(nftMsg.user, nftMsg.id, nftMsg.uri);
         } else if (nftMsg.msgType == MsgType.Withdraw) {
             INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id);
+        } else {
+            revert("invalid message type");
         }
+        emit Received(nftMsg.user, nftMsg.nft, nftMsg.id, srcChid);
         return true;
     }
 

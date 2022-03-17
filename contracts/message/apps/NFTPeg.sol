@@ -3,7 +3,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-contract MyNFT is ERC721URIStorage {
+contract PegNFT is ERC721URIStorage {
     address public immutable nftBridge;
     constructor(string memory name_, string memory symbol_, address _nftBridge) ERC721(name_, symbol_) {
         nftBridge = _nftBridge;

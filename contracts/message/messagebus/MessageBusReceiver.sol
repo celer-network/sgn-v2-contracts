@@ -133,7 +133,7 @@ contract MessageBusReceiver is Ownable {
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            delete executedMessages[messageId];
+            executedMessages[messageId] = TxStatus.Null;
             emit NeedRetry(MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
             return;
         } else {
@@ -181,7 +181,7 @@ contract MessageBusReceiver is Ownable {
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            delete executedMessages[messageId];
+            executedMessages[messageId] = TxStatus.Null;
             emit NeedRetry(MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
             return;
         } else {
@@ -219,7 +219,7 @@ contract MessageBusReceiver is Ownable {
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
             status = TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            delete executedMessages[messageId];
+            executedMessages[messageId] = TxStatus.Null;
             emit NeedRetry(MsgType.MessageOnly, messageId, _route.srcChainId, _route.srcTxHash);
             return;
         } else {

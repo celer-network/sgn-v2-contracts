@@ -114,7 +114,7 @@ contract NFTBridge is MessageReceiverApp {
     ) external payable {
         string memory _uri = INFT(_nft).tokenURI(_id);
         INFT(_nft).burn(_id);
-        NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, msg.sender, _dstNft, _id, _uri);
+        NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri);
         if (_backToOrigin) {
             nftMsg.msgType = MsgType.Withdraw;
         }
@@ -122,7 +122,7 @@ contract NFTBridge is MessageReceiverApp {
         uint256 fee = IMessageBus(messageBus).calcFee(message);
         require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
-        emit Sent(msg.sender, _nft, _id, _dstChid, msg.sender, _dstNft);
+        emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
     // ===== called by msgbus

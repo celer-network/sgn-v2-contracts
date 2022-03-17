@@ -70,6 +70,7 @@ contract NFTBridge is MessageReceiverApp {
      * @param _nft address of source NFT contract
      * @param _id nft token ID to bridge
      * @param _dstChid dest chain ID
+     * @param _receiver receiver address on dest chain
      * @param _dstNft dest chain NFT address
      * @param _dstBridge dest chain NFTBridge address, so we know what address should receive msg. we could save in map and not require this?
      */
@@ -77,16 +78,17 @@ contract NFTBridge is MessageReceiverApp {
         address _nft,
         uint256 _id,
         uint64 _dstChid,
+        address _receiver,
         address _dstNft,
         address _dstBridge
     ) external payable {
         INFT(_nft).transferFrom(msg.sender, address(this), _id);
         require(INFT(_nft).ownerOf(_id)==address(this), "transfer NFT failed");
-        bytes memory message = abi.encode(NFTMsg(MsgType.Mint, msg.sender, _dstNft, _id, INFT(_nft).tokenURI(_id)));
+        bytes memory message = abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id)));
         uint256 fee = IMessageBus(messageBus).calcFee(message);
         require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
-        emit Sent(msg.sender, _nft, _id, _dstChid, msg.sender, _dstNft);
+        emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
     // burn to withdraw or mint on another chain, arg has backToOrig bool if dest chain is NFT's orig, set to true
@@ -96,6 +98,7 @@ contract NFTBridge is MessageReceiverApp {
      * @param _nft address of source NFT contract
      * @param _id nft token ID to bridge
      * @param _dstChid dest chain ID
+     * @param _receiver receiver address on dest chain
      * @param _dstNft dest chain NFT address
      * @param _dstBridge dest chain NFTBridge address, so we know what address should receive msg. we could save in map and not require this?
      * @param _backToOrigin if dest chain is the original chain of this NFT, set to true
@@ -104,6 +107,7 @@ contract NFTBridge is MessageReceiverApp {
         address _nft,
         uint256 _id,
         uint64 _dstChid,
+        address _receiver,
         address _dstNft,
         address _dstBridge,
         bool _backToOrigin

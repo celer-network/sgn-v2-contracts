@@ -152,14 +152,7 @@ contract MessageBusReceiver is Ownable {
             }
         }
         executedMessages[messageId] = status;
-        emit Executed(
-            MsgType.MessageWithTransfer,
-            messageId,
-            status,
-            _transfer.receiver,
-            _transfer.srcChainId,
-            _transfer.srcTxHash
-        );
+        emitMessageWithTransferExecutedEvent(messageId, status, _transfer);
     }
 
     /**
@@ -202,14 +195,7 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
-        emit Executed(
-            MsgType.MessageWithTransfer,
-            messageId,
-            status,
-            _transfer.receiver,
-            _transfer.srcChainId,
-            _transfer.srcTxHash
-        );
+        emitMessageWithTransferExecutedEvent(messageId, status, _transfer);
     }
 
     /**
@@ -247,10 +233,33 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageOnly, messageId, status, _route.receiver, _route.srcChainId, _route.srcTxHash);
+        emitMessageOnlyExecutedEvent(messageId, status, _route);
     }
 
     // ================= utils (to avoid stack too deep) =================
+
+    function emitMessageWithTransferExecutedEvent(
+        bytes32 _messageId,
+        TxStatus _status,
+        TransferInfo calldata _transfer
+    ) private {
+        emit Executed(
+            MsgType.MessageWithTransfer,
+            _messageId,
+            _status,
+            _transfer.receiver,
+            _transfer.srcChainId,
+            _transfer.srcTxHash
+        );
+    }
+
+    function emitMessageOnlyExecutedEvent(
+        bytes32 _messageId,
+        TxStatus _status,
+        RouteInfo calldata _route
+    ) private {
+        emit Executed(MsgType.MessageOnly, _messageId, _status, _route.receiver, _route.srcChainId, _route.srcTxHash);
+    }
 
     function executeMessageWithTransfer(TransferInfo calldata _transfer, bytes calldata _message)
         private

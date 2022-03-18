@@ -59,7 +59,14 @@ contract MessageBusReceiver is Ownable {
         MessageWithTransfer,
         MessageOnly
     }
-    event Executed(MsgType msgType, bytes32 msgId, TxStatus status, uint64 srcChainId, bytes32 srcTxHash);
+    event Executed(
+        MsgType msgType,
+        bytes32 msgId,
+        TxStatus status,
+        address indexed receiver,
+        uint64 srcChainId,
+        bytes32 srcTxHash
+    );
     event NeedRetry(MsgType msgType, bytes32 msgId, uint64 srcChainId, bytes32 srcTxHash);
 
     event LiquidityBridgeUpdated(address liquidityBridge);
@@ -145,7 +152,14 @@ contract MessageBusReceiver is Ownable {
             }
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageWithTransfer, messageId, status, _transfer.srcChainId, _transfer.srcTxHash);
+        emit Executed(
+            MsgType.MessageWithTransfer,
+            messageId,
+            status,
+            _transfer.receiver,
+            _transfer.srcChainId,
+            _transfer.srcTxHash
+        );
     }
 
     /**
@@ -188,7 +202,14 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageWithTransfer, messageId, status, _transfer.srcChainId, _transfer.srcTxHash);
+        emit Executed(
+            MsgType.MessageWithTransfer,
+            messageId,
+            status,
+            _transfer.receiver,
+            _transfer.srcChainId,
+            _transfer.srcTxHash
+        );
     }
 
     /**
@@ -226,7 +247,7 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Fail;
         }
         executedMessages[messageId] = status;
-        emit Executed(MsgType.MessageOnly, messageId, status, _route.srcChainId, _route.srcTxHash);
+        emit Executed(MsgType.MessageOnly, messageId, status, _route.receiver, _route.srcChainId, _route.srcTxHash);
     }
 
     // ================= utils (to avoid stack too deep) =================

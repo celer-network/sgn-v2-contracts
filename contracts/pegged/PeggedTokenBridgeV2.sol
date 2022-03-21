@@ -3,7 +3,6 @@
 pragma solidity 0.8.9;
 
 import "../interfaces/ISigsVerifier.sol";
-import "../interfaces/IPeggedToken.sol";
 import "../libraries/PbPegged.sol";
 import "../safeguard/Pauser.sol";
 import "../safeguard/VolumeControl.sol";
@@ -113,6 +112,31 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         address _toAccount,
         uint64 _nonce
     ) external whenNotPaused returns (bytes32) {
+        bytes32 burnId = _burn(_token, _amount, _toChainId, _toAccount, _nonce);
+        IPeggedToken(_token).burn(msg.sender, _amount);
+        return burnId;
+    }
+
+    // same with `burn` above, use openzeppelin ERC20Burnable interface
+    function burnFrom(
+        address _token,
+        uint256 _amount,
+        uint64 _toChainId,
+        address _toAccount,
+        uint64 _nonce
+    ) external whenNotPaused returns (bytes32) {
+        bytes32 burnId = _burn(_token, _amount, _toChainId, _toAccount, _nonce);
+        IPeggedToken(_token).burnFrom(msg.sender, _amount);
+        return burnId;
+    }
+
+    function _burn(
+        address _token,
+        uint256 _amount,
+        uint64 _toChainId,
+        address _toAccount,
+        uint64 _nonce
+    ) private returns (bytes32) {
         require(_amount > minBurn[_token], "amount too small");
         require(maxBurn[_token] == 0 || _amount <= maxBurn[_token], "amount too large");
         bytes32 burnId = keccak256(
@@ -130,7 +154,6 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         );
         require(records[burnId] == false, "record exists");
         records[burnId] = true;
-        IPeggedToken(_token).burn(msg.sender, _amount);
         emit Burn(burnId, _token, msg.sender, _amount, _toChainId, _toAccount, _nonce);
         return burnId;
     }
@@ -155,4 +178,12 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
             emit MaxBurnUpdated(_tokens[i], _amounts[i]);
         }
     }
+}
+
+interface IPeggedToken {
+    function mint(address _to, uint256 _amount) external;
+
+    function burn(address _from, uint256 _amount) external;
+
+    function burnFrom(address _from, uint256 _amount) external;
 }

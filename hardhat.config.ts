@@ -126,6 +126,9 @@ const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const cloverEndpoint = process.env.CLOVER_ENDPOINT || DEFAULT_ENDPOINT;
 const cloverPrivateKey = process.env.CLOVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const reiEndpoint = process.env.REI_ENDPOINT || DEFAULT_ENDPOINT;
+const reiPrivateKey = process.env.REI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -279,6 +282,10 @@ const config: HardhatUserConfig = {
     clover: {
       url: cloverEndpoint,
       accounts: [`0x${cloverPrivateKey}`]
+    },
+    rei: {
+      url: reiEndpoint,
+      accounts: [`0x${reiPrivateKey}`]
     }
   },
   namedAccounts: {

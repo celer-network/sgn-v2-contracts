@@ -16,11 +16,10 @@ Approach: Deploy a PeggedToken ([example](./tokens/MultiBridgeToken.sol)) on cha
 
 ### Burn pegged token on chain B (PeggedTokenBridgeV2) and mint pegged token on chain C
 1. User calls [burn](./PeggedTokenBridgeV2.sol#L116) on chain B to burn the pegged token, specifying chain C's chainId as `toChainId`.
-2. SGN generates the [Mint proto msg](../libraries/proto/pegged.proto#L14) cosigned by validators, and call [mint](./PeggedTokenBridge.sol#L55) function on chain B.
+2. SGN generates the [Mint proto msg](../libraries/proto/pegged.proto#L14) cosigned by validators, and call [mint](./PeggedTokenBridge.sol#L55) function on chain C.
 
 ## Safeguard monitoring
 
 Anyone can verify the correctness of the pegged bridge behavior by tracking the contract events ([Deposit](./OriginalTokenVault.sol#L31), [Withdrawn](./OriginalTokenVault.sol#L39), [Mint](./PeggedTokenBridge.sol#L24), [Burn](./PeggedTokenBridge.sol#L39)), and verifying the `refChainId` and `refId` fields of `Mint` and `Withdrawn` events according to the code comments ([example](./OriginalTokenVault.sol#L44-L53)).
 
 For example, if we catch a `Withdrawn` event on chain A with `refChainId` of chain B and a `refId`, then we should be able to find a `Burn` event on chain B with `burnId` equals to `refId`, and then compare values of other fields of these two events.
-

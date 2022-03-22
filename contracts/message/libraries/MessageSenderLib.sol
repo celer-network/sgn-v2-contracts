@@ -15,15 +15,6 @@ import "../interfaces/IMessageBus.sol";
 library MessageSenderLib {
     using SafeERC20 for IERC20;
 
-    enum BridgeType {
-        Null,
-        Liquidity,
-        PegDeposit,
-        PegBurn,
-        PegDepositV2,
-        PegBurnV2
-    }
-
     // ============== Internal library functions called by apps ==============
 
     /**

@@ -3,6 +3,13 @@
 pragma solidity >=0.8.0;
 
 interface IPeggedTokenBridge {
+    struct MintParams {
+        bytes _request;
+        bytes[] _sigs;
+        address[] _signers;
+        uint256[] _powera;
+    }
+
     /**
      * @notice Burn tokens to trigger withdrawal at a remote chain's OriginalTokenVault
      * @param _token local token address
@@ -15,6 +22,13 @@ interface IPeggedTokenBridge {
         uint256 _amount,
         address _withdrawAccount,
         uint64 _nonce
+    ) external;
+
+    function mint(
+        bytes calldata _request,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
     ) external;
 
     function records(bytes32 recordId) external view returns (bool);

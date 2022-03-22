@@ -3,8 +3,8 @@
 pragma solidity 0.8.9;
 
 import "../interfaces/ISigsVerifier.sol";
-import "../interfaces/IPeggedTokenBurnFrom.sol";
 import "../interfaces/IPeggedToken.sol";
+import "../interfaces/IPeggedTokenBurnFrom.sol";
 import "../libraries/PbPegged.sol";
 import "../safeguard/Pauser.sol";
 import "../safeguard/VolumeControl.sol";

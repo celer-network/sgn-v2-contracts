@@ -3,6 +3,8 @@
 pragma solidity 0.8.9;
 
 import "../interfaces/ISigsVerifier.sol";
+import "../interfaces/IPeggedTokenBurnFrom.sol";
+import "../interfaces/IPeggedToken.sol";
 import "../libraries/PbPegged.sol";
 import "../safeguard/Pauser.sol";
 import "../safeguard/VolumeControl.sol";
@@ -126,7 +128,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         uint64 _nonce
     ) external whenNotPaused returns (bytes32) {
         bytes32 burnId = _burn(_token, _amount, _toChainId, _toAccount, _nonce);
-        IPeggedToken(_token).burnFrom(msg.sender, _amount);
+        IPeggedTokenBurnFrom(_token).burnFrom(msg.sender, _amount);
         return burnId;
     }
 
@@ -178,12 +180,4 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
             emit MaxBurnUpdated(_tokens[i], _amounts[i]);
         }
     }
-}
-
-interface IPeggedToken {
-    function mint(address _to, uint256 _amount) external;
-
-    function burn(address _from, uint256 _amount) external;
-
-    function burnFrom(address _from, uint256 _amount) external;
 }

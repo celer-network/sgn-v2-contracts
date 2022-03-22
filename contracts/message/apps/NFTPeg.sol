@@ -5,15 +5,25 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
 contract PegNFT is ERC721URIStorage {
     address public immutable nftBridge;
-    constructor(string memory name_, string memory symbol_, address _nftBridge) ERC721(name_, symbol_) {
+
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        address _nftBridge
+    ) ERC721(name_, symbol_) {
         nftBridge = _nftBridge;
     }
+
     modifier onlyNftBridge() {
         require(msg.sender == nftBridge, "caller is not bridge");
         _;
     }
 
-    function mint(address to, uint256 id, string memory uri) external onlyNftBridge {
+    function mint(
+        address to,
+        uint256 id,
+        string memory uri
+    ) external onlyNftBridge {
         _mint(to, id);
         _setTokenURI(id, uri);
     }

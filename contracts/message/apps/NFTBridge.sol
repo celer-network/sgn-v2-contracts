@@ -7,11 +7,23 @@ import "../interfaces/IMessageBus.sol";
 // interface for NFT contract, ERC721 and metadata, only funcs needed by NFTBridge
 interface INFT {
     function tokenURI(uint256 tokenId) external view returns (string memory);
+
     function ownerOf(uint256 tokenId) external view returns (address owner);
+
     // we do not support NFT that charges transfer fees
-    function transferFrom(address from, address to, uint256 tokenId) external;
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
+
     // impl by NFToken contract, mint an NFT with id and uri to user or burn
-    function mint(address to, uint256 id, string memory uri) external;
+    function mint(
+        address to,
+        uint256 id,
+        string memory uri
+    ) external;
+
     function burn(uint256 id) external;
 }
 
@@ -20,7 +32,10 @@ contract NFTBridge is MessageReceiverApp {
     /// per dest chain id executor fee in this chain's gas token
     mapping(uint64 => uint256) public destTxFee;
 
-    enum MsgType { Mint, Withdraw }
+    enum MsgType {
+        Mint,
+        Withdraw
+    }
     struct NFTMsg {
         MsgType msgType; // mint or withdraw
         address user; // receiver of minted or withdrawn NFT
@@ -29,26 +44,13 @@ contract NFTBridge is MessageReceiverApp {
         string uri; // tokenURI from source NFT
     }
     // emit in deposit or burn
-    event Sent (
-        address sender,
-        address srcNft,
-        uint256 id,
-        uint64 dstChid,
-        address receiver,
-        address dstNft
-    );
+    event Sent(address sender, address srcNft, uint256 id, uint64 dstChid, address receiver, address dstNft);
     // emit for mint or withdraw message
-    event Received (
-        address receiver,
-        address nft,
-        uint256 id,
-        uint64 srcChid
-    );
+    event Received(address receiver, address nft, uint256 id, uint64 srcChid);
 
     constructor(address _msgBus) {
         messageBus = _msgBus;
     }
-
 
     /**
      * @notice totalFee returns gas token value to be set in user tx, includes both cbridge msg fee and executor fee on dest chain
@@ -58,7 +60,11 @@ contract NFTBridge is MessageReceiverApp {
      * @param _id token ID to bridge (need to get accurate tokenURI length)
      * @return total fee needed for user tx
      */
-    function totalFee(uint64 _dstChid, address _nft, uint256 _id) external view returns (uint256) {
+    function totalFee(
+        uint64 _dstChid,
+        address _nft,
+        uint256 _id
+    ) external view returns (uint256) {
         string memory _uri = INFT(_nft).tokenURI(_id);
         bytes memory message = abi.encode(NFTMsg(MsgType.Mint, _nft, _nft, _id, _uri));
         return IMessageBus(messageBus).calcFee(message) + destTxFee[_dstChid];
@@ -83,10 +89,10 @@ contract NFTBridge is MessageReceiverApp {
         address _dstBridge
     ) external payable {
         INFT(_nft).transferFrom(msg.sender, address(this), _id);
-        require(INFT(_nft).ownerOf(_id)==address(this), "transfer NFT failed");
+        require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
         bytes memory message = abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id)));
         uint256 fee = IMessageBus(messageBus).calcFee(message);
-        require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
+        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
@@ -120,7 +126,7 @@ contract NFTBridge is MessageReceiverApp {
         }
         bytes memory message = abi.encode(nftMsg);
         uint256 fee = IMessageBus(messageBus).calcFee(message);
-        require(msg.value>=fee+destTxFee[_dstChid], "insufficient fee");
+        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
@@ -149,7 +155,8 @@ contract NFTBridge is MessageReceiverApp {
     function setTxFee(uint64 chid, uint256 fee) external onlyOwner {
         destTxFee[chid] = fee;
     }
-    // send all gas token this contract has to owner 
+
+    // send all gas token this contract has to owner
     function claimFee() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);
     }

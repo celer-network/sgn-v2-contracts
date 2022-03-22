@@ -8,9 +8,19 @@ import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../../interfaces/IPeggedTokenBridgeV2.sol";
 import "../interfaces/IMessageReceiverApp.sol";
+import "../interfaces/IMessageBus.sol";
 import "../../safeguard/Ownable.sol";
 
 contract MessageBusReceiver is Ownable {
+    enum BridgeType {
+        Null,
+        Liquidity,
+        PegDeposit,
+        PegBurn,
+        PegDepositV2,
+        PegBurnV2
+    }
+
     enum TransferType {
         Null,
         LqSend, // send through liquidity bridge
@@ -170,7 +180,7 @@ contract MessageBusReceiver is Ownable {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external payable {
+    ) public payable {
         // similar to executeMessageWithTransfer
         bytes32 messageId = verifyTransfer(_transfer);
         require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
@@ -196,6 +206,40 @@ contract MessageBusReceiver is Ownable {
         }
         executedMessages[messageId] = status;
         emitMessageWithTransferExecutedEvent(messageId, status, _transfer);
+    }
+
+    /**
+     * @notice convenience function that aggregates two refund calls into one to save user transaction fees
+     * @dev caller must get the required input params to each call first by querying SGN gateway and SGN node
+     * @dev internally calls executeMessageWithTransferRefund in this contract
+     * @param _srcBridgeType the type of the bridge that is used in the original sendMessageWithTransfer call
+     * @param _refund call params to LiquidityBridge.withdraw(), PegBridge.Mint(), PegVault.Withdraw(), PegBridgeV2.Mint(), or PegVaultV2.Withdraw()
+     * @dev _bridgeRefund data is acquired by querying SGN gateway's corresponding init refund APIs
+     * @param _msgRefund call params to MessageBus.executeMessageWithTransferRefund(). Acquired via querying SGN for refundable messages
+     */
+    function refund(
+        BridgeType _srcBridgeType,
+        IBridge.RefundParams calldata _refund,
+        IMessageBus.RefundParams calldata _msgRefund
+    ) external {
+        if (_srcBridgeType == BridgeType.Liquidity) {
+            IBridge(liquidityBridge).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
+        } else if (_srcBridgeType == BridgeType.PegDeposit) {
+            IOriginalTokenVault(pegVault).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
+        } else if (_srcBridgeType == BridgeType.PegBurn) {
+            IPeggedTokenBridge(pegBridge).mint(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
+        } else if (_srcBridgeType == BridgeType.PegDepositV2) {
+            IOriginalTokenVaultV2(pegVaultV2).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
+        } else if (_srcBridgeType == BridgeType.PegBurnV2) {
+            IPeggedTokenBridgeV2(pegBridgeV2).mint(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
+        }
+        _executeMessageWithTransferRefund(
+            _msgRefund.message,
+            _msgRefund.transfer,
+            _msgRefund.sigs,
+            _msgRefund.signers,
+            _msgRefund.powers
+        );
     }
 
     /**

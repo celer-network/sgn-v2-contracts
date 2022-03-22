@@ -19,5 +19,12 @@ interface IOriginalTokenVault {
         uint64 _nonce
     ) external;
 
+    function withdraw(
+        bytes calldata _request,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
+    ) external;
+
     function records(bytes32 recordId) external view returns (bool);
 }

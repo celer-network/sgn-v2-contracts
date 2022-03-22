@@ -3,6 +3,13 @@
 pragma solidity >=0.8.0;
 
 interface IMessageBus {
+    struct RefundParams {
+        bytes message;
+        TransferInfo transfer;
+        bytes[] sigs;
+        address[] signers;
+        uint256[] powers;
+    }
     enum TransferType {
         Null,
         LqSend, // send through liquidity bridge

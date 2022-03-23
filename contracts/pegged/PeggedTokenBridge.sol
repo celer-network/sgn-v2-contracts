@@ -26,7 +26,13 @@ contract PeggedTokenBridge is Pauser, VolumeControl, DelayedTransfer {
         address token,
         address account,
         uint256 amount,
+        // ref_chain_id defines the reference chain ID, taking values of:
+        // 1. The common case: the chain ID on which the remote corresponding deposit or burn happened;
+        // 2. Refund for wrong burn: this chain ID on which the burn happened
         uint64 refChainId,
+        // ref_id defines a unique reference ID, taking values of:
+        // 1. The common case of deposit/burn-mint: the deposit or burn ID on the remote chain;
+        // 2. Refund for wrong burn: the burn ID on this chain
         bytes32 refId,
         address depositor
     );

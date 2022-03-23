@@ -9,6 +9,7 @@ import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
 import "../../interfaces/IWETH.sol";
 import "../../interfaces/IUniswapV2.sol";
+import "../libraries/DataTypes.sol";
 
 /**
  * @title Demo application contract that facilitates swapping on a chain, transferring to another chain,
@@ -234,7 +235,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
             _nonce,
             _maxBridgeSlippage,
             message,
-            MessageSenderLib.BridgeType.Liquidity,
+            DataTypes.BridgeType.Liquidity,
             _fee
         );
         emit SwapRequestSent(id, _dstChainId, _amountIn, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);

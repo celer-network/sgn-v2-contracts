@@ -10,54 +10,10 @@ import "../../interfaces/IPeggedTokenBridgeV2.sol";
 import "../interfaces/IMessageReceiverApp.sol";
 import "../interfaces/IMessageBus.sol";
 import "../../safeguard/Ownable.sol";
+import "../libraries/DataTypes.sol";
 
 contract MessageBusReceiver is Ownable {
-    enum BridgeType {
-        Null,
-        Liquidity,
-        PegDeposit,
-        PegBurn,
-        PegDepositV2,
-        PegBurnV2
-    }
-
-    enum TransferType {
-        Null,
-        LqSend, // send through liquidity bridge
-        LqWithdraw, // withdraw from liquidity bridge
-        PegMint, // mint through pegged token bridge
-        PegWithdraw, // withdraw from original token vault
-        PegMintV2, // mint through pegged token bridge v2
-        PegWithdrawV2 // withdraw from original token vault v2
-    }
-
-    struct TransferInfo {
-        TransferType t;
-        address sender;
-        address receiver;
-        address token;
-        uint256 amount;
-        uint64 wdseq; // only needed for LqWithdraw (refund)
-        uint64 srcChainId;
-        bytes32 refId;
-        bytes32 srcTxHash; // src chain msg tx hash
-    }
-
-    struct RouteInfo {
-        address sender;
-        address receiver;
-        uint64 srcChainId;
-        bytes32 srcTxHash; // src chain msg tx hash
-    }
-
-    enum TxStatus {
-        Null,
-        Success,
-        Fail,
-        Fallback,
-        Pending
-    }
-    mapping(bytes32 => TxStatus) public executedMessages;
+    mapping(bytes32 => DataTypes.TxStatus) public executedMessages;
 
     address public liquidityBridge; // liquidity bridge address
     address public pegBridge; // peg bridge address
@@ -65,19 +21,15 @@ contract MessageBusReceiver is Ownable {
     address public pegBridgeV2; // peg bridge address
     address public pegVaultV2; // peg original vault address
 
-    enum MsgType {
-        MessageWithTransfer,
-        MessageOnly
-    }
     event Executed(
-        MsgType msgType,
+        DataTypes.MsgType msgType,
         bytes32 msgId,
-        TxStatus status,
+        DataTypes.TxStatus status,
         address indexed receiver,
         uint64 srcChainId,
         bytes32 srcTxHash
     );
-    event NeedRetry(MsgType msgType, bytes32 msgId, uint64 srcChainId, bytes32 srcTxHash);
+    event NeedRetry(DataTypes.MsgType msgType, bytes32 msgId, uint64 srcChainId, bytes32 srcTxHash);
 
     event LiquidityBridgeUpdated(address liquidityBridge);
     event PegBridgeUpdated(address pegBridge);
@@ -127,7 +79,7 @@ contract MessageBusReceiver is Ownable {
      */
     function executeMessageWithTransfer(
         bytes calldata _message,
-        TransferInfo calldata _transfer,
+        DataTypes.TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -135,8 +87,8 @@ contract MessageBusReceiver is Ownable {
         // For message with token transfer, message Id is computed through transfer info
         // in order to guarantee that each transfer can only be used once.
         bytes32 messageId = verifyTransfer(_transfer);
-        require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
-        executedMessages[messageId] = TxStatus.Pending;
+        require(executedMessages[messageId] == DataTypes.TxStatus.Null, "transfer already executed");
+        executedMessages[messageId] = DataTypes.TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransfer"));
         IBridge(liquidityBridge).verifySigs(
@@ -145,20 +97,20 @@ contract MessageBusReceiver is Ownable {
             _signers,
             _powers
         );
-        TxStatus status;
+        DataTypes.TxStatus status;
         IMessageReceiverApp.ExecuctionStatus est = executeMessageWithTransfer(_transfer, _message);
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
-            status = TxStatus.Success;
+            status = DataTypes.TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            executedMessages[messageId] = TxStatus.Null;
-            emit NeedRetry(MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
+            executedMessages[messageId] = DataTypes.TxStatus.Null;
+            emit NeedRetry(DataTypes.MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
             return;
         } else {
             est = executeMessageWithTransferFallback(_transfer, _message);
             if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
-                status = TxStatus.Fallback;
+                status = DataTypes.TxStatus.Fallback;
             } else {
-                status = TxStatus.Fail;
+                status = DataTypes.TxStatus.Fail;
             }
         }
         executedMessages[messageId] = status;
@@ -176,15 +128,15 @@ contract MessageBusReceiver is Ownable {
      */
     function executeMessageWithTransferRefund(
         bytes calldata _message, // the same message associated with the original transfer
-        TransferInfo calldata _transfer,
+        DataTypes.TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
     ) public payable {
         // similar to executeMessageWithTransfer
         bytes32 messageId = verifyTransfer(_transfer);
-        require(executedMessages[messageId] == TxStatus.Null, "transfer already executed");
-        executedMessages[messageId] = TxStatus.Pending;
+        require(executedMessages[messageId] == DataTypes.TxStatus.Null, "transfer already executed");
+        executedMessages[messageId] = DataTypes.TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "MessageWithTransferRefund"));
         IBridge(liquidityBridge).verifySigs(
@@ -193,16 +145,16 @@ contract MessageBusReceiver is Ownable {
             _signers,
             _powers
         );
-        TxStatus status;
+        DataTypes.TxStatus status;
         IMessageReceiverApp.ExecuctionStatus est = executeMessageWithTransferRefund(_transfer, _message);
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
-            status = TxStatus.Success;
+            status = DataTypes.TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            executedMessages[messageId] = TxStatus.Null;
-            emit NeedRetry(MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
+            executedMessages[messageId] = DataTypes.TxStatus.Null;
+            emit NeedRetry(DataTypes.MsgType.MessageWithTransfer, messageId, _transfer.srcChainId, _transfer.srcTxHash);
             return;
         } else {
-            status = TxStatus.Fail;
+            status = DataTypes.TxStatus.Fail;
         }
         executedMessages[messageId] = status;
         emitMessageWithTransferExecutedEvent(messageId, status, _transfer);
@@ -218,22 +170,22 @@ contract MessageBusReceiver is Ownable {
      * @param _msgRefund call params to MessageBus.executeMessageWithTransferRefund(). Acquired via querying SGN for refundable messages
      */
     function refund(
-        BridgeType _srcBridgeType,
+        DataTypes.BridgeType _srcBridgeType,
         IBridge.RefundParams calldata _refund,
-        IMessageBus.RefundParams calldata _msgRefund
+        DataTypes.RefundParams calldata _msgRefund
     ) external {
-        if (_srcBridgeType == BridgeType.Liquidity) {
+        if (_srcBridgeType == DataTypes.BridgeType.Liquidity) {
             IBridge(liquidityBridge).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == BridgeType.PegDeposit) {
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegDeposit) {
             IOriginalTokenVault(pegVault).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == BridgeType.PegBurn) {
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegBurn) {
             IPeggedTokenBridge(pegBridge).mint(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == BridgeType.PegDepositV2) {
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegDepositV2) {
             IOriginalTokenVaultV2(pegVaultV2).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == BridgeType.PegBurnV2) {
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegBurnV2) {
             IPeggedTokenBridgeV2(pegBridgeV2).mint(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
         }
-        _executeMessageWithTransferRefund(
+        executeMessageWithTransferRefund(
             _msgRefund.message,
             _msgRefund.transfer,
             _msgRefund.sigs,
@@ -252,7 +204,7 @@ contract MessageBusReceiver is Ownable {
      */
     function executeMessage(
         bytes calldata _message,
-        RouteInfo calldata _route,
+        DataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -260,21 +212,21 @@ contract MessageBusReceiver is Ownable {
         // For message without associated token transfer, message Id is computed through message info,
         // in order to guarantee that each message can only be applied once
         bytes32 messageId = computeMessageOnlyId(_route, _message);
-        require(executedMessages[messageId] == TxStatus.Null, "message already executed");
-        executedMessages[messageId] = TxStatus.Pending;
+        require(executedMessages[messageId] == DataTypes.TxStatus.Null, "message already executed");
+        executedMessages[messageId] = DataTypes.TxStatus.Pending;
 
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
-        TxStatus status;
+        DataTypes.TxStatus status;
         IMessageReceiverApp.ExecuctionStatus est = executeMessage(_route, _message);
         if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
-            status = TxStatus.Success;
+            status = DataTypes.TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
-            executedMessages[messageId] = TxStatus.Null;
-            emit NeedRetry(MsgType.MessageOnly, messageId, _route.srcChainId, _route.srcTxHash);
+            executedMessages[messageId] = DataTypes.TxStatus.Null;
+            emit NeedRetry(DataTypes.MsgType.MessageOnly, messageId, _route.srcChainId, _route.srcTxHash);
             return;
         } else {
-            status = TxStatus.Fail;
+            status = DataTypes.TxStatus.Fail;
         }
         executedMessages[messageId] = status;
         emitMessageOnlyExecutedEvent(messageId, status, _route);
@@ -284,11 +236,11 @@ contract MessageBusReceiver is Ownable {
 
     function emitMessageWithTransferExecutedEvent(
         bytes32 _messageId,
-        TxStatus _status,
-        TransferInfo calldata _transfer
+        DataTypes.TxStatus _status,
+        DataTypes.TransferInfo calldata _transfer
     ) private {
         emit Executed(
-            MsgType.MessageWithTransfer,
+            DataTypes.MsgType.MessageWithTransfer,
             _messageId,
             _status,
             _transfer.receiver,
@@ -299,13 +251,20 @@ contract MessageBusReceiver is Ownable {
 
     function emitMessageOnlyExecutedEvent(
         bytes32 _messageId,
-        TxStatus _status,
-        RouteInfo calldata _route
+        DataTypes.TxStatus _status,
+        DataTypes.RouteInfo calldata _route
     ) private {
-        emit Executed(MsgType.MessageOnly, _messageId, _status, _route.receiver, _route.srcChainId, _route.srcTxHash);
+        emit Executed(
+            DataTypes.MsgType.MessageOnly,
+            _messageId,
+            _status,
+            _route.receiver,
+            _route.srcChainId,
+            _route.srcTxHash
+        );
     }
 
-    function executeMessageWithTransfer(TransferInfo calldata _transfer, bytes calldata _message)
+    function executeMessageWithTransfer(DataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
@@ -326,7 +285,7 @@ contract MessageBusReceiver is Ownable {
         return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
-    function executeMessageWithTransferFallback(TransferInfo calldata _transfer, bytes calldata _message)
+    function executeMessageWithTransferFallback(DataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
@@ -347,7 +306,7 @@ contract MessageBusReceiver is Ownable {
         return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
-    function executeMessageWithTransferRefund(TransferInfo calldata _transfer, bytes calldata _message)
+    function executeMessageWithTransferRefund(DataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
@@ -366,10 +325,10 @@ contract MessageBusReceiver is Ownable {
         return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
-    function verifyTransfer(TransferInfo calldata _transfer) private view returns (bytes32) {
+    function verifyTransfer(DataTypes.TransferInfo calldata _transfer) private view returns (bytes32) {
         bytes32 transferId;
         address bridgeAddr;
-        if (_transfer.t == TransferType.LqSend) {
+        if (_transfer.t == DataTypes.TransferType.LqSend) {
             transferId = keccak256(
                 abi.encodePacked(
                     _transfer.sender,
@@ -383,7 +342,7 @@ contract MessageBusReceiver is Ownable {
             );
             bridgeAddr = liquidityBridge;
             require(IBridge(bridgeAddr).transfers(transferId) == true, "bridge relay not exist");
-        } else if (_transfer.t == TransferType.LqWithdraw) {
+        } else if (_transfer.t == DataTypes.TransferType.LqWithdraw) {
             transferId = keccak256(
                 abi.encodePacked(
                     uint64(block.chainid),
@@ -395,7 +354,7 @@ contract MessageBusReceiver is Ownable {
             );
             bridgeAddr = liquidityBridge;
             require(IBridge(bridgeAddr).withdraws(transferId) == true, "bridge withdraw not exist");
-        } else if (_transfer.t == TransferType.PegMint || _transfer.t == TransferType.PegWithdraw) {
+        } else if (_transfer.t == DataTypes.TransferType.PegMint || _transfer.t == DataTypes.TransferType.PegWithdraw) {
             transferId = keccak256(
                 abi.encodePacked(
                     _transfer.receiver,
@@ -406,19 +365,21 @@ contract MessageBusReceiver is Ownable {
                     _transfer.refId
                 )
             );
-            if (_transfer.t == TransferType.PegMint) {
+            if (_transfer.t == DataTypes.TransferType.PegMint) {
                 bridgeAddr = pegBridge;
                 require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
             } else {
-                // _transfer.t == TransferType.PegWithdraw
+                // _transfer.t == DataTypes.TransferType.PegWithdraw
                 bridgeAddr = pegVault;
                 require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
-        } else if (_transfer.t == TransferType.PegMintV2 || _transfer.t == TransferType.PegWithdrawV2) {
-            if (_transfer.t == TransferType.PegMintV2) {
+        } else if (
+            _transfer.t == DataTypes.TransferType.PegMintV2 || _transfer.t == DataTypes.TransferType.PegWithdrawV2
+        ) {
+            if (_transfer.t == DataTypes.TransferType.PegMintV2) {
                 bridgeAddr = pegBridgeV2;
             } else {
-                // TransferType.PegWithdrawV2
+                // DataTypes.TransferType.PegWithdrawV2
                 bridgeAddr = pegVaultV2;
             }
             transferId = keccak256(
@@ -432,21 +393,25 @@ contract MessageBusReceiver is Ownable {
                     bridgeAddr
                 )
             );
-            if (_transfer.t == TransferType.PegMintV2) {
+            if (_transfer.t == DataTypes.TransferType.PegMintV2) {
                 require(IPeggedTokenBridgeV2(bridgeAddr).records(transferId) == true, "mint record not exist");
             } else {
-                // TransferType.PegWithdrawV2
+                // DataTypes.TransferType.PegWithdrawV2
                 require(IOriginalTokenVaultV2(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }
-        return keccak256(abi.encodePacked(MsgType.MessageWithTransfer, bridgeAddr, transferId));
+        return keccak256(abi.encodePacked(DataTypes.MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
 
-    function computeMessageOnlyId(RouteInfo calldata _route, bytes calldata _message) private view returns (bytes32) {
+    function computeMessageOnlyId(DataTypes.RouteInfo calldata _route, bytes calldata _message)
+        private
+        view
+        returns (bytes32)
+    {
         return
             keccak256(
                 abi.encodePacked(
-                    MsgType.MessageOnly,
+                    DataTypes.MsgType.MessageOnly,
                     _route.sender,
                     _route.receiver,
                     _route.srcChainId,
@@ -457,7 +422,7 @@ contract MessageBusReceiver is Ownable {
             );
     }
 
-    function executeMessage(RouteInfo calldata _route, bytes calldata _message)
+    function executeMessage(DataTypes.RouteInfo calldata _route, bytes calldata _message)
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {

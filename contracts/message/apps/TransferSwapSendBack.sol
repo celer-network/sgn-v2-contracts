@@ -5,6 +5,7 @@ pragma solidity >=0.8.9;
 import "../libraries/MessageSenderLib.sol";
 import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
+import "../libraries/DataTypes.sol";
 
 interface ISwapToken {
     // function sellBase(address to) external returns (uint256);
@@ -57,7 +58,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
             nonce,
             swapInfo.cbrMaxSlippage,
             message,
-            MessageSenderLib.BridgeType.Liquidity,
+            DataTypes.BridgeType.Liquidity,
             msg.value
         );
     }
@@ -94,7 +95,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
                 _srcChainId,
                 nonce,
                 swapInfo.cbrMaxSlippage,
-                MessageSenderLib.BridgeType.Liquidity
+                DataTypes.BridgeType.Liquidity
             );
         } else {
             // swap to wantToken and send to user

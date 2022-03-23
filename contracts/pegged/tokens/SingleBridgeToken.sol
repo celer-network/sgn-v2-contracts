@@ -36,6 +36,15 @@ contract SingleBridgeToken is ERC20, Ownable {
     }
 
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
+        return _burnFrom(_from, _amount);
+    }
+
+    function burnFrom(address _from, uint256 _amount) external onlyBridge returns (bool) {
+        return _burnFrom(_from, _amount);
+    }
+
+    function _burnFrom(address _from, uint256 _amount) internal returns (bool) {
+        _spendAllowance(_from, msg.sender, _amount);
         _burn(_from, _amount);
         return true;
     }

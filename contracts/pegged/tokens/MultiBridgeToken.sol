@@ -37,9 +37,21 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     function burn(address _from, uint256 _amount) external returns (bool) {
+        return _burnFrom(_from, _amount);
+    }
+
+    function burnFrom(address _from, uint256 _amount) external returns (bool) {
+        return _burnFrom(_from, _amount);
+    }
+
+    function _burnFrom(address _from, uint256 _amount) internal returns (bool) {
         Supply storage b = bridges[msg.sender];
         require(b.cap > 0, "invalid caller");
-        b.total -= _amount;
+        require(b.total >= _amount, "exceeds bridge minted amount");
+        unchecked {
+            b.total -= _amount;
+        }
+        _spendAllowance(_from, msg.sender, _amount);
         _burn(_from, _amount);
         return true;
     }

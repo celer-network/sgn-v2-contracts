@@ -129,6 +129,9 @@ const cloverPrivateKey = process.env.CLOVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const reiEndpoint = process.env.REI_ENDPOINT || DEFAULT_ENDPOINT;
 const reiPrivateKey = process.env.REI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const confluxEndpoint = process.env.CONFLUX_ENDPOINT || DEFAULT_ENDPOINT;
+const confluxPrivateKey = process.env.CONFLUX_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -286,6 +289,10 @@ const config: HardhatUserConfig = {
     rei: {
       url: reiEndpoint,
       accounts: [`0x${reiPrivateKey}`]
+    },
+    conflux: {
+      url: confluxEndpoint,
+      accounts: [`0x${confluxPrivateKey}`]
     }
   },
   namedAccounts: {

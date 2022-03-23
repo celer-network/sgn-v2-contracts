@@ -47,6 +47,12 @@ const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY 
 const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const godwokenTestEndpoint = process.env.GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const godwokenTestPrivateKey = process.env.GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -120,6 +126,12 @@ const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const cloverEndpoint = process.env.CLOVER_ENDPOINT || DEFAULT_ENDPOINT;
 const cloverPrivateKey = process.env.CLOVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const reiEndpoint = process.env.REI_ENDPOINT || DEFAULT_ENDPOINT;
+const reiPrivateKey = process.env.REI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const confluxEndpoint = process.env.CONFLUX_ENDPOINT || DEFAULT_ENDPOINT;
+const confluxPrivateKey = process.env.CONFLUX_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -168,6 +180,14 @@ const config: HardhatUserConfig = {
     reiTest: {
       url: reiTestEndpoint,
       accounts: [`0x${reiTestPrivateKey}`]
+    },
+    godwokenTest: {
+      url: godwokenTestEndpoint,
+      accounts: [`0x${godwokenTestPrivateKey}`]
+    },
+    kavaTest: {
+      url: kavaTestEndpoint,
+      accounts: [`0x${kavaTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,
@@ -265,6 +285,14 @@ const config: HardhatUserConfig = {
     clover: {
       url: cloverEndpoint,
       accounts: [`0x${cloverPrivateKey}`]
+    },
+    rei: {
+      url: reiEndpoint,
+      accounts: [`0x${reiPrivateKey}`]
+    },
+    conflux: {
+      url: confluxEndpoint,
+      accounts: [`0x${confluxPrivateKey}`]
     }
   },
   namedAccounts: {

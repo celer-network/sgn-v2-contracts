@@ -42,7 +42,15 @@ contract OriginalTokenVaultV2 is ReentrancyGuard, Pauser, VolumeControl, Delayed
         address receiver,
         address token,
         uint256 amount,
+        // ref_chain_id defines the reference chain ID, taking values of:
+        // 1. The common case of burn-withdraw: the chain ID on which the corresponding burn happened;
+        // 2. Pegbridge fee claim: zero / not applicable;
+        // 3. Refund for wrong deposit: this chain ID on which the deposit happend
         uint64 refChainId,
+        // ref_id defines a unique reference ID, taking values of:
+        // 1. The common case of burn-withdraw: the burn ID on the remote chain;
+        // 2. Pegbridge fee claim: a per-account nonce;
+        // 3. Refund for wrong deposit: the deposit ID on this chain
         bytes32 refId,
         address burnAccount
     );

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity 0.8.9;
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -38,7 +38,7 @@ library BridgeSenderLib {
     // ============== Internal library functions called by apps ==============
 
     /**
-     * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in form of mint/burn.
+     * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in the form of pegged mint / burn.
      * @param _receiver The address of the receiver.
      * @param _token The address of the token.
      * @param _amount The amount of the transfer.
@@ -48,8 +48,8 @@ library BridgeSenderLib {
      * The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
      * transfer can be refunded.
-     * @param _bridgeType The type of bridge used by this transfer. One of the {BridgeType} enum.
-     * @param _bridgeAddr The address of used bridge.
+     * @param _bridgeType The type of the bridge used by this transfer. One of the {BridgeType} enum.
+     * @param _bridgeAddr The address of the bridge used.
      */
     function sendTransfer(
         address _receiver,
@@ -97,8 +97,8 @@ library BridgeSenderLib {
      * +2/3 of the bridge's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
-     * @param _bridgeType The type of bridge used by this failed transfer. One of the {BridgeType} enum.
-     * @param _bridgeAddr The address of used bridge.
+     * @param _bridgeType The type of the bridge used by this failed transfer. One of the {BridgeType} enum.
+     * @param _bridgeAddr The address of the bridge used.
      */
     function sendRefund(
         bytes calldata _request,
@@ -115,9 +115,9 @@ library BridgeSenderLib {
         } else if (_bridgeType == BridgeType.PegBurn) {
             return sendRefundForPegBridgeBurn(_request, _sigs, _signers, _powers, _bridgeAddr);
         } else if (_bridgeType == BridgeType.PegDepositV2) {
-            return sendRefundForPegVaultDepositV2(_request, _sigs, _signers, _powers, _bridgeAddr);
+            return sendRefundForPegVaultV2Deposit(_request, _sigs, _signers, _powers, _bridgeAddr);
         } else if (_bridgeType == BridgeType.PegBurnV2) {
-            return sendRefundForPegBridgeBurnV2(_request, _sigs, _signers, _powers, _bridgeAddr);
+            return sendRefundForPegBridgeV2Burn(_request, _sigs, _signers, _powers, _bridgeAddr);
         } else {
             revert("bridge type not supported");
         }
@@ -242,7 +242,7 @@ library BridgeSenderLib {
      * @param _powers The signing powers of the signers.
      * @param _bridgeAddr The address of OriginalTokenVaultV2.
      */
-    function sendRefundForPegVaultDepositV2(
+    function sendRefundForPegVaultV2Deposit(
         bytes calldata _request,
         bytes[] calldata _sigs,
         address[] calldata _signers,
@@ -283,7 +283,7 @@ library BridgeSenderLib {
      * @param _powers The signing powers of the signers.
      * @param _bridgeAddr The address of PeggedTokenBridgeV2.
      */
-    function sendRefundForPegBridgeBurnV2(
+    function sendRefundForPegBridgeV2Burn(
         bytes calldata _request,
         bytes[] calldata _sigs,
         address[] calldata _signers,

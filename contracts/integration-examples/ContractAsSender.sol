@@ -9,6 +9,10 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../libraries/BridgeSenderLib.sol";
 import "../safeguard/Pauser.sol";
 
+/**
+ * @title Example contract to send cBridge transfers. Supports the liquidity pool-based {Bridge}, the {OriginalTokenVault} for pegged
+ * deposit and the {PeggedTokenBridge} for pegged burn. Includes handling of refunds for failed transfers.
+ */
 contract ContractAsSender is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 

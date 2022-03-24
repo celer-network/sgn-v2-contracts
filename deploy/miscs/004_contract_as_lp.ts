@@ -6,11 +6,12 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('ContractAsSender', {
+  await deploy('ContractAsLP', {
     from: deployer,
     log: true,
+    args: [process.env.BRIDGE, process.env.WITHDRAW_INBOX]
   });
 };
 
-deployFunc.tags = ['ContractAsSender'];
+deployFunc.tags = ['ContractAsLP'];
 export default deployFunc;

@@ -4,21 +4,24 @@
 
 solFiles=(
   Bridge
-  Staking
-  SGN
-  StakingReward
   FarmingRewards
   Govern
+  SGN
+  Staking
+  StakingReward
   Viewer
   WithdrawInbox
+  integration-examples/ContractAsLP
+  integration-examples/ContractAsSender
   interfaces/ISigsVerifier
+  message/apps/TransferSwap
+  message/messagebus/MessageBus
   miscs/Faucet
   miscs/MintableERC20
   pegged/OriginalTokenVault
   pegged/OriginalTokenVaultV2
   pegged/PeggedTokenBridge
   pegged/PeggedTokenBridgeV2
-  pegged/tokens/customized/FraxBridgeToken
   pegged/tokens/ERC20Permit/MintSwapCanonicalTokenPermit
   pegged/tokens/ERC20Permit/MultiBridgeTokenPermit
   pegged/tokens/ERC20Permit/SingleBridgeTokenPermit
@@ -26,11 +29,8 @@ solFiles=(
   pegged/tokens/MultiBridgeToken
   pegged/tokens/SingleBridgeToken
   pegged/tokens/SwapBridgeToken
-  message/apps/TransferSwap
+  pegged/tokens/customized/FraxBridgeToken
   test-helpers/DummySwap
-  test-helpers/ContractAsLP
-  test-helpers/ContractAsSender
-  message/messagebus/MessageBus
 )
 
 run_solt_write() {

@@ -52,7 +52,7 @@ contract MultiBridgeToken is ERC20, Ownable {
 
     /**
      * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
-     * Alternative for {burnFrom} to be compatible with some bridge implementations.
+     * Alternative to {burnFrom} for compatibility with some bridge implementations.
      * See {_burnFrom}.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.

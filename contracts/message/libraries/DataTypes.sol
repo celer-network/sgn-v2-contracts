@@ -3,13 +3,6 @@
 pragma solidity 0.8.9;
 
 library DataTypes {
-    struct RefundParams {
-        bytes message;
-        TransferInfo transfer;
-        bytes[] sigs;
-        address[] signers;
-        uint256[] powers;
-    }
     enum BridgeType {
         Null,
         Liquidity,
@@ -18,6 +11,7 @@ library DataTypes {
         PegDepositV2,
         PegBurnV2
     }
+
     enum TransferType {
         Null,
         LqSend, // send through liquidity bridge
@@ -27,10 +21,20 @@ library DataTypes {
         PegMintV2, // mint through pegged token bridge v2
         PegWithdrawV2 // withdraw from original token vault v2
     }
+
     enum MsgType {
         MessageWithTransfer,
         MessageOnly
     }
+
+    enum TxStatus {
+        Null,
+        Success,
+        Fail,
+        Fallback,
+        Pending
+    }
+
     struct TransferInfo {
         TransferType t;
         address sender;
@@ -42,17 +46,26 @@ library DataTypes {
         bytes32 refId;
         bytes32 srcTxHash; // src chain msg tx hash
     }
+
     struct RouteInfo {
         address sender;
         address receiver;
         uint64 srcChainId;
         bytes32 srcTxHash; // src chain msg tx hash
     }
-    enum TxStatus {
-        Null,
-        Success,
-        Fail,
-        Fallback,
-        Pending
+
+    struct MsgRefundParams {
+        bytes message;
+        TransferInfo transfer;
+        bytes[] sigs;
+        address[] signers;
+        uint256[] powers;
+    }
+
+    struct BridgeRefundParams {
+        bytes request;
+        bytes[] sigs;
+        address[] signers;
+        uint256[] powers;
     }
 }

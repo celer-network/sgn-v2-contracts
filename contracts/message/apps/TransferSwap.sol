@@ -9,7 +9,6 @@ import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
 import "../../interfaces/IWETH.sol";
 import "../../interfaces/IUniswapV2.sol";
-import "../libraries/DataTypes.sol";
 
 /**
  * @title Demo application contract that facilitates swapping on a chain, transferring to another chain,

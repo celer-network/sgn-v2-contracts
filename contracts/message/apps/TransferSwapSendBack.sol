@@ -5,7 +5,6 @@ pragma solidity >=0.8.9;
 import "../libraries/MessageSenderLib.sol";
 import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
-import "../libraries/DataTypes.sol";
 
 interface ISwapToken {
     // function sellBase(address to) external returns (uint256);

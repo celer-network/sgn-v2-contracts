@@ -3,13 +3,6 @@
 pragma solidity >=0.8.0;
 
 interface IBridge {
-    struct RefundParams {
-        bytes request;
-        bytes[] sigs;
-        address[] signers;
-        uint256[] powers;
-    }
-
     function send(
         address _receiver,
         address _token,

@@ -161,40 +161,6 @@ contract MessageBusReceiver is Ownable {
     }
 
     /**
-     * @notice convenience function that aggregates two refund calls into one to save user transaction fees
-     * @dev caller must get the required input params to each call first by querying SGN gateway and SGN node
-     * @dev internally calls executeMessageWithTransferRefund in this contract
-     * @param _srcBridgeType the type of the bridge that is used in the original sendMessageWithTransfer call
-     * @param _refund call params to LiquidityBridge.withdraw(), PegBridge.Mint(), PegVault.Withdraw(), PegBridgeV2.Mint(), or PegVaultV2.Withdraw()
-     * @dev _bridgeRefund data is acquired by querying SGN gateway's corresponding init refund APIs
-     * @param _msgRefund call params to MessageBus.executeMessageWithTransferRefund(). Acquired via querying SGN for refundable messages
-     */
-    function refund(
-        DataTypes.BridgeType _srcBridgeType,
-        IBridge.RefundParams calldata _refund,
-        DataTypes.RefundParams calldata _msgRefund
-    ) external {
-        if (_srcBridgeType == DataTypes.BridgeType.Liquidity) {
-            IBridge(liquidityBridge).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == DataTypes.BridgeType.PegDeposit) {
-            IOriginalTokenVault(pegVault).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == DataTypes.BridgeType.PegBurn) {
-            IPeggedTokenBridge(pegBridge).mint(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == DataTypes.BridgeType.PegDepositV2) {
-            IOriginalTokenVaultV2(pegVaultV2).withdraw(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        } else if (_srcBridgeType == DataTypes.BridgeType.PegBurnV2) {
-            IPeggedTokenBridgeV2(pegBridgeV2).mint(_refund.request, _refund.sigs, _refund.signers, _refund.powers);
-        }
-        executeMessageWithTransferRefund(
-            _msgRefund.message,
-            _msgRefund.transfer,
-            _msgRefund.sigs,
-            _msgRefund.signers,
-            _msgRefund.powers
-        );
-    }
-
-    /**
      * @notice Execute a message not associated with a transfer.
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
      * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
@@ -439,6 +405,66 @@ contract MessageBusReceiver is Ownable {
             return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
         return IMessageReceiverApp.ExecuctionStatus.Fail;
+    }
+
+    // ================= helper (non-critical) functions =====================
+
+    /**
+     * @notice convenience function that aggregates two refund calls into one to save user transaction fees
+     * @dev caller must get the required input params to each call first by querying SGN gateway and SGN node
+     * @param _srcBridgeType the type of the bridge that is used in the original sendMessageWithTransfer call
+     * @param _bridgeRefund call params to LiquidityBridge.withdraw(), PegBridge.Mint(),
+     *                      PegVault.Withdraw(), PegBridgeV2.Mint(), or PegVaultV2.Withdraw()
+     * @param _msgRefund call params to MessageBus.executeMessageWithTransferRefund()
+     */
+    function refund(
+        DataTypes.BridgeType _srcBridgeType,
+        DataTypes.BridgeRefundParams calldata _bridgeRefund,
+        DataTypes.MsgRefundParams calldata _msgRefund
+    ) external {
+        if (_srcBridgeType == DataTypes.BridgeType.Liquidity) {
+            IBridge(liquidityBridge).withdraw(
+                _bridgeRefund.request,
+                _bridgeRefund.sigs,
+                _bridgeRefund.signers,
+                _bridgeRefund.powers
+            );
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegDeposit) {
+            IOriginalTokenVault(pegVault).withdraw(
+                _bridgeRefund.request,
+                _bridgeRefund.sigs,
+                _bridgeRefund.signers,
+                _bridgeRefund.powers
+            );
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegBurn) {
+            IPeggedTokenBridge(pegBridge).mint(
+                _bridgeRefund.request,
+                _bridgeRefund.sigs,
+                _bridgeRefund.signers,
+                _bridgeRefund.powers
+            );
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegDepositV2) {
+            IOriginalTokenVaultV2(pegVaultV2).withdraw(
+                _bridgeRefund.request,
+                _bridgeRefund.sigs,
+                _bridgeRefund.signers,
+                _bridgeRefund.powers
+            );
+        } else if (_srcBridgeType == DataTypes.BridgeType.PegBurnV2) {
+            IPeggedTokenBridgeV2(pegBridgeV2).mint(
+                _bridgeRefund.request,
+                _bridgeRefund.sigs,
+                _bridgeRefund.signers,
+                _bridgeRefund.powers
+            );
+        }
+        executeMessageWithTransferRefund(
+            _msgRefund.message,
+            _msgRefund.transfer,
+            _msgRefund.sigs,
+            _msgRefund.signers,
+            _msgRefund.powers
+        );
     }
 
     // ================= contract addr config =================

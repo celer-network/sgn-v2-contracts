@@ -5,7 +5,7 @@ pragma solidity 0.8.9;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "../libraries/DataTypes.sol";
+import "../libraries/MsgDataTypes.sol";
 import "../libraries/MessageSenderLib.sol";
 import "./MessageBusAddress.sol";
 import "../messagebus/MessageBus.sol";
@@ -54,7 +54,7 @@ abstract contract MessageSenderApp is MessageBusAddress {
         uint64 _nonce,
         uint32 _maxSlippage,
         bytes memory _message,
-        DataTypes.BridgeType _bridgeType,
+        MsgDataTypes.BridgeType _bridgeType,
         uint256 _fee
     ) internal returns (bytes32) {
         return
@@ -91,18 +91,18 @@ abstract contract MessageSenderApp is MessageBusAddress {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage,
-        DataTypes.BridgeType _bridgeType
+        MsgDataTypes.BridgeType _bridgeType
     ) internal {
         address bridge;
-        if (_bridgeType == DataTypes.BridgeType.Liquidity) {
+        if (_bridgeType == MsgDataTypes.BridgeType.Liquidity) {
             bridge = MessageBus(messageBus).liquidityBridge();
-        } else if (_bridgeType == DataTypes.BridgeType.PegDeposit) {
+        } else if (_bridgeType == MsgDataTypes.BridgeType.PegDeposit) {
             bridge = MessageBus(messageBus).pegVault();
-        } else if (_bridgeType == DataTypes.BridgeType.PegBurn) {
+        } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurn) {
             bridge = MessageBus(messageBus).pegBridge();
-        } else if (_bridgeType == DataTypes.BridgeType.PegDepositV2) {
+        } else if (_bridgeType == MsgDataTypes.BridgeType.PegDepositV2) {
             bridge = MessageBus(messageBus).pegVaultV2();
-        } else if (_bridgeType == DataTypes.BridgeType.PegBurnV2) {
+        } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurnV2) {
             bridge = MessageBus(messageBus).pegBridgeV2();
         } else {
             revert("bridge type not supported");

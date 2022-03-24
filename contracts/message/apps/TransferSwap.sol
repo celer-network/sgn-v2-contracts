@@ -234,7 +234,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
             _nonce,
             _maxBridgeSlippage,
             message,
-            DataTypes.BridgeType.Liquidity,
+            MsgDataTypes.BridgeType.Liquidity,
             _fee
         );
         emit SwapRequestSent(id, _dstChainId, _amountIn, _srcSwap.path[0], _dstSwap.path[_dstSwap.path.length - 1]);

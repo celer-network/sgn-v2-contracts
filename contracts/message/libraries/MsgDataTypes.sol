@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-library DataTypes {
+library MsgDataTypes {
     enum BridgeType {
         Null,
         Liquidity,

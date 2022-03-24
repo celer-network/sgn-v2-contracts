@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.0;
 
-import "../libraries/DataTypes.sol";
+import "../libraries/MsgDataTypes.sol";
 
 interface IMessageBus {
     function liquidityBridge() external view returns (address);
@@ -81,7 +81,7 @@ interface IMessageBus {
      */
     function executeMessageWithTransfer(
         bytes calldata _message,
-        DataTypes.TransferInfo calldata _transfer,
+        MsgDataTypes.TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -98,7 +98,7 @@ interface IMessageBus {
      */
     function executeMessageWithTransferRefund(
         bytes calldata _message, // the same message associated with the original transfer
-        DataTypes.TransferInfo calldata _transfer,
+        MsgDataTypes.TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -114,7 +114,7 @@ interface IMessageBus {
      */
     function executeMessage(
         bytes calldata _message,
-        DataTypes.RouteInfo calldata _route,
+        MsgDataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers

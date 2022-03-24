@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
-import "../libraries/DataTypes.sol";
 
 /** @title Application to test message with transfer refund flow */
 contract TestRefund is MessageSenderApp, MessageReceiverApp {
@@ -27,7 +26,7 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage,
-        DataTypes.BridgeType _bridgeType
+        MsgDataTypes.BridgeType _bridgeType
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         bytes memory message = abi.encode(msg.sender);

@@ -28,7 +28,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @notice Mints tokens to an account. Increases total amount minted by the calling bridge.
+     * @notice Mints tokens to an address. Increases total amount minted by the calling bridge.
      * @param _to The address to mint tokens to.
      * @param _amount The amount to mint.
      */
@@ -51,7 +51,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @notice Burns tokens from an account. Decreases total amount minted by the calling bridge.
+     * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
      * Alternative for {burnFrom} to be compatible with some bridge implementations.
      * See {_burnFrom}.
      * @param _from The address to burn tokens from.
@@ -62,7 +62,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @notice Burns tokens from an account. Decreases total amount minted by the calling bridge.
+     * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
      * See {_burnFrom}.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
@@ -72,7 +72,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @dev Burns tokens from an account. Decreases total amount minted by the calling bridge.
+     * @dev Burns tokens from an address. Decreases total amount minted by the calling bridge.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
      */

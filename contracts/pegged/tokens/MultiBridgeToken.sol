@@ -27,6 +27,11 @@ contract MultiBridgeToken is ERC20, Ownable {
         _decimals = decimals_;
     }
 
+    /**
+     * @notice Mints tokens to an address. Increases total amount minted by the calling bridge.
+     * @param _to The address to mint tokens to.
+     * @param _amount The amount to mint.
+     */
     function mint(address _to, uint256 _amount) external returns (bool) {
         Supply storage b = bridges[msg.sender];
         require(b.cap > 0, "invalid caller");
@@ -36,25 +41,74 @@ contract MultiBridgeToken is ERC20, Ownable {
         return true;
     }
 
+    /**
+     * @notice Burns tokens for msg.sender.
+     * @param _amount The amount to burn.
+     */
+    function burn(uint256 _amount) external returns (bool) {
+        _burn(msg.sender, _amount);
+        return true;
+    }
+
+    /**
+     * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
+     * Alternative to {burnFrom} for compatibility with some bridge implementations.
+     * See {_burnFrom}.
+     * @param _from The address to burn tokens from.
+     * @param _amount The amount to burn.
+     */
     function burn(address _from, uint256 _amount) external returns (bool) {
+        return _burnFrom(_from, _amount);
+    }
+
+    /**
+     * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
+     * See {_burnFrom}.
+     * @param _from The address to burn tokens from.
+     * @param _amount The amount to burn.
+     */
+    function burnFrom(address _from, uint256 _amount) external returns (bool) {
+        return _burnFrom(_from, _amount);
+    }
+
+    /**
+     * @dev Burns tokens from an address. Decreases total amount minted by the calling bridge.
+     * @param _from The address to burn tokens from.
+     * @param _amount The amount to burn.
+     */
+    function _burnFrom(address _from, uint256 _amount) internal returns (bool) {
         Supply storage b = bridges[msg.sender];
         require(b.cap > 0, "invalid caller");
-        b.total -= _amount;
+        require(b.total >= _amount, "exceeds bridge minted amount");
+        unchecked {
+            b.total -= _amount;
+        }
+        _spendAllowance(_from, msg.sender, _amount);
         _burn(_from, _amount);
         return true;
     }
 
+    /**
+     * @notice Returns the decimals of the token.
+     */
     function decimals() public view virtual override returns (uint8) {
         return _decimals;
     }
 
+    /**
+     * @notice Updates the supply cap for a bridge.
+     * @param _bridge The bridge address.
+     * @param _cap The new supply cap.
+     */
     function updateBridgeSupplyCap(address _bridge, uint256 _cap) external onlyOwner {
         // cap == 0 means revoking bridge role
         bridges[_bridge].cap = _cap;
         emit BridgeSupplyCapUpdated(_bridge, _cap);
     }
 
-    // to make compatible with BEP20
+    /**
+     * @notice Returns the owner address. Required by BEP20.
+     */
     function getOwner() external view returns (address) {
         return owner();
     }

@@ -9,6 +9,9 @@ import "../interfaces/IPool.sol";
 import "../interfaces/IWithdrawInbox.sol";
 import "../safeguard/Pauser.sol";
 
+/**
+ * @title Example contract to provide liquidity to {Bridge}. Supports withdrawing liquidity via {WithdrawInbox}.
+ */
 contract ContractAsLP is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
@@ -23,7 +26,7 @@ contract ContractAsLP is ReentrancyGuard, Pauser {
     }
 
     /**
-     * @notice Lock tokens.
+     * @notice Deposit tokens.
      * @param _token The deposited token address.
      * @param _amount The amount to deposit.
      */

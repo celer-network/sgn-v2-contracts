@@ -9,6 +9,9 @@ import "./interfaces/ISigsVerifier.sol";
 import "./libraries/PbFarming.sol";
 import "./safeguard/Pauser.sol";
 
+/**
+ * @title A contract to hold and distribute farming rewards.
+ */
 contract FarmingRewards is Pauser {
     using SafeERC20 for IERC20;
 

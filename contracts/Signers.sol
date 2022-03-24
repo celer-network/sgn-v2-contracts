@@ -6,6 +6,9 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ISigsVerifier.sol";
 
+/**
+ * @title Multi-sig verification and management functions for {Bridge}.
+ */
 contract Signers is Ownable, ISigsVerifier {
     using ECDSA for bytes32;
 

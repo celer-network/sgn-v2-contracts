@@ -8,6 +8,9 @@ import {DataTypes as dt} from "./libraries/DataTypes.sol";
 import "./safeguard/Pauser.sol";
 import "./Staking.sol";
 
+/**
+ * @title A contract to hold and distribute CELR staking rewards.
+ */
 contract StakingReward is Pauser {
     using SafeERC20 for IERC20;
 

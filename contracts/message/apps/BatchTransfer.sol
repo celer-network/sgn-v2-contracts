@@ -52,7 +52,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         uint64 _dstChainId,
         uint32 _maxSlippage,
-        MessageSenderLib.BridgeType _bridgeType,
+        DataTypes.BridgeType _bridgeType,
         address[] calldata _accounts,
         uint256[] calldata _amounts
     ) external payable onlyEOA {

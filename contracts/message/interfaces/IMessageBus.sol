@@ -2,32 +2,9 @@
 
 pragma solidity >=0.8.0;
 
+import "../libraries/DataTypes.sol";
+
 interface IMessageBus {
-    enum TransferType {
-        Null,
-        LqSend, // send through liquidity bridge
-        LqWithdraw, // withdraw from liquidity bridge
-        PegMint, // mint through pegged token bridge
-        PegWithdraw // withdraw from original token vault
-    }
-
-    struct TransferInfo {
-        TransferType t;
-        address sender;
-        address receiver;
-        address token;
-        uint256 amount;
-        uint64 seqnum; // only needed for LqWithdraw
-        uint64 srcChainId;
-        bytes32 refId;
-    }
-
-    struct RouteInfo {
-        address sender;
-        address receiver;
-        uint64 srcChainId;
-    }
-
     function liquidityBridge() external view returns (address);
 
     function pegBridge() external view returns (address);
@@ -104,7 +81,7 @@ interface IMessageBus {
      */
     function executeMessageWithTransfer(
         bytes calldata _message,
-        TransferInfo calldata _transfer,
+        DataTypes.TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -121,7 +98,7 @@ interface IMessageBus {
      */
     function executeMessageWithTransferRefund(
         bytes calldata _message, // the same message associated with the original transfer
-        TransferInfo calldata _transfer,
+        DataTypes.TransferInfo calldata _transfer,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
@@ -137,7 +114,7 @@ interface IMessageBus {
      */
     function executeMessage(
         bytes calldata _message,
-        RouteInfo calldata _route,
+        DataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers

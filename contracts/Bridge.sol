@@ -7,6 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./libraries/PbBridge.sol";
 import "./Pool.sol";
 
+/**
+ * @title The liquidity-pool based bridge.
+ */
 contract Bridge is Pool {
     using SafeERC20 for IERC20;
 

@@ -12,9 +12,9 @@ import "./safeguard/VolumeControl.sol";
 import "./safeguard/DelayedTransfer.sol";
 import "./Signers.sol";
 
-// add liquidity and withdraw
-// withdraw can be used by user or liquidity provider
-
+/**
+ * @title Liquidity pool functions for {Bridge}.
+ */
 contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfer {
     using SafeERC20 for IERC20;
 

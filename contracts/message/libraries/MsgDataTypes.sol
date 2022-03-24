@@ -54,7 +54,7 @@ library MsgDataTypes {
         bytes32 srcTxHash; // src chain msg tx hash
     }
 
-    struct MsgRefundParams {
+    struct MsgWithTransferExecutionParams {
         bytes message;
         TransferInfo transfer;
         bytes[] sigs;
@@ -62,7 +62,7 @@ library MsgDataTypes {
         uint256[] powers;
     }
 
-    struct BridgeRefundParams {
+    struct BridgeTransferParams {
         bytes request;
         bytes[] sigs;
         address[] signers;

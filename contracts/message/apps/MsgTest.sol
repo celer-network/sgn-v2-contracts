@@ -10,7 +10,7 @@ import "../framework/MessageReceiverApp.sol";
 /** @title Application to test message with transfer refund flow */
 contract MsgTest is MessageSenderApp, MessageReceiverApp {
     using SafeERC20 for IERC20;
-    uint256 msgNonce;
+    uint64 nonce;
 
     event MessageReceivedWithTransfer(
         address token,
@@ -32,7 +32,6 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _dstChainId,
-        uint64 _nonce,
         uint32 _maxSlippage,
         bytes calldata _message,
         MsgDataTypes.BridgeType _bridgeType
@@ -44,12 +43,13 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
             _token,
             _amount,
             _dstChainId,
-            _nonce,
+            nonce,
             _maxSlippage,
             message,
             _bridgeType,
             msg.value
         );
+        nonce++;
     }
 
     function executeMessageWithTransfer(
@@ -83,8 +83,8 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         uint64 _dstChainId,
         bytes calldata _message
     ) external payable {
-        bytes memory message = abi.encode(msgNonce, _message);
-        msgNonce++;
+        bytes memory message = abi.encode(nonce, _message);
+        nonce++;
         sendMessage(_receiver, _dstChainId, message, msg.value);
     }
 
@@ -94,8 +94,8 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecuctionStatus) {
-        (uint256 nonce, bytes memory message) = abi.decode((_message), (uint256, bytes));
-        emit MessageReceived(_sender, _srcChainId, nonce, message);
+        (uint256 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
+        emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecuctionStatus.Success;
     }
 }

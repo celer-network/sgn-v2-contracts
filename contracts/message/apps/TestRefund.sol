@@ -77,12 +77,12 @@ contract TestRefund is MessageSenderApp, MessageReceiverApp {
     }
 
     function executeMessage(
-        address _receiver,
-        uint64 _dstChainId,
+        address _sender,
+        uint64 _srcChainId,
         bytes calldata _message
     ) external payable override onlyMessageBus returns (bool) {
         bool success = abi.decode((_message), (bool));
-        emit MessageReceived(_receiver, _dstChainId, _message);
+        emit MessageReceived(_sender, _srcChainId, _message);
         return success;
     }
 }

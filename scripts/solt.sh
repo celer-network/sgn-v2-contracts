@@ -15,7 +15,9 @@ solFiles=(
   miscs/Faucet
   miscs/MintableERC20
   pegged/OriginalTokenVault
+  pegged/OriginalTokenVaultV2
   pegged/PeggedTokenBridge
+  pegged/PeggedTokenBridgeV2
   pegged/tokens/customized/FraxBridgeToken
   pegged/tokens/ERC20Permit/MintSwapCanonicalTokenPermit
   pegged/tokens/ERC20Permit/MultiBridgeTokenPermit

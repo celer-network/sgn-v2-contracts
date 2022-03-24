@@ -63,7 +63,7 @@ describe('Basic Tests', function () {
   it('should fail to initialize a validator if self delegation fails', async function () {
     await expect(
       staking.initializeValidator(admin.address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE)
-    ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+    ).to.be.revertedWith('ERC20: insufficient allowance');
   });
 
   it('should fail to initialize a non-whitelisted validator when whitelist is enabled', async function () {

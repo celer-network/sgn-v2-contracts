@@ -9,10 +9,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await deploy('ContractAsLP', {
     from: deployer,
     log: true,
-    args: [
-      process.env.CBRIDGE_ADDRESS,
-      process.env.WITHDRAW_INBOX_ADDRESS,
-    ]
+    args: [process.env.BRIDGE, process.env.WITHDRAW_INBOX]
   });
 };
 

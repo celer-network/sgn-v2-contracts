@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../libraries/MsgDataTypes.sol";
 import "../libraries/MessageSenderLib.sol";
-import "./MessageBusAddress.sol";
 import "../messagebus/MessageBus.sol";
+import "./MessageBusAddress.sol";
+
 
 abstract contract MessageSenderApp is MessageBusAddress {
     using SafeERC20 for IERC20;

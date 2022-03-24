@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.9;
 
+import "../libraries/MsgDataTypes.sol";
+import "../interfaces/IMessageReceiverApp.sol";
+import "../interfaces/IMessageBus.sol";
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../../interfaces/IPeggedTokenBridgeV2.sol";
-import "../interfaces/IMessageReceiverApp.sol";
-import "../interfaces/IMessageBus.sol";
 import "../../safeguard/Ownable.sol";
-import "../libraries/MsgDataTypes.sol";
 
 contract MessageBusReceiver is Ownable {
     mapping(bytes32 => MsgDataTypes.TxStatus) public executedMessages;
@@ -422,8 +422,8 @@ contract MessageBusReceiver is Ownable {
     // ================= helper (non-critical) functions =====================
 
     /**
-     * @notice convenience function that aggregates two refund calls into one to save user transaction fees
-     * @dev caller must get the required input params to each call first by querying SGN gateway and SGN node
+     * @notice helper function that aggregates two refund calls into one to save one tx
+     * @dev caller needs to get the required input params by querying SGN
      * @param _srcBridgeType the type of the bridge that is used in the original sendMessageWithTransfer call
      * @param _bridgeRefund call params to LiquidityBridge.withdraw(), PegBridge.Mint(),
      *                      PegVault.Withdraw(), PegBridgeV2.Mint(), or PegVaultV2.Withdraw()

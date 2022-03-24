@@ -6,7 +6,7 @@
 # GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
 SOLC_VER="v0.8.9+commit.e5eed63a"
-OPENZEPPELIN="openzeppelin-contracts-4.2.0"          # if change, also need to change the url in dld_solc
+OPENZEPPELIN="openzeppelin-contracts-4.5.0"          # if change, also need to change the url in dld_solc
 GETH_VER="geth-alltools-linux-amd64-1.10.7-12f0ff40" # for abigen
 CNTRDIR="contracts"                                  # folder name for all contracts code
 GO_REPO=https://${GH_TOKEN}@github.com/celer-network/sgn-v2
@@ -26,7 +26,7 @@ dld_solc() {
   curl -L "https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-${SOLC_VER}" -o solc && chmod +x solc
   sudo mv solc /usr/local/bin/
   # only need oz's contracts subfolder, files will be at $CNTRDIR/$OPENZEPPELIN/contracts
-  curl -L "https://github.com/OpenZeppelin/openzeppelin-contracts/archive/v4.2.0.tar.gz" | tar -xz -C $CNTRDIR $OPENZEPPELIN/contracts/
+  curl -L "https://github.com/OpenZeppelin/openzeppelin-contracts/archive/v4.5.0.tar.gz" | tar -xz -C $CNTRDIR $OPENZEPPELIN/contracts/
 }
 
 dld_abigen() {

@@ -111,7 +111,8 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         SwapInfo calldata _srcSwap,
         SwapInfo calldata _dstSwap,
         uint32 _maxBridgeSlippage,
-        uint64 _nonce
+        uint64 _nonce,
+        bool _nativeOut
     ) external payable onlyEOA {
         IERC20(_srcSwap.path[0]).safeTransferFrom(msg.sender, address(this), _amountIn);
         _transferWithSwap(
@@ -122,7 +123,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
             _dstSwap,
             _maxBridgeSlippage,
             _nonce,
-            false,
+            _nativeOut,
             msg.value
         );
     }
@@ -169,7 +170,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         }
 
         if (_dstChainId == chainId) {
-            _directSend(_receiver, _amountIn, chainId, _srcSwap, _nonce, srcTokenOut, srcAmtOut);
+            _directSend(msg.sender, _amountIn, chainId, _srcSwap, _nonce, srcTokenOut, srcAmtOut);
         } else {
             _crossChainTransferWithSwap(
                 _receiver,

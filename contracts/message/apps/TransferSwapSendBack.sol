@@ -57,7 +57,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
             nonce,
             swapInfo.cbrMaxSlippage,
             message,
-            MessageSenderLib.BridgeType.Liquidity,
+            MsgDataTypes.BridgeType.Liquidity,
             msg.value
         );
     }
@@ -69,8 +69,9 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
-        bytes memory _message
-    ) external payable override onlyMessageBus returns (bool) {
+        bytes memory _message,
+        address // executor
+    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
         SwapInfo memory swapInfo = abi.decode((_message), (SwapInfo));
         IERC20(_token).approve(dex, _amount);
         address[] memory path = new address[](2);
@@ -93,7 +94,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
                 _srcChainId,
                 nonce,
                 swapInfo.cbrMaxSlippage,
-                MessageSenderLib.BridgeType.Liquidity
+                MsgDataTypes.BridgeType.Liquidity
             );
         } else {
             // swap to wantToken and send to user
@@ -101,6 +102,6 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
         }
         // bytes memory notice; // send back to src chain to handleMessage
         // sendMessage(_sender, _srcChainId, notice);
-        return true;
+        return ExecuctionStatus.Success;
     }
 }

@@ -7,14 +7,17 @@ Approach: Deploy a PeggedToken ([example](./tokens/MultiBridgeToken.sol)) on cha
 ## Basic workflows
 
 ### Deposit original token on chain A and mint pegged token on chain B
+
 1. User calls [deposit](./OriginalTokenVault.sol#L72) on chain A to lock original tokens in chain A’s vault contract.
 2. SGN generates the [Mint proto msg](../libraries/proto/pegged.proto#L14) cosigned by validators, and call [mint](./PeggedTokenBridge.sol#L55) function on chain B.
 
 ### Burn pegged token on chain B and withdraw original token on chain A
+
 1. User calls [burn](./PeggedTokenBridge.sol#L104) on chain B to burn the pegged token.
 2. SGN generates the [Withdraw proto msg](../libraries/proto/pegged.proto#L34) cosigned by validators, and call [withdraw](./OriginalTokenVault.sol#L131) function on chain A.
 
 ### Burn pegged token on chain B (PeggedTokenBridgeV2) and mint pegged token on chain C
+
 1. User calls [burn](./PeggedTokenBridgeV2.sol#L116) on chain B to burn the pegged token, specifying chain C's chainId as `toChainId`.
 2. SGN generates the [Mint proto msg](../libraries/proto/pegged.proto#L14) cosigned by validators, and call [mint](./PeggedTokenBridge.sol#L55) function on chain C.
 

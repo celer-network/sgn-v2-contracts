@@ -436,6 +436,9 @@ contract MessageBusReceiver is Ownable {
         uint256 gasLeftAfterExecution = gasleft();
         uint256 maxTargetGasLimit = block.gaslimit - preExecuteMessageGasUsage;
         if (_gasLeftBeforeExecution < maxTargetGasLimit && gasLeftAfterExecution <= _gasLeftBeforeExecution / 64) {
+            // if this happens, the executor must have not provided sufficient gas limit,
+            // then the tx should revert instead of recording a non-retryable failure status
+            // https://github.com/wolflo/evm-opcodes/blob/main/gas.md#aa-f-gas-to-send-with-call-operations
             assembly {
                 invalid()
             }

@@ -72,7 +72,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @dev Burns tokens from an address, deducting from the caller's allowance. 
+     * @dev Burns tokens from an address, deducting from the caller's allowance.
      *      Decreases total amount minted if called by a bridge.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.

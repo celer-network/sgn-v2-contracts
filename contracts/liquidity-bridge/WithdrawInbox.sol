@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-import "./safeguard/Ownable.sol";
+import "../safeguard/Ownable.sol";
 
 /**
  * @title A contract to initiate withdrawal requests for contracts tha provide liquidity to {Bridge}.

@@ -3,14 +3,14 @@
 # Script to run solt and generate standard-json files for Etherscan verification.
 
 solFiles=(
-  Bridge
-  FarmingRewards
-  Govern
-  SGN
-  Staking
-  StakingReward
-  Viewer
-  WithdrawInbox
+  staking/Govern
+  staking/SGN
+  staking/Staking
+  staking/StakingReward
+  staking/Viewer
+  liquidity-bridge/Bridge
+  liquidity-bridge/FarmingRewards
+  liquidity-bridge/WithdrawInbox
   integration-examples/ContractAsLP
   integration-examples/ContractAsSender
   interfaces/ISigsVerifier
@@ -18,18 +18,18 @@ solFiles=(
   message/messagebus/MessageBus
   miscs/Faucet
   miscs/MintableERC20
-  pegged/OriginalTokenVault
-  pegged/OriginalTokenVaultV2
-  pegged/PeggedTokenBridge
-  pegged/PeggedTokenBridgeV2
-  pegged/tokens/ERC20Permit/MintSwapCanonicalTokenPermit
-  pegged/tokens/ERC20Permit/MultiBridgeTokenPermit
-  pegged/tokens/ERC20Permit/SingleBridgeTokenPermit
-  pegged/tokens/MintSwapCanonicalToken
-  pegged/tokens/MultiBridgeToken
-  pegged/tokens/SingleBridgeToken
-  pegged/tokens/SwapBridgeToken
-  pegged/tokens/customized/FraxBridgeToken
+  pegged-bridge/OriginalTokenVault
+  pegged-bridge/OriginalTokenVaultV2
+  pegged-bridge/PeggedTokenBridge
+  pegged-bridge/PeggedTokenBridgeV2
+  pegged-bridge/tokens/ERC20Permit/MintSwapCanonicalTokenPermit
+  pegged-bridge/tokens/ERC20Permit/MultiBridgeTokenPermit
+  pegged-bridge/tokens/ERC20Permit/SingleBridgeTokenPermit
+  pegged-bridge/tokens/MintSwapCanonicalToken
+  pegged-bridge/tokens/MultiBridgeToken
+  pegged-bridge/tokens/SingleBridgeToken
+  pegged-bridge/tokens/SwapBridgeToken
+  pegged-bridge/tokens/customized/FraxBridgeToken
   test-helpers/DummySwap
 )
 

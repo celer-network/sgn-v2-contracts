@@ -4,9 +4,9 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {DataTypes as dt} from "./libraries/DataTypes.sol";
-import "./libraries/PbSgn.sol";
-import "./safeguard/Pauser.sol";
+import {DataTypes as dt} from "./DataTypes.sol";
+import "../libraries/PbSgn.sol";
+import "../safeguard/Pauser.sol";
 import "./Staking.sol";
 
 /**

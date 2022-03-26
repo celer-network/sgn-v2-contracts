@@ -13,12 +13,12 @@ GO_REPO=https://${GH_TOKEN}@github.com/celer-network/sgn-v2
 
 # xx.sol under contracts/, no need for .sol suffix, if sol file is in subfolder, just add the relative path
 solFiles=(
-  Staking
-  SGN
-  StakingReward
-  FarmingRewards
-  Govern
-  Viewer
+  staking/Staking
+  staking/SGN
+  staking/StakingReward
+  staking/Govern
+  staking/Viewer
+  liquidity-bridge/FarmingRewards
   interfaces/ISigsVerifier
 )
 
@@ -37,7 +37,7 @@ dld_abigen() {
 # MUST run this under $CNTRDIR
 gen_dtHelper() {
   pushd libraries
-  DTFILE="DataTypes.sol"
+  DTFILE="staking/DataTypes.sol"
   CTRNAME="DtHelper"
   SOLFILE="$CTRNAME.sol"
   cat >$SOLFILE <<EOF

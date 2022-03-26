@@ -72,14 +72,15 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @dev Burns tokens from an address, deducting from the caller's allowance. Decreases total amount minted if called
-     * by a bridge.
+     * @dev Burns tokens from an address, deducting from the caller's allowance. 
+     *      Decreases total amount minted if called by a bridge.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
      */
     function _burnFrom(address _from, uint256 _amount) internal returns (bool) {
         Supply storage b = bridges[msg.sender];
         if (b.cap > 0 || b.total > 0) {
+            // set cap to 1 would effectively disable a deprecated bridge's ability to burn
             require(b.total >= _amount, "exceeds bridge minted amount");
             unchecked {
                 b.total -= _amount;

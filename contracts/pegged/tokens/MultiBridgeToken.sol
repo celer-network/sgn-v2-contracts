@@ -51,7 +51,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @notice Burns tokens from an address. Decreases total amount minted if called by a bridge.
+     * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
      * Alternative to {burnFrom} for compatibility with some bridge implementations.
      * See {_burnFrom}.
      * @param _from The address to burn tokens from.
@@ -62,7 +62,7 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @notice Burns tokens from an address. Decreases total amount minted if called by a bridge.
+     * @notice Burns tokens from an address. Decreases total amount minted by the calling bridge.
      * See {_burnFrom}.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
@@ -72,18 +72,16 @@ contract MultiBridgeToken is ERC20, Ownable {
     }
 
     /**
-     * @dev Burns tokens from an address, deducting from the caller's allowance. Decreases total amount minted if called
-     * by a bridge.
+     * @dev Burns tokens from an address. Decreases total amount minted by the calling bridge.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
      */
     function _burnFrom(address _from, uint256 _amount) internal returns (bool) {
         Supply storage b = bridges[msg.sender];
-        if (b.cap > 0 || b.total > 0) {
-            require(b.total >= _amount, "exceeds bridge minted amount");
-            unchecked {
-                b.total -= _amount;
-            }
+        require(b.cap > 0, "invalid caller");
+        require(b.total >= _amount, "exceeds bridge minted amount");
+        unchecked {
+            b.total -= _amount;
         }
         _spendAllowance(_from, msg.sender, _amount);
         _burn(_from, _amount);

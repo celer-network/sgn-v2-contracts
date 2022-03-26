@@ -56,7 +56,7 @@ contract SingleBridgeToken is ERC20, Ownable {
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
      */
-    function burn(address _from, uint256 _amount) external returns (bool) {
+    function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
         return _burnFrom(_from, _amount);
     }
 
@@ -66,12 +66,12 @@ contract SingleBridgeToken is ERC20, Ownable {
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
      */
-    function burnFrom(address _from, uint256 _amount) external returns (bool) {
+    function burnFrom(address _from, uint256 _amount) external onlyBridge returns (bool) {
         return _burnFrom(_from, _amount);
     }
 
     /**
-     * @dev Burns tokens from an address, deducting from the caller's allowance.
+     * @dev Burns tokens from an address.
      * @param _from The address to burn tokens from.
      * @param _amount The amount to burn.
      */

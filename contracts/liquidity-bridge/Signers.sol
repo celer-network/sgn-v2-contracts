@@ -4,7 +4,7 @@ pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/ISigsVerifier.sol";
+import "../interfaces/ISigsVerifier.sol";
 
 /**
  * @title Multi-sig verification and management functions for {Bridge}.

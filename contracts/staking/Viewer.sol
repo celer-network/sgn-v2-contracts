@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.9;
 
-import {DataTypes as dt} from "./libraries/DataTypes.sol";
+import {DataTypes as dt} from "./DataTypes.sol";
 import "./Staking.sol";
 
 /**

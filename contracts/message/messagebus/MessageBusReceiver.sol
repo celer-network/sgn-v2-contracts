@@ -21,6 +21,10 @@ contract MessageBusReceiver is Ownable {
     address public pegBridgeV2; // peg bridge address
     address public pegVaultV2; // peg original vault address
 
+    // minimum amount of gas needed by this contract before it tries to
+    // deliver a message to the target contract.
+    uint256 public preExecuteMessageGasUsage;
+
     event Executed(
         MsgDataTypes.MsgType msgType,
         bytes32 msgId,
@@ -30,6 +34,7 @@ contract MessageBusReceiver is Ownable {
         bytes32 srcTxHash
     );
     event NeedRetry(MsgDataTypes.MsgType msgType, bytes32 msgId, uint64 srcChainId, bytes32 srcTxHash);
+    event CallReverted(string reason); // help debug
 
     event LiquidityBridgeUpdated(address liquidityBridge);
     event PegBridgeUpdated(address pegBridge);
@@ -244,6 +249,7 @@ contract MessageBusReceiver is Ownable {
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
+        uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransfer.selector,
@@ -258,6 +264,7 @@ contract MessageBusReceiver is Ownable {
         if (ok) {
             return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
+        handleExecutionRevert(gasLeftBeforeExecution, res);
         return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
@@ -265,6 +272,7 @@ contract MessageBusReceiver is Ownable {
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
+        uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransferFallback.selector,
@@ -279,6 +287,7 @@ contract MessageBusReceiver is Ownable {
         if (ok) {
             return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
+        handleExecutionRevert(gasLeftBeforeExecution, res);
         return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
@@ -286,6 +295,7 @@ contract MessageBusReceiver is Ownable {
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
+        uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransferRefund.selector,
@@ -298,6 +308,7 @@ contract MessageBusReceiver is Ownable {
         if (ok) {
             return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
+        handleExecutionRevert(gasLeftBeforeExecution, res);
         return IMessageReceiverApp.ExecuctionStatus.Fail;
     }
 
@@ -404,6 +415,7 @@ contract MessageBusReceiver is Ownable {
         private
         returns (IMessageReceiverApp.ExecuctionStatus)
     {
+        uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_route.receiver).call{value: msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessage.selector,
@@ -416,7 +428,31 @@ contract MessageBusReceiver is Ownable {
         if (ok) {
             return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
         }
+        handleExecutionRevert(gasLeftBeforeExecution, res);
         return IMessageReceiverApp.ExecuctionStatus.Fail;
+    }
+
+    function handleExecutionRevert(uint256 _gasLeftBeforeExecution, bytes memory _returnData) private {
+        uint256 gasLeftAfterExecution = gasleft();
+        uint256 maxTargetGasLimit = block.gaslimit - preExecuteMessageGasUsage;
+        if (_gasLeftBeforeExecution < maxTargetGasLimit && gasLeftAfterExecution <= _gasLeftBeforeExecution / 64) {
+            assembly {
+                invalid()
+            }
+        }
+        emit CallReverted(getRevertMsg(_returnData));
+    }
+
+    // https://ethereum.stackexchange.com/a/83577
+    // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
+    function getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
+        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
+        if (_returnData.length < 68) return "Transaction reverted silently";
+        assembly {
+            // Slice the sighash.
+            _returnData := add(_returnData, 0x04)
+        }
+        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
     // ================= helper functions =====================
@@ -509,7 +545,7 @@ contract MessageBusReceiver is Ownable {
         }
     }
 
-    // ================= contract addr config =================
+    // ================= contract config =================
 
     function setLiquidityBridge(address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
@@ -539,5 +575,9 @@ contract MessageBusReceiver is Ownable {
         require(_addr != address(0), "invalid address");
         pegVaultV2 = _addr;
         emit PegVaultV2Updated(pegVaultV2);
+    }
+
+    function setPreExecuteMessageGasUsage(uint256 _usage) public onlyOwner {
+        preExecuteMessageGasUsage = _usage;
     }
 }

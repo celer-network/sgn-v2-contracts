@@ -62,14 +62,13 @@ library BridgeSenderLib {
         address _bridgeAddr
     ) internal returns (bytes32) {
         bytes32 transferId;
+        IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
         if (_bridgeType == BridgeType.Liquidity) {
-            IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
             IBridge(_bridgeAddr).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
             transferId = keccak256(
                 abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
             );
         } else if (_bridgeType == BridgeType.PegDeposit) {
-            IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
             IOriginalTokenVault(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
@@ -80,7 +79,6 @@ library BridgeSenderLib {
                 abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
             );
         } else if (_bridgeType == BridgeType.PegDepositV2) {
-            IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
             transferId = IOriginalTokenVaultV2(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == BridgeType.PegBurnV2) {
             transferId = IPeggedTokenBridgeV2(_bridgeAddr).burn(_token, _amount, _dstChainId, _receiver, _nonce);

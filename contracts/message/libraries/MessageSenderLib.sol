@@ -229,6 +229,7 @@ library MessageSenderLib {
         } else {
             pegBridge = IMessageBus(_messageBus).pegBridgeV2();
         }
+        IERC20(_token).safeIncreaseAllowance(pegBridge, _amount);
         bytes32 transferId;
         if (_bridgeType == MsgDataTypes.BridgeType.PegBurn) {
             IPeggedTokenBridge(pegBridge).burn(_token, _amount, _receiver, _nonce);
@@ -270,16 +271,14 @@ library MessageSenderLib {
         MsgDataTypes.BridgeType _bridgeType,
         address _bridge
     ) internal {
+        IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
         if (_bridgeType == MsgDataTypes.BridgeType.Liquidity) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
             IBridge(_bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegDeposit) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
             IOriginalTokenVault(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurn) {
             IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegDepositV2) {
-            IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
             IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurnV2) {
             IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);

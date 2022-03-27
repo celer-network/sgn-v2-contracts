@@ -363,12 +363,12 @@ contract MessageBusReceiver is Ownable {
                 require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         } else if (
-            _transfer.t == MsgDataTypes.TransferType.PegMintV2 || _transfer.t == MsgDataTypes.TransferType.PegWithdrawV2
+            _transfer.t == MsgDataTypes.TransferType.PegV2Mint || _transfer.t == MsgDataTypes.TransferType.PegV2Withdraw
         ) {
-            if (_transfer.t == MsgDataTypes.TransferType.PegMintV2) {
+            if (_transfer.t == MsgDataTypes.TransferType.PegV2Mint) {
                 bridgeAddr = pegBridgeV2;
             } else {
-                // MsgDataTypes.TransferType.PegWithdrawV2
+                // MsgDataTypes.TransferType.PegV2Withdraw
                 bridgeAddr = pegVaultV2;
             }
             transferId = keccak256(
@@ -382,10 +382,10 @@ contract MessageBusReceiver is Ownable {
                     bridgeAddr
                 )
             );
-            if (_transfer.t == MsgDataTypes.TransferType.PegMintV2) {
+            if (_transfer.t == MsgDataTypes.TransferType.PegV2Mint) {
                 require(IPeggedTokenBridgeV2(bridgeAddr).records(transferId) == true, "mint record not exist");
             } else {
-                // MsgDataTypes.TransferType.PegWithdrawV2
+                // MsgDataTypes.TransferType.PegV2Withdraw
                 require(IOriginalTokenVaultV2(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }
@@ -524,7 +524,7 @@ contract MessageBusReceiver is Ownable {
                 _transferParams.signers,
                 _transferParams.powers
             );
-        } else if (t == MsgDataTypes.TransferType.PegMintV2) {
+        } else if (t == MsgDataTypes.TransferType.PegV2Mint) {
             IPeggedTokenBridgeV2(pegBridgeV2).mint(
                 _transferParams.request,
                 _transferParams.sigs,
@@ -538,7 +538,7 @@ contract MessageBusReceiver is Ownable {
                 _transferParams.signers,
                 _transferParams.powers
             );
-        } else if (t == MsgDataTypes.TransferType.PegWithdrawV2) {
+        } else if (t == MsgDataTypes.TransferType.PegV2Withdraw) {
             IOriginalTokenVaultV2(pegVaultV2).withdraw(
                 _transferParams.request,
                 _transferParams.sigs,

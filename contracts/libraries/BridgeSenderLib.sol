@@ -31,9 +31,9 @@ library BridgeSenderLib {
         Liquidity,
         PegDeposit,
         PegBurn,
-        PegDepositV2,
-        PegBurnV2,
-        PegBurnFromV2
+        PegV2Deposit,
+        PegV2Burn,
+        PegV2BurnFrom
     }
 
     // ============== Internal library functions called by apps ==============
@@ -81,13 +81,13 @@ library BridgeSenderLib {
             );
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridgeAddr, 0);
-        } else if (_bridgeSendType == BridgeSendType.PegDepositV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Deposit) {
             transferId = IOriginalTokenVaultV2(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-        } else if (_bridgeSendType == BridgeSendType.PegBurnV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Burn) {
             transferId = IPeggedTokenBridgeV2(_bridgeAddr).burn(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridgeAddr, 0);
-        } else if (_bridgeSendType == BridgeSendType.PegBurnFromV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2BurnFrom) {
             transferId = IPeggedTokenBridgeV2(_bridgeAddr).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridgeAddr, 0);
@@ -121,9 +121,9 @@ library BridgeSenderLib {
             return sendRefundForPegVaultDeposit(_request, _sigs, _signers, _powers, _bridgeAddr);
         } else if (_bridgeSendType == BridgeSendType.PegBurn) {
             return sendRefundForPegBridgeBurn(_request, _sigs, _signers, _powers, _bridgeAddr);
-        } else if (_bridgeSendType == BridgeSendType.PegDepositV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Deposit) {
             return sendRefundForPegVaultV2Deposit(_request, _sigs, _signers, _powers, _bridgeAddr);
-        } else if (_bridgeSendType == BridgeSendType.PegBurnV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Burn) {
             return sendRefundForPegBridgeV2Burn(_request, _sigs, _signers, _powers, _bridgeAddr);
         } else {
             revert("bridge type not supported");

@@ -100,11 +100,11 @@ abstract contract MessageSenderApp is MessageBusAddress {
             bridge = MessageBus(messageBus).pegVault();
         } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn) {
             bridge = MessageBus(messageBus).pegBridge();
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegDepositV2) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Deposit) {
             bridge = MessageBus(messageBus).pegVaultV2();
         } else if (
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnV2 ||
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnFromV2
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn ||
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom
         ) {
             bridge = MessageBus(messageBus).pegBridgeV2();
         } else {

@@ -78,7 +78,7 @@ library MessageSenderLib {
                 );
         } else if (
             _bridgeSendType == MsgDataTypes.BridgeSendType.PegDeposit ||
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegDepositV2
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Deposit
         ) {
             return
                 sendMessageWithPegVaultDeposit(
@@ -94,7 +94,7 @@ library MessageSenderLib {
                 );
         } else if (
             _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn ||
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnV2
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn
         ) {
             return
                 sendMessageWithPegBridgeBurn(
@@ -286,13 +286,13 @@ library MessageSenderLib {
             IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridge, 0);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegDepositV2) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Deposit) {
             IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnV2) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn) {
             IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridge, 0);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnFromV2) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom) {
             IPeggedTokenBridgeV2(_bridge).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridge, 0);

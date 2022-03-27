@@ -9,20 +9,20 @@ library MsgDataTypes {
         Liquidity,
         PegDeposit,
         PegBurn,
-        PegDepositV2,
-        PegBurnV2,
-        PegBurnFromV2
+        PegV2Deposit,
+        PegV2Burn,
+        PegV2BurnFrom
     }
 
     // bridge operation type at the receiver side (dst chain)
     enum TransferType {
         Null,
-        LqRelay, // send through liquidity bridge
+        LqRelay, // relay through liquidity bridge
         LqWithdraw, // withdraw from liquidity bridge
         PegMint, // mint through pegged token bridge
         PegWithdraw, // withdraw from original token vault
-        PegMintV2, // mint through pegged token bridge v2
-        PegWithdrawV2 // withdraw from original token vault v2
+        PegV2Mint, // mint through pegged token bridge v2
+        PegV2Withdraw // withdraw from original token vault v2
     }
 
     enum MsgType {

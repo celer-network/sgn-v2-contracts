@@ -315,7 +315,7 @@ contract MessageBusReceiver is Ownable {
     function verifyTransfer(MsgDataTypes.TransferInfo calldata _transfer) private view returns (bytes32) {
         bytes32 transferId;
         address bridgeAddr;
-        if (_transfer.t == MsgDataTypes.TransferType.LqSend) {
+        if (_transfer.t == MsgDataTypes.TransferType.LqRelay) {
             transferId = keccak256(
                 abi.encodePacked(
                     _transfer.sender,
@@ -503,7 +503,7 @@ contract MessageBusReceiver is Ownable {
     function _bridgeTransfer(MsgDataTypes.TransferType t, MsgDataTypes.BridgeTransferParams calldata _transferParams)
         private
     {
-        if (t == MsgDataTypes.TransferType.LqSend) {
+        if (t == MsgDataTypes.TransferType.LqRelay) {
             IBridge(liquidityBridge).relay(
                 _transferParams.request,
                 _transferParams.sigs,

@@ -16,15 +16,11 @@ import "../safeguard/Pauser.sol";
 contract ContractAsSender is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
-    mapping(BridgeSenderLib.BridgeType => address) public bridges;
+    mapping(BridgeSenderLib.BridgeSendType => address) public bridges;
     mapping(bytes32 => address) public records;
 
     event Deposited(address depositor, address token, uint256 amount);
-    event LiquidityBridgeUpdated(address liquidityBridge);
-    event PegBridgeUpdated(address pegBridge);
-    event PegVaultUpdated(address pegVault);
-    event PegBridgeV2Updated(address pegBridgeV2);
-    event PegVaultV2Updated(address pegVaultV2);
+    event BridgeUpdated(BridgeSenderLib.BridgeSendType bridgeSendType, address bridgeAddr);
 
     /**
      * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in form of mint/burn.
@@ -37,7 +33,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
      * The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
      * transfer can be refunded.
-     * @param _bridgeType The type of bridge used by this transfer. One of the {BridgeType} enum.
+     * @param _bridgeSendType The type of bridge used by this transfer. One of the {BridgeSendType} enum.
      */
     function transfer(
         address _receiver,
@@ -46,9 +42,9 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
-        BridgeSenderLib.BridgeType _bridgeType
+        BridgeSenderLib.BridgeSendType _bridgeSendType
     ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
-        address _bridgeAddr = bridges[_bridgeType];
+        address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
         bytes32 transferId = BridgeSenderLib.sendTransfer(
             _receiver,
@@ -57,7 +53,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
             _dstChainId,
             _nonce,
             _maxSlippage,
-            _bridgeType,
+            _bridgeSendType,
             _bridgeAddr
         );
         require(records[transferId] == address(0), "record exists");
@@ -72,23 +68,23 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
      * +2/3 of the bridge's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
-     * @param _bridgeType The type of bridge used by this failed transfer. One of the {BridgeType} enum.
+     * @param _bridgeSendType The type of bridge used by this failed transfer. One of the {BridgeSendType} enum.
      */
     function refund(
         bytes calldata _request,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
-        BridgeSenderLib.BridgeType _bridgeType
+        BridgeSenderLib.BridgeSendType _bridgeSendType
     ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
-        address _bridgeAddr = bridges[_bridgeType];
+        address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
         BridgeSenderLib.RefundInfo memory refundInfo = BridgeSenderLib.sendRefund(
             _request,
             _sigs,
             _signers,
             _powers,
-            _bridgeType,
+            _bridgeSendType,
             _bridgeAddr
         );
         require(refundInfo.receiver == address(this), "invalid refund");
@@ -111,33 +107,9 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
 
     // ----------------------Admin operation-----------------------
 
-    function setLiquidityBridge(address _addr) public onlyOwner {
+    function setBridgeAddress(BridgeSenderLib.BridgeSendType _bridgeSendType, address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
-        bridges[BridgeSenderLib.BridgeType.Liquidity] = _addr;
-        emit LiquidityBridgeUpdated(_addr);
-    }
-
-    function setPegBridge(address _addr) public onlyOwner {
-        require(_addr != address(0), "invalid address");
-        bridges[BridgeSenderLib.BridgeType.PegBurn] = _addr;
-        emit PegBridgeUpdated(_addr);
-    }
-
-    function setPegVault(address _addr) public onlyOwner {
-        require(_addr != address(0), "invalid address");
-        bridges[BridgeSenderLib.BridgeType.PegDeposit] = _addr;
-        emit PegVaultUpdated(_addr);
-    }
-
-    function setPegBridgeV2(address _addr) public onlyOwner {
-        require(_addr != address(0), "invalid address");
-        bridges[BridgeSenderLib.BridgeType.PegBurnV2] = _addr;
-        emit PegBridgeV2Updated(_addr);
-    }
-
-    function setPegVaultV2(address _addr) public onlyOwner {
-        require(_addr != address(0), "invalid address");
-        bridges[BridgeSenderLib.BridgeType.PegDepositV2] = _addr;
-        emit PegVaultV2Updated(_addr);
+        bridges[_bridgeSendType] = _addr;
+        emit BridgeUpdated(_bridgeSendType, _addr);
     }
 }

@@ -40,9 +40,9 @@ abstract contract MessageSenderApp is MessageBusAddress {
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded. Only applicable to the {BridgeType.Liquidity}.
+     * transfer can be refunded. Only applicable to the {BridgeSendType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
-     * @param _bridgeType One of the {BridgeType} enum.
+     * @param _bridgeSendType One of the {BridgeSendType} enum.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.
      */
@@ -54,7 +54,7 @@ abstract contract MessageSenderApp is MessageBusAddress {
         uint64 _nonce,
         uint32 _maxSlippage,
         bytes memory _message,
-        MsgDataTypes.BridgeType _bridgeType,
+        MsgDataTypes.BridgeSendType _bridgeSendType,
         uint256 _fee
     ) internal returns (bytes32) {
         return
@@ -66,7 +66,7 @@ abstract contract MessageSenderApp is MessageBusAddress {
                 _nonce,
                 _maxSlippage,
                 _message,
-                _bridgeType,
+                _bridgeSendType,
                 messageBus,
                 _fee
             );
@@ -82,7 +82,7 @@ abstract contract MessageSenderApp is MessageBusAddress {
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
      * transfer can be refunded.
-     * @param _bridgeType One of the {BridgeType} enum.
+     * @param _bridgeSendType One of the {BridgeSendType} enum.
      */
     function sendTokenTransfer(
         address _receiver,
@@ -91,18 +91,21 @@ abstract contract MessageSenderApp is MessageBusAddress {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage,
-        MsgDataTypes.BridgeType _bridgeType
+        MsgDataTypes.BridgeSendType _bridgeSendType
     ) internal {
         address bridge;
-        if (_bridgeType == MsgDataTypes.BridgeType.Liquidity) {
+        if (_bridgeSendType == MsgDataTypes.BridgeSendType.Liquidity) {
             bridge = MessageBus(messageBus).liquidityBridge();
-        } else if (_bridgeType == MsgDataTypes.BridgeType.PegDeposit) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegDeposit) {
             bridge = MessageBus(messageBus).pegVault();
-        } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurn) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn) {
             bridge = MessageBus(messageBus).pegBridge();
-        } else if (_bridgeType == MsgDataTypes.BridgeType.PegDepositV2) {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegDepositV2) {
             bridge = MessageBus(messageBus).pegVaultV2();
-        } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurnV2) {
+        } else if (
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnV2 ||
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurnFromV2
+        ) {
             bridge = MessageBus(messageBus).pegBridgeV2();
         } else {
             revert("bridge type not supported");
@@ -114,7 +117,7 @@ abstract contract MessageSenderApp is MessageBusAddress {
             _dstChainId,
             _nonce,
             _maxSlippage,
-            _bridgeType,
+            _bridgeSendType,
             bridge
         );
     }

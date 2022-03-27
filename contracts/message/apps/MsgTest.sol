@@ -34,7 +34,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         uint64 _dstChainId,
         uint32 _maxSlippage,
         bytes calldata _message,
-        MsgDataTypes.BridgeType _bridgeType
+        MsgDataTypes.BridgeSendType _bridgeSendType
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         bytes memory message = abi.encode(msg.sender, _message);
@@ -46,7 +46,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
             nonce,
             _maxSlippage,
             message,
-            _bridgeType,
+            _bridgeSendType,
             msg.value
         );
         nonce++;

@@ -78,10 +78,14 @@ library BridgeSenderLib {
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
             );
+            // handle cases where certain tokens do not spend allowance for role-based burn
+            IERC20(_token).safeApprove(_bridgeAddr, 0);
         } else if (_bridgeType == BridgeType.PegDepositV2) {
             transferId = IOriginalTokenVaultV2(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == BridgeType.PegBurnV2) {
             transferId = IPeggedTokenBridgeV2(_bridgeAddr).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+            // handle cases where certain tokens do not spend allowance for role-based burn
+            IERC20(_token).safeApprove(_bridgeAddr, 0);
         } else {
             revert("bridge type not supported");
         }

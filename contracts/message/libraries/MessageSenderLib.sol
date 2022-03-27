@@ -239,6 +239,8 @@ library MessageSenderLib {
         } else {
             transferId = IPeggedTokenBridgeV2(pegBridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
         }
+        // handle cases where certain tokens do not spend allowance for role-based burn
+        IERC20(_token).safeApprove(pegBridge, 0);
         IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
             _receiver,
             _dstChainId,
@@ -278,10 +280,14 @@ library MessageSenderLib {
             IOriginalTokenVault(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurn) {
             IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
+            // handle cases where certain tokens do not spend allowance for role-based burn
+            IERC20(_token).safeApprove(_bridge, 0);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegDepositV2) {
             IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeType == MsgDataTypes.BridgeType.PegBurnV2) {
             IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+            // handle cases where certain tokens do not spend allowance for role-based burn
+            IERC20(_token).safeApprove(_bridge, 0);
         } else {
             revert("bridge type not supported");
         }

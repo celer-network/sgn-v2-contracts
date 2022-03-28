@@ -103,10 +103,10 @@ contract MessageBusReceiver is Ownable {
             _powers
         );
         MsgDataTypes.TxStatus status;
-        IMessageReceiverApp.ExecuctionStatus est = executeMessageWithTransfer(_transfer, _message);
-        if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
+        IMessageReceiverApp.ExecutionStatus est = executeMessageWithTransfer(_transfer, _message);
+        if (est == IMessageReceiverApp.ExecutionStatus.Success) {
             status = MsgDataTypes.TxStatus.Success;
-        } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
+        } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {
             executedMessages[messageId] = MsgDataTypes.TxStatus.Null;
             emit NeedRetry(
                 MsgDataTypes.MsgType.MessageWithTransfer,
@@ -117,7 +117,7 @@ contract MessageBusReceiver is Ownable {
             return;
         } else {
             est = executeMessageWithTransferFallback(_transfer, _message);
-            if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
+            if (est == IMessageReceiverApp.ExecutionStatus.Success) {
                 status = MsgDataTypes.TxStatus.Fallback;
             } else {
                 status = MsgDataTypes.TxStatus.Fail;
@@ -156,10 +156,10 @@ contract MessageBusReceiver is Ownable {
             _powers
         );
         MsgDataTypes.TxStatus status;
-        IMessageReceiverApp.ExecuctionStatus est = executeMessageWithTransferRefund(_transfer, _message);
-        if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
+        IMessageReceiverApp.ExecutionStatus est = executeMessageWithTransferRefund(_transfer, _message);
+        if (est == IMessageReceiverApp.ExecutionStatus.Success) {
             status = MsgDataTypes.TxStatus.Success;
-        } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
+        } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {
             executedMessages[messageId] = MsgDataTypes.TxStatus.Null;
             emit NeedRetry(
                 MsgDataTypes.MsgType.MessageWithTransfer,
@@ -199,10 +199,10 @@ contract MessageBusReceiver is Ownable {
         bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
         MsgDataTypes.TxStatus status;
-        IMessageReceiverApp.ExecuctionStatus est = executeMessage(_route, _message);
-        if (est == IMessageReceiverApp.ExecuctionStatus.Success) {
+        IMessageReceiverApp.ExecutionStatus est = executeMessage(_route, _message);
+        if (est == IMessageReceiverApp.ExecutionStatus.Success) {
             status = MsgDataTypes.TxStatus.Success;
-        } else if (est == IMessageReceiverApp.ExecuctionStatus.Retry) {
+        } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {
             executedMessages[messageId] = MsgDataTypes.TxStatus.Null;
             emit NeedRetry(MsgDataTypes.MsgType.MessageOnly, messageId, _route.srcChainId, _route.srcTxHash);
             return;
@@ -247,7 +247,7 @@ contract MessageBusReceiver is Ownable {
 
     function executeMessageWithTransfer(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (IMessageReceiverApp.ExecuctionStatus)
+        returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
@@ -262,15 +262,15 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
+            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));
         }
         handleExecutionRevert(gasLeftBeforeExecution, res);
-        return IMessageReceiverApp.ExecuctionStatus.Fail;
+        return IMessageReceiverApp.ExecutionStatus.Fail;
     }
 
     function executeMessageWithTransferFallback(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (IMessageReceiverApp.ExecuctionStatus)
+        returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
@@ -285,15 +285,15 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
+            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));
         }
         handleExecutionRevert(gasLeftBeforeExecution, res);
-        return IMessageReceiverApp.ExecuctionStatus.Fail;
+        return IMessageReceiverApp.ExecutionStatus.Fail;
     }
 
     function executeMessageWithTransferRefund(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (IMessageReceiverApp.ExecuctionStatus)
+        returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
@@ -306,10 +306,10 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
+            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));
         }
         handleExecutionRevert(gasLeftBeforeExecution, res);
-        return IMessageReceiverApp.ExecuctionStatus.Fail;
+        return IMessageReceiverApp.ExecutionStatus.Fail;
     }
 
     function verifyTransfer(MsgDataTypes.TransferInfo calldata _transfer) private view returns (bytes32) {
@@ -413,7 +413,7 @@ contract MessageBusReceiver is Ownable {
 
     function executeMessage(MsgDataTypes.RouteInfo calldata _route, bytes calldata _message)
         private
-        returns (IMessageReceiverApp.ExecuctionStatus)
+        returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_route.receiver).call{value: msg.value}(
@@ -426,10 +426,10 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            return abi.decode((res), (IMessageReceiverApp.ExecuctionStatus));
+            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));
         }
         handleExecutionRevert(gasLeftBeforeExecution, res);
-        return IMessageReceiverApp.ExecuctionStatus.Fail;
+        return IMessageReceiverApp.ExecutionStatus.Fail;
     }
 
     function handleExecutionRevert(uint256 _gasLeftBeforeExecution, bytes memory _returnData) private {

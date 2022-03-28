@@ -137,7 +137,7 @@ contract NFTBridge is MessageReceiverApp {
         uint64 srcChid,
         bytes memory _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         // withdraw original locked nft back to user, or mint new nft depending on msg.type
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
         if (nftMsg.msgType == MsgType.Mint) {
@@ -148,7 +148,7 @@ contract NFTBridge is MessageReceiverApp {
             revert("invalid message type");
         }
         emit Received(nftMsg.user, nftMsg.nft, nftMsg.id, srcChid);
-        return ExecuctionStatus.Success;
+        return ExecutionStatus.Success;
     }
 
     // only owner

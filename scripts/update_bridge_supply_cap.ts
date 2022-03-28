@@ -1,21 +1,15 @@
 import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
-import { ethers, getNamedAccounts } from 'hardhat';
-
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
 import { MintSwapCanonicalToken__factory } from '../typechain/factories/MintSwapCanonicalToken__factory';
+import { getDeployerSigner, getFeeOverrides } from './common';
 
 dotenv.config();
 
-async function getDeployerSigner(): Promise<SignerWithAddress> {
-  const deployer = (await getNamedAccounts())['deployer'];
-  return await ethers.getSigner(deployer);
-}
-
 async function updateBridgeSupplyCap(): Promise<void> {
   const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
 
   const tokenAddr = process.env.MINT_SWAP_CANONICAL_TOKEN as string;
   if (!tokenAddr) {
@@ -27,7 +21,7 @@ async function updateBridgeSupplyCap(): Promise<void> {
   }
   const mintSwapCanonicalToken = MintSwapCanonicalToken__factory.connect(tokenAddr, deployerSigner);
   const cap = process.env.MINT_SWAP_CANONICAL_TOKEN_CAP as string;
-  await (await mintSwapCanonicalToken.updateBridgeSupplyCap(bridgeAddr, cap)).wait();
+  await (await mintSwapCanonicalToken.updateBridgeSupplyCap(bridgeAddr, cap, feeOverrides)).wait();
   console.log('updateBridgeSupplyCap', tokenAddr, bridgeAddr, cap);
 }
 

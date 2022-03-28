@@ -1,4 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
+import '@nomiclabs/hardhat-etherscan';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
@@ -11,7 +12,8 @@ import { HardhatUserConfig } from 'hardhat/types';
 dotenv.config();
 
 const DEFAULT_ENDPOINT = 'http://localhost:8545';
-const DEFAULT_PRIVATE_KEY = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+const DEFAULT_PRIVATE_KEY =
+  process.env.DEFAULT_PRIVATE_KEY ?? 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
 // Testnets
 const kovanEndpoint = process.env.KOVAN_ENDPOINT || DEFAULT_ENDPOINT;
@@ -35,6 +37,9 @@ const fantomTestPrivateKey = process.env.FANTOM_TEST_PRIVATE_KEY || DEFAULT_PRIV
 const avalancheTestEndpoint = process.env.AVALANCHE_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const avalancheTestPrivateKey = process.env.AVALANCHE_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const arbitrumRinkebyEndpoint = process.env.ARBITRUM_RINKEBY_ENDPOINT || DEFAULT_ENDPOINT;
+const arbitrumRinkebyPrivateKey = process.env.ARBITRUM_RINKEBY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const celoAlfajoresTestEndpoint = process.env.CELO_ALFAJORES_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const celoAlfajoresTestPrivateKey = process.env.CELO_ALFAJORES_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -52,6 +57,9 @@ const godwokenTestPrivateKey = process.env.GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_
 
 const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const polygonTestEndpoint = process.env.POLYGON_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const polygonTestPrivateKey = process.env.POLYGON_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
@@ -164,6 +172,14 @@ const config: HardhatUserConfig = {
     avalancheTest: {
       url: avalancheTestEndpoint,
       accounts: [`0x${avalancheTestPrivateKey}`]
+    },
+    arbitrumTest: {
+      url: arbitrumRinkebyEndpoint,
+      accounts: [`0x${arbitrumRinkebyPrivateKey}`]
+    },
+    polygonTest: {
+      url: polygonTestEndpoint,
+      accounts: [`0x${polygonTestPrivateKey}`]
     },
     celoAlfajoresTest: {
       url: celoAlfajoresTestEndpoint,
@@ -322,6 +338,16 @@ const config: HardhatUserConfig = {
   typechain: {
     outDir: 'typechain',
     target: 'ethers-v5'
+  },
+  etherscan: {
+    apiKey: {
+      goerli: process.env.ETHERSCAN_API_KEY,
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
+      bscTestnet: process.env.BSCSCAN_API_KEY,
+      arbitrumTestnet: process.env.ARBISCAN_API_KEY,
+      ftmTestnet: process.env.FTMSCAN_API_KEY,
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY
+    }
   }
 };
 

@@ -10,12 +10,12 @@
 
 - Receiver functions `executeMessageWithTransfer`, `executeMessageWithTransferFallback`, `executeMessageWithTransferRefund`, `executeMessage` now has an extra param `address _executor` that the app developer could use to check who submitted the execution.
 
-- Receiver functions' required return value also changed from a `boolean success` to `IMessageBusReceiver.ExecutionStatus` to accomodate a third status `MsgDataTypes.ExecutionStatus.Retry`. This status indicates that the message processing should not be regarded as "processed" by MessageBus and the processing should simply be ignored. This status can be used in conjunction with the aforementioned `address _executor` to completely ignore executions that are not originated from a specific executor.
+- Receiver functions' required return value also changed from a `boolean success` to `ExecutionStatus` to accomodate a third status `ExecutionStatus.Retry`. This status indicates that the message processing should not be regarded as "processed" by MessageBus and the processing should simply be ignored. This status can be used in conjunction with the aforementioned `address _executor` to completely ignore executions that are not originated from a specific executor.
 
 ## MessageBus (MessageBusReceiver)
 
 - Added a helper function `refund()` to aggregate refund call to `Bridge.withdraw()` and refund functions in other bridges and `MessageBus.executeMessageWithTransferRefund()` into one call.
 
-- Added a new event `NeedRetry`, emitted when the execution logic in an app contract returns `MsgDataTypes.ExecutionStatus.Retry`.
+- Added a new event `NeedRetry`, emitted when the execution logic in an app contract returns `ExecutionStatus.Retry`.
 
 - Added a field `srcTxHash` in `Executed` and `NeedRetry` event to enable third parties to co-verify a whether a transfer/message send does happen on the source chain (in the name of not completely trusting message bus).

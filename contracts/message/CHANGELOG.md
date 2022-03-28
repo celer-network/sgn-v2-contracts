@@ -14,7 +14,7 @@
 
 ## MessageBus (MessageBusReceiver)
 
-- Added a helper function `refund()` to aggregate refund call to `Bridge.withdraw()` and `MessageBus.executeMessageWithTransferRefund()` into one call.
+- Added a helper function `refund()` to aggregate refund call to `Bridge.withdraw()` and refund functions in other bridges and `MessageBus.executeMessageWithTransferRefund()` into one call.
 
 - Added a new event `NeedRetry`, emitted when the execution is indicated as `MsgDataTypes.ExecutionStatus.Retry`.
 

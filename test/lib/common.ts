@@ -105,8 +105,29 @@ interface BridgeInfo {
   pegToken: SingleBridgeTokenPermit;
 }
 
-interface MessageInfo {
-  bus: MessageBus;
+export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {
+  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const token = await testERC20Factory.connect(admin).deploy();
+  await token.deployed();
+
+  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridge = await bridgeFactory.connect(admin).deploy();
+  await bridge.deployed();
+
+  const pegBridgeFactory = (await ethers.getContractFactory('PeggedTokenBridge')) as PeggedTokenBridge__factory;
+  const pegBridge = await pegBridgeFactory.connect(admin).deploy(bridge.address);
+  await pegBridge.deployed();
+
+  const pegTokenFactory = (await ethers.getContractFactory(
+    'SingleBridgeTokenPermit'
+  )) as SingleBridgeTokenPermit__factory;
+  const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.address);
+  await pegToken.deployed();
+
+  return { bridge, token, pegBridge, pegToken };
+}
+
+interface SwapInfo {
   transferSwap: TransferSwap;
   tokenA: TestERC20;
   tokenB: TestERC20;
@@ -115,7 +136,7 @@ interface MessageInfo {
   weth: WETH;
 }
 
-export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo> {
+export async function deploySwapContracts(admin: Wallet): Promise<SwapInfo> {
   const testERC20FactoryA = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
   const tokenA = await testERC20FactoryA.connect(admin).deploy();
   await tokenA.deployed();
@@ -153,29 +174,7 @@ export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo
   const transferSwap = await transferSwapFactory.connect(admin).deploy(bus.address, swap.address, weth.address);
   await transferSwap.deployed();
 
-  return { bus, tokenA, tokenB, transferSwap, swap, bridge, weth };
-}
-
-export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {
-  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
-  const token = await testERC20Factory.connect(admin).deploy();
-  await token.deployed();
-
-  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
-  const bridge = await bridgeFactory.connect(admin).deploy();
-  await bridge.deployed();
-
-  const pegBridgeFactory = (await ethers.getContractFactory('PeggedTokenBridge')) as PeggedTokenBridge__factory;
-  const pegBridge = await pegBridgeFactory.connect(admin).deploy(bridge.address);
-  await pegBridge.deployed();
-
-  const pegTokenFactory = (await ethers.getContractFactory(
-    'SingleBridgeTokenPermit'
-  )) as SingleBridgeTokenPermit__factory;
-  const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.address);
-  await pegToken.deployed();
-
-  return { bridge, token, pegBridge, pegToken };
+  return { tokenA, tokenB, transferSwap, swap, bridge, weth };
 }
 
 export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {

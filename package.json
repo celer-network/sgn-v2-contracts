@@ -1,6 +1,6 @@
 {
   "name": "sgn-v2-contracts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SGN V2 Contracts",
   "scripts": {
     "clean": "hardhat clean",

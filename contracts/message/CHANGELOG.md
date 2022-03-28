@@ -16,4 +16,6 @@
 
 - Added a helper function `refund()` to aggregate refund call to `Bridge.withdraw()` and `MessageBus.executeMessageWithTransferRefund()` into one call.
 
+- Added a new event `NeedRetry`, emitted when the execution is indicated as `MsgDataTypes.ExecutionStatus.Retry`.
+
 - Added a field `srcTxHash` in `Executed` and `NeedRetry` event to enable third parties to co-verify a whether a tx does happen on the source chain (in the name of not completely trusting message bus).

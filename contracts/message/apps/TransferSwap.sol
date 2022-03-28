@@ -256,7 +256,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         uint64 _srcChainId,
         bytes memory _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         require(_token == m.swap.path[0], "bridged token must be the same as the first token in destination swap path");
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
@@ -283,7 +283,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         }
         emit SwapRequestDone(id, dstAmount, status);
         // always return success since swap failure is already handled in-place
-        return ExecuctionStatus.Success;
+        return ExecutionStatus.Success;
     }
 
     /**
@@ -298,13 +298,13 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         uint64 _srcChainId,
         bytes memory _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         SwapRequest memory m = abi.decode((_message), (SwapRequest));
         bytes32 id = _computeSwapRequestId(m.receiver, _srcChainId, uint64(block.chainid), _message);
         emit SwapRequestDone(id, 0, SwapStatus.Failed);
         // always return fail to mark this transfer as failed since if this function is called then there nothing more
         // we can do in this app as the swap failures are already handled in executeMessageWithTransfer
-        return ExecuctionStatus.Fail;
+        return ExecutionStatus.Fail;
     }
 
     function _trySwap(SwapInfo memory _swap, uint256 _amount) private returns (bool ok, uint256 amountOut) {

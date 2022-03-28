@@ -59,11 +59,11 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         uint64 _srcChainId,
         bytes memory _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (address receiver, bytes memory message) = abi.decode((_message), (address, bytes));
         IERC20(_token).safeTransfer(receiver, _amount);
         emit MessageReceivedWithTransfer(_token, _amount, _sender, _srcChainId, receiver, message);
-        return ExecuctionStatus.Success;
+        return ExecutionStatus.Success;
     }
 
     function executeMessageWithTransferRefund(
@@ -71,11 +71,11 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         uint256 _amount,
         bytes calldata _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (address receiver, bytes memory message) = abi.decode((_message), (address, bytes));
         IERC20(_token).safeTransfer(receiver, _amount);
         emit Refunded(receiver, _token, _amount, message);
-        return ExecuctionStatus.Success;
+        return ExecutionStatus.Success;
     }
 
     function sendMessage(
@@ -93,9 +93,9 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         uint64 _srcChainId,
         bytes calldata _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecuctionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (uint256 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
         emit MessageReceived(_sender, _srcChainId, n, message);
-        return ExecuctionStatus.Success;
+        return ExecutionStatus.Success;
     }
 }

@@ -30,12 +30,12 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         uint64 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
+    ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
 
     /**
      * @notice Only called by MessageBus (MessageBusReceiver) if
      *         1. executeMessageWithTransfer reverts, or
-     *         2. executeMessageWithTransfer returns ExecuctionStatus.Fail
+     *         2. executeMessageWithTransfer returns ExecutionStatus.Fail
      * @param _sender The address of the source app contract
      * @param _token The address of the token that comes out of the bridge
      * @param _amount The amount of tokens received at this contract through the cross-chain bridge.
@@ -52,7 +52,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         uint64 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
+    ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
 
     /**
      * @notice Called by MessageBus (MessageBusReceiver) to process refund of the original transfer from this contract
@@ -66,7 +66,7 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         uint256 _amount,
         bytes calldata _message,
         address _executor
-    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
+    ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
 
     /**
      * @notice Called by MessageBus (MessageBusReceiver)
@@ -80,5 +80,5 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         uint64 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external payable virtual override onlyMessageBus returns (ExecuctionStatus) {}
+    ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
 }

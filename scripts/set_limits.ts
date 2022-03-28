@@ -2,14 +2,14 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 import { BigNumber } from 'ethers';
-import { ethers, getNamedAccounts } from 'hardhat';
+import { ethers } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address';
 
 import { Bridge__factory } from '../typechain/factories/Bridge__factory';
 import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';
 import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBridge__factory';
+import { getDeployerSigner, getFeeOverrides } from './common';
 
 import type { ContractTransaction, Overrides } from '@ethersproject/contracts';
 import type { BigNumberish } from '@ethersproject/bignumber';
@@ -24,11 +24,6 @@ function getParseUnitsCallback(
   return (s, i) => parseUnits(s, unitNames[i]);
 }
 
-async function getDeployerSigner(): Promise<SignerWithAddress> {
-  const deployer = (await getNamedAccounts())['deployer'];
-  return await ethers.getSigner(deployer);
-}
-
 async function setLimitIfSpecified(
   limitEnv: string,
   tokens: string[],
@@ -38,14 +33,15 @@ async function setLimitIfSpecified(
     _tokens: string[],
     _amounts: BigNumberish[],
     overrides?: Overrides & { from?: string | Promise<string> }
-  ) => Promise<ContractTransaction>
+  ) => Promise<ContractTransaction>,
+  feeOverrides: Overrides
 ): Promise<void> {
   if (limitEnv) {
     const limitStr = limitEnv.split(',');
     if (limitEnv.length > 0) {
       const limits = limitStr.map(getParseUnitsCallback(decimals));
       if (limits.some(gtZeroPredicate)) {
-        await (await method(tokens, limits)).wait();
+        await (await method(tokens, limits, feeOverrides)).wait();
         console.log(methodName, tokens, limits);
       }
     }
@@ -54,6 +50,7 @@ async function setLimitIfSpecified(
 
 async function setBridgeLimits(): Promise<void> {
   const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
 
   const bridgeAddr = process.env.BRIDGE as string;
   if (!bridgeAddr) {
@@ -68,40 +65,46 @@ async function setBridgeLimits(): Promise<void> {
     tokens,
     decimals,
     'setMinAdd',
-    bridge.setMinAdd
+    bridge.setMinAdd,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.BRIDGE_LIMIT_MIN_SENDS as string,
     tokens,
     decimals,
     'setMinSend',
-    bridge.setMinSend
+    bridge.setMinSend,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.BRIDGE_LIMIT_MAX_SENDS as string,
     tokens,
     decimals,
     'setMaxSend',
-    bridge.setMaxSend
+    bridge.setMaxSend,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.BRIDGE_LIMIT_EPOCH_VOLUME_CAPS as string,
     tokens,
     decimals,
     'setEpochVolumeCaps',
-    bridge.setEpochVolumeCaps
+    bridge.setEpochVolumeCaps,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.BRIDGE_LIMIT_DELAY_THRESHOLDS as string,
     tokens,
     decimals,
     'setDelayThresholds',
-    bridge.setDelayThresholds
+    bridge.setDelayThresholds,
+    feeOverrides
   );
 }
 
 async function setOriginalTokenVaultLimits(): Promise<void> {
   const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
 
   const originalTokenVaultAddr = process.env.ORIGINAL_TOKEN_VAULT as string;
   if (!originalTokenVaultAddr) {
@@ -116,33 +119,38 @@ async function setOriginalTokenVaultLimits(): Promise<void> {
     tokens,
     decimals,
     'setMinDeposit',
-    originalTokenVault.setMinDeposit
+    originalTokenVault.setMinDeposit,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.ORIGINAL_TOKEN_VAULT_LIMIT_MAX_DEPOSITS as string,
     tokens,
     decimals,
     'setMaxDeposit',
-    originalTokenVault.setMaxDeposit
+    originalTokenVault.setMaxDeposit,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.ORIGINAL_TOKEN_VAULT_LIMIT_EPOCH_VOLUME_CAPS as string,
     tokens,
     decimals,
     'setEpochVolumeCaps',
-    originalTokenVault.setEpochVolumeCaps
+    originalTokenVault.setEpochVolumeCaps,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.ORIGINAL_TOKEN_VAULT_LIMIT_DELAY_THRESHOLDS as string,
     tokens,
     decimals,
     'setDelayThresholds',
-    originalTokenVault.setDelayThresholds
+    originalTokenVault.setDelayThresholds,
+    feeOverrides
   );
 }
 
 async function setPeggedTokenBridgeLimits(): Promise<void> {
   const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
 
   const peggedTokenBridgeAddr = process.env.PEGGED_TOKEN_BRIDGE as string;
   if (!peggedTokenBridgeAddr) {
@@ -157,28 +165,32 @@ async function setPeggedTokenBridgeLimits(): Promise<void> {
     tokens,
     decimals,
     'setMinBurn',
-    peggedTokenBridge.setMinBurn
+    peggedTokenBridge.setMinBurn,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.PEGGED_TOKEN_BRIDGE_LIMIT_MAX_BURNS as string,
     tokens,
     decimals,
     'setMaxBurn',
-    peggedTokenBridge.setMaxBurn
+    peggedTokenBridge.setMaxBurn,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.PEGGED_TOKEN_BRIDGE_LIMIT_EPOCH_VOLUME_CAPS as string,
     tokens,
     decimals,
     'setEpochVolumeCaps',
-    peggedTokenBridge.setEpochVolumeCaps
+    peggedTokenBridge.setEpochVolumeCaps,
+    feeOverrides
   );
   await setLimitIfSpecified(
     process.env.PEGGED_TOKEN_BRIDGE_LIMIT_DELAY_THRESHOLDS as string,
     tokens,
     decimals,
     'setDelayThresholds',
-    peggedTokenBridge.setDelayThresholds
+    peggedTokenBridge.setDelayThresholds,
+    feeOverrides
   );
 }
 

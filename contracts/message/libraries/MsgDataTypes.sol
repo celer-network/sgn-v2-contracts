@@ -35,7 +35,7 @@ library MsgDataTypes {
         Success,
         Fail,
         Fallback,
-        Pending // transit state within a transaction
+        Pending // transient state within a transaction
     }
 
     struct TransferInfo {

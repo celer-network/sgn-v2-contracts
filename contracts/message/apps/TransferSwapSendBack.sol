@@ -57,7 +57,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
             nonce,
             swapInfo.cbrMaxSlippage,
             message,
-            MsgDataTypes.BridgeType.Liquidity,
+            MsgDataTypes.BridgeSendType.Liquidity,
             msg.value
         );
     }
@@ -94,7 +94,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
                 _srcChainId,
                 nonce,
                 swapInfo.cbrMaxSlippage,
-                MsgDataTypes.BridgeType.Liquidity
+                MsgDataTypes.BridgeSendType.Liquidity
             );
         } else {
             // swap to wantToken and send to user

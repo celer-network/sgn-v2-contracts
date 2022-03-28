@@ -26,13 +26,14 @@ library BridgeSenderLib {
         bytes32 refundId;
     }
 
-    enum BridgeType {
+    enum BridgeSendType {
         Null,
         Liquidity,
         PegDeposit,
         PegBurn,
-        PegDepositV2,
-        PegBurnV2
+        PegV2Deposit,
+        PegV2Burn,
+        PegV2BurnFrom
     }
 
     // ============== Internal library functions called by apps ==============
@@ -48,7 +49,7 @@ library BridgeSenderLib {
      * The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
      * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
      * transfer can be refunded.
-     * @param _bridgeType The type of the bridge used by this transfer. One of the {BridgeType} enum.
+     * @param _bridgeSendType The type of the bridge used by this transfer. One of the {BridgeSendType} enum.
      * @param _bridgeAddr The address of the bridge used.
      */
     function sendTransfer(
@@ -58,32 +59,36 @@ library BridgeSenderLib {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
-        BridgeType _bridgeType,
+        BridgeSendType _bridgeSendType,
         address _bridgeAddr
     ) internal returns (bytes32) {
         bytes32 transferId;
         IERC20(_token).safeIncreaseAllowance(_bridgeAddr, _amount);
-        if (_bridgeType == BridgeType.Liquidity) {
+        if (_bridgeSendType == BridgeSendType.Liquidity) {
             IBridge(_bridgeAddr).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
             transferId = keccak256(
                 abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
             );
-        } else if (_bridgeType == BridgeType.PegDeposit) {
+        } else if (_bridgeSendType == BridgeSendType.PegDeposit) {
             IOriginalTokenVault(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
             );
-        } else if (_bridgeType == BridgeType.PegBurn) {
+        } else if (_bridgeSendType == BridgeSendType.PegBurn) {
             IPeggedTokenBridge(_bridgeAddr).burn(_token, _amount, _receiver, _nonce);
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
             );
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridgeAddr, 0);
-        } else if (_bridgeType == BridgeType.PegDepositV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Deposit) {
             transferId = IOriginalTokenVaultV2(_bridgeAddr).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-        } else if (_bridgeType == BridgeType.PegBurnV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Burn) {
             transferId = IPeggedTokenBridgeV2(_bridgeAddr).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+            // handle cases where certain tokens do not spend allowance for role-based burn
+            IERC20(_token).safeApprove(_bridgeAddr, 0);
+        } else if (_bridgeSendType == BridgeSendType.PegV2BurnFrom) {
+            transferId = IPeggedTokenBridgeV2(_bridgeAddr).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(_bridgeAddr, 0);
         } else {
@@ -99,7 +104,7 @@ library BridgeSenderLib {
      * +2/3 of the bridge's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
-     * @param _bridgeType The type of the bridge used by this failed transfer. One of the {BridgeType} enum.
+     * @param _bridgeSendType The type of the bridge used by this failed transfer. One of the {BridgeSendType} enum.
      * @param _bridgeAddr The address of the bridge used.
      */
     function sendRefund(
@@ -107,18 +112,18 @@ library BridgeSenderLib {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
-        BridgeType _bridgeType,
+        BridgeSendType _bridgeSendType,
         address _bridgeAddr
     ) internal returns (RefundInfo memory) {
-        if (_bridgeType == BridgeType.Liquidity) {
+        if (_bridgeSendType == BridgeSendType.Liquidity) {
             return sendRefundForLiquidityBridgeTransfer(_request, _sigs, _signers, _powers, _bridgeAddr);
-        } else if (_bridgeType == BridgeType.PegDeposit) {
+        } else if (_bridgeSendType == BridgeSendType.PegDeposit) {
             return sendRefundForPegVaultDeposit(_request, _sigs, _signers, _powers, _bridgeAddr);
-        } else if (_bridgeType == BridgeType.PegBurn) {
+        } else if (_bridgeSendType == BridgeSendType.PegBurn) {
             return sendRefundForPegBridgeBurn(_request, _sigs, _signers, _powers, _bridgeAddr);
-        } else if (_bridgeType == BridgeType.PegDepositV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Deposit) {
             return sendRefundForPegVaultV2Deposit(_request, _sigs, _signers, _powers, _bridgeAddr);
-        } else if (_bridgeType == BridgeType.PegBurnV2) {
+        } else if (_bridgeSendType == BridgeSendType.PegV2Burn) {
             return sendRefundForPegBridgeV2Burn(_request, _sigs, _signers, _powers, _bridgeAddr);
         } else {
             revert("bridge type not supported");

@@ -3,23 +3,26 @@
 pragma solidity 0.8.9;
 
 library MsgDataTypes {
-    enum BridgeType {
+    // bridge operation type at the sender side (src chain)
+    enum BridgeSendType {
         Null,
         Liquidity,
         PegDeposit,
         PegBurn,
-        PegDepositV2,
-        PegBurnV2
+        PegV2Deposit,
+        PegV2Burn,
+        PegV2BurnFrom
     }
 
+    // bridge operation type at the receiver side (dst chain)
     enum TransferType {
         Null,
-        LqSend, // send through liquidity bridge
+        LqRelay, // relay through liquidity bridge
         LqWithdraw, // withdraw from liquidity bridge
         PegMint, // mint through pegged token bridge
         PegWithdraw, // withdraw from original token vault
-        PegMintV2, // mint through pegged token bridge v2
-        PegWithdrawV2 // withdraw from original token vault v2
+        PegV2Mint, // mint through pegged token bridge v2
+        PegV2Withdraw // withdraw from original token vault v2
     }
 
     enum MsgType {
@@ -32,7 +35,7 @@ library MsgDataTypes {
         Success,
         Fail,
         Fallback,
-        Pending
+        Pending // transit state within a transaction
     }
 
     struct TransferInfo {

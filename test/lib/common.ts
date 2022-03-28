@@ -14,12 +14,14 @@ import {
   Govern__factory,
   MessageBus,
   MessageBus__factory,
+  MsgTest,
+  MsgTest__factory,
   PeggedTokenBridge,
   PeggedTokenBridge__factory,
   SGN,
   SGN__factory,
-  SingleBridgeTokenPermit,
-  SingleBridgeTokenPermit__factory,
+  SingleBridgeToken,
+  SingleBridgeToken__factory,
   Staking,
   Staking__factory,
   StakingReward,
@@ -102,7 +104,7 @@ interface BridgeInfo {
   bridge: Bridge;
   token: TestERC20;
   pegBridge: PeggedTokenBridge;
-  pegToken: SingleBridgeTokenPermit;
+  pegToken: SingleBridgeToken;
 }
 
 export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {
@@ -119,12 +121,48 @@ export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> 
   await pegBridge.deployed();
 
   const pegTokenFactory = (await ethers.getContractFactory(
-    'SingleBridgeTokenPermit'
-  )) as SingleBridgeTokenPermit__factory;
+    'SingleBridgeToken'
+  )) as SingleBridgeToken__factory;
   const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.address);
   await pegToken.deployed();
 
   return { bridge, token, pegBridge, pegToken };
+}
+
+interface MessageInfo {
+  bridge: Bridge;
+  msgbus: MessageBus;
+  msgtest: MsgTest;
+  token: TestERC20;
+}
+
+export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo> {
+  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const token = await testERC20Factory.connect(admin).deploy();
+  await token.deployed();
+
+  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridge = await bridgeFactory.connect(admin).deploy();
+  await bridge.deployed();
+
+  const msgbusFactory = (await ethers.getContractFactory('MessageBus')) as MessageBus__factory;
+  const msgbus = await msgbusFactory
+    .connect(admin)
+    .deploy(
+      bridge.address,
+      bridge.address,
+      ethers.constants.AddressZero,
+      ethers.constants.AddressZero,
+      ethers.constants.AddressZero,
+      ethers.constants.AddressZero
+    );
+  await msgbus.deployed();
+
+  const msgtestFactory = (await ethers.getContractFactory('MsgTest')) as MsgTest__factory;
+  const msgtest = await msgtestFactory.connect(admin).deploy(msgbus.address);
+  await msgtest.deployed();
+
+  return { bridge, msgbus, msgtest, token };
 }
 
 interface SwapInfo {

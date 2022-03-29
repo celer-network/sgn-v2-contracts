@@ -7,14 +7,14 @@ import { Address } from 'hardhat-deploy/types';
 import { keccak256 } from '@ethersproject/solidity';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Bridge, DummySwap, MessageBus, TestERC20, TransferSwap, WETH } from '../typechain';
-import { deployMessageContracts as deployMessageContracts, getAccounts, loadFixture } from './lib/common';
+import { Bridge, DummySwap, TestERC20, TransferSwap, WETH } from '../typechain';
+import { deploySwapContracts, getAccounts, loadFixture } from './lib/common';
 import { ZERO_ADDR } from './lib/constants';
 
 const UINT64_MAX = '9223372036854775807';
 
 async function swapFixture([admin]: Wallet[]) {
-  const res = await deployMessageContracts(admin);
+  const res = await deploySwapContracts(admin);
   return { admin, ...res };
 }
 
@@ -49,7 +49,6 @@ function slip(amount: BigNumber, perc: number) {
   return amount.mul(parseUnits(percent.toString(), 4)).div(parseUnits('100', 4));
 }
 
-let bus: MessageBus;
 let tokenA: TestERC20;
 let tokenB: TestERC20;
 let xswap: TransferSwap;
@@ -78,7 +77,6 @@ let dstSwap: Swap;
 async function prepare() {
   const res = await loadFixture(swapFixture);
   admin = res.admin;
-  bus = res.bus;
   tokenA = res.tokenA;
   tokenB = res.tokenB;
   weth = res.weth;
@@ -113,7 +111,7 @@ async function prepare() {
   await tokenB.connect(res.admin).transfer(dex.address, parseUnits('1000'));
   await weth.connect(res.admin).deposit({ value: parseUnits('100') });
   await weth.connect(res.admin).transfer(dex.address, parseUnits('100'));
-  return { admin, bus, tokenA, tokenB, xswap, dex, bridge, accounts, chainId };
+  return { admin, tokenA, tokenB, xswap, dex, bridge, accounts, chainId };
 }
 
 describe('Test transferWithSwap', function () {

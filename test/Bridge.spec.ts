@@ -6,7 +6,7 @@ import { keccak256, pack } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Bridge, TestERC20, PeggedTokenBridge, SingleBridgeTokenPermit } from '../typechain';
+import { Bridge, TestERC20, PeggedTokenBridge, SingleBridgeToken } from '../typechain';
 import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
 import { calculateSignatures, getMintRequest, getRelayRequest, getWithdrawRequest, hex2Bytes } from './lib/proto';
 
@@ -48,7 +48,7 @@ describe('Bridge Tests', function () {
   let bridge: Bridge;
   let token: TestERC20;
   let pegBridge: PeggedTokenBridge;
-  let pegToken: SingleBridgeTokenPermit;
+  let pegToken: SingleBridgeToken;
   let accounts: Wallet[];
   let chainId: number;
 

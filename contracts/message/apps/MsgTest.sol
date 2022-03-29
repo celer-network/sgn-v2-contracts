@@ -21,7 +21,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         bytes message
     );
     event Refunded(address receiver, address token, uint256 amount, bytes message);
-    event MessageReceived(address sender, uint64 srcChainId, uint256 nonce, bytes message);
+    event MessageReceived(address sender, uint64 srcChainId, uint64 nonce, bytes message);
 
     constructor(address _messageBus) {
         messageBus = _messageBus;
@@ -94,7 +94,12 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        (uint256 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
+        (uint64 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
+        require(n != 100000000000001, "invalid nonce"); // test revert with reason
+        if (n == 100000000000002) {
+            // test revert without reason
+            revert();
+        }
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }

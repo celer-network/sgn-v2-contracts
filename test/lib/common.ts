@@ -120,9 +120,7 @@ export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> 
   const pegBridge = await pegBridgeFactory.connect(admin).deploy(bridge.address);
   await pegBridge.deployed();
 
-  const pegTokenFactory = (await ethers.getContractFactory(
-    'SingleBridgeToken'
-  )) as SingleBridgeToken__factory;
+  const pegTokenFactory = (await ethers.getContractFactory('SingleBridgeToken')) as SingleBridgeToken__factory;
   const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.address);
   await pegToken.deployed();
 

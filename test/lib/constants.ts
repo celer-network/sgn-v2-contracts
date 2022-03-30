@@ -35,6 +35,21 @@ export const ENUM_VOTE_OPTION_NO = 3;
 
 export const SUB_FEE = parseUnits('100000000', 'wei');
 
+export const TYPE_MSG_XFER = 0;
+export const TYPE_MSG_ONLY = 1;
+
+export const MSG_TX_NULL = 0;
+export const MSG_TX_SUCCESS = 1;
+export const MSG_TX_FAIL = 2;
+export const MSG_TX_FALLBACK = 3;
+
+export const XFER_TYPE_LQ_RELAY = 1;
+export const XFER_TYPE_LQ_WITHDRAW = 2;
+export const XFER_TYPE_PEG_MINT = 3;
+export const XFER_TYPE_PEG_WITHDRAW = 4;
+export const XFER_TYPE_PEGV2_MINT = 5;
+export const XFER_TYPE_PEGV2_WITHDRAW = 6;
+
 export const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
 export const userPrivKeys = [

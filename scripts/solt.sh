@@ -30,6 +30,7 @@ solFiles=(
   pegged-bridge/tokens/SingleBridgeToken
   pegged-bridge/tokens/SwapBridgeToken
   pegged-bridge/tokens/customized/FraxBridgeToken
+  pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner
   test-helpers/DummySwap
 )
 

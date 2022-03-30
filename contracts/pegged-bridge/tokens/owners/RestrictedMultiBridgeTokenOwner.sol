@@ -8,7 +8,7 @@ interface IMultiBridgeToken {
     function updateBridgeSupplyCap(address _bridge, uint256 _cap) external;
 }
 
-// restrict multibridge token to effectively only have one bridge (minter)
+// restrict multi-bridge token to effectively only have one bridge (minter)
 contract RestrictedMultiBridgeTokenOwner is Ownable {
     address public immutable token;
     address public bridge;

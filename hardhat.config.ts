@@ -53,6 +53,12 @@ const godwokenTestPrivateKey = process.env.GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_
 const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const darwiniaPangolinTestEndpoint = process.env.DARWINIA_PANGOLIN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const darwiniaPangolinTestPrivateKey = process.env.DARWINIA_PANGOLIN_TEST_PRIVATE_KEY || DEFAULT_ENDPOINT;
+
+const platonTestEndpoint = process.env.PLATON_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const platonTestPrivateKey = process.env.PLATON_TEST_PRIVATE_KEY || DEFAULT_ENDPOINT;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -132,6 +138,12 @@ const reiPrivateKey = process.env.REI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const confluxEndpoint = process.env.CONFLUX_ENDPOINT || DEFAULT_ENDPOINT;
 const confluxPrivateKey = process.env.CONFLUX_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const darwiniaCrabEndpoint = process.env.DARWINIA_CRAB_ENDPOINT || DEFAULT_ENDPOINT;
+const darwiniaCrabPrivateKey = process.env.DARWINIA_CRAB_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const platonEndpoint = process.env.PLATON_ENDPOINT || DEFAULT_ENDPOINT;
+const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_ENDPOINT;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -188,6 +200,14 @@ const config: HardhatUserConfig = {
     kavaTest: {
       url: kavaTestEndpoint,
       accounts: [`0x${kavaTestPrivateKey}`]
+    },
+    darwiniaPangolinTest: {
+      url: darwiniaPangolinTestEndpoint,
+      accounts: [`0x${darwiniaPangolinTestPrivateKey}`]
+    },
+    platonTest: {
+      url: platonTestEndpoint,
+      accounts: [`0x${platonTestPrivateKey}`]
     },
     ethMainnet: {
       url: ethMainnetEndpoint,
@@ -293,6 +313,14 @@ const config: HardhatUserConfig = {
     conflux: {
       url: confluxEndpoint,
       accounts: [`0x${confluxPrivateKey}`]
+    },
+    darwiniaCrab: {
+      url: darwiniaCrabEndpoint,
+      accounts: [`0x${darwiniaCrabPrivateKey}`]
+    },
+    platon: {
+      url: platonEndpoint,
+      accounts: [`0x${platonPrivateKey}`]
     }
   },
   namedAccounts: {

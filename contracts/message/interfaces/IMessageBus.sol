@@ -23,7 +23,10 @@ interface IMessageBus {
     function calcFee(bytes calldata _message) external view returns (uint256);
 
     /**
-     * @notice Sends a message to an app on another chain via MessageBus without an associated transfer.
+     * @notice Sends a message to a contract on another chain.
+     * Sender needs to make sure the uniqueness of the message Id, which is computed as
+     * hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message).
+     * If messages with the same Id are sent, only one of them will succeed at dst chain..
      * A fee is charged in the native gas token.
      * @param _receiver The address of the destination app contract.
      * @param _dstChainId The destination chain ID.
@@ -36,7 +39,8 @@ interface IMessageBus {
     ) external payable;
 
     /**
-     * @notice Sends a message associated with a transfer to an app on another chain via MessageBus without an associated transfer.
+     * @notice Sends a message associated with a transfer to a contract on another chain.
+     * If messages with the same srcTransferId are sent, only one of them will succeed at dst chain..
      * A fee is charged in the native token.
      * @param _receiver The address of the destination app contract.
      * @param _dstChainId The destination chain ID.

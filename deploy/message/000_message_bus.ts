@@ -9,17 +9,19 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
+  const args = [
+    process.env.MESSAGE_BUS_SIGS_VERIFIER,
+    process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE,
+    process.env.MESSAGE_BUS_PEG_BRIDGE,
+    process.env.MESSAGE_BUS_PEG_VAULT,
+    process.env.MESSAGE_BUS_PEG_BRIDGE_V2,
+    process.env.MESSAGE_BUS_PEG_VAULT_V2
+  ];
+
   await deploy('MessageBus', {
     from: deployer,
     log: true,
-    args: [
-      process.env.MESSAGE_BUS_SIGS_VERIFIER,
-      process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE,
-      process.env.MESSAGE_BUS_PEG_BRIDGE,
-      process.env.MESSAGE_BUS_PEG_VAULT,
-      process.env.MESSAGE_BUS_PEG_BRIDGE_V2,
-      process.env.MESSAGE_BUS_PEG_VAULT_V2
-    ],
+    args: args,
     proxy: {
       proxyContract: 'OptimizedTransparentProxy',
       execute: {
@@ -38,6 +40,10 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
       }
     }
   });
+  const proxy = await deployments.get('MessageBus_Proxy');
+  console.log('MessageBus_Proxy', proxy.address);
+  const msgbus = await deployments.get('MessageBus_Implementation');
+  await hre.run('verify:verify', { address: msgbus.address, constructorArguments: args });
 };
 
 deployFunc.tags = ['MessageBus'];

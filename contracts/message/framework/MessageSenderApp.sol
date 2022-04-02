@@ -42,8 +42,9 @@ abstract contract MessageSenderApp is MessageBusAddress {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded. Only applicable to the {BridgeSendType.Liquidity}.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
+     *        (100% - max slippage percentage) * amount or the transfer can be refunded.
+     *        Only applicable to the {MsgDataTypes.BridgeSendType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
      * @param _bridgeSendType One of the {BridgeSendType} enum.
      * @param _fee The fee amount to pay to MessageBus.
@@ -77,14 +78,16 @@ abstract contract MessageSenderApp is MessageBusAddress {
 
     /**
      * @notice Sends a token transfer via a bridge.
+     * @dev sendMessageWithTransfer with empty message
      * @param _receiver The address of the destination app contract.
      * @param _token The address of the token to be sent.
      * @param _amount The amount of tokens to be sent.
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
+     *        (100% - max slippage percentage) * amount or the transfer can be refunded.
+     *        Only applicable to the {MsgDataTypes.BridgeSendType.Liquidity}.
      * @param _bridgeSendType One of the {BridgeSendType} enum.
      */
     function sendTokenTransfer(
@@ -95,33 +98,19 @@ abstract contract MessageSenderApp is MessageBusAddress {
         uint64 _nonce,
         uint32 _maxSlippage,
         MsgDataTypes.BridgeSendType _bridgeSendType
-    ) internal {
-        address bridge;
-        if (_bridgeSendType == MsgDataTypes.BridgeSendType.Liquidity) {
-            bridge = MessageBus(messageBus).liquidityBridge();
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegDeposit) {
-            bridge = MessageBus(messageBus).pegVault();
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn) {
-            bridge = MessageBus(messageBus).pegBridge();
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Deposit) {
-            bridge = MessageBus(messageBus).pegVaultV2();
-        } else if (
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn ||
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom
-        ) {
-            bridge = MessageBus(messageBus).pegBridgeV2();
-        } else {
-            revert("bridge type not supported");
-        }
-        MessageSenderLib.sendTokenTransfer(
-            _receiver,
-            _token,
-            _amount,
-            _dstChainId,
-            _nonce,
-            _maxSlippage,
-            _bridgeSendType,
-            bridge
-        );
+    ) internal returns (bytes32) {
+        return
+            MessageSenderLib.sendMessageWithTransfer(
+                _receiver,
+                _token,
+                _amount,
+                _dstChainId,
+                _nonce,
+                _maxSlippage,
+                "", // empty message, which will not trigger sendMessage
+                _bridgeSendType,
+                messageBus,
+                0
+            );
     }
 }

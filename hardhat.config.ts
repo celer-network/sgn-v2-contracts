@@ -144,6 +144,9 @@ const darwiniaCrabPrivateKey = process.env.DARWINIA_CRAB_PRIVATE_KEY || DEFAULT_
 const platonEndpoint = process.env.PLATON_ENDPOINT || DEFAULT_ENDPOINT;
 const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_ENDPOINT;
 
+const ontologyEndpoint = process.env.ONTOLOGY_ENDPOINT || DEFAULT_ENDPOINT;
+const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_ENDPOINT;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -321,6 +324,10 @@ const config: HardhatUserConfig = {
     platon: {
       url: platonEndpoint,
       accounts: [`0x${platonPrivateKey}`]
+    },
+    ontology: {
+      url: ontologyEndpoint,
+      accounts: [`0x${ontologyPrivateKey}`]
     }
   },
   namedAccounts: {

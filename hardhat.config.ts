@@ -54,10 +54,10 @@ const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const darwiniaPangolinTestEndpoint = process.env.DARWINIA_PANGOLIN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const darwiniaPangolinTestPrivateKey = process.env.DARWINIA_PANGOLIN_TEST_PRIVATE_KEY || DEFAULT_ENDPOINT;
+const darwiniaPangolinTestPrivateKey = process.env.DARWINIA_PANGOLIN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const platonTestEndpoint = process.env.PLATON_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const platonTestPrivateKey = process.env.PLATON_TEST_PRIVATE_KEY || DEFAULT_ENDPOINT;
+const platonTestPrivateKey = process.env.PLATON_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
@@ -142,10 +142,10 @@ const darwiniaCrabEndpoint = process.env.DARWINIA_CRAB_ENDPOINT || DEFAULT_ENDPO
 const darwiniaCrabPrivateKey = process.env.DARWINIA_CRAB_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const platonEndpoint = process.env.PLATON_ENDPOINT || DEFAULT_ENDPOINT;
-const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_ENDPOINT;
+const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const ontologyEndpoint = process.env.ONTOLOGY_ENDPOINT || DEFAULT_ENDPOINT;
-const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_ENDPOINT;
+const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',

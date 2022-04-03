@@ -99,7 +99,8 @@ library MessageSenderLib {
                 );
         } else if (
             _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn ||
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn ||
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom
         ) {
             return
                 sendMessageWithPegBridgeBurn(
@@ -249,8 +250,11 @@ library MessageSenderLib {
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
             );
-        } else {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn) {
             transferId = IPeggedTokenBridgeV2(pegBridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+        } else {
+            // PegV2BurnFrom
+            transferId = IPeggedTokenBridgeV2(pegBridge).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
         }
         // handle cases where certain tokens do not spend allowance for role-based burn
         IERC20(_token).safeApprove(pegBridge, 0);

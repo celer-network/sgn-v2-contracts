@@ -29,10 +29,10 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
      * @param _amount The amount of the transfer.
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
-     * @param _maxSlippage (optional, only used for transfer via liquidity pool-based bridge)
-     * The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded.
+     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
+     *        (100% - max slippage percentage) * amount or the transfer can be refunded.
+     *        Only applicable to the {BridgeSendType.Liquidity}.
      * @param _bridgeSendType The type of bridge used by this transfer. One of the {BridgeSendType} enum.
      */
     function transfer(
@@ -64,8 +64,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     /**
      * @notice Refund a failed cross-chain transfer.
      * @param _request The serialized request protobuf.
-     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A request must be signed-off by
-     * +2/3 of the bridge's current signing power to be delivered.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
      * @param _bridgeSendType The type of bridge used by this failed transfer. One of the {BridgeSendType} enum.
@@ -79,20 +78,20 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
-        BridgeSenderLib.RefundInfo memory refundInfo = BridgeSenderLib.sendRefund(
+        BridgeSenderLib.ReceiveInfo memory refundInfo = BridgeSenderLib.receiveTransfer(
             _request,
             _sigs,
             _signers,
             _powers,
-            _bridgeSendType,
+            BridgeSenderLib.bridgeRefundType(_bridgeSendType),
             _bridgeAddr
         );
         require(refundInfo.receiver == address(this), "invalid refund");
-        address _receiver = records[refundInfo.transferId];
+        address _receiver = records[refundInfo.refid];
         require(_receiver != address(0), "unknown transfer id or already refunded");
-        delete records[refundInfo.transferId];
+        delete records[refundInfo.refid];
         IERC20(refundInfo.token).safeTransfer(_receiver, refundInfo.amount);
-        return refundInfo.refundId;
+        return refundInfo.transferId;
     }
 
     /**

@@ -46,9 +46,11 @@ library MessageSenderLib {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded. Only applicable to the {MsgDataTypes.BridgeSendType.Liquidity}.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
+     *        (100% - max slippage percentage) * amount or the transfer can be refunded.
+     *        Only applicable to the {MsgDataTypes.BridgeSendType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _bridgeSendType One of the {MsgDataTypes.BridgeSendType} enum.
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
@@ -97,7 +99,8 @@ library MessageSenderLib {
                 );
         } else if (
             _bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn ||
-            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn ||
+            _bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom
         ) {
             return
                 sendMessageWithPegBridgeBurn(
@@ -124,9 +127,10 @@ library MessageSenderLib {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
+     *        (100% - max slippage percentage) * amount or the transfer can be refunded.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.
@@ -148,13 +152,15 @@ library MessageSenderLib {
         bytes32 transferId = keccak256(
             abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
         );
-        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
-            _receiver,
-            _dstChainId,
-            bridge,
-            transferId,
-            _message
-        );
+        if (_message.length > 0) {
+            IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+                _receiver,
+                _dstChainId,
+                bridge,
+                transferId,
+                _message
+            );
+        }
         return transferId;
     }
 
@@ -166,6 +172,7 @@ library MessageSenderLib {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.
@@ -197,13 +204,15 @@ library MessageSenderLib {
         } else {
             transferId = IOriginalTokenVaultV2(pegVault).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         }
-        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
-            _receiver,
-            _dstChainId,
-            pegVault,
-            transferId,
-            _message
-        );
+        if (_message.length > 0) {
+            IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+                _receiver,
+                _dstChainId,
+                pegVault,
+                transferId,
+                _message
+            );
+        }
         return transferId;
     }
 
@@ -215,6 +224,7 @@ library MessageSenderLib {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.
@@ -243,64 +253,23 @@ library MessageSenderLib {
             transferId = keccak256(
                 abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid))
             );
-        } else {
+        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn) {
             transferId = IPeggedTokenBridgeV2(pegBridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+        } else {
+            // PegV2BurnFrom
+            transferId = IPeggedTokenBridgeV2(pegBridge).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
         }
         // handle cases where certain tokens do not spend allowance for role-based burn
         IERC20(_token).safeApprove(pegBridge, 0);
-        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
-            _receiver,
-            _dstChainId,
-            pegBridge,
-            transferId,
-            _message
-        );
-        return transferId;
-    }
-
-    /**
-     * @notice Sends a token transfer via a bridge.
-     * @param _receiver The address of the destination app contract.
-     * @param _token The address of the token to be sent.
-     * @param _amount The amount of tokens to be sent.
-     * @param _dstChainId The destination chain ID.
-     * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
-     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
-     * Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least (100% - max slippage percentage) * amount or the
-     * transfer can be refunded.
-     * @param _bridgeSendType One of the {MsgDataTypes.BridgeSendType} enum.
-     */
-    function sendTokenTransfer(
-        address _receiver,
-        address _token,
-        uint256 _amount,
-        uint64 _dstChainId,
-        uint64 _nonce,
-        uint32 _maxSlippage,
-        MsgDataTypes.BridgeSendType _bridgeSendType,
-        address _bridge
-    ) internal {
-        IERC20(_token).safeIncreaseAllowance(_bridge, _amount);
-        if (_bridgeSendType == MsgDataTypes.BridgeSendType.Liquidity) {
-            IBridge(_bridge).send(_receiver, _token, _amount, _dstChainId, _nonce, _maxSlippage);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegDeposit) {
-            IOriginalTokenVault(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegBurn) {
-            IPeggedTokenBridge(_bridge).burn(_token, _amount, _receiver, _nonce);
-            // handle cases where certain tokens do not spend allowance for role-based burn
-            IERC20(_token).safeApprove(_bridge, 0);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Deposit) {
-            IOriginalTokenVaultV2(_bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn) {
-            IPeggedTokenBridgeV2(_bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
-            // handle cases where certain tokens do not spend allowance for role-based burn
-            IERC20(_token).safeApprove(_bridge, 0);
-        } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom) {
-            IPeggedTokenBridgeV2(_bridge).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
-            // handle cases where certain tokens do not spend allowance for role-based burn
-            IERC20(_token).safeApprove(_bridge, 0);
-        } else {
-            revert("bridge type not supported");
+        if (_message.length > 0) {
+            IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+                _receiver,
+                _dstChainId,
+                pegBridge,
+                transferId,
+                _message
+            );
         }
+        return transferId;
     }
 }

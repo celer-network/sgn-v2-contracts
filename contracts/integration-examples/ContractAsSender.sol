@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-import "../libraries/BridgeSenderLib.sol";
+import "../libraries/BridgeTransferLib.sol";
 import "../safeguard/Pauser.sol";
 
 /**
@@ -16,11 +16,11 @@ import "../safeguard/Pauser.sol";
 contract ContractAsSender is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
-    mapping(BridgeSenderLib.BridgeSendType => address) public bridges;
+    mapping(BridgeTransferLib.BridgeSendType => address) public bridges;
     mapping(bytes32 => address) public records;
 
     event Deposited(address depositor, address token, uint256 amount);
-    event BridgeUpdated(BridgeSenderLib.BridgeSendType bridgeSendType, address bridgeAddr);
+    event BridgeUpdated(BridgeTransferLib.BridgeSendType bridgeSendType, address bridgeAddr);
 
     /**
      * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in form of mint/burn.
@@ -42,11 +42,11 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
-        BridgeSenderLib.BridgeSendType _bridgeSendType
+        BridgeTransferLib.BridgeSendType _bridgeSendType
     ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
-        bytes32 transferId = BridgeSenderLib.sendTransfer(
+        bytes32 transferId = BridgeTransferLib.sendTransfer(
             _receiver,
             _token,
             _amount,
@@ -74,16 +74,16 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
-        BridgeSenderLib.BridgeSendType _bridgeSendType
+        BridgeTransferLib.BridgeSendType _bridgeSendType
     ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
-        BridgeSenderLib.ReceiveInfo memory refundInfo = BridgeSenderLib.receiveTransfer(
+        BridgeTransferLib.ReceiveInfo memory refundInfo = BridgeTransferLib.receiveTransfer(
             _request,
             _sigs,
             _signers,
             _powers,
-            BridgeSenderLib.bridgeRefundType(_bridgeSendType),
+            BridgeTransferLib.bridgeRefundType(_bridgeSendType),
             _bridgeAddr
         );
         require(refundInfo.receiver == address(this), "invalid refund");
@@ -106,7 +106,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
 
     // ----------------------Admin operation-----------------------
 
-    function setBridgeAddress(BridgeSenderLib.BridgeSendType _bridgeSendType, address _addr) public onlyOwner {
+    function setBridgeAddress(BridgeTransferLib.BridgeSendType _bridgeSendType, address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[_bridgeSendType] = _addr;
         emit BridgeUpdated(_bridgeSendType, _addr);

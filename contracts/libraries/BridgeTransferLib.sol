@@ -14,7 +14,7 @@ import "../interfaces/IOriginalTokenVaultV2.sol";
 import "../interfaces/IPeggedTokenBridge.sol";
 import "../interfaces/IPeggedTokenBridgeV2.sol";
 
-library BridgeSenderLib {
+library BridgeTransferLib {
     using SafeERC20 for IERC20;
 
     enum BridgeSendType {
@@ -195,7 +195,6 @@ library BridgeSenderLib {
     ) internal returns (ReceiveInfo memory) {
         ReceiveInfo memory recv;
         PbPool.WithdrawMsg memory request = PbPool.decWithdrawMsg(_request);
-        // len = 8 + 8 + 20 + 20 + 32 = 88
         recv.transferId = keccak256(
             abi.encodePacked(request.chainid, request.seqnum, request.receiver, request.token, request.amount)
         );
@@ -227,7 +226,6 @@ library BridgeSenderLib {
         ReceiveInfo memory recv;
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         recv.transferId = keccak256(
-            // len = 20 + 20 + 32 + 20 + 8 + 32 = 132
             abi.encodePacked(
                 request.receiver,
                 request.token,
@@ -265,7 +263,6 @@ library BridgeSenderLib {
         ReceiveInfo memory recv;
         PbPegged.Mint memory request = PbPegged.decMint(_request);
         recv.transferId = keccak256(
-            // len = 20 + 20 + 32 + 20 + 8 + 32 = 132
             abi.encodePacked(
                 request.account,
                 request.token,
@@ -305,7 +302,6 @@ library BridgeSenderLib {
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
         if (IOriginalTokenVaultV2(_bridgeAddr).records(request.refId)) {
             recv.transferId = keccak256(
-                // len = 20 + 20 + 32 + 20 + 8 + 32 + 20 = 152
                 abi.encodePacked(
                     request.receiver,
                     request.token,
@@ -346,7 +342,6 @@ library BridgeSenderLib {
         PbPegged.Mint memory request = PbPegged.decMint(_request);
         if (IPeggedTokenBridgeV2(_bridgeAddr).records(request.refId)) {
             recv.transferId = keccak256(
-                // len = 20 + 20 + 32 + 20 + 8 + 32 + 20 = 152
                 abi.encodePacked(
                     request.account,
                     request.token,

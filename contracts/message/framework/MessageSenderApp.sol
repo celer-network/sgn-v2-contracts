@@ -46,6 +46,7 @@ abstract contract MessageSenderApp is MessageBusAddress {
      *        (100% - max slippage percentage) * amount or the transfer can be refunded.
      *        Only applicable to the {MsgDataTypes.BridgeSendType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _bridgeSendType One of the {BridgeSendType} enum.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.

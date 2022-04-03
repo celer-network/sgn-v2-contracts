@@ -50,7 +50,7 @@ library MessageSenderLib {
      *        (100% - max slippage percentage) * amount or the transfer can be refunded.
      *        Only applicable to the {MsgDataTypes.BridgeSendType.Liquidity}.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
-     *        If message is empty, only send out the token transfer.
+     *        If message is empty, only the token transfer will be sent
      * @param _bridgeSendType One of the {MsgDataTypes.BridgeSendType} enum.
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
@@ -130,6 +130,7 @@ library MessageSenderLib {
      *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
      *        (100% - max slippage percentage) * amount or the transfer can be refunded.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.
@@ -171,6 +172,7 @@ library MessageSenderLib {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.
@@ -222,6 +224,7 @@ library MessageSenderLib {
      * @param _dstChainId The destination chain ID.
      * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     *        If message is empty, only the token transfer will be sent
      * @param _messageBus The address of the MessageBus on this chain.
      * @param _fee The fee amount to pay to MessageBus.
      * @return The transfer ID.

@@ -20,3 +20,5 @@ typechain/
 .env
 solc-input-*.json
 flattened-*.sol
+
+memo

@@ -1,0 +1,220 @@
+{
+  "address": "0xB5df797468E6e8f2Cb293Cd6e32939366e0F8733",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_bridge",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "bridge",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_bridge",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_cap",
+          "type": "uint256"
+        }
+      ],
+      "name": "changeBridge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_bridge",
+          "type": "address"
+        }
+      ],
+      "name": "revokeBridge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "token",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_cap",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateBridgeSupplyCap",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x7b6e642e4d986f2175659b80dac5b17c8a15e2dff1f5a0fa9e21c1005d187292",
+  "receipt": {
+    "to": null,
+    "from": "0x1b9dFC56e38b0F92448659C114e2347Bd803911c",
+    "contractAddress": "0xB5df797468E6e8f2Cb293Cd6e32939366e0F8733",
+    "transactionIndex": 4,
+    "gasUsed": "465564",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000800000000000000000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000020000000000000000000800000000000000000000000000000000400000000000000000000000800000000000000000000000000000000020000000000000000000000000000000000000000010000000000000000004000000000000000000800000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xff3601232a581585d42291600a8541ad3597f03485632e7064a297aca2745b57",
+    "transactionHash": "0x7b6e642e4d986f2175659b80dac5b17c8a15e2dff1f5a0fa9e21c1005d187292",
+    "logs": [
+      {
+        "transactionIndex": 4,
+        "blockNumber": 720168,
+        "transactionHash": "0x7b6e642e4d986f2175659b80dac5b17c8a15e2dff1f5a0fa9e21c1005d187292",
+        "address": "0xB5df797468E6e8f2Cb293Cd6e32939366e0F8733",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000001b9dfc56e38b0f92448659c114e2347bd803911c"
+        ],
+        "data": "0x",
+        "logIndex": 0,
+        "blockHash": "0xff3601232a581585d42291600a8541ad3597f03485632e7064a297aca2745b57"
+      }
+    ],
+    "blockNumber": 720168,
+    "cumulativeGasUsed": "757296",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x7756a83563f0f56937A6FdF668E7D9F387c0D199",
+    "0xBB7684Cc5408F4DD0921E5c2Cadd547b8f1AD573"
+  ],
+  "numDeployments": 12,
+  "solcInputHash": "e0d45916db41b9ca3a8d762090c4d44b",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.9+commit.e5eed63a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_bridge\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"bridge\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_bridge\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_cap\",\"type\":\"uint256\"}],\"name\":\"changeBridge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_bridge\",\"type\":\"address\"}],\"name\":\"revokeBridge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_cap\",\"type\":\"uint256\"}],\"name\":\"updateBridgeSupplyCap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner.sol\":\"RestrictedMultiBridgeTokenOwner\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":800},\"remappings\":[]},\"sources\":{\"contracts/pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity 0.8.9;\\n\\nimport \\\"../../../safeguard/Ownable.sol\\\";\\n\\ninterface IMultiBridgeToken {\\n    function updateBridgeSupplyCap(address _bridge, uint256 _cap) external;\\n}\\n\\n// restrict multi-bridge token to effectively only have one bridge (minter)\\ncontract RestrictedMultiBridgeTokenOwner is Ownable {\\n    address public immutable token;\\n    address public bridge;\\n\\n    constructor(address _token, address _bridge) {\\n        token = _token;\\n        bridge = _bridge;\\n    }\\n\\n    function updateBridgeSupplyCap(uint256 _cap) external onlyOwner {\\n        IMultiBridgeToken(token).updateBridgeSupplyCap(bridge, _cap);\\n    }\\n\\n    function changeBridge(address _bridge, uint256 _cap) external onlyOwner {\\n        // set previous bridge cap to 1 to disable mint but still allow burn\\n        // till its total supply becomes zero\\n        IMultiBridgeToken(token).updateBridgeSupplyCap(bridge, 1);\\n        // set new bridge and cap\\n        IMultiBridgeToken(token).updateBridgeSupplyCap(_bridge, _cap);\\n        bridge = _bridge;\\n    }\\n\\n    function revokeBridge(address _bridge) external onlyOwner {\\n        // set previous bridge cap to 0 to disable both mint and burn\\n        IMultiBridgeToken(token).updateBridgeSupplyCap(_bridge, 0);\\n    }\\n}\\n\",\"keccak256\":\"0x62d932d5316057fbc221d43a2dda51a509302b318d7fd23de19a0f9caab5f0f0\",\"license\":\"GPL-3.0-only\"},\"contracts/safeguard/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n *\\n * This adds a normal func that setOwner if _owner is address(0). So we can't allow\\n * renounceOwnership. So we can support Proxy based upgradable contract\\n */\\nabstract contract Ownable {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor() {\\n        _setOwner(msg.sender);\\n    }\\n\\n    /**\\n     * @dev Only to be called by inherit contracts, in their init func called by Proxy\\n     * we require _owner == address(0), which is only possible when it's a delegateCall\\n     * because constructor sets _owner in contract state.\\n     */\\n    function initOwner() internal {\\n        require(_owner == address(0), \\\"owner already set\\\");\\n        _setOwner(msg.sender);\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == msg.sender, \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        _setOwner(newOwner);\\n    }\\n\\n    function _setOwner(address newOwner) private {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0x2a92103195b8dce0f34fdf9bf7f94ddf38bf8edf0c0fd4be21323c47016687e9\",\"license\":\"GPL-3.0-only\"}},\"version\":1}",
+  "bytecode": "0x60a060405234801561001057600080fd5b506040516107c83803806107c883398101604081905261002f916100cc565b61003833610060565b6001600160a01b03918216608052600180546001600160a01b031916919092161790556100ff565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b80516001600160a01b03811681146100c757600080fd5b919050565b600080604083850312156100df57600080fd5b6100e8836100b0565b91506100f6602084016100b0565b90509250929050565b60805161069261013660003960008181610111015281816101c7015281816102bb0152818161033b015261045c01526106926000f3fe608060405234801561001057600080fd5b506004361061007d5760003560e01c80638da5cb5b1161005b5780638da5cb5b146100bd578063e78cea92146100e6578063f2fde38b146100f9578063fc0c546a1461010c57600080fd5b80634910b86114610082578063531daeb0146100975780636beee716146100aa575b600080fd5b6100956100903660046105f7565b610133565b005b6100956100a5366004610619565b610227565b6100956100b8366004610643565b6103ca565b6000546001600160a01b03165b6040516001600160a01b03909116815260200160405180910390f35b6001546100ca906001600160a01b031681565b6100956101073660046105f7565b61048d565b6100ca7f000000000000000000000000000000000000000000000000000000000000000081565b336101466000546001600160a01b031690565b6001600160a01b0316146101a15760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b6040516326717b8d60e11b81526001600160a01b038281166004830152600060248301527f00000000000000000000000000000000000000000000000000000000000000001690634ce2f71a906044015b600060405180830381600087803b15801561020c57600080fd5b505af1158015610220573d6000803e3d6000fd5b5050505050565b3361023a6000546001600160a01b031690565b6001600160a01b0316146102905760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610198565b600180546040516326717b8d60e11b81526001600160a01b03918216600482015260248101929092527f00000000000000000000000000000000000000000000000000000000000000001690634ce2f71a90604401600060405180830381600087803b1580156102ff57600080fd5b505af1158015610313573d6000803e3d6000fd5b50506040516326717b8d60e11b81526001600160a01b038581166004830152602482018590527f0000000000000000000000000000000000000000000000000000000000000000169250634ce2f71a9150604401600060405180830381600087803b15801561038157600080fd5b505af1158015610395573d6000803e3d6000fd5b50506001805473ffffffffffffffffffffffffffffffffffffffff19166001600160a01b039590951694909417909355505050565b336103dd6000546001600160a01b031690565b6001600160a01b0316146104335760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610198565b6001546040516326717b8d60e11b81526001600160a01b039182166004820152602481018390527f000000000000000000000000000000000000000000000000000000000000000090911690634ce2f71a906044016101f2565b336104a06000546001600160a01b031690565b6001600160a01b0316146104f65760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610198565b6001600160a01b0381166105725760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f64647265737300000000000000000000000000000000000000000000000000006064820152608401610198565b61057b8161057e565b50565b600080546001600160a01b0383811673ffffffffffffffffffffffffffffffffffffffff19831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b80356001600160a01b03811681146105f257600080fd5b919050565b60006020828403121561060957600080fd5b610612826105db565b9392505050565b6000806040838503121561062c57600080fd5b610635836105db565b946020939093013593505050565b60006020828403121561065557600080fd5b503591905056fea2646970667358221220f53d3cb84b329e9a52cdbdb6508e4ac293aa101168d587a90c46427581f6b7e264736f6c63430008090033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061007d5760003560e01c80638da5cb5b1161005b5780638da5cb5b146100bd578063e78cea92146100e6578063f2fde38b146100f9578063fc0c546a1461010c57600080fd5b80634910b86114610082578063531daeb0146100975780636beee716146100aa575b600080fd5b6100956100903660046105f7565b610133565b005b6100956100a5366004610619565b610227565b6100956100b8366004610643565b6103ca565b6000546001600160a01b03165b6040516001600160a01b03909116815260200160405180910390f35b6001546100ca906001600160a01b031681565b6100956101073660046105f7565b61048d565b6100ca7f000000000000000000000000000000000000000000000000000000000000000081565b336101466000546001600160a01b031690565b6001600160a01b0316146101a15760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b6040516326717b8d60e11b81526001600160a01b038281166004830152600060248301527f00000000000000000000000000000000000000000000000000000000000000001690634ce2f71a906044015b600060405180830381600087803b15801561020c57600080fd5b505af1158015610220573d6000803e3d6000fd5b5050505050565b3361023a6000546001600160a01b031690565b6001600160a01b0316146102905760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610198565b600180546040516326717b8d60e11b81526001600160a01b03918216600482015260248101929092527f00000000000000000000000000000000000000000000000000000000000000001690634ce2f71a90604401600060405180830381600087803b1580156102ff57600080fd5b505af1158015610313573d6000803e3d6000fd5b50506040516326717b8d60e11b81526001600160a01b038581166004830152602482018590527f0000000000000000000000000000000000000000000000000000000000000000169250634ce2f71a9150604401600060405180830381600087803b15801561038157600080fd5b505af1158015610395573d6000803e3d6000fd5b50506001805473ffffffffffffffffffffffffffffffffffffffff19166001600160a01b039590951694909417909355505050565b336103dd6000546001600160a01b031690565b6001600160a01b0316146104335760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610198565b6001546040516326717b8d60e11b81526001600160a01b039182166004820152602481018390527f000000000000000000000000000000000000000000000000000000000000000090911690634ce2f71a906044016101f2565b336104a06000546001600160a01b031690565b6001600160a01b0316146104f65760405162461bcd60e51b815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e65726044820152606401610198565b6001600160a01b0381166105725760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f64647265737300000000000000000000000000000000000000000000000000006064820152608401610198565b61057b8161057e565b50565b600080546001600160a01b0383811673ffffffffffffffffffffffffffffffffffffffff19831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b80356001600160a01b03811681146105f257600080fd5b919050565b60006020828403121561060957600080fd5b610612826105db565b9392505050565b6000806040838503121561062c57600080fd5b610635836105db565b946020939093013593505050565b60006020828403121561065557600080fd5b503591905056fea2646970667358221220f53d3cb84b329e9a52cdbdb6508e4ac293aa101168d587a90c46427581f6b7e264736f6c63430008090033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 19923,
+        "contract": "contracts/pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner.sol:RestrictedMultiBridgeTokenOwner",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 19499,
+        "contract": "contracts/pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner.sol:RestrictedMultiBridgeTokenOwner",
+        "label": "bridge",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_address"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  }
+}

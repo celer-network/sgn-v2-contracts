@@ -373,7 +373,9 @@ const config: HardhatUserConfig = {
       bsc: process.env.BSCSCAN_API_KEY,
       arbitrumOne: process.env.ARBISCAN_API_KEY,
       opera: process.env.FTMSCAN_API_KEY,
-      polygon: process.env.POLYGONSCAN_API_KEY
+      polygon: process.env.POLYGONSCAN_API_KEY,
+      aurora: process.env.AURORASCAN_API_KEY,
+      moonriver: process.env.MOONSCAN_API_KEY
     }
   }
 };

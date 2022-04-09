@@ -122,6 +122,7 @@ contract NFTBridge is MessageReceiverApp {
         require(_dstNft != address(0), "dest NFT not found");
         address _dstBridge = destBridge[_dstChid];
         require(_dstBridge != address(0), "dest NFT Bridge not found");
+        require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
         string memory _uri = INFT(_nft).tokenURI(_id);
         INFT(_nft).burn(_id);
         NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri);
@@ -188,6 +189,12 @@ contract NFTBridge is MessageReceiverApp {
     // set per chain id, nft bridge address
     function setDestBridge(uint64 dstChid, address dstNftBridge) external onlyOwner {
         destBridge[dstChid] = dstNftBridge;
+    }
+    // batch set nft bridge addresses for multiple chainids
+    function setDestBridges(uint64[] calldata dstChid, address[] calldata dstNftBridge) external onlyOwner {
+        for (uint i=0; i< dstChid.length; i++) {
+            destBridge[dstChid[i]] = dstNftBridge[i];
+        }
     }
     // send all gas token this contract has to owner
     function claimFee() external onlyOwner {

@@ -12,7 +12,7 @@ import { HardhatUserConfig } from 'hardhat/types';
 dotenv.config();
 
 const DEFAULT_ENDPOINT = 'http://localhost:8545';
-const DEFAULT_PRIVATE_KEY = process.env.DEFAULT_PRIVATE_KEY;
+const DEFAULT_PRIVATE_KEY = process.env.DEFAULT_PRIVATE_KEY || 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
 // Testnets
 const kovanEndpoint = process.env.KOVAN_ENDPOINT || DEFAULT_ENDPOINT;

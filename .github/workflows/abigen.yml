@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/abigen.yml'
+      - 'hardhat.config.ts'
       - 'contracts/**'
       - 'scripts/**'
 jobs:

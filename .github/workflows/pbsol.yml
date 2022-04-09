@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/pbsol.yml'
+      - 'hardhat.config.ts'
       - 'contracts/libraries/proto/**'
 
 jobs:

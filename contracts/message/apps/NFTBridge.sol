@@ -18,7 +18,7 @@ interface INFT {
     ) external;
 
     // impl by NFToken contract, mint an NFT with id and uri to user or burn
-    function mint(
+    function bridgeMint(
         address to,
         uint256 id,
         string memory uri
@@ -160,7 +160,7 @@ contract NFTBridge is MessageReceiverApp {
         // withdraw original locked nft back to user, or mint new nft depending on msg.type
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
         if (nftMsg.msgType == MsgType.Mint) {
-            INFT(nftMsg.nft).mint(nftMsg.user, nftMsg.id, nftMsg.uri);
+            INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri);
         } else if (nftMsg.msgType == MsgType.Withdraw) {
             INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id);
         } else {

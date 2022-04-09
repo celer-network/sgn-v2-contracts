@@ -31,7 +31,7 @@ contract MCNNFT is ERC721URIStorage, Ownable {
         _;
     }
 
-    function mint(
+    function bridgeMint(
         address to,
         uint256 id,
         string memory uri

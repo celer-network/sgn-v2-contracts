@@ -45,7 +45,7 @@ contract MCNNFT is ERC721URIStorage, Ownable {
         return INFTBridge(nftBridge).totalFee(_dstChid, address(this), _id);
     }
 
-    // burn ID on this chain and mint on dest chain
+    // called by user, burn token on this chain and mint same id/uri on dest chain
     function crossChain(uint64 _dstChid, uint256 _id, address _receiver) external payable {
         require(msg.sender == ownerOf(_id), "not token owner");
         string memory _uri = tokenURI(_id);
@@ -53,7 +53,12 @@ contract MCNNFT is ERC721URIStorage, Ownable {
         INFTBridge(nftBridge).sendMsg{value: msg.value}(_dstChid, _receiver, _id, _uri);
     }
 
-    // only Owner
+    // ===== only Owner
+    function mint(address to, uint256 id, string memory uri) external onlyOwner {
+        _mint(to, id);
+        _setTokenURI(id, uri);
+    }
+
     function setNFTBridge(address _newBridge) public onlyOwner {
         nftBridge = _newBridge;
         emit NFTBridgeUpdated(_newBridge);

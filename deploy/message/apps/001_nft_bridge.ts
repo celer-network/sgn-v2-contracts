@@ -14,7 +14,20 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log: true,
     args: [
       process.env.MSG_BUS_ADDR
-    ]
+    ],
+    proxy: {
+      proxyContract: "OptimizedTransparentProxy",
+      execute: {
+        // only called when proxy is deployed, it'll call NFTBridge.init
+        // to set owner and msgbus in proxy contract state
+        init: {
+          methodName: 'init',
+          args: [
+            process.env.MSG_BUS_ADDR
+          ]
+        }
+      }
+    }
   });
 };
 

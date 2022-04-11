@@ -56,6 +56,13 @@ contract NFTBridge is MessageReceiverApp {
         messageBus = _msgBus;
     }
 
+    // only to be called by Proxy via delegatecall and will modify Proxy state
+    // initOwner will fail if owner is already set, so only delegateCall will work
+    function init(address _msgBus) external {
+        initOwner();
+        messageBus = _msgBus;
+    }
+
     /**
      * @notice totalFee returns gas token value to be set in user tx, includes both cbridge msg fee and executor fee on dest chain
      * @dev we use _nft address for user as it's same length so same msg cost
@@ -90,14 +97,8 @@ contract NFTBridge is MessageReceiverApp {
     ) external payable {
         INFT(_nft).transferFrom(msg.sender, address(this), _id);
         require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
-        address _dstNft = destNFTAddr[_nft][_dstChid];
-        require(_dstNft != address(0), "dest NFT not found");
-        address _dstBridge = destBridge[_dstChid];
-        require(_dstBridge != address(0), "dest NFT Bridge not found");
-        bytes memory message = abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id)));
-        uint256 fee = IMessageBus(messageBus).calcFee(message);
-        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
-        IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
+        (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
+        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id))));
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
@@ -118,36 +119,23 @@ contract NFTBridge is MessageReceiverApp {
         address _receiver,
         bool _backToOrigin
     ) external payable {
-        address _dstNft = destNFTAddr[_nft][_dstChid];
-        require(_dstNft != address(0), "dest NFT not found");
-        address _dstBridge = destBridge[_dstChid];
-        require(_dstBridge != address(0), "dest NFT Bridge not found");
         require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
+        (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
         string memory _uri = INFT(_nft).tokenURI(_id);
         INFT(_nft).burn(_id);
         NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri);
         if (_backToOrigin) {
             nftMsg.msgType = MsgType.Withdraw;
         }
-        bytes memory message = abi.encode(nftMsg);
-        uint256 fee = IMessageBus(messageBus).calcFee(message);
-        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
-        IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
+        msgBus(_dstBridge, _dstChid, abi.encode(nftMsg));
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
     // ===== called by MCN NFT after NFT is burnt
     function sendMsg(uint64 _dstChid, address _sender, address _receiver, uint256 _id, string calldata _uri) external payable {
         address _nft = msg.sender;
-        address _dstNft = destNFTAddr[_nft][_dstChid];
-        require(_dstNft != address(0), "dest NFT not found");
-        address _dstBridge = destBridge[_dstChid];
-        require(_dstBridge != address(0), "dest NFT Bridge not found");
-        NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri);
-        bytes memory message = abi.encode(nftMsg);
-        uint256 fee = IMessageBus(messageBus).calcFee(message);
-        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
-        IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
+        (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
+        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri)));
         emit Sent(_sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
@@ -160,6 +148,7 @@ contract NFTBridge is MessageReceiverApp {
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         // withdraw original locked nft back to user, or mint new nft depending on msg.type
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
+        // or we could try to see if ownerOf(id) is self, but openzep erc721 impl require id is valid
         if (nftMsg.msgType == MsgType.Mint) {
             INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri);
         } else if (nftMsg.msgType == MsgType.Withdraw) {
@@ -169,6 +158,21 @@ contract NFTBridge is MessageReceiverApp {
         }
         emit Received(nftMsg.user, nftMsg.nft, nftMsg.id, srcChid);
         return ExecutionStatus.Success;
+    }
+
+    // ===== internal utils
+    // check _nft and destChid are valid, return dstBridge and dstNft
+    function checkAddr(address _nft, uint64 _dstChid) internal view returns (address dstBridge, address dstNft) {
+        dstBridge = destBridge[_dstChid];
+        require(dstBridge != address(0), "dest NFT Bridge not found");
+        dstNft = destNFTAddr[_nft][_dstChid];
+        require(dstNft != address(0), "dest NFT not found");
+    }
+    // check fee and call msgbus sendMessage
+    function msgBus(address _dstBridge, uint64 _dstChid, bytes memory message) internal {
+        uint256 fee = IMessageBus(messageBus).calcFee(message);
+        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
+        IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
     }
 
     // only owner

@@ -10,6 +10,7 @@ import "../../interfaces/IWETH.sol";
 
 // To support single-transaction deposit of native gas token (e.g., ETH in ethereum)
 // to legacy vaults that do not have the depositNative function
+// Note that the depositor address shown at the desitnation chain will be this contract address
 contract NativeTokenVaultProxy {
     address public immutable nativeWrap;
     address public immutable vault;

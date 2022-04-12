@@ -103,4 +103,8 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }
+
+    function drainToken(address _token, uint256 _amount) external onlyOwner {
+        IERC20(_token).safeTransfer(msg.sender, _amount);
+    }
 }

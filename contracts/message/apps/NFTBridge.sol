@@ -34,7 +34,7 @@ contract NFTBridge is MessageReceiverApp {
     /// per dest chain id NFTBridge address
     mapping(uint64 => address) public destBridge;
     /// first key is NFT address on this chain, 2nd key is dest chain id, value is address on dest chain
-    mapping (address => mapping (uint64 => address)) public destNFTAddr;
+    mapping(address => mapping(uint64 => address)) public destNFTAddr;
 
     enum MsgType {
         Mint,
@@ -98,7 +98,11 @@ contract NFTBridge is MessageReceiverApp {
         INFT(_nft).transferFrom(msg.sender, address(this), _id);
         require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
-        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id))));
+        msgBus(
+            _dstBridge,
+            _dstChid,
+            abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id)))
+        );
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
@@ -132,7 +136,13 @@ contract NFTBridge is MessageReceiverApp {
     }
 
     // ===== called by MCN NFT after NFT is burnt
-    function sendMsg(uint64 _dstChid, address _sender, address _receiver, uint256 _id, string calldata _uri) external payable {
+    function sendMsg(
+        uint64 _dstChid,
+        address _sender,
+        address _receiver,
+        uint256 _id,
+        string calldata _uri
+    ) external payable {
         address _nft = msg.sender;
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
         msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri)));
@@ -168,8 +178,13 @@ contract NFTBridge is MessageReceiverApp {
         dstNft = destNFTAddr[_nft][_dstChid];
         require(dstNft != address(0), "dest NFT not found");
     }
+
     // check fee and call msgbus sendMessage
-    function msgBus(address _dstBridge, uint64 _dstChid, bytes memory message) internal {
+    function msgBus(
+        address _dstBridge,
+        uint64 _dstChid,
+        bytes memory message
+    ) internal {
         uint256 fee = IMessageBus(messageBus).calcFee(message);
         require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
         IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
@@ -177,29 +192,42 @@ contract NFTBridge is MessageReceiverApp {
 
     // only owner
     // set per NFT, per chain id, address
-    function setDestNFT(address srcNft, uint64 dstChid, address dstNft) external onlyOwner {
+    function setDestNFT(
+        address srcNft,
+        uint64 dstChid,
+        address dstNft
+    ) external onlyOwner {
         destNFTAddr[srcNft][dstChid] = dstNft;
     }
+
     // set all dest chains
-    function setDestNFTs(address srcNft, uint64[] calldata dstChid, address[] calldata dstNft) external onlyOwner {
-        for (uint i=0; i< dstChid.length; i++) {
+    function setDestNFTs(
+        address srcNft,
+        uint64[] calldata dstChid,
+        address[] calldata dstNft
+    ) external onlyOwner {
+        for (uint256 i = 0; i < dstChid.length; i++) {
             destNFTAddr[srcNft][dstChid[i]] = dstNft[i];
         }
     }
+
     // set destTxFee
     function setTxFee(uint64 chid, uint256 fee) external onlyOwner {
         destTxFee[chid] = fee;
     }
+
     // set per chain id, nft bridge address
     function setDestBridge(uint64 dstChid, address dstNftBridge) external onlyOwner {
         destBridge[dstChid] = dstNftBridge;
     }
+
     // batch set nft bridge addresses for multiple chainids
     function setDestBridges(uint64[] calldata dstChid, address[] calldata dstNftBridge) external onlyOwner {
-        for (uint i=0; i< dstChid.length; i++) {
+        for (uint256 i = 0; i < dstChid.length; i++) {
             destBridge[dstChid[i]] = dstNftBridge[i];
         }
     }
+
     // send all gas token this contract has to owner
     function claimFee() external onlyOwner {
         payable(msg.sender).transfer(address(this).balance);

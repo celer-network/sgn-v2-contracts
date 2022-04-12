@@ -5,7 +5,13 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "../../safeguard/Ownable.sol";
 
 interface INFTBridge {
-    function sendMsg(uint64 _dstChid, address _receiver, uint256 _id, string calldata _uri) external payable;
+    function sendMsg(
+        uint64 _dstChid,
+        address _receiver,
+        uint256 _id,
+        string calldata _uri
+    ) external payable;
+
     function totalFee(
         uint64 _dstChid,
         address _nft,
@@ -46,7 +52,11 @@ contract MCNNFT is ERC721URIStorage, Ownable {
     }
 
     // called by user, burn token on this chain and mint same id/uri on dest chain
-    function crossChain(uint64 _dstChid, uint256 _id, address _receiver) external payable {
+    function crossChain(
+        uint64 _dstChid,
+        uint256 _id,
+        address _receiver
+    ) external payable {
         require(msg.sender == ownerOf(_id), "not token owner");
         string memory _uri = tokenURI(_id);
         _burn(_id);
@@ -54,7 +64,11 @@ contract MCNNFT is ERC721URIStorage, Ownable {
     }
 
     // ===== only Owner
-    function mint(address to, uint256 id, string memory uri) external onlyOwner {
+    function mint(
+        address to,
+        uint256 id,
+        string memory uri
+    ) external onlyOwner {
         _mint(to, id);
         _setTokenURI(id, uri);
     }

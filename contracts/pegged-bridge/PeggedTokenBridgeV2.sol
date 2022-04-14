@@ -49,7 +49,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
     );
     event MinBurnUpdated(address token, uint256 amount);
     event MaxBurnUpdated(address token, uint256 amount);
-    event SupplyReset(address token, uint256 supply);
+    event SupplyUpdated(address token, uint256 supply);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -193,16 +193,16 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
 
     function setSupply(address _token, uint256 _supply) external onlyOwner {
         supplies[_token] = _supply;
-        emit SupplyReset(_token, _supply);
+        emit SupplyUpdated(_token, _supply);
     }
 
     function increaseSupply(address _token, uint256 _delta) external onlyOwner {
         supplies[_token] += _delta;
-        emit SupplyReset(_token, supplies[_token]);
+        emit SupplyUpdated(_token, supplies[_token]);
     }
 
     function decreaseSupply(address _token, uint256 _delta) external onlyOwner {
         supplies[_token] -= _delta;
-        emit SupplyReset(_token, supplies[_token]);
+        emit SupplyUpdated(_token, supplies[_token]);
     }
 }

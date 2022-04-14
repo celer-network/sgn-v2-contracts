@@ -18,6 +18,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
     ISigsVerifier public immutable sigsVerifier;
 
     mapping(bytes32 => bool) public records;
+    mapping(address => uint256) public supplies;
 
     mapping(address => uint256) public minBurn;
     mapping(address => uint256) public maxBurn;
@@ -48,6 +49,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
     );
     event MinBurnUpdated(address token, uint256 amount);
     event MaxBurnUpdated(address token, uint256 amount);
+    event SupplyUpdated(address token, uint256 supply);
 
     constructor(ISigsVerifier _sigsVerifier) {
         sigsVerifier = _sigsVerifier;
@@ -91,6 +93,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         } else {
             IPeggedToken(request.token).mint(request.account, request.amount);
         }
+        supplies[request.token] += request.amount;
         emit Mint(
             mintId,
             request.token,
@@ -147,6 +150,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
     ) private returns (bytes32) {
         require(_amount > minBurn[_token], "amount too small");
         require(maxBurn[_token] == 0 || _amount <= maxBurn[_token], "amount too large");
+        supplies[_token] -= _amount;
         bytes32 burnId = keccak256(
             // len = 20 + 20 + 32 + 8 + 20 + 8 + 8 + 20 = 136
             abi.encodePacked(
@@ -185,5 +189,20 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
             maxBurn[_tokens[i]] = _amounts[i];
             emit MaxBurnUpdated(_tokens[i], _amounts[i]);
         }
+    }
+
+    function setSupply(address _token, uint256 _supply) external onlyOwner {
+        supplies[_token] = _supply;
+        emit SupplyUpdated(_token, _supply);
+    }
+
+    function increaseSupply(address _token, uint256 _delta) external onlyOwner {
+        supplies[_token] += _delta;
+        emit SupplyUpdated(_token, supplies[_token]);
+    }
+
+    function decreaseSupply(address _token, uint256 _delta) external onlyOwner {
+        supplies[_token] -= _delta;
+        emit SupplyUpdated(_token, supplies[_token]);
     }
 }

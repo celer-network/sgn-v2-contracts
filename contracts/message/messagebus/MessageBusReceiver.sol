@@ -178,6 +178,7 @@ contract MessageBusReceiver is Ownable {
     /**
      * @notice Execute a message not associated with a transfer.
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _route The info about the sender and the receiver.
      * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
      * +2/3 of the sigsVerifier's current signing power to be delivered.
      * @param _signers The sorted list of signers.

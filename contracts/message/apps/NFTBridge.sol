@@ -151,11 +151,12 @@ contract NFTBridge is MessageReceiverApp {
 
     // ===== called by msgbus
     function executeMessage(
-        address,
+        address sender,
         uint64 srcChid,
         bytes memory _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
+        require(sender == destBridge[srcChid], "nft bridge addr mismatch");
         // withdraw original locked nft back to user, or mint new nft depending on msg.type
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
         // or we could try to see if ownerOf(id) is self, but openzep erc721 impl require id is valid

@@ -7,6 +7,7 @@ import "../../safeguard/Ownable.sol";
 interface INFTBridge {
     function sendMsg(
         uint64 _dstChid,
+        address _sender,
         address _receiver,
         uint256 _id,
         string calldata _uri
@@ -60,7 +61,7 @@ contract MCNNFT is ERC721URIStorage, Ownable {
         require(msg.sender == ownerOf(_id), "not token owner");
         string memory _uri = tokenURI(_id);
         _burn(_id);
-        INFTBridge(nftBridge).sendMsg{value: msg.value}(_dstChid, _receiver, _id, _uri);
+        INFTBridge(nftBridge).sendMsg{value: msg.value}(_dstChid, msg.sender, _receiver, _id, _uri);
     }
 
     // ===== only Owner

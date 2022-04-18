@@ -15,7 +15,7 @@ contract NativeTokenVaultProxy {
     address public immutable nativeWrap;
     address public immutable vault;
 
-    mapping(bytes32 => address) public senders;
+    mapping(bytes32 => address) public depositors;
 
     constructor(address _nativeWrap, address _vault) {
         nativeWrap = _nativeWrap;
@@ -50,7 +50,7 @@ contract NativeTokenVaultProxy {
         );
         IWETH(nativeWrap).deposit{value: _amount}();
         IOriginalTokenVault(vault).deposit(nativeWrap, _amount, _mintChainId, _mintAccount, _nonce);
-        senders[depositId] = msg.sender;
+        depositors[depositId] = msg.sender;
         return depositId;
     }
 
@@ -76,9 +76,9 @@ contract NativeTokenVaultProxy {
         if (!IOriginalTokenVault(vault).records(withdrawId)) {
             IOriginalTokenVault(vault).withdraw(_request, _sigs, _signers, _powers);
         }
-        address sender = senders[wd.refId];
+        address sender = depositors[wd.refId];
         require(sender != address(0), "Sender not found");
-        delete senders[wd.refId];
+        delete depositors[wd.refId];
         IWETH(nativeWrap).withdraw(wd.amount);
         (bool sent, ) = sender.call{value: wd.amount, gas: 50000}("");
         require(sent, "failed to send native token");

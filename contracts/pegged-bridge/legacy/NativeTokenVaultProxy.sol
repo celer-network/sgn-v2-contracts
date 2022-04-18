@@ -16,6 +16,7 @@ contract NativeTokenVaultProxy {
     address public immutable vault;
 
     mapping(bytes32 => address) public depositors;
+    event ProxyDeposited(bytes32 depositId, address depositor);
 
     constructor(address _nativeWrap, address _vault) {
         nativeWrap = _nativeWrap;
@@ -49,6 +50,8 @@ contract NativeTokenVaultProxy {
             )
         );
         IWETH(nativeWrap).deposit{value: _amount}();
+        emit ProxyDeposited(depositId, msg.sender);
+
         IOriginalTokenVault(vault).deposit(nativeWrap, _amount, _mintChainId, _mintAccount, _nonce);
         depositors[depositId] = msg.sender;
         return depositId;

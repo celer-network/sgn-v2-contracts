@@ -19,7 +19,7 @@ contract PegNFT is ERC721URIStorage {
         _;
     }
 
-    function mint(
+    function bridgeMint(
         address to,
         uint256 id,
         string memory uri

@@ -9,28 +9,17 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('NFTBridge', {
+  await deploy('MCNNFT', {
     from: deployer,
     log: true,
     args: [
-      process.env.MSG_BUS_ADDR
-    ],
-    proxy: {
-      proxyContract: "OptimizedTransparentProxy",
-      execute: {
-        // only called when proxy is deployed, it'll call NFTBridge.init
-        // to set owner and msgbus in proxy contract state
-        init: {
-          methodName: 'init',
-          args: [
-            process.env.MSG_BUS_ADDR
-          ]
-        }
-      }
-    }
+      process.env.NFT_NAME,
+      process.env.NFT_SYM,
+      process.env.NFT_BRIDGE_ADDR
+    ]
   });
 };
 
-deployFunc.tags = ['NFTBridge'];
+deployFunc.tags = ['MCNNFT'];
 deployFunc.dependencies = [];
 export default deployFunc;

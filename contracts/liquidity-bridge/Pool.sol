@@ -50,7 +50,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     /**
      * @notice Add liquidity to the pool-based bridge.
      * NOTE: This function DOES NOT SUPPORT fee-on-transfer / rebasing tokens.
-     * NOTE: ONLY call this from an EOA. DO NOT call from a contract address.
      * @param _token The address of the token.
      * @param _amount The amount to add.
      */
@@ -63,7 +62,6 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
 
     /**
      * @notice Add native token liquidity to the pool-based bridge.
-     * NOTE: ONLY call this from an EOA. DO NOT call from a contract address.
      * @param _amount The amount to add.
      */
     function addNativeLiquidity(uint256 _amount) external payable nonReentrant whenNotPaused {

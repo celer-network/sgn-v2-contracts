@@ -15,6 +15,7 @@ solFiles=(
   integration-examples/ContractAsSender
   interfaces/ISigsVerifier
   message/apps/TransferSwap
+  message/apps/NFTBridge
   message/messagebus/MessageBus
   miscs/Faucet
   miscs/MintableERC20

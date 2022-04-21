@@ -9,11 +9,14 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('PeggedTokenBridgeV2', {
+  const args = [process.env.PEGGED_TOKEN_BRIDGE_SIGS_VERIFIER];
+
+  const peggedTokenBridgeV2 = await deploy('PeggedTokenBridgeV2', {
     from: deployer,
     log: true,
-    args: [process.env.PEGGED_TOKEN_BRIDGE_SIGS_VERIFIER]
+    args: args
   });
+  await hre.run('verify:verify', { address: peggedTokenBridgeV2.address, constructorArguments: args });
 };
 
 deployFunc.tags = ['PeggedTokenBridgeV2'];

@@ -19,16 +19,20 @@ async function setBridgeBasics(): Promise<void> {
   }
   const bridge = Bridge__factory.connect(bridgeAddr, deployerSigner);
   const pausers = (process.env.BRIDGE_PAUSERS as string).split(',');
-  for (let i = 0; i < pausers.length; i++) {
-    const pauser = pausers[i];
-    await (await bridge.addPauser(pauser, feeOverrides)).wait();
-    console.log('addPauser', pauser);
+  if (pausers[0].length > 0) {
+    for (let i = 0; i < pausers.length; i++) {
+      const pauser = pausers[i];
+      await (await bridge.addPauser(pauser, feeOverrides)).wait();
+      console.log('addPauser', pauser);
+    }
   }
   const governors = (process.env.BRIDGE_GOVERNORS as string).split(',');
-  for (let i = 0; i < governors.length; i++) {
-    const governor = governors[i];
-    await (await bridge.addGovernor(governor, feeOverrides)).wait();
-    console.log('addGovernor', governor);
+  if (governors[0].length > 0) {
+    for (let i = 0; i < governors.length; i++) {
+      const governor = governors[i];
+      await (await bridge.addGovernor(governor, feeOverrides)).wait();
+      console.log('addGovernor', governor);
+    }
   }
   const delayPeriod = process.env.BRIDGE_DELAY_PERIOD as string;
   if (delayPeriod) {
@@ -62,16 +66,20 @@ async function setPeggedTokenBridgeBasics(): Promise<void> {
   }
   const peggedTokenBridge = PeggedTokenBridge__factory.connect(peggedTokenBridgeAddr, deployerSigner);
   const pausers = (process.env.PEGGED_TOKEN_BRIDGE_PAUSERS as string).split(',');
-  for (let i = 0; i < pausers.length; i++) {
-    const pauser = pausers[i];
-    await (await peggedTokenBridge.addPauser(pauser, feeOverrides)).wait();
-    console.log('addPauser', pauser);
+  if (pausers[0].length > 0) {
+    for (let i = 0; i < pausers.length; i++) {
+      const pauser = pausers[i];
+      await (await peggedTokenBridge.addPauser(pauser, feeOverrides)).wait();
+      console.log('addPauser', pauser);
+    }
   }
   const governors = (process.env.PEGGED_TOKEN_BRIDGE_GOVERNORS as string).split(',');
-  for (let i = 0; i < governors.length; i++) {
-    const governor = governors[i];
-    await (await peggedTokenBridge.addGovernor(governor, feeOverrides)).wait();
-    console.log('addGovernor', governor);
+  if (governors[0].length > 0) {
+    for (let i = 0; i < governors.length; i++) {
+      const governor = governors[i];
+      await (await peggedTokenBridge.addGovernor(governor, feeOverrides)).wait();
+      console.log('addGovernor', governor);
+    }
   }
   const delayPeriod = process.env.PEGGED_TOKEN_BRIDGE_DELAY_PERIOD as string;
   if (delayPeriod) {
@@ -95,16 +103,20 @@ async function setOriginalTokenVaultBasics(): Promise<void> {
   }
   const originalTokenVault = OriginalTokenVault__factory.connect(originalTokenVaultAddr, deployerSigner);
   const pausers = (process.env.ORIGINAL_TOKEN_VAULT_PAUSERS as string).split(',');
-  for (let i = 0; i < pausers.length; i++) {
-    const pauser = pausers[i];
-    await (await originalTokenVault.addPauser(pauser, feeOverrides)).wait();
-    console.log('addPauser', pauser);
+  if (pausers[0].length > 0) {
+    for (let i = 0; i < pausers.length; i++) {
+      const pauser = pausers[i];
+      await (await originalTokenVault.addPauser(pauser, feeOverrides)).wait();
+      console.log('addPauser', pauser);
+    }
   }
   const governors = (process.env.ORIGINAL_TOKEN_VAULT_GOVERNORS as string).split(',');
-  for (let i = 0; i < governors.length; i++) {
-    const governor = governors[i];
-    await (await originalTokenVault.addGovernor(governor, feeOverrides)).wait();
-    console.log('addGovernor', governor);
+  if (governors[0].length > 0) {
+    for (let i = 0; i < governors.length; i++) {
+      const governor = governors[i];
+      await (await originalTokenVault.addGovernor(governor, feeOverrides)).wait();
+      console.log('addGovernor', governor);
+    }
   }
   const delayPeriod = process.env.ORIGINAL_TOKEN_VAULT_DELAY_PERIOD as string;
   if (delayPeriod) {

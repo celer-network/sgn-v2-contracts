@@ -9,11 +9,14 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('OriginalTokenVaultV2', {
+  const args = [process.env.ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER];
+
+  const originalTokenVaultV2 = await deploy('OriginalTokenVaultV2', {
     from: deployer,
     log: true,
-    args: [process.env.ORIGINAL_TOKEN_VAULT_SIGS_VERIFIER]
+    args: args
   });
+  await hre.run('verify:verify', { address: originalTokenVaultV2.address, constructorArguments: args });
 };
 
 deployFunc.tags = ['OriginalTokenVaultV2'];

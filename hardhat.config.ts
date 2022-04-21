@@ -61,6 +61,12 @@ const darwiniaPangolinTestPrivateKey = process.env.DARWINIA_PANGOLIN_TEST_PRIVAT
 const platonTestEndpoint = process.env.PLATON_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const platonTestPrivateKey = process.env.PLATON_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const polygonTestEndpoint = process.env.POLYGON_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const polygonTestPrivateKey = process.env.POLYGON_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const sxTestEndpoint = process.env.SX_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const sxTestPrivateKey = process.env.SX_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -152,6 +158,7 @@ const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_PRIVATE_K
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
+    // Testnets
     hardhat: {},
     localhost: { timeout: 600000 },
     kovan: {
@@ -214,6 +221,15 @@ const config: HardhatUserConfig = {
       url: platonTestEndpoint,
       accounts: [`0x${platonTestPrivateKey}`]
     },
+    polygonTest: {
+      url: polygonTestEndpoint,
+      accounts: [`0x${polygonTestPrivateKey}`]
+    },
+    sxTest: {
+      url: sxTestEndpoint,
+      accounts: [`0x${sxTestPrivateKey}`]
+    },
+    // Mainnets
     ethMainnet: {
       url: ethMainnetEndpoint,
       accounts: [`0x${ethMainnetPrivateKey}`]

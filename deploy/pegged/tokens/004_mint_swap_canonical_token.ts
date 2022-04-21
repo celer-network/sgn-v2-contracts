@@ -9,15 +9,17 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('MintSwapCanonicalToken', {
+  const args = [
+    process.env.MINT_SWAP_CANONICAL_TOKEN_NAME,
+    process.env.MINT_SWAP_CANONICAL_TOKEN_SYMBOL,
+    process.env.MINT_SWAP_CANONICAL_TOKEN_DECIMALS
+  ];
+  const mintSwapCanonicalToken = await deploy('MintSwapCanonicalToken', {
     from: deployer,
     log: true,
-    args: [
-      process.env.MINT_SWAP_CANONICAL_TOKEN_NAME,
-      process.env.MINT_SWAP_CANONICAL_TOKEN_SYMBOL,
-      process.env.MINT_SWAP_CANONICAL_TOKEN_DECIMALS
-    ]
+    args: args
   });
+  await hre.run('verify:verify', { address: mintSwapCanonicalToken.address, constructorArguments: args });
 };
 
 deployFunc.tags = ['MintSwapCanonicalToken'];

@@ -9,10 +9,11 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('Bridge', {
+  const bridge = await deploy('Bridge', {
     from: deployer,
     log: true
   });
+  await hre.run('verify:verify', { address: bridge.address });
 };
 
 deployFunc.tags = ['Bridge'];

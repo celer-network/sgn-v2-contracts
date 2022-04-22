@@ -3,6 +3,7 @@ pragma solidity 0.8.9;
 
 import "../framework/MessageReceiverApp.sol";
 import "../interfaces/IMessageBus.sol";
+import "../../safeguard/Pauser.sol";
 
 // interface for NFT contract, ERC721 and metadata, only funcs needed by NFTBridge
 interface INFT {
@@ -28,7 +29,7 @@ interface INFT {
 }
 
 /** @title NFT Bridge */
-contract NFTBridge is MessageReceiverApp {
+contract NFTBridge is MessageReceiverApp, Pauser {
     /// per dest chain id executor fee in this chain's gas token
     mapping(uint64 => uint256) public destTxFee;
     /// per dest chain id NFTBridge address
@@ -94,7 +95,7 @@ contract NFTBridge is MessageReceiverApp {
         uint256 _id,
         uint64 _dstChid,
         address _receiver
-    ) external payable {
+    ) external payable whenNotPaused {
         INFT(_nft).transferFrom(msg.sender, address(this), _id);
         require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
@@ -122,7 +123,7 @@ contract NFTBridge is MessageReceiverApp {
         uint64 _dstChid,
         address _receiver,
         bool _backToOrigin
-    ) external payable {
+    ) external payable whenNotPaused {
         require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
         string memory _uri = INFT(_nft).tokenURI(_id);
@@ -142,7 +143,7 @@ contract NFTBridge is MessageReceiverApp {
         address _receiver,
         uint256 _id,
         string calldata _uri
-    ) external payable {
+    ) external payable whenNotPaused {
         address _nft = msg.sender;
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
         msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri)));
@@ -155,7 +156,7 @@ contract NFTBridge is MessageReceiverApp {
         uint64 srcChid,
         bytes memory _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecutionStatus) {
+    ) external payable override onlyMessageBus whenNotPaused returns (ExecutionStatus) {
         require(sender == destBridge[srcChid], "nft bridge addr mismatch");
         // withdraw original locked nft back to user, or mint new nft depending on msg.type
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));

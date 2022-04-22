@@ -2,7 +2,7 @@
 pragma solidity 0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "../../safeguard/Ownable.sol";
+import "../../safeguard/Pauser.sol";
 
 interface INFTBridge {
     function sendMsg(
@@ -21,7 +21,7 @@ interface INFTBridge {
 }
 
 // Multi-Chain Native NFT, same contract on all chains. User interacts with this directly.
-contract MCNNFT is ERC721URIStorage, Ownable {
+contract MCNNFT is ERC721URIStorage, Pauser {
     event NFTBridgeUpdated(address);
     address public nftBridge;
 
@@ -57,7 +57,7 @@ contract MCNNFT is ERC721URIStorage, Ownable {
         uint64 _dstChid,
         uint256 _id,
         address _receiver
-    ) external payable {
+    ) external payable whenNotPaused {
         require(msg.sender == ownerOf(_id), "not token owner");
         string memory _uri = tokenURI(_id);
         _burn(_id);

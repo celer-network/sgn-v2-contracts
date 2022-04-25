@@ -53,6 +53,11 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     // emit for mint or withdraw message
     event Received(address receiver, address nft, uint256 id, uint64 srcChid);
 
+    event SetDestNFT(address srcNft, uint64 dstChid, address dstNft);
+    event SetTxFee(uint64 chid, uint256 fee);
+    event SetDestBridge(uint64 dstChid, address dstNftBridge);
+    event FeeClaimed(uint256 amount);
+
     constructor(address _msgBus) {
         messageBus = _msgBus;
     }
@@ -200,6 +205,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         address dstNft
     ) external onlyOwner {
         destNFTAddr[srcNft][dstChid] = dstNft;
+        emit SetDestNFT(srcNft, dstChid, dstNft);
     }
 
     // set all dest chains
@@ -216,11 +222,13 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     // set destTxFee
     function setTxFee(uint64 chid, uint256 fee) external onlyOwner {
         destTxFee[chid] = fee;
+        emit SetTxFee(chid, fee);
     }
 
     // set per chain id, nft bridge address
     function setDestBridge(uint64 dstChid, address dstNftBridge) external onlyOwner {
         destBridge[dstChid] = dstNftBridge;
+        emit SetDestBridge(dstChid, dstNftBridge);
     }
 
     // batch set nft bridge addresses for multiple chainids
@@ -232,6 +240,8 @@ contract NFTBridge is MessageReceiverApp, Pauser {
 
     // send all gas token this contract has to owner
     function claimFee() external onlyOwner {
-        payable(msg.sender).transfer(address(this).balance);
+        uint256 amount = address(this).balance;
+        payable(msg.sender).transfer(amount);
+        emit FeeClaimed(amount);
     }
 }

@@ -9,16 +9,19 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('MintableERC20', {
+  const args = [
+    process.env.TEST_TOKEN_NAME,
+    process.env.TEST_TOKEN_SYMBOL,
+    process.env.TEST_TOKEN_DECIMALS,
+    process.env.TEST_TOKEN_SUPPLY
+  ];
+
+  const testToken = await deploy('MintableERC20', {
     from: deployer,
     log: true,
-    args: [
-      process.env.TEST_TOKEN_NAME,
-      process.env.TEST_TOKEN_SYMBOL,
-      process.env.TEST_TOKEN_DECIMALS,
-      process.env.TEST_TOKEN_SUPPLY
-    ]
+    args: args
   });
+  await hre.run('verify:verify', { address: testToken.address, constructorArguments: args });
 };
 
 deployFunc.tags = ['Test' + (process.env.TEST_TOKEN_SYMBOL || 'Token')];

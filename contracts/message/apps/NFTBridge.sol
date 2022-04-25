@@ -215,6 +215,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         uint64[] calldata dstChid,
         address[] calldata dstNft
     ) external onlyOwner {
+        require(dstChid.length == dstNft.length, "length mismatch");
         for (uint256 i = 0; i < dstChid.length; i++) {
             destNFTAddr[srcNft][dstChid[i]] = dstNft[i];
         }

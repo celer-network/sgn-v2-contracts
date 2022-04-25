@@ -53,6 +53,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     // emit for mint or withdraw message
     event Received(address receiver, address nft, uint256 id, uint64 srcChid);
 
+    // emit when params change
     event SetDestNFT(address srcNft, uint64 dstChid, address dstNft);
     event SetTxFee(uint64 chid, uint256 fee);
     event SetDestBridge(uint64 dstChid, address dstNftBridge);

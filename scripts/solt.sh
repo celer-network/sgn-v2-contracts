@@ -16,6 +16,7 @@ solFiles=(
   interfaces/ISigsVerifier
   message/apps/TransferSwap
   message/apps/NFTBridge
+  message/apps/MsgTest
   message/messagebus/MessageBus
   miscs/Faucet
   miscs/MintableERC20

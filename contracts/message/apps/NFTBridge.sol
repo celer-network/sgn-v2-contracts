@@ -113,11 +113,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
             INFT(_nft).burn(_id);
         }
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
-        msgBus(
-            _dstBridge,
-            _dstChid,
-            abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri))
-        );
+        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri)));
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
@@ -222,6 +218,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         origNFT[_nft] = true;
         emit SetOrigNFT(_nft, true);
     }
+
     // remove origNFT entry
     function delOrigNFT(address _nft) external onlyOwner {
         delete origNFT[_nft];

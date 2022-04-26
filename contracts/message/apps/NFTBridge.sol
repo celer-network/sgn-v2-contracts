@@ -225,7 +225,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     // remove origNFT entry
     function delOrigNFT(address _nft) external onlyOwner {
         delete origNFT[_nft];
-        emit SetOrigNFT(_nft, true);
+        emit SetOrigNFT(_nft, false);
     }
 
     // send all gas token this contract has to owner

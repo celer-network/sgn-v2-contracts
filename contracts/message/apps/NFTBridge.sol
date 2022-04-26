@@ -37,12 +37,11 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     /// first key is NFT address on this chain, 2nd key is dest chain id, value is address on dest chain
     mapping(address => mapping(uint64 => address)) public destNFTAddr;
 
-    enum MsgType {
-        Mint,
-        Withdraw
-    }
+    /// only set to true if NFT addr on this chain is the orig, so we will use deposit/withdraw instead of burn/mint.
+    /// not applicable for mcn nft (always burn/mint)
+    mapping(address => bool) public origNFT;
+
     struct NFTMsg {
-        MsgType msgType; // mint or withdraw
         address user; // receiver of minted or withdrawn NFT
         address nft; // NFT contract on mint/withdraw chain
         uint256 id; // token ID
@@ -58,6 +57,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     event SetTxFee(uint64 chid, uint256 fee);
     event SetDestBridge(uint64 dstChid, address dstNftBridge);
     event FeeClaimed(uint256 amount);
+    event SetOrigNFT(address nft, bool isOrig);
 
     constructor(address _msgBus) {
         messageBus = _msgBus;
@@ -84,61 +84,40 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         uint256 _id
     ) external view returns (uint256) {
         string memory _uri = INFT(_nft).tokenURI(_id);
-        bytes memory message = abi.encode(NFTMsg(MsgType.Mint, _nft, _nft, _id, _uri));
+        bytes memory message = abi.encode(NFTMsg(_nft, _nft, _id, _uri));
         return IMessageBus(messageBus).calcFee(message) + destTxFee[_dstChid];
     }
 
     // ===== called by user
     /**
-     * @notice deposit locks user's NFT in this contract and send message to mint on dest chain
+     * @notice locks or burn user's NFT in this contract and send message to mint (or withdraw) on dest chain
      * @param _nft address of source NFT contract
      * @param _id nft token ID to bridge
      * @param _dstChid dest chain ID
      * @param _receiver receiver address on dest chain
      */
-    function deposit(
+    function sendTo(
         address _nft,
         uint256 _id,
         uint64 _dstChid,
         address _receiver
     ) external payable whenNotPaused {
-        INFT(_nft).transferFrom(msg.sender, address(this), _id);
-        require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
+        require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
+        string memory _uri = INFT(_nft).tokenURI(_id);
+        if (origNFT[_nft] == true) {
+            // deposit
+            INFT(_nft).transferFrom(msg.sender, address(this), _id);
+            require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
+        } else {
+            // burn
+            INFT(_nft).burn(_id);
+        }
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
         msgBus(
             _dstBridge,
             _dstChid,
-            abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, INFT(_nft).tokenURI(_id)))
+            abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri))
         );
-        emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
-    }
-
-    // burn to withdraw or mint on another chain, arg has backToOrig bool if dest chain is NFT's orig, set to true
-    // sendMessage withdraw or mint
-    /**
-     * @notice burn deletes user's NFT in nft contract and send message to withdraw or mint on dest chain
-     * @param _nft address of source NFT contract
-     * @param _id nft token ID to bridge
-     * @param _dstChid dest chain ID
-     * @param _receiver receiver address on dest chain
-     * @param _backToOrigin if dest chain is the original chain of this NFT, set to true
-     */
-    function burn(
-        address _nft,
-        uint256 _id,
-        uint64 _dstChid,
-        address _receiver,
-        bool _backToOrigin
-    ) external payable whenNotPaused {
-        require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
-        (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
-        string memory _uri = INFT(_nft).tokenURI(_id);
-        INFT(_nft).burn(_id);
-        NFTMsg memory nftMsg = NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri);
-        if (_backToOrigin) {
-            nftMsg.msgType = MsgType.Withdraw;
-        }
-        msgBus(_dstBridge, _dstChid, abi.encode(nftMsg));
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
@@ -152,7 +131,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     ) external payable whenNotPaused {
         address _nft = msg.sender;
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
-        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(MsgType.Mint, _receiver, _dstNft, _id, _uri)));
+        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri)));
         emit Sent(_sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
@@ -164,15 +143,13 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         address // executor
     ) external payable override onlyMessageBus whenNotPaused returns (ExecutionStatus) {
         require(sender == destBridge[srcChid], "nft bridge addr mismatch");
-        // withdraw original locked nft back to user, or mint new nft depending on msg.type
+        // withdraw original locked nft back to user, or mint new nft depending on if this is the orig chain of nft
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
-        // or we could try to see if ownerOf(id) is self, but openzep erc721 impl require id is valid
-        if (nftMsg.msgType == MsgType.Mint) {
-            INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri);
-        } else if (nftMsg.msgType == MsgType.Withdraw) {
+        // if we are on nft orig chain, use transfer, otherwise, use mint
+        if (origNFT[nftMsg.nft] == true) {
             INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id);
         } else {
-            revert("invalid message type");
+            INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri);
         }
         emit Received(nftMsg.user, nftMsg.nft, nftMsg.id, srcChid);
         return ExecutionStatus.Success;
@@ -238,6 +215,17 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         for (uint256 i = 0; i < dstChid.length; i++) {
             destBridge[dstChid[i]] = dstNftBridge[i];
         }
+    }
+
+    // only called on NFT's orig chain, not applicable for mcn nft
+    function setOrigNFT(address _nft) external onlyOwner {
+        origNFT[_nft] = true;
+        emit SetOrigNFT(_nft, true);
+    }
+    // remove origNFT entry
+    function delOrigNFT(address _nft) external onlyOwner {
+        delete origNFT[_nft];
+        emit SetOrigNFT(_nft, false);
     }
 
     // send all gas token this contract has to owner

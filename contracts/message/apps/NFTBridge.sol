@@ -137,7 +137,10 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         uint64 srcChid,
         bytes memory _message,
         address // executor
-    ) external payable override onlyMessageBus whenNotPaused returns (ExecutionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
+        if (paused()) {
+            return ExecutionStatus.Retry;
+        }
         require(sender == destBridge[srcChid], "nft bridge addr mismatch");
         // withdraw original locked nft back to user, or mint new nft depending on if this is the orig chain of nft
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));

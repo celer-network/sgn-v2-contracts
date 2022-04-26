@@ -2,7 +2,6 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 import { BigNumber } from 'ethers';
-import { ethers } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
 
@@ -15,8 +14,6 @@ import type { ContractTransaction, Overrides } from '@ethersproject/contracts';
 import type { BigNumberish } from '@ethersproject/bignumber';
 
 dotenv.config();
-
-const gtZeroPredicate = (v: BigNumber) => v.gt(ethers.constants.Zero);
 
 function getParseUnitsCallback(
   unitNames: BigNumberish[]
@@ -38,12 +35,14 @@ async function setLimitIfSpecified(
 ): Promise<void> {
   if (limitEnv) {
     const limitStr = limitEnv.split(',');
-    if (limitEnv.length > 0) {
+    if (limitEnv.length > 0 && limitStr.length === decimals.length) {
       const limits = limitStr.map(getParseUnitsCallback(decimals));
-      if (limits.some(gtZeroPredicate)) {
-        await (await method(tokens, limits, feeOverrides)).wait();
-        console.log(methodName, tokens, limits);
-      }
+      await (await method(tokens, limits, feeOverrides)).wait();
+      console.log(
+        methodName,
+        tokens,
+        limits.map((limit) => limit.toString())
+      );
     }
   }
 }

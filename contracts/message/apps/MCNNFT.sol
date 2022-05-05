@@ -13,6 +13,14 @@ interface INFTBridge {
         string calldata _uri
     ) external payable;
 
+    function sendMsg(
+        uint64 _dstChid,
+        address _sender,
+        bytes calldata _receiver,
+        uint256 _id,
+        string calldata _uri
+    ) external payable;
+
     function totalFee(
         uint64 _dstChid,
         address _nft,
@@ -57,6 +65,18 @@ contract MCNNFT is ERC721URIStorage, Pauser {
         uint64 _dstChid,
         uint256 _id,
         address _receiver
+    ) external payable whenNotPaused {
+        require(msg.sender == ownerOf(_id), "not token owner");
+        string memory _uri = tokenURI(_id);
+        _burn(_id);
+        INFTBridge(nftBridge).sendMsg{value: msg.value}(_dstChid, msg.sender, _receiver, _id, _uri);
+    }
+
+    // support chains w/ arbitrary address as receiver
+    function crossChain(
+        uint64 _dstChid,
+        uint256 _id,
+        bytes calldata _receiver
     ) external payable whenNotPaused {
         require(msg.sender == ownerOf(_id), "not token owner");
         string memory _uri = tokenURI(_id);

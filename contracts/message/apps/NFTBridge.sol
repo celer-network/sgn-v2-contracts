@@ -41,14 +41,27 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     /// not applicable for mcn nft (always burn/mint)
     mapping(address => bool) public origNFT;
 
+    /// only for non-evm chains and address can't fit 20bytes
+    mapping(uint64 => bytes) public destBridge2;
+    mapping(address => mapping(uint64 => bytes)) public destNFTAddr2;
+
     struct NFTMsg {
         address user; // receiver of minted or withdrawn NFT
         address nft; // NFT contract on mint/withdraw chain
         uint256 id; // token ID
         string uri; // tokenURI from source NFT
     }
+    // for non-evm dst chain, address type is bytes 
+    struct NFTMsg2 {
+        bytes user; // receiver of minted or withdrawn NFT
+        bytes nft; // NFT contract on mint/withdraw chain
+        uint256 id; // token ID
+        string uri; // tokenURI from source NFT
+    }
     // emit in deposit or burn
     event Sent(address sender, address srcNft, uint256 id, uint64 dstChid, address receiver, address dstNft);
+    // bytes type for receiver and dstNft
+    event Sent2(address sender, address srcNft, uint256 id, uint64 dstChid, bytes receiver, bytes dstNft);
     // emit for mint or withdraw message
     event Received(address receiver, address nft, uint256 id, uint64 srcChid);
 
@@ -130,6 +143,19 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri)));
         emit Sent(_sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
+    // for non-evm chains and address can't fit 20bytes or non-hex
+    function sendMsg(
+        uint64 _dstChid,
+        address _sender,
+        bytes calldata _receiver,
+        uint256 _id,
+        string calldata _uri
+    ) external payable whenNotPaused {
+        address _nft = msg.sender;
+        (bytes memory _dstBridge, bytes memory _dstNft) = checkAddr2(_nft, _dstChid);
+        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg2(_receiver, _dstNft, _id, _uri)));
+        emit Sent2(_sender, _nft, _id, _dstChid, _receiver, _dstNft);
+    }
 
     // ===== called by msgbus
     function executeMessage(
@@ -163,9 +189,26 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         require(dstNft != address(0), "dest NFT not found");
     }
 
+    function checkAddr2(address _nft, uint64 _dstChid) internal view returns (bytes memory dstBridge, bytes memory dstNft) {
+        dstBridge = destBridge2[_dstChid];
+        require(dstBridge.length != 0, "dest NFT Bridge not found");
+        dstNft = destNFTAddr2[_nft][_dstChid];
+        require(dstNft.length != 0, "dest NFT not found");
+    }
+
     // check fee and call msgbus sendMessage
     function msgBus(
         address _dstBridge,
+        uint64 _dstChid,
+        bytes memory message
+    ) internal {
+        uint256 fee = IMessageBus(messageBus).calcFee(message);
+        require(msg.value >= fee + destTxFee[_dstChid], "insufficient fee");
+        IMessageBus(messageBus).sendMessage{value: fee}(_dstBridge, _dstChid, message);
+    }
+
+    function msgBus(
+        bytes memory _dstBridge,
         uint64 _dstChid,
         bytes memory message
     ) internal {

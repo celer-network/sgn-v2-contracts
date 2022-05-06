@@ -67,6 +67,9 @@ const polygonTestPrivateKey = process.env.POLYGON_TEST_PRIVATE_KEY || DEFAULT_PR
 const sxTestEndpoint = process.env.SX_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const sxTestPrivateKey = process.env.SX_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const swimmerTestEndpoint = process.env.SWIMMER_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const swimmerTestPrivateKey = process.env.SWIMMER_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -228,6 +231,10 @@ const config: HardhatUserConfig = {
     sxTest: {
       url: sxTestEndpoint,
       accounts: [`0x${sxTestPrivateKey}`]
+    },
+    swimmerTest: {
+      url: swimmerTestEndpoint,
+      accounts: [`0x${swimmerTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

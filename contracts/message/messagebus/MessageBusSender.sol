@@ -13,6 +13,8 @@ contract MessageBusSender is Ownable {
     mapping(address => uint256) public withdrawnFees;
 
     event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message, uint256 fee);
+    // message to and from non-evm chain
+    event Message2(address indexed sender, bytes receiver, uint256 dstChainId, bytes message, uint256 fee);
 
     event MessageWithTransfer(
         address indexed sender,
@@ -50,6 +52,17 @@ contract MessageBusSender is Ownable {
         uint256 minFee = calcFee(_message);
         require(msg.value >= minFee, "Insufficient fee");
         emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);
+    }
+
+    function sendMessage(
+        bytes calldata _receiver,
+        uint256 _dstChainId,
+        bytes calldata _message
+    ) external payable {
+        require(_dstChainId != block.chainid, "Invalid chainId");
+        uint256 minFee = calcFee(_message);
+        require(msg.value >= minFee, "Insufficient fee");
+        emit Message2(msg.sender, _receiver, _dstChainId, _message, msg.value);
     }
 
     /**

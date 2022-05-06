@@ -57,6 +57,21 @@ library MsgDataTypes {
         bytes32 srcTxHash; // src chain msg tx hash
     }
 
+    struct RouteInfo2 {
+        bytes sender;
+        address receiver;
+        uint64 srcChainId;
+        bytes32 srcTxHash; // src chain msg tx hash
+    }
+
+    struct RouteInfoX {
+        address sender;
+        bytes senderBytes;
+        address receiver;
+        uint64 srcChainId;
+        bytes32 srcTxHash; // src chain msg tx hash
+    }
+
     struct MsgWithTransferExecutionParams {
         bytes message;
         TransferInfo transfer;

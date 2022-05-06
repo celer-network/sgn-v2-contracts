@@ -79,4 +79,11 @@ interface IMessageReceiverApp {
         bytes calldata _message,
         address _executor
     ) external payable returns (ExecutionStatus);
+
+    function executeMessage(
+        bytes calldata _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address _executor
+    ) external payable returns (ExecutionStatus);
 }

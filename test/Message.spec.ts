@@ -55,7 +55,15 @@ describe('Message Tests', function () {
     let nonce = 1;
     let message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
     let res = await computeMessageOnlyIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
-    await expect(msgbus.executeMessage(message, routeInfo, res.sigs, [admin.address], [parseUnits('1')]))
+    await expect(
+      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+        message,
+        routeInfo,
+        res.sigs,
+        [admin.address],
+        [parseUnits('1')]
+      )
+    )
       .to.emit(msgtest, 'MessageReceived')
       .withArgs(admin.address, srcChainId, nonce, hash)
       .to.emit(msgbus, 'Executed')
@@ -64,7 +72,15 @@ describe('Message Tests', function () {
     nonce = 100000000000001;
     message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
     res = await computeMessageOnlyIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
-    await expect(msgbus.executeMessage(message, routeInfo, res.sigs, [admin.address], [parseUnits('1')]))
+    await expect(
+      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+        message,
+        routeInfo,
+        res.sigs,
+        [admin.address],
+        [parseUnits('1')]
+      )
+    )
       .to.emit(msgbus, 'CallReverted')
       .withArgs('invalid nonce')
       .to.emit(msgbus, 'Executed')
@@ -73,7 +89,15 @@ describe('Message Tests', function () {
     nonce = 100000000000002;
     message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
     res = await computeMessageOnlyIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
-    await expect(msgbus.executeMessage(message, routeInfo, res.sigs, [admin.address], [parseUnits('1')]))
+    await expect(
+      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+        message,
+        routeInfo,
+        res.sigs,
+        [admin.address],
+        [parseUnits('1')]
+      )
+    )
       .to.emit(msgbus, 'CallReverted')
       .withArgs('Transaction reverted silently')
       .to.emit(msgbus, 'Executed')

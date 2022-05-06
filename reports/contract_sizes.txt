@@ -1,6 +1,5 @@
-Generating typings for: 109 artifacts in dir: typechain for target: ethers-v5
-Successfully generated 182 typings!
-Compiled 102 Solidity files successfully
+Nothing to compile
+No need to generate any newer typings.
  ·---------------------------------------------|-------------|---------------·
  |  Contract Name                              ·  Size (KB)  ·  Change (KB)  │
  ··············································|·············|················

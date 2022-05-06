@@ -4,7 +4,6 @@ pragma solidity 0.8.9;
 
 import "../libraries/MsgDataTypes.sol";
 import "../interfaces/IMessageReceiverApp.sol";
-import "../interfaces/IMessageBus.sol";
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IOriginalTokenVaultV2.sol";
@@ -195,6 +194,8 @@ contract MessageBusReceiver is Ownable {
         executeMessage(_message, route, _sigs, _signers, _powers, "Message");
     }
 
+    // execute message from non-evm chain with bytes for sender address,
+    // otherwise same as above.
     function executeMessage(
         bytes calldata _message,
         MsgDataTypes.RouteInfo2 calldata _route,

@@ -38,6 +38,18 @@ library MessageSenderLib {
         IMessageBus(_messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message);
     }
 
+    // Send message to non-evm chain with bytes for receiver address,
+    // otherwise same as above.
+    function sendMessage(
+        bytes calldata _receiver,
+        uint64 _dstChainId,
+        bytes memory _message,
+        address _messageBus,
+        uint256 _fee
+    ) internal {
+        IMessageBus(_messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message);
+    }
+
     /**
      * @notice Sends a message associated with a transfer to a contract on another chain.
      * @param _receiver The address of the destination app contract.

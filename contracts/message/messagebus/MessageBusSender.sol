@@ -54,6 +54,8 @@ contract MessageBusSender is Ownable {
         emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);
     }
 
+    // Send message to non-evm chain with bytes for receiver address,
+    // otherwise same as above.
     function sendMessage(
         bytes calldata _receiver,
         uint256 _dstChainId,

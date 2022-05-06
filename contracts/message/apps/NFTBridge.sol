@@ -72,6 +72,9 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     event FeeClaimed(uint256 amount);
     event SetOrigNFT(address nft, bool isOrig);
 
+    event SetDestNFT2(address srcNft, uint64 dstChid, bytes dstNft);
+    event SetDestBridge2(uint64 dstChid, bytes dstNftBridge);
+
     constructor(address _msgBus) {
         messageBus = _msgBus;
     }
@@ -227,6 +230,15 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         destNFTAddr[srcNft][dstChid] = dstNft;
         emit SetDestNFT(srcNft, dstChid, dstNft);
     }
+    // add to destNFTAddr2
+    function setDestNFT(
+        address srcNft,
+        uint64 dstChid,
+        bytes calldata dstNft
+    ) external onlyOwner {
+        destNFTAddr2[srcNft][dstChid] = dstNft;
+        emit SetDestNFT2(srcNft, dstChid, dstNft);
+    }
 
     // set all dest chains
     function setDestNFTs(
@@ -250,6 +262,11 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     function setDestBridge(uint64 dstChid, address dstNftBridge) external onlyOwner {
         destBridge[dstChid] = dstNftBridge;
         emit SetDestBridge(dstChid, dstNftBridge);
+    }
+
+    function setDestBridge(uint64 dstChid, bytes calldata dstNftBridge) external onlyOwner {
+        destBridge2[dstChid] = dstNftBridge;
+        emit SetDestBridge2(dstChid, dstNftBridge);
     }
 
     // batch set nft bridge addresses for multiple chainids

@@ -73,13 +73,15 @@ library MessageSenderLib {
             _bridgeSendType,
             _messageBus
         );
-        IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
-            _receiver,
-            _dstChainId,
-            bridge,
-            transferId,
-            _message
-        );
+        if (_message.length > 0) {
+            IMessageBus(_messageBus).sendMessageWithTransfer{value: _fee}(
+                _receiver,
+                _dstChainId,
+                bridge,
+                transferId,
+                _message
+            );
+        }
         return transferId;
     }
 
@@ -125,22 +127,19 @@ library MessageSenderLib {
         } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Deposit) {
             bridge = IMessageBus(_messageBus).pegVaultV2();
             IERC20(_token).safeIncreaseAllowance(bridge, _amount);
-            IOriginalTokenVaultV2(bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
-            transferId = computePegV2Id(_receiver, _token, _amount, _dstChainId, _nonce);
+            transferId = IOriginalTokenVaultV2(bridge).deposit(_token, _amount, _dstChainId, _receiver, _nonce);
         } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2Burn) {
             bridge = IMessageBus(_messageBus).pegBridgeV2();
             IERC20(_token).safeIncreaseAllowance(bridge, _amount);
-            IPeggedTokenBridgeV2(bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
+            transferId = IPeggedTokenBridgeV2(bridge).burn(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(bridge, 0);
-            transferId = computePegV2Id(_receiver, _token, _amount, _dstChainId, _nonce);
         } else if (_bridgeSendType == MsgDataTypes.BridgeSendType.PegV2BurnFrom) {
             bridge = IMessageBus(_messageBus).pegBridgeV2();
             IERC20(_token).safeIncreaseAllowance(bridge, _amount);
-            IPeggedTokenBridgeV2(bridge).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
+            transferId = IPeggedTokenBridgeV2(bridge).burnFrom(_token, _amount, _dstChainId, _receiver, _nonce);
             // handle cases where certain tokens do not spend allowance for role-based burn
             IERC20(_token).safeApprove(bridge, 0);
-            transferId = computePegV2Id(_receiver, _token, _amount, _dstChainId, _nonce);
         } else {
             revert("bridge type not supported");
         }
@@ -179,27 +178,5 @@ library MessageSenderLib {
         uint64 _nonce
     ) internal view returns (bytes32) {
         return keccak256(abi.encodePacked(address(this), _token, _amount, _receiver, _nonce, uint64(block.chainid)));
-    }
-
-    function computePegV2Id(
-        address _receiver,
-        address _token,
-        uint256 _amount,
-        uint64 _dstChainId,
-        uint64 _nonce
-    ) internal view returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    msg.sender,
-                    _token,
-                    _amount,
-                    _dstChainId,
-                    _receiver,
-                    _nonce,
-                    uint64(block.chainid),
-                    address(this)
-                )
-            );
     }
 }

@@ -75,6 +75,8 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     event SetDestNFT2(address srcNft, uint64 dstChid, bytes dstNft);
     event SetDestBridge2(uint64 dstChid, bytes dstNftBridge);
 
+    event ExtCallErr(bytes returnData);
+
     constructor(address _msgBus) {
         messageBus = _msgBus;
     }
@@ -119,15 +121,9 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         address _receiver
     ) external payable whenNotPaused {
         require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
+        // must save _uri before burn
         string memory _uri = INFT(_nft).tokenURI(_id);
-        if (origNFT[_nft] == true) {
-            // deposit
-            INFT(_nft).transferFrom(msg.sender, address(this), _id);
-            require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
-        } else {
-            // burn
-            INFT(_nft).burn(_id);
-        }
+        lockOrBurn(_nft, _id);
         (address _dstBridge, address _dstNft) = checkAddr(_nft, _dstChid);
         msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri)));
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
@@ -164,26 +160,66 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     function executeMessage(
         address sender,
         uint64 srcChid,
-        bytes memory _message,
+        bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        if (paused()) {
+        // Must check sender to ensure msg is from another nft bridge
+        // but we allow retry later in case it's a temporary config error
+        // risk is invalid sender will be retried but this can be easily filtered
+        // in executor or require manual trigger for retry
+        if (paused() || sender != destBridge[srcChid]) {
             return ExecutionStatus.Retry;
         }
-        require(sender == destBridge[srcChid], "nft bridge addr mismatch");
+        return xferOrMint(_message, srcChid);
+    }
+    /*
+    function executeMessage(
+        bytes calldata sender,
+        uint64 srcChid,
+        bytes calldata _message,
+        address // executor
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
+    }
+    */
+
+    // ===== internal utils
+    // lockOrBurn on sender side
+    function lockOrBurn(address _nft, uint256 _id) internal {
+        if (origNFT[_nft] == true) {
+            // deposit
+            INFT(_nft).transferFrom(msg.sender, address(this), _id);
+            require(INFT(_nft).ownerOf(_id) == address(this), "transfer NFT failed");
+        } else {
+            // burn
+            INFT(_nft).burn(_id);
+        }
+    }
+
+    // xferOrMint on receiver side, transfer or mint NFT to receiver
+    function xferOrMint(bytes calldata _message, uint64 srcChid) internal returns (ExecutionStatus) {
         // withdraw original locked nft back to user, or mint new nft depending on if this is the orig chain of nft
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
         // if we are on nft orig chain, use transfer, otherwise, use mint
+        // we must never return fail because burnt nft will be lost forever
         if (origNFT[nftMsg.nft] == true) {
-            INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id);
+            try INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id) {
+                // do nothing here to move on to emit Received event and return success
+            } catch (bytes memory returnData) {
+                emit ExtCallErr(returnData);
+                return ExecutionStatus.Retry;
+            }
         } else {
-            INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri);
+            try INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri) {
+                // do nothing here to move on to emit Received event and return success
+            } catch (bytes memory returnData) {
+                emit ExtCallErr(returnData);
+                return ExecutionStatus.Retry;
+            }
         }
         emit Received(nftMsg.user, nftMsg.nft, nftMsg.id, srcChid);
         return ExecutionStatus.Success;
     }
 
-    // ===== internal utils
     // check _nft and destChid are valid, return dstBridge and dstNft
     function checkAddr(address _nft, uint64 _dstChid) internal view returns (address dstBridge, address dstNft) {
         dstBridge = destBridge[_dstChid];

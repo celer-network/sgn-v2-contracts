@@ -72,7 +72,7 @@ contract MCNNFT is ERC721URIStorage, Pauser {
         INFTBridge(nftBridge).sendMsg{value: msg.value}(_dstChid, msg.sender, _receiver, _id, _uri);
     }
 
-    // support chains w/ arbitrary address as receiver
+    // support chains using bytes for address
     function crossChain(
         uint64 _dstChid,
         uint256 _id,

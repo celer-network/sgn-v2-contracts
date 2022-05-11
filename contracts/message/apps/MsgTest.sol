@@ -99,6 +99,8 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         if (n == 100000000000002) {
             // test revert without reason
             revert();
+        } else if (n == 100000000000003) {
+            return ExecutionStatus.Retry;
         }
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;

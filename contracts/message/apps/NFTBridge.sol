@@ -71,11 +71,11 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     event SetDestBridge(uint64 dstChid, address dstNftBridge);
     event FeeClaimed(uint256 amount);
     event SetOrigNFT(address nft, bool isOrig);
+    // emit if executeMessage calls nft transfer or bridgeMint returns error
+    event ExtCallErr(bytes returnData);
 
     event SetDestNFT2(address srcNft, uint64 dstChid, bytes dstNft);
     event SetDestBridge2(uint64 dstChid, bytes dstNftBridge);
-
-    event ExtCallErr(bytes returnData);
 
     constructor(address _msgBus) {
         messageBus = _msgBus;

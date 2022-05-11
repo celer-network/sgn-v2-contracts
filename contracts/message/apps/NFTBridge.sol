@@ -58,6 +58,8 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     event SetDestBridge(uint64 dstChid, address dstNftBridge);
     event FeeClaimed(uint256 amount);
     event SetOrigNFT(address nft, bool isOrig);
+    // emit if executeMessage calls nft transfer or bridgeMint returns error
+    event ExtCallErr(bytes returnData);
 
     constructor(address _msgBus) {
         messageBus = _msgBus;
@@ -138,17 +140,30 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         bytes memory _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        if (paused()) {
+        // Must check sender to ensure msg is from another nft bridge
+        // but we allow retry later in case it's a temporary config error
+        // risk is invalid sender will be retried but this can be easily filtered
+        // in executor or require manual trigger for retry
+        if (paused() || sender != destBridge[srcChid]) {
             return ExecutionStatus.Retry;
         }
-        require(sender == destBridge[srcChid], "nft bridge addr mismatch");
         // withdraw original locked nft back to user, or mint new nft depending on if this is the orig chain of nft
         NFTMsg memory nftMsg = abi.decode((_message), (NFTMsg));
         // if we are on nft orig chain, use transfer, otherwise, use mint
         if (origNFT[nftMsg.nft] == true) {
-            INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id);
+            try INFT(nftMsg.nft).transferFrom(address(this), nftMsg.user, nftMsg.id) {
+                // do nothing here to move on to emit Received event and return success
+            } catch (bytes memory returnData) {
+                emit ExtCallErr(returnData);
+                return ExecutionStatus.Retry;
+            }
         } else {
-            INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri);
+            try INFT(nftMsg.nft).bridgeMint(nftMsg.user, nftMsg.id, nftMsg.uri) {
+                // do nothing here to move on to emit Received event and return success
+            } catch (bytes memory returnData) {
+                emit ExtCallErr(returnData);
+                return ExecutionStatus.Retry;
+            }
         }
         emit Received(nftMsg.user, nftMsg.nft, nftMsg.id, srcChid);
         return ExecutionStatus.Success;

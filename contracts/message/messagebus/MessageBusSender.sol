@@ -48,9 +48,7 @@ contract MessageBusSender is Ownable {
         uint256 _dstChainId,
         bytes calldata _message
     ) external payable {
-        require(_dstChainId != block.chainid, "Invalid chainId");
-        uint256 minFee = calcFee(_message);
-        require(msg.value >= minFee, "Insufficient fee");
+        _sendMessage(_dstChainId, _message);
         emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);
     }
 
@@ -61,10 +59,14 @@ contract MessageBusSender is Ownable {
         uint256 _dstChainId,
         bytes calldata _message
     ) external payable {
+        _sendMessage(_dstChainId, _message);
+        emit Message2(msg.sender, _receiver, _dstChainId, _message, msg.value);
+    }
+
+    function _sendMessage(uint256 _dstChainId, bytes calldata _message) private {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 minFee = calcFee(_message);
         require(msg.value >= minFee, "Insufficient fee");
-        emit Message2(msg.sender, _receiver, _dstChainId, _message, msg.value);
     }
 
     /**

@@ -190,7 +190,7 @@ contract MessageBusReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external payable {
-        MsgDataTypes.RouteInfoX memory route = getRoutInfo(_route);
+        MsgDataTypes.Route memory route = getRoutInfo(_route);
         executeMessage(_message, route, _sigs, _signers, _powers, "Message");
     }
 
@@ -203,13 +203,13 @@ contract MessageBusReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external payable {
-        MsgDataTypes.RouteInfoX memory route = getRoutInfo(_route);
+        MsgDataTypes.Route memory route = getRoutInfo(_route);
         executeMessage(_message, route, _sigs, _signers, _powers, "Message2");
     }
 
     function executeMessage(
         bytes calldata _message,
-        MsgDataTypes.RouteInfoX memory _route,
+        MsgDataTypes.Route memory _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
@@ -258,7 +258,7 @@ contract MessageBusReceiver is Ownable {
     function emitMessageOnlyExecutedEvent(
         bytes32 _messageId,
         MsgDataTypes.TxStatus _status,
-        MsgDataTypes.RouteInfoX memory _route
+        MsgDataTypes.Route memory _route
     ) private {
         emit Executed(
             MsgDataTypes.MsgType.MessageOnly,
@@ -417,7 +417,7 @@ contract MessageBusReceiver is Ownable {
         return keccak256(abi.encodePacked(MsgDataTypes.MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
 
-    function computeMessageOnlyId(MsgDataTypes.RouteInfoX memory _route, bytes calldata _message)
+    function computeMessageOnlyId(MsgDataTypes.Route memory _route, bytes calldata _message)
         private
         view
         returns (bytes32)
@@ -440,7 +440,7 @@ contract MessageBusReceiver is Ownable {
             );
     }
 
-    function executeMessage(MsgDataTypes.RouteInfoX memory _route, bytes calldata _message)
+    function executeMessage(MsgDataTypes.Route memory _route, bytes calldata _message)
         private
         returns (IMessageReceiverApp.ExecutionStatus)
     {
@@ -501,16 +501,12 @@ contract MessageBusReceiver is Ownable {
         return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
-    function getRoutInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.RouteInfoX memory) {
-        return MsgDataTypes.RouteInfoX(_route.sender, "", _route.receiver, _route.srcChainId, _route.srcTxHash);
+    function getRoutInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {
+        return MsgDataTypes.Route(_route.sender, "", _route.receiver, _route.srcChainId, _route.srcTxHash);
     }
 
-    function getRoutInfo(MsgDataTypes.RouteInfo2 calldata _route)
-        private
-        pure
-        returns (MsgDataTypes.RouteInfoX memory)
-    {
-        return MsgDataTypes.RouteInfoX(address(0), _route.sender, _route.receiver, _route.srcChainId, _route.srcTxHash);
+    function getRoutInfo(MsgDataTypes.RouteInfo2 calldata _route) private pure returns (MsgDataTypes.Route memory) {
+        return MsgDataTypes.Route(address(0), _route.sender, _route.receiver, _route.srcChainId, _route.srcTxHash);
     }
 
     // ================= helper functions =====================

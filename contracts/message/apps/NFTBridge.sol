@@ -89,8 +89,8 @@ contract NFTBridge is MessageReceiverApp, Pauser {
     }
 
     /**
-     * @notice totalFee returns gas token value to be set in user tx, includes both cbridge msg fee and executor fee on dest chain
-     * @dev we use _nft address for user as it's same length so same msg cost
+     * @notice totalFee returns gas token value to be set in user tx, includes both msg fee and executor fee for dest chain
+     * @dev we assume if dst chain address are bytes, user and nft are same length, otherwise we need to add receiver to args
      * @param _dstChid dest chain ID
      * @param _nft address of source NFT contract
      * @param _id token ID to bridge (need to get accurate tokenURI length)
@@ -102,7 +102,15 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         uint256 _id
     ) external view returns (uint256) {
         string memory _uri = INFT(_nft).tokenURI(_id);
-        bytes memory message = abi.encode(NFTMsg(_nft, _nft, _id, _uri));
+        bytes memory message;
+        // try non-evm first
+        bytes memory dstNft = destNFTAddr2[_nft][_dstChid];
+        if (dstNft.length > 0) {
+            message = abi.encode(NFTMsg2(dstNft, dstNft, _id, _uri));
+        } else {
+            // evm chains or not configured, assume to be evm, 20 bytes address
+            message = abi.encode(NFTMsg(_nft, _nft, _id, _uri));
+        }
         return IMessageBus(messageBus).calcFee(message) + destTxFee[_dstChid];
     }
 
@@ -134,7 +142,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
      * @param _nft address of source NFT contract
      * @param _id nft token ID to bridge
      * @param _dstChid dest chain ID
-     * @param _receiver receiver address on dest chain
+     * @param _receiver receiver address on dest chain, arbitrary bytes
      */
     function sendTo(
         address _nft,
@@ -194,15 +202,18 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         }
         return xferOrMint(_message, srcChid);
     }
-    /*
+    
     function executeMessage(
         bytes calldata sender,
         uint64 srcChid,
         bytes calldata _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecutionStatus) {
+    ) external payable /* override */ onlyMessageBus returns (ExecutionStatus) {
+        if (paused() || keccak256(sender) != keccak256(destBridge2[srcChid])) {
+            return ExecutionStatus.Retry;
+        }
+        return xferOrMint(_message, srcChid);
     }
-    */
 
     // ===== internal utils
     // lockOrBurn on sender side

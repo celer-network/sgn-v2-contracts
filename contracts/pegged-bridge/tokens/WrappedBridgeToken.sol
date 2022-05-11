@@ -50,8 +50,8 @@ contract WrappedBridgeToken is ERC20, Ownable {
     }
 
     function addLiquidity(uint256 _amount) external {
-        IERC20(canonical).safeTransferFrom(msg.sender, address(this), _amount);
         liquidity[msg.sender] += _amount;
+        IERC20(canonical).safeTransferFrom(msg.sender, address(this), _amount);
         emit LiquidityAdded(msg.sender, _amount);
     }
 

@@ -129,6 +129,28 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         emit Sent(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
 
+    /**
+     * @notice locks or burn user's NFT in this contract and send message to mint (or withdraw) on dest chain
+     * @param _nft address of source NFT contract
+     * @param _id nft token ID to bridge
+     * @param _dstChid dest chain ID
+     * @param _receiver receiver address on dest chain
+     */
+    function sendTo(
+        address _nft,
+        uint256 _id,
+        uint64 _dstChid,
+        bytes calldata _receiver
+    ) external payable whenNotPaused {
+        require(msg.sender == INFT(_nft).ownerOf(_id), "not token owner");
+        // must save _uri before burn
+        string memory _uri = INFT(_nft).tokenURI(_id);
+        lockOrBurn(_nft, _id);
+        (bytes memory _dstBridge, bytes memory _dstNft) = checkAddr2(_nft, _dstChid);
+        msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg2(_receiver, _dstNft, _id, _uri)));
+        emit Sent2(msg.sender, _nft, _id, _dstChid, _receiver, _dstNft);
+    }
+
     // ===== called by MCN NFT after NFT is burnt
     function sendMsg(
         uint64 _dstChid,

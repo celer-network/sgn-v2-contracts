@@ -88,6 +88,16 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         sendMessage(_receiver, _dstChainId, message, msg.value);
     }
 
+    function sendMessageWithNonce(
+        address _receiver,
+        uint64 _dstChainId,
+        bytes calldata _message,
+        uint64 _nonce
+    ) external payable {
+        bytes memory message = abi.encode(_nonce, _message);
+        sendMessage(_receiver, _dstChainId, message, msg.value);
+    }
+
     function executeMessage(
         address _sender,
         uint64 _srcChainId,

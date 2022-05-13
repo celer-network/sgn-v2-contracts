@@ -26,6 +26,8 @@ contract MessageBusSender is Ownable {
         uint256 fee
     );
 
+    event FeeWithdrawn(address receiver, uint256 amount);
+
     event FeeBaseUpdated(uint256 feeBase);
     event FeePerByteUpdated(uint256 feePerByte);
 
@@ -120,6 +122,7 @@ contract MessageBusSender is Ownable {
         withdrawnFees[_account] = _cumulativeFee;
         (bool sent, ) = _account.call{value: amount, gas: 50000}("");
         require(sent, "failed to withdraw fee");
+        emit FeeWithdrawn(_account, amount);
     }
 
     /**

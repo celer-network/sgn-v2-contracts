@@ -13,7 +13,7 @@ contract MessageBusSender is Ownable {
     mapping(address => uint256) public withdrawnFees;
 
     event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message, uint256 fee);
-    // message to and from non-evm chain
+    // message to non-evm chain with >20 bytes addr
     event Message2(address indexed sender, bytes receiver, uint256 dstChainId, bytes message, uint256 fee);
 
     event MessageWithTransfer(

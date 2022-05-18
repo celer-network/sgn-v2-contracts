@@ -164,6 +164,9 @@ const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_PRIVATE_K
 const swimmerEndpoint = process.env.SWIMMER_ENDPOINT || DEFAULT_ENDPOINT;
 const swimmerPrivateKey = process.env.SWIMMER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const sxNetworkEndpoint = process.env.SX_NETWORK_ENDPOINT || DEFAULT_ENDPOINT;
+const sxNetworkPrivateKey = process.env.SX_NETWORK_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -367,6 +370,10 @@ const config: HardhatUserConfig = {
     swimmer: {
       url: swimmerEndpoint,
       accounts: [`0x${swimmerPrivateKey}`]
+    },
+    sxNetwork: {
+      url: sxNetworkEndpoint,
+      accounts: [`0x${sxNetworkPrivateKey}`]
     }
   },
   namedAccounts: {

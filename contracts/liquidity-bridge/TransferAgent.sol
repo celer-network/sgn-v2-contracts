@@ -18,7 +18,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
 
     mapping(BridgeTransferLib.BridgeSendType => address) public bridges;
 
-    event Supplement(address sender, bytes receiver);
+    event Supplement(bytes32 transferId, address sender, bytes receiver);
     event BridgeUpdated(BridgeTransferLib.BridgeSendType bridgeSendType, address bridgeAddr);
 
     /**
@@ -42,7 +42,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
         BridgeTransferLib.BridgeSendType _bridgeSendType
-    ) external nonReentrant whenNotPaused onlyOwner returns (bytes32) {
+    ) external nonReentrant whenNotPaused returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -56,7 +56,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
             _bridgeSendType,
             _bridgeAddr
         );
-        emit Supplement(msg.sender, _receiver);
+        emit Supplement(transferId, msg.sender, _receiver);
         return transferId;
     }
 

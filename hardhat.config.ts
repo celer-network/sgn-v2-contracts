@@ -70,6 +70,9 @@ const sxTestPrivateKey = process.env.SX_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const swimmerTestEndpoint = process.env.SWIMMER_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const swimmerTestPrivateKey = process.env.SWIMMER_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const dexalotTestEndpoint = process.env.DEXALOT_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const dexalotTestPrivateKey = process.env.DEXALOT_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -158,6 +161,12 @@ const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const ontologyEndpoint = process.env.ONTOLOGY_ENDPOINT || DEFAULT_ENDPOINT;
 const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const swimmerEndpoint = process.env.SWIMMER_ENDPOINT || DEFAULT_ENDPOINT;
+const swimmerPrivateKey = process.env.SWIMMER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const sxNetworkEndpoint = process.env.SX_NETWORK_ENDPOINT || DEFAULT_ENDPOINT;
+const sxNetworkPrivateKey = process.env.SX_NETWORK_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -235,6 +244,10 @@ const config: HardhatUserConfig = {
     swimmerTest: {
       url: swimmerTestEndpoint,
       accounts: [`0x${swimmerTestPrivateKey}`]
+    },
+    dexalotTest: {
+      url: dexalotTestEndpoint,
+      accounts: [`0x${dexalotTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -353,6 +366,14 @@ const config: HardhatUserConfig = {
     ontology: {
       url: ontologyEndpoint,
       accounts: [`0x${ontologyPrivateKey}`]
+    },
+    swimmer: {
+      url: swimmerEndpoint,
+      accounts: [`0x${swimmerPrivateKey}`]
+    },
+    sxNetwork: {
+      url: sxNetworkEndpoint,
+      accounts: [`0x${sxNetworkPrivateKey}`]
     }
   },
   namedAccounts: {

@@ -88,6 +88,16 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         sendMessage(_receiver, _dstChainId, message, msg.value);
     }
 
+    function sendMessageWithNonce(
+        address _receiver,
+        uint64 _dstChainId,
+        bytes calldata _message,
+        uint64 _nonce
+    ) external payable {
+        bytes memory message = abi.encode(_nonce, _message);
+        sendMessage(_receiver, _dstChainId, message, msg.value);
+    }
+
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
@@ -99,6 +109,8 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         if (n == 100000000000002) {
             // test revert without reason
             revert();
+        } else if (n == 100000000000003) {
+            return ExecutionStatus.Retry;
         }
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;

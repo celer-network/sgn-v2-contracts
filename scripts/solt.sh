@@ -15,6 +15,9 @@ solFiles=(
   integration-examples/ContractAsSender
   interfaces/ISigsVerifier
   message/apps/TransferSwap
+  message/apps/OrigNFT
+  message/apps/PegNFT
+  message/apps/MCNNFT
   message/apps/NFTBridge
   message/apps/MsgTest
   message/messagebus/MessageBus
@@ -34,6 +37,7 @@ solFiles=(
   pegged-bridge/tokens/customized/FraxBridgeToken
   pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner
   test-helpers/DummySwap
+  test-helpers/WETH
 )
 
 run_solt_write() {

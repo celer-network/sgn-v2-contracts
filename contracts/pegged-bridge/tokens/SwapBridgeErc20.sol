@@ -49,7 +49,7 @@ contract SwapBridgeErc20 is ERC20, Ownable {
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
         IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
         IERC20MintableBurnable(canonical).burn(_amount);
-        _burn(address(this), amountB);
+        _burn(address(this), _amount);
         return true;
     }
 

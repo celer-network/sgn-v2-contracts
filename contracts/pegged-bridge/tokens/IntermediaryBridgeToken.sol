@@ -8,16 +8,17 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IERC20MintableBurnable is IERC20 {
-
     function mint(address receiver, uint256 amount) external;
 
     function burn(uint256 amount) external;
 }
 
 /**
- * @title Per bridge intermediary token that supports swapping with a canonical token.
+ * @title Per bridge intermediary token that delegates to a canonical token.
+ * Useful for canonical tokens that don't support the burn / burnFrom function signature required by
+ * PeggedTokenBridge.
  */
-contract SwapBridgeErc20 is ERC20, Ownable {
+contract IntermediaryBridgeToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
     address public bridge;
@@ -41,7 +42,7 @@ contract SwapBridgeErc20 is ERC20, Ownable {
     }
 
     function mint(address _to, uint256 _amount) external onlyBridge returns (bool) {
-        _mint(address(this), _amount); // totalSupply == bridge liqudidty
+        _mint(address(this), _amount); // totalSupply == bridge liquidity
         IERC20MintableBurnable(canonical).mint(_to, _amount);
         return true;
     }

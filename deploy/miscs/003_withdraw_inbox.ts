@@ -6,10 +6,11 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  await deploy('WithdrawInbox', {
+  const withdrawInbox = await deploy('WithdrawInbox', {
     from: deployer,
-    log: true,
+    log: true
   });
+  await hre.run('verify:verify', { address: withdrawInbox.address });
 };
 
 deployFunc.tags = ['WithdrawInbox'];

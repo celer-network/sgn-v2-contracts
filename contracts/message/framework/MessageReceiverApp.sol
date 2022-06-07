@@ -3,6 +3,9 @@
 pragma solidity 0.8.9;
 
 import "../interfaces/IMessageReceiverApp.sol";
+import "../interfaces/IMessageBus.sol";
+import "../../interfaces/IBridge.sol";
+import "../../interfaces/IWETH.sol";
 import "./MessageBusAddress.sol";
 
 abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
@@ -81,4 +84,24 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         bytes calldata _message,
         address _executor
     ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
+
+    /**
+     * @notice util function that checks whether the bridge out token is native and wraps it
+     * @dev when the bridged token is a native or wrapped native token, whether your contracts receives native/wrapped token depends on whether
+     * the "nativeWrap" field is set in the Bridge contract. An easy but sometimes gas-inefficient way to deal with this is to always check and
+     * wrap the bridge out token using this function.
+     * note Assumption: only the liquidity bridge is capable of sending a native wrap
+     * @param _bridgeOutToken token out from liquidity bridge
+     * @param _amount amount of token
+     */
+    function wrapBridgeOutToken(address _bridgeOutToken, uint256 _amount) internal {
+        address bridge = IMessageBus(messageBus).liquidityBridge();
+        if (bridge == address(0)) {
+            return;
+        }
+        address nativeWrap = IBridge(bridge).nativeWrap();
+        if (_bridgeOutToken == nativeWrap) {
+            IWETH(nativeWrap).deposit{value: _amount}();
+        }
+    }
 }

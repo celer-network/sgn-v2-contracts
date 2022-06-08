@@ -57,6 +57,7 @@ contract OntologyBridgeToken is ERC20, Ownable {
     function mint(address _to, uint256 _amount) external onlyBridge returns (bool) {
         _mint(address(this), _amount);
         _approve(address(this), wrapper, _amount);
+        // NOTE: swapBridgeForCanonical automatically transfers canonical token to _to.
         IOntologyBridgeTokenWrapper(wrapper).swapBridgeForCanonical(address(this), _to, _amount);
         return true;
     }
@@ -64,8 +65,9 @@ contract OntologyBridgeToken is ERC20, Ownable {
     function burn(address _from, uint256 _amount) external onlyBridge returns (bool) {
         IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
         IERC20(canonical).safeIncreaseAllowance(address(wrapper), _amount);
-        IOntologyBridgeTokenWrapper(wrapper).swapCanonicalForBridge(address(this), _from, _amount);
-        _burn(_from, _amount);
+        // NOTE: swapCanonicalForBridge automatically transfers bridge token to _from.
+        uint256 got = IOntologyBridgeTokenWrapper(wrapper).swapCanonicalForBridge(address(this), _from, _amount);
+        _burn(_from, got);
         return true;
     }
 

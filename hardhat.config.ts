@@ -170,6 +170,9 @@ const sxNetworkPrivateKey = process.env.SX_NETWORK_PRIVATE_KEY || DEFAULT_PRIVAT
 const apeEndpoint = process.env.APE_ENDPOINT || DEFAULT_ENDPOINT;
 const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
+const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -381,6 +384,10 @@ const config: HardhatUserConfig = {
     ape: {
       url: apeEndpoint,
       accounts: [`0x${apePrivateKey}`]
+    },
+    kava: {
+      url: kavaEndpoint,
+      accounts: [`0x${kavaPrivateKey}`]
     }
   },
   namedAccounts: {

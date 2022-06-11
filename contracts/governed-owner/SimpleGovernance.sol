@@ -45,7 +45,7 @@ contract SimpleGovernance {
 
     // NOTE: proxies must be audited open-source non-upgradable contracts with following requirements:
     // 1. Truthfully pass along tx sender who called the proxy function as the governance proposer.
-    // 2. Do not allow arbitary fastpass proposal with calldata constructed by the proxy callers.
+    // 2. Do not allow arbitrary fastpass proposal with calldata constructed by the proxy callers.
     // See ./proxies/CommonOwnerProxy.sol for example.
     mapping(address => bool) public proposerProxies;
 

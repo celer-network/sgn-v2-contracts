@@ -58,11 +58,13 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
 
     //====================== option 2 =============================
     function transfer(address _to, uint256 _amount) public virtual override returns (bool) {
-        super.transfer(_to, _amount);
         if (msg.sender == bridge) {
+            super.transfer(address(this), _amount);
             IERC20(canonical).safeTransfer(_to, _amount);
+            return true;
+        } else {
+            return super.transfer(_to, _amount);
         }
-        return true;
     }
 
     function transferFrom(
@@ -73,7 +75,7 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
         if (msg.sender == bridge) {
             IERC20(canonical).safeTransferFrom(_from, _to, _amount);
         }
-        return super.transferFrom(_from, _to, _amount);
+        return super.transferFrom(address(this), _to, _amount);
     }
 
     //====================== end option 2 =========================

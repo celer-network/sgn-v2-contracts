@@ -39,7 +39,7 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
     ) internal virtual override {
         super._beforeTokenTransfer(_from, _to, _amount); // Call parent hook
         if (msg.sender == bridge && _to == bridge) {
-            IERC20(canonical).safeTransferFrom(_from, _to, _amount);
+            IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
         }
     }
 
@@ -73,9 +73,10 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
         uint256 _amount
     ) public virtual override returns (bool) {
         if (msg.sender == bridge) {
-            IERC20(canonical).safeTransferFrom(_from, _to, _amount);
+            IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
+            return super.transferFrom(address(this), _to, _amount);
         }
-        return super.transferFrom(address(this), _to, _amount);
+        return super.transferFrom(_from, _to, _amount);
     }
 
     //====================== end option 2 =========================

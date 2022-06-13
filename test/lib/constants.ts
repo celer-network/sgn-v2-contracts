@@ -50,6 +50,17 @@ export const XFER_TYPE_PEG_WITHDRAW = 4;
 export const XFER_TYPE_PEGV2_MINT = 5;
 export const XFER_TYPE_PEGV2_WITHDRAW = 6;
 
+export const GovExternalDefault = 0;
+export const GovExternalFastPass = 1;
+export const GovInternalParamChange = 2;
+export const GovInternalVoterUpdate = 3;
+export const GovInternalProxyUpdate = 4;
+export const GovInternalTokenTransfer = 5;
+
+export const GovParamActivePeriod = 0;
+export const GovParamQuorumThreshold = 1;
+export const GovParamFastPassThreshold = 2;
+
 export const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
 export const userPrivKeys = [

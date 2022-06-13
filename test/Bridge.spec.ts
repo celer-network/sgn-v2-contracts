@@ -7,16 +7,8 @@ import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
 import { Bridge, TestERC20, PeggedTokenBridge, SingleBridgeToken } from '../typechain';
-import { deployBridgeContracts, getAccounts, loadFixture } from './lib/common';
+import { deployBridgeContracts, getAccounts, getAddrs, getBlockTime, loadFixture } from './lib/common';
 import { calculateSignatures, getMintRequest, getRelayRequest, getWithdrawRequest, hex2Bytes } from './lib/proto';
-
-function getAddrs(signers: Wallet[]) {
-  const addrs: string[] = [];
-  for (let i = 0; i < signers.length; i++) {
-    addrs.push(signers[i].address);
-  }
-  return addrs;
-}
 
 async function getUpdateSignersSigs(
   triggerTime: number,
@@ -31,12 +23,6 @@ async function getUpdateSignersSigs(
   const hash = keccak256(['bytes'], [data]);
   const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
   return sigs;
-}
-
-async function getBlockTime() {
-  const blockNumber = await ethers.provider.getBlockNumber();
-  const block = await ethers.provider.getBlock(blockNumber);
-  return block.timestamp;
 }
 
 describe('Bridge Tests', function () {

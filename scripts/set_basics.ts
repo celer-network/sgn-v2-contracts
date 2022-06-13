@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 import { Bridge__factory } from '../typechain/factories/Bridge__factory';
 import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';
 import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBridge__factory';
+import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
 dotenv.config();
@@ -135,10 +136,47 @@ async function setOriginalTokenVaultBasics(): Promise<void> {
   }
 }
 
+async function setMessageBusBasics(): Promise<void> {
+  const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
+
+  const messageBusAddr = process.env.MESSAGE_BUS as string;
+  if (!messageBusAddr) {
+    return;
+  }
+  const messageBus = MessageBus__factory.connect(messageBusAddr, deployerSigner);
+  const liquidityBridge = process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE as string;
+  if (liquidityBridge) {
+    await (await messageBus.setLiquidityBridge(liquidityBridge, feeOverrides)).wait();
+    console.log('setLiquidityBridge', liquidityBridge);
+  }
+  const pegVault = process.env.MESSAGE_BUS_PEG_VAULT as string;
+  if (pegVault) {
+    await (await messageBus.setPegVault(pegVault, feeOverrides)).wait();
+    console.log('setPegVault', pegVault);
+  }
+  const pegBridge = process.env.MESSAGE_BUS_PEG_BRIDGE as string;
+  if (pegBridge) {
+    await (await messageBus.setPegBridge(pegBridge, feeOverrides)).wait();
+    console.log('setPegBridge', pegBridge);
+  }
+  const pegVaultV2 = process.env.MESSAGE_BUS_PEG_VAULT_V2 as string;
+  if (pegVaultV2) {
+    await (await messageBus.setPegVaultV2(pegVaultV2, feeOverrides)).wait();
+    console.log('setPegVaultV2', pegVaultV2);
+  }
+  const pegBridgeV2 = process.env.MESSAGE_BUS_PEG_BRIDGE_V2 as string;
+  if (pegBridgeV2) {
+    await (await messageBus.setPegBridgeV2(pegBridgeV2, feeOverrides)).wait();
+    console.log('setPegBridgeV2', pegBridgeV2);
+  }
+}
+
 async function setBasics(): Promise<void> {
   await setBridgeBasics();
   await setOriginalTokenVaultBasics();
   await setPeggedTokenBridgeBasics();
+  await setMessageBusBasics();
 }
 
 setBasics();

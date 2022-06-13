@@ -16,6 +16,9 @@ async function resetSigners(): Promise<void> {
     return;
   }
   const bridge = Bridge__factory.connect(bridgeAddr, deployerSigner);
+  // Uncomment if needed
+  // await (await bridge.notifyResetSigners(feeOverrides)).wait();
+
   const signers = (process.env.BRIDGE_SIGNERS as string).split(',');
   const powers = (process.env.BRIDGE_POWERS as string).split(',');
   await (await bridge.resetSigners(signers, powers, feeOverrides)).wait();

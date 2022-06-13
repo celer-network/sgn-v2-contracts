@@ -9,10 +9,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title Per bridge intermediary token that delegates to a canonical token.
- * Useful for canonical tokens that don't support the burn / burnFrom function signature required by
- * PeggedTokenBridge.
+ * Useful for several original tokens that need to be pegged to a single pegged token.
  */
-contract IntermediaryBridgeToken is ERC20, Ownable {
+contract IntermediaryOriginalToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
     address public bridge;

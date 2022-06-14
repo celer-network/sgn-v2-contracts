@@ -11,7 +11,7 @@ import "../safeguard/Pauser.sol";
 
 /**
  * @title Transfer agent. Designed to support arbitrary length receiver address for transfer. Supports the liquidity pool-based {Bridge}, the {OriginalTokenVault} for pegged
- * deposit and the {PeggedTokenBridge} for pegged burn.
+ * deposit and the {PeggedTokenBridge} for pegged burn. Supports contract sender as well.
  */
 contract TransferAgent is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;

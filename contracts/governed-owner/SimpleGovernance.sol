@@ -68,7 +68,6 @@ contract SimpleGovernance {
     );
     event ProposalVoted(uint256 proposalId, address voter, bool vote);
     event ProposalExecuted(uint256 proposalId);
-    event ProposalExecutionReverted(string reason);
 
     event ParamChangeProposalCreated(uint256 proposalId, ParamName name, uint256 value);
     event VoterUpdateProposalCreated(uint256 proposalId, address[] voters, uint256[] powers);

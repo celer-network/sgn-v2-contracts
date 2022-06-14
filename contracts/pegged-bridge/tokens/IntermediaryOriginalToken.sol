@@ -8,34 +8,35 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Per bridge intermediary token that delegates to a canonical token.
- * Useful for several original tokens that need to be pegged to a single pegged token.
+ * @title Intermediary token that automatically transfers the canonical token when interacting with approved bridges.
  */
 contract IntermediaryOriginalToken is ERC20, Ownable {
     using SafeERC20 for IERC20;
 
-    address public bridge;
+    mapping(address => bool) public bridges;
     address public immutable canonical; // canonical token
 
-    event BridgeUpdated(address bridge);
+    event BridgeUpdated(address bridge, bool enable);
 
     constructor(
         string memory name_,
         string memory symbol_,
-        address bridge_,
+        address[] memory bridges_,
         address canonical_
     ) ERC20(name_, symbol_) {
-        bridge = bridge_;
+        for (uint256 i = 0; i < bridges_.length; i++) {
+            bridges[bridges_[i]] = true;
+        }
         canonical = canonical_;
     }
 
     function transfer(address _to, uint256 _amount) public virtual override returns (bool) {
-        if (msg.sender == bridge) {
-            _burn(msg.sender, _amount);
+        bool success = super.transfer(_to, _amount);
+        if (bridges[msg.sender]) {
+            _burn(_to, _amount);
             IERC20(canonical).safeTransfer(_to, _amount);
-            return true;
         }
-        return super.transfer(_to, _amount);
+        return success;
     }
 
     function transferFrom(
@@ -43,17 +44,16 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
         address _to,
         uint256 _amount
     ) public virtual override returns (bool) {
-        if (msg.sender == bridge) {
+        if (bridges[msg.sender]) {
+            _mint(_from, _amount);
             IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
-            _mint(_to, _amount);
-            return true;
         }
         return super.transferFrom(_from, _to, _amount);
     }
 
-    function updateBridge(address _bridge) external onlyOwner {
-        bridge = _bridge;
-        emit BridgeUpdated(bridge);
+    function updateBridge(address _bridge, bool _enable) external onlyOwner {
+        bridges[_bridge] = _enable;
+        emit BridgeUpdated(_bridge, _enable);
     }
 
     // to make compatible with BEP20

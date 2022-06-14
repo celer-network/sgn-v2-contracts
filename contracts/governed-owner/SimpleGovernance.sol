@@ -186,12 +186,17 @@ contract SimpleGovernance {
             require(success, _getRevertMsg(res));
         } else if (_type == ProposalType.InternalParamChange) {
             (ParamName name, uint256 value) = abi.decode((_data), (ParamName, uint256));
+            params[name] = value;
             if (name == ParamName.ActivePeriod) {
                 require(value <= MAX_ACTIVE_PERIOD && value >= MIN_ACTIVE_PERIOD, "invalid active period");
             } else if (name == ParamName.QuorumThreshold || name == ParamName.FastPassThreshold) {
-                require(value < THRESHOLD_DECIMAL && value > 0, "invalid threshold");
+                require(
+                    params[ParamName.QuorumThreshold] >= params[ParamName.FastPassThreshold] &&
+                        value < THRESHOLD_DECIMAL &&
+                        value > 0,
+                    "invalid threshold"
+                );
             }
-            params[name] = value;
         } else if (_type == ProposalType.InternalVoterUpdate) {
             (address[] memory addrs, uint256[] memory powers) = abi.decode((_data), (address[], uint256[]));
             for (uint256 i = 0; i < addrs.length; i++) {

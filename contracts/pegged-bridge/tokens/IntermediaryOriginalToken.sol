@@ -27,44 +27,15 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
     ) ERC20(name_, symbol_) {
         bridge = bridge_;
         canonical = canonical_;
-        _mint(address(this), type(uint256).max);
-        IERC20(this).safeApprove(bridge_, type(uint256).max);
     }
 
-    //====================== option 1 =============================
-    function _beforeTokenTransfer(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) internal virtual override {
-        super._beforeTokenTransfer(_from, _to, _amount); // Call parent hook
-        if (msg.sender == bridge && _to == bridge) {
-            IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
-        }
-    }
-
-    function _afterTokenTransfer(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) internal virtual override {
-        super._afterTokenTransfer(_from, _to, _amount); // Call parent hook
-        if (msg.sender == bridge && _from == bridge) {
-            IERC20(canonical).safeTransfer(_to, _amount);
-        }
-    }
-
-    //====================== end option 1 =========================
-
-    //====================== option 2 =============================
     function transfer(address _to, uint256 _amount) public virtual override returns (bool) {
         if (msg.sender == bridge) {
-            super.transfer(address(this), _amount);
+            _burn(msg.sender, _amount);
             IERC20(canonical).safeTransfer(_to, _amount);
             return true;
-        } else {
-            return super.transfer(_to, _amount);
         }
+        return super.transfer(_to, _amount);
     }
 
     function transferFrom(
@@ -74,17 +45,14 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
     ) public virtual override returns (bool) {
         if (msg.sender == bridge) {
             IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
-            return super.transferFrom(address(this), _to, _amount);
+            _mint(_to, _amount);
+            return true;
         }
         return super.transferFrom(_from, _to, _amount);
     }
 
-    //====================== end option 2 =========================
-
     function updateBridge(address _bridge) external onlyOwner {
-        IERC20(this).safeApprove(bridge, 0);
         bridge = _bridge;
-        IERC20(this).safeApprove(bridge, type(uint256).max);
         emit BridgeUpdated(bridge);
     }
 

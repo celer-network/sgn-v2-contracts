@@ -36,11 +36,6 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     log: true,
     args: [staking.address]
   });
-  await deploy('FarmingRewards', {
-    from: deployer,
-    log: true,
-    args: [staking.address]
-  });
   const stakingReward = await deployments.get('StakingReward');
   await deploy('Govern', {
     from: deployer,

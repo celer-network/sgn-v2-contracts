@@ -6,5 +6,12 @@ import "./proxies/CommonOwnerProxy.sol";
 import "./proxies/BridgeOwnerProxy.sol";
 import "./proxies/MessageOwnerProxy.sol";
 import "./proxies/SgnOwnerProxy.sol";
+import "./proxies/UpgradeableOwnerProxy.sol";
 
-contract GovernedOwnerProxy is CommonOwnerProxy, BridgeOwnerProxy, MessageOwnerProxy, SgnOwnerProxy {}
+contract GovernedOwnerProxy is
+    CommonOwnerProxy,
+    BridgeOwnerProxy,
+    MessageOwnerProxy,
+    SgnOwnerProxy,
+    UpgradeableOwnerProxy
+{}

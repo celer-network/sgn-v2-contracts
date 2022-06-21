@@ -14,11 +14,10 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const voters = (process.env.GOVERNANCE_VOTERS as string).split(',');
   const powers = (process.env.GOVERNANCE_POWERS as string).split(',');
-  const proxies = (process.env.GOVERNANCE_PROXIES as string).split(',');
   const args = [
     voters,
     powers,
-    proxies,
+    [governedOwnerProxy.address],
     process.env.GOVERNANCE_ACTIVE_PERIOD,
     process.env.GOVERNANCE_QUORUM_THRESHOLD,
     process.env.GOVERNANCE_FAST_PASS_THRESHOLD

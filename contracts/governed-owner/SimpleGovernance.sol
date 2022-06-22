@@ -293,8 +293,10 @@ contract SimpleGovernance {
 
     function _addVoter(address _voter, uint256 _power) private {
         require(_power > 0, "zero power");
-        require(voterPowers[_voter] == 0, "already a voter");
-        voters.push(_voter);
+        if (voterPowers[_voter] == 0) {
+            // add new voter
+            voters.push(_voter);
+        }
         voterPowers[_voter] = _power;
     }
 

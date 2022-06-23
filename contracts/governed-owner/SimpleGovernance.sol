@@ -89,7 +89,7 @@ contract SimpleGovernance {
             "invalid init thresholds"
         );
         for (uint256 i = 0; i < _voters.length; i++) {
-            _addVoter(_voters[i], _powers[i]);
+            _setVoter(_voters[i], _powers[i]);
         }
         for (uint256 i = 0; i < _proxies.length; i++) {
             proposerProxies[_proxies[i]] = true;
@@ -201,7 +201,7 @@ contract SimpleGovernance {
             (address[] memory addrs, uint256[] memory powers) = abi.decode((_data), (address[], uint256[]));
             for (uint256 i = 0; i < addrs.length; i++) {
                 if (powers[i] > 0) {
-                    _addVoter(addrs[i], powers[i]);
+                    _setVoter(addrs[i], powers[i]);
                 } else {
                     _removeVoter(addrs[i]);
                 }
@@ -291,10 +291,12 @@ contract SimpleGovernance {
         return proposalId;
     }
 
-    function _addVoter(address _voter, uint256 _power) private {
+    function _setVoter(address _voter, uint256 _power) private {
         require(_power > 0, "zero power");
-        require(voterPowers[_voter] == 0, "already a voter");
-        voters.push(_voter);
+        if (voterPowers[_voter] == 0) {
+            // add new voter
+            voters.push(_voter);
+        }
         voterPowers[_voter] = _power;
     }
 

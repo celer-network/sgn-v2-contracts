@@ -14,6 +14,10 @@ import "../interfaces/IOriginalTokenVaultV2.sol";
 import "../interfaces/IPeggedTokenBridge.sol";
 import "../interfaces/IPeggedTokenBridgeV2.sol";
 
+interface INativeWrap {
+    function nativeWrap() external view returns (address);
+}
+
 library BridgeTransferLib {
     using SafeERC20 for IERC20;
 
@@ -40,7 +44,7 @@ library BridgeTransferLib {
     struct ReceiveInfo {
         bytes32 transferId;
         address receiver;
-        address token;
+        address token; // 0 address for native token
         uint256 amount;
         bytes32 refid; // reference id, e.g., srcTransferId for refund
     }
@@ -200,7 +204,11 @@ library BridgeTransferLib {
         );
         recv.refid = request.refid;
         recv.receiver = request.receiver;
-        recv.token = request.token;
+        if (INativeWrap(_bridgeAddr).nativeWrap() == request.token) {
+            recv.token = address(0);
+        } else {
+            recv.token = request.token;
+        }
         recv.amount = request.amount;
         if (!IBridge(_bridgeAddr).withdraws(recv.transferId)) {
             IBridge(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
@@ -237,7 +245,11 @@ library BridgeTransferLib {
         );
         recv.refid = request.refId;
         recv.receiver = request.receiver;
-        recv.token = request.token;
+        if (INativeWrap(_bridgeAddr).nativeWrap() == request.token) {
+            recv.token = address(0);
+        } else {
+            recv.token = request.token;
+        }
         recv.amount = request.amount;
         if (!IOriginalTokenVault(_bridgeAddr).records(recv.transferId)) {
             IOriginalTokenVault(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
@@ -317,7 +329,11 @@ library BridgeTransferLib {
         }
         recv.refid = request.refId;
         recv.receiver = request.receiver;
-        recv.token = request.token;
+        if (INativeWrap(_bridgeAddr).nativeWrap() == request.token) {
+            recv.token = address(0);
+        } else {
+            recv.token = request.token;
+        }
         recv.amount = request.amount;
         return recv;
     }

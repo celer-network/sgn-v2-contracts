@@ -90,7 +90,13 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         address _receiver = records[refundInfo.refid];
         require(_receiver != address(0), "unknown transfer id or already refunded");
         delete records[refundInfo.refid];
-        IERC20(refundInfo.token).safeTransfer(_receiver, refundInfo.amount);
+        if (refundInfo.token == address(0)) {
+            // native token transfer
+            (bool sent, ) = _receiver.call{value: refundInfo.amount, gas: 50000}("");
+            require(sent, "failed to send native token");
+        } else {
+            IERC20(refundInfo.token).safeTransfer(_receiver, refundInfo.amount);
+        }
         return refundInfo.transferId;
     }
 
@@ -111,4 +117,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         bridges[_bridgeSendType] = _addr;
         emit BridgeUpdated(_bridgeSendType, _addr);
     }
+
+    // This is needed to receive ETH if a refund asset is ETH
+    receive() external payable {}
 }

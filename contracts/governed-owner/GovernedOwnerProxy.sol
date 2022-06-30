@@ -14,4 +14,6 @@ contract GovernedOwnerProxy is
     MessageOwnerProxy,
     SgnOwnerProxy,
     UpgradeableOwnerProxy
-{}
+{
+    constructor(address _initializer) OwnerProxyBase(_initializer) {}
+}

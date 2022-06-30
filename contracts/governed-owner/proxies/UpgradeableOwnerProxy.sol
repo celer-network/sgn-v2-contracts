@@ -9,16 +9,16 @@ import {OwnerDataTypes as dt} from "./OwnerDataTypes.sol";
 
 abstract contract UpgradeableOwnerProxy is OwnerProxyBase {
     event ChangeProxyAdminProposalCreated(uint256 proposalId, address target, address proxy, address newAdmin);
-    event UpgradeProposalCreated(uint256 proposalId, address target, address proxy, address implementaion);
+    event UpgradeProposalCreated(uint256 proposalId, address target, address proxy, address implementation);
     event UpgradeAndCallProposalCreated(
         uint256 proposalId,
         address target,
         address proxy,
-        address implementaion,
+        address implementation,
         bytes data
     );
-    event UpgradeToProposalCreated(uint256 proposalId, address target, address implementaion);
-    event UpgradeToAndCallProposalCreated(uint256 proposalId, address target, address implementaion, bytes data);
+    event UpgradeToProposalCreated(uint256 proposalId, address target, address implementation);
+    event UpgradeToAndCallProposalCreated(uint256 proposalId, address target, address implementation, bytes data);
 
     function proposeChangeProxyAdmin(
         address _target,

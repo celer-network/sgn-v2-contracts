@@ -435,7 +435,9 @@ const config: HardhatUserConfig = {
       opera: process.env.FTMSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
       aurora: process.env.AURORASCAN_API_KEY,
-      moonriver: process.env.MOONSCAN_API_KEY
+      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
+      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY,
+      heco: process.env.HECOSCAN_API_KEY
     }
   }
 };

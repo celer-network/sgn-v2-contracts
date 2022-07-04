@@ -10,8 +10,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const governedOwnerProxy = await deploy('GovernedOwnerProxy', {
     from: deployer,
     log: true,
-    args: ownerProxyArgs,
-    deterministicDeployment: true
+    args: ownerProxyArgs
   });
   await hre.run('verify:verify', { address: governedOwnerProxy.address, constructorArguments: ownerProxyArgs });
 
@@ -28,8 +27,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const simpleGovernance = await deploy('SimpleGovernance', {
     from: deployer,
     log: true,
-    args: args,
-    deterministicDeployment: true
+    args: args
   });
   await hre.run('verify:verify', { address: simpleGovernance.address, constructorArguments: args });
 };

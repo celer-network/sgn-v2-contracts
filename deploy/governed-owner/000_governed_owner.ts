@@ -6,19 +6,20 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
+  const ownerProxyArgs = [process.env.GOVERNANCE_INITIALIZER];
   const governedOwnerProxy = await deploy('GovernedOwnerProxy', {
     from: deployer,
-    log: true
+    log: true,
+    args: ownerProxyArgs
   });
-  await hre.run('verify:verify', { address: governedOwnerProxy.address });
+  await hre.run('verify:verify', { address: governedOwnerProxy.address, constructorArguments: ownerProxyArgs });
 
   const voters = (process.env.GOVERNANCE_VOTERS as string).split(',');
   const powers = (process.env.GOVERNANCE_POWERS as string).split(',');
-  const proxies = (process.env.GOVERNANCE_PROXIES as string).split(',');
-  const args = [
+  const governanceArgs = [
     voters,
     powers,
-    proxies,
+    [governedOwnerProxy.address],
     process.env.GOVERNANCE_ACTIVE_PERIOD,
     process.env.GOVERNANCE_QUORUM_THRESHOLD,
     process.env.GOVERNANCE_FAST_PASS_THRESHOLD
@@ -26,9 +27,9 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const simpleGovernance = await deploy('SimpleGovernance', {
     from: deployer,
     log: true,
-    args: args
+    args: governanceArgs
   });
-  await hre.run('verify:verify', { address: simpleGovernance.address, constructorArguments: args });
+  await hre.run('verify:verify', { address: simpleGovernance.address, constructorArguments: governanceArgs });
 };
 
 deployFunc.tags = ['GovernedOwner'];

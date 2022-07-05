@@ -174,7 +174,7 @@ interface GovernedOwnerInfo {
 
 export async function deployGovernedOwner(admin: Wallet, initVoterNum: number): Promise<GovernedOwnerInfo> {
   const proxyFactory = (await ethers.getContractFactory('GovernedOwnerProxy')) as GovernedOwnerProxy__factory;
-  const proxy = await proxyFactory.connect(admin).deploy();
+  const proxy = await proxyFactory.connect(admin).deploy(admin.address);
   await proxy.deployed();
 
   const voters: string[] = [];

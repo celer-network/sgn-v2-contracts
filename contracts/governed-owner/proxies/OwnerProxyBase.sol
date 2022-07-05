@@ -6,14 +6,14 @@ import "../SimpleGovernance.sol";
 
 abstract contract OwnerProxyBase {
     SimpleGovernance public gov;
-    address private deployer;
+    address private initializer;
 
-    constructor() {
-        deployer = msg.sender;
+    constructor(address _initializer) {
+        initializer = _initializer;
     }
 
     function initGov(SimpleGovernance _gov) public {
-        require(msg.sender == deployer, "only deployer can init");
+        require(msg.sender == initializer, "only initializer can init");
         require(address(gov) == address(0), "gov addr already set");
         gov = _gov;
     }

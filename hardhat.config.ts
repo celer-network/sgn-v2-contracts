@@ -49,8 +49,8 @@ const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY 
 const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const godwokenTestEndpoint = process.env.GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const godwokenTestPrivateKey = process.env.GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const nervosGodwokenTestEndpoint = process.env.NERVOS_GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosGodwokenTestPrivateKey = process.env.NERVOS_GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -176,8 +176,8 @@ const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const nervosEndpoint = process.env.NERVOS_ENDPOINT || DEFAULT_ENDPOINT;
-const nervosPrivateKey = process.env.NERVOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const nervosGodwokenEndpoint = process.env.NERVOS_GODWOKEN_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -229,9 +229,9 @@ const config: HardhatUserConfig = {
       url: reiTestEndpoint,
       accounts: [`0x${reiTestPrivateKey}`]
     },
-    godwokenTest: {
-      url: godwokenTestEndpoint,
-      accounts: [`0x${godwokenTestPrivateKey}`]
+    nervosGodwokenTest: {
+      url: nervosGodwokenTestEndpoint,
+      accounts: [`0x${nervosGodwokenTestPrivateKey}`]
     },
     kavaTest: {
       url: kavaTestEndpoint,
@@ -399,10 +399,10 @@ const config: HardhatUserConfig = {
       url: kavaEndpoint,
       accounts: [`0x${kavaPrivateKey}`]
     },
-    nervos: {
-      url: nervosEndpoint,
-      accounts: [`0x${nervosPrivateKey}`]
-    },
+    nervosGodwoken: {
+      url: nervosGodwokenEndpoint,
+      accounts: [`0x${nervosGodwokenPrivateKey}`]
+    }
   },
   namedAccounts: {
     deployer: {

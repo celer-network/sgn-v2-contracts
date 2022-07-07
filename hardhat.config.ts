@@ -173,6 +173,12 @@ const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const nervosTestnetEndpoint = process.env.NERVOS_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const nervosEndpoint = process.env.NERVOS_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosPrivateKey = process.env.NERVOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -388,7 +394,15 @@ const config: HardhatUserConfig = {
     kava: {
       url: kavaEndpoint,
       accounts: [`0x${kavaPrivateKey}`]
-    }
+    },
+    nervos: {
+      url: nervosEndpoint,
+      accounts: [`0x${nervosPrivateKey}`]
+    },
+    nervosTestnet: {
+      url: nervosTestnetEndpoint,
+      accounts: [`0x${nervosTestnetPrivateKey}`]
+    },
   },
   namedAccounts: {
     deployer: {

@@ -73,6 +73,9 @@ const swimmerTestPrivateKey = process.env.SWIMMER_TEST_PRIVATE_KEY || DEFAULT_PR
 const dexalotTestEndpoint = process.env.DEXALOT_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const dexalotTestPrivateKey = process.env.DEXALOT_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const nervosTestnetEndpoint = process.env.NERVOS_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -173,9 +176,6 @@ const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const nervosTestnetEndpoint = process.env.NERVOS_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
-const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
-
 const nervosEndpoint = process.env.NERVOS_ENDPOINT || DEFAULT_ENDPOINT;
 const nervosPrivateKey = process.env.NERVOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -260,6 +260,10 @@ const config: HardhatUserConfig = {
     dexalotTest: {
       url: dexalotTestEndpoint,
       accounts: [`0x${dexalotTestPrivateKey}`]
+    },
+    nervosTestnet: {
+      url: nervosTestnetEndpoint,
+      accounts: [`0x${nervosTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -398,10 +402,6 @@ const config: HardhatUserConfig = {
     nervos: {
       url: nervosEndpoint,
       accounts: [`0x${nervosPrivateKey}`]
-    },
-    nervosTestnet: {
-      url: nervosTestnetEndpoint,
-      accounts: [`0x${nervosTestnetPrivateKey}`]
     },
   },
   namedAccounts: {

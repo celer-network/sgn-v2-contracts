@@ -38,6 +38,7 @@ interface IMessageBus {
         bytes calldata _message
     ) external payable;
 
+// receiver is non-evm chain address
     function sendMessage(
         bytes calldata _receiver,
         uint256 _dstChainId,

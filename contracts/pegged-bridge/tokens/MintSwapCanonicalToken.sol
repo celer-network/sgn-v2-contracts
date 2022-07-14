@@ -30,7 +30,7 @@ contract MintSwapCanonicalToken is MultiBridgeToken {
     function swapBridgeForCanonical(address _bridgeToken, uint256 _amount) external returns (uint256) {
         Supply storage supply = swapSupplies[_bridgeToken];
         require(supply.cap > 0, "invalid bridge token");
-        require(supply.total + _amount < supply.cap, "exceed swap cap");
+        require(supply.total + _amount <= supply.cap, "exceed swap cap");
 
         supply.total += _amount;
         _mint(msg.sender, _amount);

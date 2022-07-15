@@ -1,10 +1,11 @@
 import { ethers } from 'hardhat';
 import { Wallet } from '@ethersproject/wallet';
 import { keccak256 } from '@ethersproject/solidity';
-import { Bridge, PeggedTokenBridge, SimpleGovernance, GovernedOwnerProxy } from '../typechain';
+import { Bridge, PeggedTokenBridge, SimpleGovernance, GovernedOwnerProxy, TestERC20 } from '../typechain';
 import { deployBridgeContracts, deployGovernedOwner, getAccounts, advanceBlockTime, loadFixture } from './lib/common';
 import { expect } from 'chai';
 import * as consts from './lib/constants';
+import { parseUnits } from 'ethers/lib/utils';
 
 describe('GovernedOwner Tests', function () {
   const initVoterNum = 4;
@@ -12,12 +13,13 @@ describe('GovernedOwner Tests', function () {
   const abiCoder = ethers.utils.defaultAbiCoder;
 
   async function fixture([admin]: Wallet[]) {
-    const { bridge, pegBridge } = await deployBridgeContracts(admin);
+    const { bridge, token, pegBridge } = await deployBridgeContracts(admin);
     const { gov, proxy } = await deployGovernedOwner(admin, initVoterNum);
-    return { admin, bridge, pegBridge, gov, proxy };
+    return { admin, bridge, token, pegBridge, gov, proxy };
   }
 
   let bridge: Bridge;
+  let token: TestERC20;
   let pegBridge: PeggedTokenBridge;
   let gov: SimpleGovernance;
   let proxy: GovernedOwnerProxy;
@@ -26,6 +28,7 @@ describe('GovernedOwner Tests', function () {
   beforeEach(async () => {
     const res = await loadFixture(fixture);
     bridge = res.bridge;
+    token = res.token;
     pegBridge = res.pegBridge;
     gov = res.gov;
     proxy = res.proxy;
@@ -111,6 +114,23 @@ describe('GovernedOwner Tests', function () {
 
     expect(await gov.proposerProxies(proxy.address)).to.equal(false);
     expect(await gov.proposerProxies(voters[3].address)).to.equal(true);
+  });
+
+  it('should pass transfer token tests', async function () {
+    expect(await token.balanceOf(voters[0].address)).to.equal(0);
+
+    const amount = parseUnits('1');
+    await token.transfer(gov.address, amount);
+    await expect(gov.connect(voters[0]).createTransferTokenProposal(voters[0].address, token.address, amount))
+      .to.emit(gov, 'TransferTokenProposalCreated')
+      .withArgs(0, voters[0].address, token.address, amount);
+    await gov.connect(voters[1]).voteProposal(0, true);
+    const data = abiCoder.encode(['address', 'address', 'uint256'], [voters[0].address, token.address, amount]);
+    await expect(gov.connect(voters[2]).executeProposal(0, consts.GovInternalTokenTransfer, consts.ZERO_ADDR, data))
+      .to.emit(gov, 'ProposalExecuted')
+      .withArgs(0);
+
+    expect(await token.balanceOf(voters[0].address)).to.equal(amount);
   });
 
   it('should pass common owner proxy tests', async function () {

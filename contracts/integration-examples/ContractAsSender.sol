@@ -12,12 +12,17 @@ import "../safeguard/Pauser.sol";
 /**
  * @title Example contract to send cBridge transfers. Supports the liquidity pool-based {Bridge}, the {OriginalTokenVault} for pegged
  * deposit and the {PeggedTokenBridge} for pegged burn. Includes handling of refunds for failed transfers.
+ * @notice For the bad Bridge.send/PeggedTokenBridge.deposit of native token(eg.ETH) or wrapped native token(eg.WETH),
+ * its refund asset depends on whether the nativeWrap of Bridge/PeggedTokenBridge is set or not AT THE MOMENT OF REFUNDING.
+ * If the nativeWrap is set, the refund asset would always be native token (eg.ETH), even though the original sending asset
+ * is wrapped native token. If the nativeWrap isn't set, the refund asset would always be wrapped native token.
  */
 contract ContractAsSender is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
     mapping(BridgeTransferLib.BridgeSendType => address) public bridges;
     mapping(bytes32 => address) public records;
+    address public nativeWrap;
 
     event Deposited(address depositor, address token, uint256 amount);
     event BridgeUpdated(BridgeTransferLib.BridgeSendType bridgeSendType, address bridgeAddr);
@@ -90,9 +95,49 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         address _receiver = records[refundInfo.refid];
         require(_receiver != address(0), "unknown transfer id or already refunded");
         delete records[refundInfo.refid];
-        IERC20(refundInfo.token).safeTransfer(_receiver, refundInfo.amount);
+        _sendToken(_receiver, refundInfo.token, refundInfo.amount);
         return refundInfo.transferId;
     }
+
+    /**
+     * @notice Send token to user. For native token and wrapped native token, this contract may not have enough _token to
+     * send to _receiver. This may caused by others refund an original transfer that is sent from this contract via cBridge
+     * contract right before you call refund function of this contract and then the nativeWrap of cBridge contract is
+     * modified right after that the refund triggered by that guy completes.
+     * As a consequence, native token and wrapped native token possessed by this contract are mixed. But don't worry,
+     * the total sum of two tokens keeps correct. So in order to avoid deadlocking any token, we'd better have a
+     * balance check before sending out native token or wrapped native token. If the balance of _token is not sufficient,
+     * we change to sent the other token.
+     */
+    function _sendToken(
+        address _receiver,
+        address _token,
+        uint256 _amount
+    ) internal {
+        if (_token == address(0)) {
+            // refund asset is ETH
+            if (address(this).balance >= _amount) {
+                (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+                require(sent, "failed to send native token");
+            } else {
+                // in case of refund asset is WETH
+                IERC20(_token).safeTransfer(_receiver, _amount);
+            }
+        } else if (_token == nativeWrap) {
+            // refund asset is WETH
+            if (IERC20(_token).balanceOf(address(this)) >= _amount) {
+                IERC20(_token).safeTransfer(_receiver, _amount);
+            } else {
+                // in case of refund asset is ETH
+                (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+                require(sent, "failed to send native token");
+            }
+        } else {
+            IERC20(_token).safeTransfer(_receiver, _amount);
+        }
+    }
+
+    // ----------------------Admin operation-----------------------
 
     /**
      * @notice Lock tokens.
@@ -104,11 +149,17 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         emit Deposited(msg.sender, _token, _amount);
     }
 
-    // ----------------------Admin operation-----------------------
-
     function setBridgeAddress(BridgeTransferLib.BridgeSendType _bridgeSendType, address _addr) public onlyOwner {
         require(_addr != address(0), "invalid address");
         bridges[_bridgeSendType] = _addr;
         emit BridgeUpdated(_bridgeSendType, _addr);
     }
+
+    // set nativeWrap
+    function setWrap(address _weth) external onlyOwner {
+        nativeWrap = _weth;
+    }
+
+    // This is needed to receive ETH if a refund asset is ETH
+    receive() external payable {}
 }

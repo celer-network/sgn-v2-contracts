@@ -49,8 +49,8 @@ const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY 
 const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const godwokenTestEndpoint = process.env.GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const godwokenTestPrivateKey = process.env.GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const nervosGodwokenTestEndpoint = process.env.NERVOS_GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosGodwokenTestPrivateKey = process.env.NERVOS_GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -72,6 +72,9 @@ const swimmerTestPrivateKey = process.env.SWIMMER_TEST_PRIVATE_KEY || DEFAULT_PR
 
 const dexalotTestEndpoint = process.env.DEXALOT_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const dexalotTestPrivateKey = process.env.DEXALOT_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const nervosTestnetEndpoint = process.env.NERVOS_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
@@ -170,6 +173,12 @@ const sxNetworkPrivateKey = process.env.SX_NETWORK_PRIVATE_KEY || DEFAULT_PRIVAT
 const apeEndpoint = process.env.APE_ENDPOINT || DEFAULT_ENDPOINT;
 const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
+const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const nervosGodwokenEndpoint = process.env.NERVOS_GODWOKEN_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -220,9 +229,9 @@ const config: HardhatUserConfig = {
       url: reiTestEndpoint,
       accounts: [`0x${reiTestPrivateKey}`]
     },
-    godwokenTest: {
-      url: godwokenTestEndpoint,
-      accounts: [`0x${godwokenTestPrivateKey}`]
+    nervosGodwokenTest: {
+      url: nervosGodwokenTestEndpoint,
+      accounts: [`0x${nervosGodwokenTestPrivateKey}`]
     },
     kavaTest: {
       url: kavaTestEndpoint,
@@ -251,6 +260,10 @@ const config: HardhatUserConfig = {
     dexalotTest: {
       url: dexalotTestEndpoint,
       accounts: [`0x${dexalotTestPrivateKey}`]
+    },
+    nervosTestnet: {
+      url: nervosTestnetEndpoint,
+      accounts: [`0x${nervosTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -381,6 +394,14 @@ const config: HardhatUserConfig = {
     ape: {
       url: apeEndpoint,
       accounts: [`0x${apePrivateKey}`]
+    },
+    kava: {
+      url: kavaEndpoint,
+      accounts: [`0x${kavaPrivateKey}`]
+    },
+    nervosGodwoken: {
+      url: nervosGodwokenEndpoint,
+      accounts: [`0x${nervosGodwokenPrivateKey}`]
     }
   },
   namedAccounts: {
@@ -428,7 +449,9 @@ const config: HardhatUserConfig = {
       opera: process.env.FTMSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
       aurora: process.env.AURORASCAN_API_KEY,
-      moonriver: process.env.MOONSCAN_API_KEY
+      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
+      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY,
+      heco: process.env.HECOSCAN_API_KEY
     }
   }
 };

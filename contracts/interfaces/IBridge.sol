@@ -3,6 +3,8 @@
 pragma solidity >=0.8.0;
 
 interface IBridge {
+    function nativeWrap() external view returns (address);
+
     function send(
         address _receiver,
         address _token,

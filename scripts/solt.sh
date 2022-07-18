@@ -3,17 +3,14 @@
 # Script to run solt and generate standard-json files for Etherscan verification.
 
 solFiles=(
-  staking/Govern
-  staking/SGN
-  staking/Staking
-  staking/StakingReward
-  staking/Viewer
-  liquidity-bridge/Bridge
-  liquidity-bridge/FarmingRewards
-  liquidity-bridge/WithdrawInbox
+  governed-owner/GovernedOwnerProxy
+  governed-owner/SimpleGovernance
   integration-examples/ContractAsLP
   integration-examples/ContractAsSender
   interfaces/ISigsVerifier
+  liquidity-bridge/Bridge
+  liquidity-bridge/FarmingRewards
+  liquidity-bridge/WithdrawInbox
   message/apps/TransferSwap
   message/apps/OrigNFT
   message/apps/PegNFT
@@ -36,6 +33,11 @@ solFiles=(
   pegged-bridge/tokens/SwapBridgeToken
   pegged-bridge/tokens/customized/FraxBridgeToken
   pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner
+  staking/Govern
+  staking/SGN
+  staking/Staking
+  staking/StakingReward
+  staking/Viewer
   test-helpers/DummySwap
   test-helpers/WETH
 )

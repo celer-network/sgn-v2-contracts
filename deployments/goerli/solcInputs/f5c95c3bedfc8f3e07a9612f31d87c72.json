@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/WithdrawInbox.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-only\n\npragma solidity 0.8.9;\n\ncontract WithdrawInbox {\n    // contract LP withdrawal request\n    event WithdrawalRequest(\n        uint64 seqNum,\n        address sender,\n        address receiver,\n        uint64 toChain,\n        uint64[] fromChains,\n        address[] tokens,\n        uint32[] ratios,\n        uint32[] slippages\n    );\n\n    /**\n     * @notice Withdraw liquidity from the pool-based bridge.\n     * NOTE: Each of your withdrawal request should have different _wdSeq.\n     * NOTE: Tokens to withdraw within one withdrawal request should have the same symbol.\n     * @param _wdSeq The unique sequence number to identify this withdrawal request.\n     * @param _receiver The receiver address on _toChain.\n     * @param _toChain The chain Id to receive the withdrawn tokens.\n     * @param _fromChains The chain Ids to withdraw tokens.\n     * @param _tokens The token to withdraw on each fromChain.\n     * @param _ratios The withdrawal ratios of each token.\n     * @param _slippages The max slippages of each token for cross-chain withdraw.\n     */\n    function withdraw(\n        uint64 _wdSeq,\n        address _receiver,\n        uint64 _toChain,\n        uint64[] calldata _fromChains,\n        address[] calldata _tokens,\n        uint32[] calldata _ratios,\n        uint32[] calldata _slippages\n    ) external {\n        require(_fromChains.length > 0, \"empty withdrawal request\");\n        require(\n            _tokens.length == _fromChains.length &&\n                _ratios.length == _fromChains.length &&\n                _slippages.length == _fromChains.length,\n            \"length mismatch\"\n        );\n        for (uint256 i = 0; i < _ratios.length; i++) {\n            require(_ratios[i] > 0 && _ratios[i] <= 1e8, \"invalid ratio\");\n        }\n        emit WithdrawalRequest(_wdSeq, msg.sender, _receiver, _toChain, _fromChains, _tokens, _ratios, _slippages);\n    }\n}\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 800
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}

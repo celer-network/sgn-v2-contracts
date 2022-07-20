@@ -190,7 +190,7 @@ contract MessageBusReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external payable {
-        MsgDataTypes.Route memory route = getRoutInfo(_route);
+        MsgDataTypes.Route memory route = getRouteInfo(_route);
         executeMessage(_message, route, _sigs, _signers, _powers, "Message");
     }
 
@@ -203,7 +203,7 @@ contract MessageBusReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external payable {
-        MsgDataTypes.Route memory route = getRoutInfo(_route);
+        MsgDataTypes.Route memory route = getRouteInfo(_route);
         executeMessage(_message, route, _sigs, _signers, _powers, "Message2");
     }
 
@@ -501,11 +501,11 @@ contract MessageBusReceiver is Ownable {
         return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
-    function getRoutInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {
+    function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {
         return MsgDataTypes.Route(_route.sender, "", _route.receiver, _route.srcChainId, _route.srcTxHash);
     }
 
-    function getRoutInfo(MsgDataTypes.RouteInfo2 calldata _route) private pure returns (MsgDataTypes.Route memory) {
+    function getRouteInfo(MsgDataTypes.RouteInfo2 calldata _route) private pure returns (MsgDataTypes.Route memory) {
         return MsgDataTypes.Route(address(0), _route.sender, _route.receiver, _route.srcChainId, _route.srcTxHash);
     }
 

@@ -57,7 +57,7 @@ library MsgDataTypes {
         bytes32 srcTxHash; // src chain msg tx hash
     }
 
-    // used for msg from non-evm chains with logner-bytes address
+    // used for msg from non-evm chains with longer-bytes address
     struct RouteInfo2 {
         bytes sender;
         address receiver;

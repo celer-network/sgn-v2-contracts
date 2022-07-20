@@ -10,10 +10,16 @@ import { Bridge, TestERC20, MessageBus, MsgTest } from '../typechain';
 import { deployMessageContracts, loadFixture } from './lib/common';
 import { calculateSignatures, hex2Bytes, getRelayRequest } from './lib/proto';
 import * as consts from './lib/constants';
-import { Bytes } from 'ethers';
 
 type RouteInfoStruct = {
   sender: string;
+  receiver: string;
+  srcChainId: number;
+  srcTxHash: string;
+};
+
+type RouteInfo2Struct = {
+  sender: number[];
   receiver: string;
   srcChainId: number;
   srcTxHash: string;
@@ -54,7 +60,7 @@ describe('Message Tests', function () {
     };
     let nonce = 1;
     let message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    let res = await computeMessageOnlyIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    let res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
     await expect(
       msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
         message,
@@ -69,9 +75,32 @@ describe('Message Tests', function () {
       .to.emit(msgbus, 'Executed')
       .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_SUCCESS, msgtest.address, srcChainId, hash);
 
+    const routeInfo2 = {
+      sender: hex2Bytes(admin.address),
+      receiver: msgtest.address,
+      srcChainId: srcChainId,
+      srcTxHash: hash // fake tx hash
+    };
+    nonce = 2;
+    message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    res = await computeMessage2IdAndSigs(chainId, msgbus.address, routeInfo2, message, [admin]);
+    await expect(
+      msgbus.functions['executeMessage(bytes,(bytes,address,uint64,bytes32),bytes[],address[],uint256[])'](
+        message,
+        routeInfo2,
+        res.sigs,
+        [admin.address],
+        [parseUnits('1')]
+      )
+    )
+      .to.emit(msgtest, 'Message2Received')
+      .withArgs(pack(['address'], [admin.address]), srcChainId, nonce, hash)
+      .to.emit(msgbus, 'Executed')
+      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_SUCCESS, msgtest.address, srcChainId, hash);
+
     nonce = 100000000000001;
     message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    res = await computeMessageOnlyIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
     await expect(
       msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
         message,
@@ -88,7 +117,7 @@ describe('Message Tests', function () {
 
     nonce = 100000000000002;
     message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    res = await computeMessageOnlyIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
     await expect(
       msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
         message,
@@ -144,7 +173,7 @@ describe('Message Tests', function () {
   });
 });
 
-async function computeMessageOnlyIdAndSigs(
+async function computeMessageIdAndSigs(
   chainId: number,
   msgbus: string,
   route: RouteInfoStruct,
@@ -156,6 +185,24 @@ async function computeMessageOnlyIdAndSigs(
     [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
   );
   const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message']);
+  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  return { messageId, sigs };
+}
+
+async function computeMessage2IdAndSigs(
+  chainId: number,
+  msgbus: string,
+  route: RouteInfo2Struct,
+  message: string,
+  signers: Wallet[]
+) {
+  const messageId = keccak256(
+    ['uint8', 'bytes', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
+    [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
+  );
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message2']);
   const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
   const signedDataHash = keccak256(['bytes'], [signedData]);
   const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));

@@ -461,7 +461,7 @@ contract MessageBusReceiver is Ownable {
             (ok, res) = address(_route.receiver).call{value: msg.value}(
                 abi.encodeWithSelector(
                     bytes4(keccak256(bytes("executeMessage(bytes,uint64,bytes,address)"))),
-                    _route.sender,
+                    _route.senderBytes,
                     _route.srcChainId,
                     _message,
                     msg.sender

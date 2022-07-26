@@ -79,4 +79,13 @@ interface IMessageReceiverApp {
         bytes calldata _message,
         address _executor
     ) external payable returns (ExecutionStatus);
+
+    // execute message from non-evm chain with bytes for sender address,
+    // otherwise same as above.
+    function executeMessage(
+        bytes calldata _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address _executor
+    ) external payable returns (ExecutionStatus);
 }

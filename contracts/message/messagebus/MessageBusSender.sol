@@ -13,6 +13,8 @@ contract MessageBusSender is Ownable {
     mapping(address => uint256) public withdrawnFees;
 
     event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message, uint256 fee);
+    // message to non-evm chain with >20 bytes addr
+    event Message2(address indexed sender, bytes receiver, uint256 dstChainId, bytes message, uint256 fee);
 
     event MessageWithTransfer(
         address indexed sender,
@@ -23,6 +25,8 @@ contract MessageBusSender is Ownable {
         bytes message,
         uint256 fee
     );
+
+    event FeeWithdrawn(address receiver, uint256 amount);
 
     event FeeBaseUpdated(uint256 feeBase);
     event FeePerByteUpdated(uint256 feePerByte);
@@ -46,10 +50,25 @@ contract MessageBusSender is Ownable {
         uint256 _dstChainId,
         bytes calldata _message
     ) external payable {
+        _sendMessage(_dstChainId, _message);
+        emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);
+    }
+
+    // Send message to non-evm chain with bytes for receiver address,
+    // otherwise same as above.
+    function sendMessage(
+        bytes calldata _receiver,
+        uint256 _dstChainId,
+        bytes calldata _message
+    ) external payable {
+        _sendMessage(_dstChainId, _message);
+        emit Message2(msg.sender, _receiver, _dstChainId, _message, msg.value);
+    }
+
+    function _sendMessage(uint256 _dstChainId, bytes calldata _message) private {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 minFee = calcFee(_message);
         require(msg.value >= minFee, "Insufficient fee");
-        emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);
     }
 
     /**
@@ -103,6 +122,7 @@ contract MessageBusSender is Ownable {
         withdrawnFees[_account] = _cumulativeFee;
         (bool sent, ) = _account.call{value: amount, gas: 50000}("");
         require(sent, "failed to withdraw fee");
+        emit FeeWithdrawn(_account, amount);
     }
 
     /**

@@ -4,7 +4,6 @@ pragma solidity 0.8.9;
 
 import "../libraries/MsgDataTypes.sol";
 import "../interfaces/IMessageReceiverApp.sol";
-import "../interfaces/IMessageBus.sol";
 import "../../interfaces/IBridge.sol";
 import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IOriginalTokenVaultV2.sol";
@@ -191,13 +190,38 @@ contract MessageBusReceiver is Ownable {
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external payable {
+        MsgDataTypes.Route memory route = getRouteInfo(_route);
+        executeMessage(_message, route, _sigs, _signers, _powers, "Message");
+    }
+
+    // execute message from non-evm chain with bytes for sender address,
+    // otherwise same as above.
+    function executeMessage(
+        bytes calldata _message,
+        MsgDataTypes.RouteInfo2 calldata _route,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers
+    ) external payable {
+        MsgDataTypes.Route memory route = getRouteInfo(_route);
+        executeMessage(_message, route, _sigs, _signers, _powers, "Message2");
+    }
+
+    function executeMessage(
+        bytes calldata _message,
+        MsgDataTypes.Route memory _route,
+        bytes[] calldata _sigs,
+        address[] calldata _signers,
+        uint256[] calldata _powers,
+        string memory domainName
+    ) private {
         // For message without associated token transfer, message Id is computed through message info,
         // in order to guarantee that each message can only be applied once
         bytes32 messageId = computeMessageOnlyId(_route, _message);
         require(executedMessages[messageId] == MsgDataTypes.TxStatus.Null, "message already executed");
         executedMessages[messageId] = MsgDataTypes.TxStatus.Pending;
 
-        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), "Message"));
+        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), domainName));
         IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);
         MsgDataTypes.TxStatus status;
         IMessageReceiverApp.ExecutionStatus est = executeMessage(_route, _message);
@@ -234,7 +258,7 @@ contract MessageBusReceiver is Ownable {
     function emitMessageOnlyExecutedEvent(
         bytes32 _messageId,
         MsgDataTypes.TxStatus _status,
-        MsgDataTypes.RouteInfo calldata _route
+        MsgDataTypes.Route memory _route
     ) private {
         emit Executed(
             MsgDataTypes.MsgType.MessageOnly,
@@ -393,16 +417,20 @@ contract MessageBusReceiver is Ownable {
         return keccak256(abi.encodePacked(MsgDataTypes.MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
 
-    function computeMessageOnlyId(MsgDataTypes.RouteInfo calldata _route, bytes calldata _message)
+    function computeMessageOnlyId(MsgDataTypes.Route memory _route, bytes calldata _message)
         private
         view
         returns (bytes32)
     {
+        bytes memory sender = _route.senderBytes;
+        if (sender.length == 0) {
+            sender = abi.encodePacked(_route.sender);
+        }
         return
             keccak256(
                 abi.encodePacked(
                     MsgDataTypes.MsgType.MessageOnly,
-                    _route.sender,
+                    sender,
                     _route.receiver,
                     _route.srcChainId,
                     _route.srcTxHash,
@@ -412,20 +440,34 @@ contract MessageBusReceiver is Ownable {
             );
     }
 
-    function executeMessage(MsgDataTypes.RouteInfo calldata _route, bytes calldata _message)
+    function executeMessage(MsgDataTypes.Route memory _route, bytes calldata _message)
         private
         returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
-        (bool ok, bytes memory res) = address(_route.receiver).call{value: msg.value}(
-            abi.encodeWithSelector(
-                IMessageReceiverApp.executeMessage.selector,
-                _route.sender,
-                _route.srcChainId,
-                _message,
-                msg.sender
-            )
-        );
+        bool ok;
+        bytes memory res;
+        if (_route.senderBytes.length == 0) {
+            (ok, res) = address(_route.receiver).call{value: msg.value}(
+                abi.encodeWithSelector(
+                    bytes4(keccak256(bytes("executeMessage(address,uint64,bytes,address)"))),
+                    _route.sender,
+                    _route.srcChainId,
+                    _message,
+                    msg.sender
+                )
+            );
+        } else {
+            (ok, res) = address(_route.receiver).call{value: msg.value}(
+                abi.encodeWithSelector(
+                    bytes4(keccak256(bytes("executeMessage(bytes,uint64,bytes,address)"))),
+                    _route.senderBytes,
+                    _route.srcChainId,
+                    _message,
+                    msg.sender
+                )
+            );
+        }
         if (ok) {
             return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));
         }
@@ -457,6 +499,14 @@ contract MessageBusReceiver is Ownable {
             _returnData := add(_returnData, 0x04)
         }
         return abi.decode(_returnData, (string)); // All that remains is the revert string
+    }
+
+    function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {
+        return MsgDataTypes.Route(_route.sender, "", _route.receiver, _route.srcChainId, _route.srcTxHash);
+    }
+
+    function getRouteInfo(MsgDataTypes.RouteInfo2 calldata _route) private pure returns (MsgDataTypes.Route memory) {
+        return MsgDataTypes.Route(address(0), _route.sender, _route.receiver, _route.srcChainId, _route.srcTxHash);
     }
 
     // ================= helper functions =====================

@@ -57,6 +57,23 @@ library MsgDataTypes {
         bytes32 srcTxHash; // src chain msg tx hash
     }
 
+    // used for msg from non-evm chains with longer-bytes address
+    struct RouteInfo2 {
+        bytes sender;
+        address receiver;
+        uint64 srcChainId;
+        bytes32 srcTxHash;
+    }
+
+    // combination of RouteInfo and RouteInfo2 for easier processing
+    struct Route {
+        address sender; // from RouteInfo
+        bytes senderBytes; // from RouteInfo2
+        address receiver;
+        uint64 srcChainId;
+        bytes32 srcTxHash;
+    }
+
     struct MsgWithTransferExecutionParams {
         bytes message;
         TransferInfo transfer;

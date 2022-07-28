@@ -16,14 +16,14 @@ import "../safeguard/Pauser.sol";
 contract TransferAgent is ReentrancyGuard, Pauser {
     using SafeERC20 for IERC20;
 
-    struct SupplementMetadata {
+    struct Supplementary {
         uint8 Type;
         bytes Value;
     }
 
     mapping(BridgeTransferLib.BridgeSendType => address) public bridges;
 
-    event Supplement(bytes32 transferId, address sender, bytes receiver, SupplementMetadata[] data);
+    event Supplement(bytes32 transferId, address sender, bytes receiver, Supplementary[] supplementaries);
     event BridgeUpdated(BridgeTransferLib.BridgeSendType bridgeSendType, address bridgeAddr);
 
     /**
@@ -38,7 +38,8 @@ contract TransferAgent is ReentrancyGuard, Pauser {
      *        (100% - max slippage percentage) * amount or the transfer can be refunded.
      *        Only applicable to the {BridgeSendType.Liquidity}.
      * @param _bridgeSendType The type of bridge used by this transfer. One of the {BridgeSendType} enum.
-     * @param _data The scalable data to be processed by agent.
+     * @param _supplementaries A list of supplementary to be processed by agent, is designed to be used for scaling
+     *        present transfer. Contact Celer team to learn about already supported type of supplementary.
      */
     function transfer(
         bytes calldata _receiver,
@@ -48,7 +49,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
         uint64 _nonce,
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
         BridgeTransferLib.BridgeSendType _bridgeSendType,
-        SupplementMetadata[] calldata _data
+        Supplementary[] calldata _supplementaries
     ) external nonReentrant whenNotPaused returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
@@ -63,7 +64,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
             _bridgeSendType,
             _bridgeAddr
         );
-        emit Supplement(transferId, msg.sender, _receiver, _data);
+        emit Supplement(transferId, msg.sender, _receiver, _supplementaries);
         return transferId;
     }
 

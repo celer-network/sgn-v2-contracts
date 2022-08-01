@@ -61,6 +61,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (address receiver, bytes memory message) = abi.decode((_message), (address, bytes));
+        wrapBridgeOutToken(_token, _amount);
         IERC20(_token).safeTransfer(receiver, _amount);
         emit MessageReceivedWithTransfer(_token, _amount, _sender, _srcChainId, receiver, message);
         return ExecutionStatus.Success;
@@ -73,6 +74,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (address receiver, bytes memory message) = abi.decode((_message), (address, bytes));
+        wrapBridgeOutToken(_token, _amount);
         IERC20(_token).safeTransfer(receiver, _amount);
         emit Refunded(receiver, _token, _amount, message);
         return ExecutionStatus.Success;

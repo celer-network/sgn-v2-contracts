@@ -123,6 +123,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
+        wrapBridgeOutToken(_token, _amount);
         uint256 totalAmt;
         for (uint256 i = 0; i < transfer.accounts.length; i++) {
             IERC20(_token).safeTransfer(transfer.accounts[i], transfer.amounts[i]);
@@ -150,6 +151,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
+        wrapBridgeOutToken(_token, _amount);
         IERC20(_token).safeTransfer(transfer.sender, _amount);
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Fail}));
         sendMessage(_sender, _srcChainId, message, msg.value);

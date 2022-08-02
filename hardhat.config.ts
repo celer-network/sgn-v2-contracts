@@ -179,6 +179,9 @@ const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const nervosGodwokenEndpoint = process.env.NERVOS_GODWOKEN_ENDPOINT || DEFAULT_ENDPOINT;
 const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const klaytnEndpoint = process.env.KLAYTN_ENDPOINT || DEFAULT_ENDPOINT;
+const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -402,6 +405,11 @@ const config: HardhatUserConfig = {
     nervosGodwoken: {
       url: nervosGodwokenEndpoint,
       accounts: [`0x${nervosGodwokenPrivateKey}`]
+    },
+    klaytn: {
+      url: klaytnEndpoint,
+      accounts: [`0x${klaytnPrivateKey}`],
+      gasPrice: 250000000000
     }
   },
   namedAccounts: {

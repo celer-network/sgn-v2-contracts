@@ -76,6 +76,9 @@ const dexalotTestPrivateKey = process.env.DEXALOT_TEST_PRIVATE_KEY || DEFAULT_PR
 const nervosTestnetEndpoint = process.env.NERVOS_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
 const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const shibuyaTestnetEndpoint = process.env.SHIBUYA_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -267,6 +270,10 @@ const config: HardhatUserConfig = {
     nervosTestnet: {
       url: nervosTestnetEndpoint,
       accounts: [`0x${nervosTestnetPrivateKey}`]
+    },
+    shibuyaTestnet: {
+      url: shibuyaTestnetEndpoint,
+      accounts: [`0x${shibuyaTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

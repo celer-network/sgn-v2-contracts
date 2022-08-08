@@ -7,13 +7,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../libraries/BridgeTransferLib.sol";
-import "../safeguard/Pauser.sol";
 
 /**
  * @title Transfer agent. Designed to support arbitrary length receiver address for transfer. Supports the liquidity pool-based {Bridge}, the {OriginalTokenVault} for pegged
- * deposit and the {PeggedTokenBridge} for pegged burn. Supports contract sender as well.
+ * deposit and the {PeggedTokenBridge} for pegged burn.
  */
-contract TransferAgent is ReentrancyGuard, Pauser {
+contract TransferAgent is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Extension {
@@ -23,7 +22,13 @@ contract TransferAgent is ReentrancyGuard, Pauser {
 
     mapping(BridgeTransferLib.BridgeSendType => address) public bridges;
 
-    event Supplement(bytes32 transferId, address sender, bytes receiver, Extension[] extensions);
+    event Supplement(
+        BridgeTransferLib.BridgeSendType bridgeSendType,
+        bytes32 transferId,
+        address sender,
+        bytes receiver,
+        Extension[] extensions
+    );
     event BridgeUpdated(BridgeTransferLib.BridgeSendType bridgeSendType, address bridgeAddr);
 
     /**
@@ -50,7 +55,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
         uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
         BridgeTransferLib.BridgeSendType _bridgeSendType,
         Extension[] calldata _extensions
-    ) external nonReentrant whenNotPaused returns (bytes32) {
+    ) external nonReentrant returns (bytes32) {
         address _bridgeAddr = bridges[_bridgeSendType];
         require(_bridgeAddr != address(0), "unknown bridge type");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -64,7 +69,7 @@ contract TransferAgent is ReentrancyGuard, Pauser {
             _bridgeSendType,
             _bridgeAddr
         );
-        emit Supplement(transferId, msg.sender, _receiver, _extensions);
+        emit Supplement(_bridgeSendType, transferId, msg.sender, _receiver, _extensions);
         return transferId;
     }
 

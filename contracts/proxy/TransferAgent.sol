@@ -57,19 +57,22 @@ contract TransferAgent is ReentrancyGuard, Ownable {
         BridgeTransferLib.BridgeSendType _bridgeSendType,
         Extension[] calldata _extensions
     ) external nonReentrant returns (bytes32) {
-        address _bridgeAddr = bridges[_bridgeSendType];
-        require(_bridgeAddr != address(0), "unknown bridge type");
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        bytes32 transferId = BridgeTransferLib.sendTransfer(
-            address(0),
-            _token,
-            _amount,
-            _dstChainId,
-            _nonce,
-            _maxSlippage,
-            _bridgeSendType,
-            _bridgeAddr
-        );
+        bytes32 transferId;
+        {
+            address _bridgeAddr = bridges[_bridgeSendType];
+            require(_bridgeAddr != address(0), "unknown bridge type");
+            IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+            transferId = BridgeTransferLib.sendTransfer(
+                address(0),
+                _token,
+                _amount,
+                _dstChainId,
+                _nonce,
+                _maxSlippage,
+                _bridgeSendType,
+                _bridgeAddr
+            );
+        }
         emit Supplement(_bridgeSendType, transferId, msg.sender, _receiver, _extensions);
         return transferId;
     }

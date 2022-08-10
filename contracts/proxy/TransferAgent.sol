@@ -7,12 +7,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "../libraries/BridgeTransferLib.sol";
+import "../safeguard/Ownable.sol";
 
 /**
  * @title Transfer agent. Designed to support arbitrary length receiver address for transfer. Supports the liquidity pool-based {Bridge}, the {OriginalTokenVault} for pegged
  * deposit and the {PeggedTokenBridge} for pegged burn.
  */
-contract TransferAgent is ReentrancyGuard {
+contract TransferAgent is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
     struct Extension {

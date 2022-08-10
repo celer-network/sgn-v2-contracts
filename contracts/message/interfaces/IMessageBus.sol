@@ -38,6 +38,12 @@ interface IMessageBus {
         bytes calldata _message
     ) external payable;
 
+    function sendMessage(
+        bytes calldata _receiver,
+        uint256 _dstChainId,
+        bytes calldata _message
+    ) external payable;
+
     /**
      * @notice Sends a message associated with a transfer to a contract on another chain.
      * If messages with the same srcTransferId are sent, only one of them will succeed at dst chain..

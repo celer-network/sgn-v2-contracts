@@ -208,7 +208,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         uint64 srcChid,
         bytes calldata _message,
         address // executor
-    ) external payable /* override */ onlyMessageBus returns (ExecutionStatus) {
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
         if (paused() || keccak256(sender) != keccak256(destBridge2[srcChid])) {
             return ExecutionStatus.Retry;
         }

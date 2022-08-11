@@ -12,6 +12,8 @@ import {
   FarmingRewards__factory,
   Govern,
   Govern__factory,
+  GovernedOwnerProxy,
+  GovernedOwnerProxy__factory,
   MessageBus,
   MessageBus__factory,
   MsgTest,
@@ -20,6 +22,8 @@ import {
   PeggedTokenBridge__factory,
   SGN,
   SGN__factory,
+  SimpleGovernance,
+  SimpleGovernance__factory,
   SingleBridgeToken,
   SingleBridgeToken__factory,
   Staking,
@@ -163,6 +167,33 @@ export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo
   return { bridge, msgbus, msgtest, token };
 }
 
+interface GovernedOwnerInfo {
+  gov: SimpleGovernance;
+  proxy: GovernedOwnerProxy;
+}
+
+export async function deployGovernedOwner(admin: Wallet, initVoterNum: number): Promise<GovernedOwnerInfo> {
+  const proxyFactory = (await ethers.getContractFactory('GovernedOwnerProxy')) as GovernedOwnerProxy__factory;
+  const proxy = await proxyFactory.connect(admin).deploy(admin.address);
+  await proxy.deployed();
+
+  const voters: string[] = [];
+  const powers: number[] = [];
+  for (let i = 0; i < initVoterNum; i++) {
+    const voter = new ethers.Wallet(consts.userPrivKeys[i]).connect(ethers.provider);
+    voters.push(voter.address);
+    powers.push(100);
+  }
+
+  const govFactory = (await ethers.getContractFactory('SimpleGovernance')) as SimpleGovernance__factory;
+  const gov = await govFactory.connect(admin).deploy(voters, powers, [proxy.address], 3600, 60, 40);
+  await gov.deployed();
+
+  await proxy.initGov(gov.address);
+
+  return { gov, proxy };
+}
+
 interface SwapInfo {
   transferSwap: TransferSwap;
   tokenA: TestERC20;
@@ -244,4 +275,24 @@ export async function advanceBlockNumberTo(target: number): Promise<void> {
     promises.push(ethers.provider.send('evm_mine', []));
   }
   await Promise.all(promises);
+}
+
+export async function getBlockTime() {
+  const blockNumber = await ethers.provider.getBlockNumber();
+  const block = await ethers.provider.getBlock(blockNumber);
+  return block.timestamp;
+}
+
+export async function advanceBlockTime(blkTime: number) {
+  const currBlkTime = await getBlockTime();
+  await ethers.provider.send('evm_setNextBlockTimestamp', [currBlkTime + blkTime]);
+  await ethers.provider.send('evm_mine', []);
+}
+
+export function getAddrs(signers: Wallet[]) {
+  const addrs: string[] = [];
+  for (let i = 0; i < signers.length; i++) {
+    addrs.push(signers[i].address);
+  }
+  return addrs;
 }

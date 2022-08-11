@@ -49,8 +49,8 @@ const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY 
 const reiTestEndpoint = process.env.REI_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const reiTestPrivateKey = process.env.REI_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const godwokenTestEndpoint = process.env.GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const godwokenTestPrivateKey = process.env.GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const nervosGodwokenTestEndpoint = process.env.NERVOS_GODWOKEN_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosGodwokenTestPrivateKey = process.env.NERVOS_GODWOKEN_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const kavaTestEndpoint = process.env.KAVA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaTestPrivateKey = process.env.KAVA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -69,6 +69,15 @@ const sxTestPrivateKey = process.env.SX_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const swimmerTestEndpoint = process.env.SWIMMER_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const swimmerTestPrivateKey = process.env.SWIMMER_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const dexalotTestEndpoint = process.env.DEXALOT_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const dexalotTestPrivateKey = process.env.DEXALOT_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const nervosTestnetEndpoint = process.env.NERVOS_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const shibuyaTestnetEndpoint = process.env.SHIBUYA_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
@@ -158,6 +167,24 @@ const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const ontologyEndpoint = process.env.ONTOLOGY_ENDPOINT || DEFAULT_ENDPOINT;
 const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const swimmerEndpoint = process.env.SWIMMER_ENDPOINT || DEFAULT_ENDPOINT;
+const swimmerPrivateKey = process.env.SWIMMER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const sxNetworkEndpoint = process.env.SX_NETWORK_ENDPOINT || DEFAULT_ENDPOINT;
+const sxNetworkPrivateKey = process.env.SX_NETWORK_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const apeEndpoint = process.env.APE_ENDPOINT || DEFAULT_ENDPOINT;
+const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
+const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const nervosGodwokenEndpoint = process.env.NERVOS_GODWOKEN_ENDPOINT || DEFAULT_ENDPOINT;
+const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const klaytnEndpoint = process.env.KLAYTN_ENDPOINT || DEFAULT_ENDPOINT;
+const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -208,9 +235,9 @@ const config: HardhatUserConfig = {
       url: reiTestEndpoint,
       accounts: [`0x${reiTestPrivateKey}`]
     },
-    godwokenTest: {
-      url: godwokenTestEndpoint,
-      accounts: [`0x${godwokenTestPrivateKey}`]
+    nervosGodwokenTest: {
+      url: nervosGodwokenTestEndpoint,
+      accounts: [`0x${nervosGodwokenTestPrivateKey}`]
     },
     kavaTest: {
       url: kavaTestEndpoint,
@@ -235,6 +262,18 @@ const config: HardhatUserConfig = {
     swimmerTest: {
       url: swimmerTestEndpoint,
       accounts: [`0x${swimmerTestPrivateKey}`]
+    },
+    dexalotTest: {
+      url: dexalotTestEndpoint,
+      accounts: [`0x${dexalotTestPrivateKey}`]
+    },
+    nervosTestnet: {
+      url: nervosTestnetEndpoint,
+      accounts: [`0x${nervosTestnetPrivateKey}`]
+    },
+    shibuyaTestnet: {
+      url: shibuyaTestnetEndpoint,
+      accounts: [`0x${shibuyaTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -353,6 +392,31 @@ const config: HardhatUserConfig = {
     ontology: {
       url: ontologyEndpoint,
       accounts: [`0x${ontologyPrivateKey}`]
+    },
+    swimmer: {
+      url: swimmerEndpoint,
+      accounts: [`0x${swimmerPrivateKey}`]
+    },
+    sxNetwork: {
+      url: sxNetworkEndpoint,
+      accounts: [`0x${sxNetworkPrivateKey}`]
+    },
+    ape: {
+      url: apeEndpoint,
+      accounts: [`0x${apePrivateKey}`]
+    },
+    kava: {
+      url: kavaEndpoint,
+      accounts: [`0x${kavaPrivateKey}`]
+    },
+    nervosGodwoken: {
+      url: nervosGodwokenEndpoint,
+      accounts: [`0x${nervosGodwokenPrivateKey}`]
+    },
+    klaytn: {
+      url: klaytnEndpoint,
+      accounts: [`0x${klaytnPrivateKey}`],
+      gasPrice: 250000000000
     }
   },
   namedAccounts: {
@@ -396,10 +460,13 @@ const config: HardhatUserConfig = {
       avalanche: process.env.SNOWTRACE_API_KEY,
       bsc: process.env.BSCSCAN_API_KEY,
       arbitrumOne: process.env.ARBISCAN_API_KEY,
+      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
       opera: process.env.FTMSCAN_API_KEY,
       polygon: process.env.POLYGONSCAN_API_KEY,
       aurora: process.env.AURORASCAN_API_KEY,
-      moonriver: process.env.MOONSCAN_API_KEY
+      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
+      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY,
+      heco: process.env.HECOSCAN_API_KEY
     }
   }
 };

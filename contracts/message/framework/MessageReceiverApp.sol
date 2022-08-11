@@ -81,4 +81,13 @@ abstract contract MessageReceiverApp is IMessageReceiverApp, MessageBusAddress {
         bytes calldata _message,
         address _executor
     ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
+
+    // execute message from non-evm chain with bytes for sender address,
+    // otherwise same as above.
+    function executeMessage(
+        bytes calldata _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address _executor
+    ) external payable virtual override onlyMessageBus returns (ExecutionStatus) {}
 }

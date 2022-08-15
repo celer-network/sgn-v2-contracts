@@ -163,7 +163,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         address expectedSender = apps[_srcChainId];
         require(expectedSender == _sender, "invalid message sender");
 
-        (bytes32 agrHash) = abi.decode(_message, (bytes32));
+        bytes32 agrHash = abi.decode(_message, (bytes32));
         unconsumedMsg[agrHash] = true;
 
         emit MessageReceived(agrHash);
@@ -208,7 +208,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         uint256[] calldata _powers,
         bytes32 _agrHash
     ) private {
-        (bytes32 expectedAgrHash) = abi.decode(_message, (bytes32));
+        bytes32 expectedAgrHash = abi.decode(_message, (bytes32));
         require(_agrHash == expectedAgrHash, "mismatch agreement hash");
         if (unconsumedMsg[_agrHash] == false) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);

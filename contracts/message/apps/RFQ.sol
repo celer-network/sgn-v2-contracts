@@ -38,7 +38,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     uint32 public feePercGlobal;
     // dstChainId => feePercOverride
     mapping(uint64 => uint32) public feePercOverride;
-    uint64 public safeTime;
 
     event SrcDeposited(bytes32 hash, Quote detail, address srcRecipient, uint64 submissionDeadline);
     event DstTransferred(bytes32 hash);
@@ -48,7 +47,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     event Refunded(bytes32 hash, address refundTo, address srcToken, uint256 amount);
     event RfqContractsUpdated(uint64[] chainIds, address[] remoteRfqContracts);
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
-    event SafeTimeUpdated(uint64 safeTime);
     event TreasuryAddrUpdated(address treasuryAddr);
     event FeeCollected(address treasuryAddr, address token, uint256 amount);
 
@@ -63,7 +61,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         returns (bytes32)
     {
         require(_submissionDeadline > block.timestamp, "past submission deadline");
-        require(_quote.deadline > (block.timestamp + safeTime), "inappropriate release deadline");
         require(
             _quote.receiver != address(0) && _quote.liquidityProvider != address(0),
             "receiver and liquidityProvider should not be 0 address"
@@ -252,11 +249,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
             }
         }
         emit FeePercUpdated(_chainIds, _feePercs);
-    }
-
-    function setSafeTime(uint64 _safeTime) external onlyOwner {
-        safeTime = _safeTime;
-        emit SafeTimeUpdated(_safeTime);
     }
 
     function setTreasuryAddr(address _treasuryAddr) external onlyOwner {

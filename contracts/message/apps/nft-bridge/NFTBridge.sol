@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.8.9;
 
-import "../framework/MessageReceiverApp.sol";
-import "../interfaces/IMessageBus.sol";
-import "../../safeguard/Pauser.sol";
+import "../../framework/MessageReceiverApp.sol";
+import "../../interfaces/IMessageBus.sol";
+import "../../../safeguard/Pauser.sol";
 
 // interface for NFT contract, ERC721 and metadata, only funcs needed by NFTBridge
 interface INFT {

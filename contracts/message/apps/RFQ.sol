@@ -13,145 +13,149 @@ import "../../safeguard/Pauser.sol";
 contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    struct AgreementDetail {
+    struct Quote {
         uint64 srcChainId;
         address srcToken;
-        uint256 amount1;
+        uint256 srcAmount;
         uint64 dstChainId;
         address dstToken;
-        uint256 amount2;
-        uint64 releaseDeadline;
+        uint256 dstAmount;
+        uint64 deadline;
         uint64 nonce;
-        address usrAddr;
-        address dstRecipient;
+        address sender;
+        address receiver;
         address refundTo;
-        address srcRecipient;
+        address liquidityProvider;
     }
 
-    mapping(uint64 => address) public apps;
+    mapping(uint64 => address) public remoteRfqContracts;
     mapping(bytes32 => bool) public unconsumedMsg;
-    mapping(bytes32 => bool) public orderBooks;
-    mapping(bytes32 => bool) public filledOrder;
+    // pending quotes on src chain
+    mapping(bytes32 => bool) public quotes;
+    // executed quotes on dst chain
+    mapping(bytes32 => bool) public executedQuotes;
+    address public treasuryAddr;
     uint32 public feePercGlobal;
     // dstChainId => feePercOverride
     mapping(uint64 => uint32) public feePercOverride;
     uint64 public safeTime;
 
-    event Msg1Sent(bytes32 hash, AgreementDetail detail, address srcRecipient, uint64 submissionDeadline);
-    event Msg2Sent(bytes32 hash);
-    event Msg3Sent(bytes32 hash);
+    event SrcDeposited(bytes32 hash, Quote detail, address srcRecipient, uint64 submissionDeadline);
+    event DstTransferred(bytes32 hash);
+    event RefundInitiated(bytes32 hash);
     event MessageReceived(bytes32 hash);
-    event Msg2Executed(bytes32 hash, address srcRecipient, address srcToken, uint256 amount);
-    event Msg3Executed(bytes32 hash, address refundTo, address srcToken, uint256 amount);
-    event AppUpdated(uint64 chainId, address app);
-    event FeePercUpdated(uint64 chainId, uint32 feePerc);
+    event SrcReleased(bytes32 hash, address srcRecipient, address srcToken, uint256 amount);
+    event Refunded(bytes32 hash, address refundTo, address srcToken, uint256 amount);
+    event RfqContractsUpdated(uint64[] chainIds, address[] remoteRfqContracts);
+    event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event SafeTimeUpdated(uint64 safeTime);
+    event TreasuryAddrUpdated(address treasuryAddr);
+    event FeeCollected(address treasuryAddr, address token, uint256 amount);
 
     constructor(address _messageBus) {
         messageBus = _messageBus;
     }
 
-    function sendMessage1(AgreementDetail calldata _agrDetail, uint64 _submissionDeadline)
+    function srcDeposit(Quote calldata _quote, uint64 _submissionDeadline)
         external
         payable
         whenNotPaused
         returns (bytes32)
     {
         require(_submissionDeadline > block.timestamp, "past submission deadline");
-        require(_agrDetail.releaseDeadline > (block.timestamp + safeTime), "inappropriate release deadline");
+        require(_quote.deadline > (block.timestamp + safeTime), "inappropriate release deadline");
         require(
-            _agrDetail.dstRecipient != address(0) &&
-                _agrDetail.refundTo != address(0) &&
-                _agrDetail.srcRecipient != address(0),
-            "src/dstRecipient, refundTo should not be 0 address"
+            _quote.receiver != address(0) && _quote.liquidityProvider != address(0),
+            "receiver and liquidityProvider should not be 0 address"
         );
-        require(_agrDetail.srcChainId == uint64(block.chainid), "mismatch src chainId");
-        require(_agrDetail.usrAddr == msg.sender, "mismatch usr addr");
+        require(_quote.srcChainId == uint64(block.chainid), "mismatch src chainId");
+        require(_quote.sender == msg.sender, "mismatch usr addr");
 
-        bytes32 agrHash = getAgrHash(_agrDetail);
-        require(orderBooks[agrHash] == false, "still pending order");
-        uint256 rfqFee = getRFQFee(_agrDetail.dstChainId, _agrDetail.amount1);
-        require(rfqFee <= _agrDetail.amount1, "too small amount to cover protocol fee");
-        IERC20(_agrDetail.srcToken).safeTransferFrom(msg.sender, address(this), _agrDetail.amount1);
-        orderBooks[agrHash] = true;
+        bytes32 quoteHash = getQuoteHash(_quote);
+        require(quotes[quoteHash] == false, "still pending order");
+        uint256 rfqFee = getRFQFee(_quote.dstChainId, _quote.srcAmount);
+        require(rfqFee <= _quote.srcAmount, "too small amount to cover protocol fee");
+        IERC20(_quote.srcToken).safeTransferFrom(msg.sender, address(this), _quote.srcAmount);
+        quotes[quoteHash] = true;
 
-        address _receiver = apps[_agrDetail.dstChainId];
+        address _receiver = remoteRfqContracts[_quote.dstChainId];
         require(_receiver != address(0), "no rfq contract on dst chain");
-        bytes memory message = abi.encode(agrHash);
-        sendMessage(_receiver, _agrDetail.dstChainId, message, msg.value);
-        emit Msg1Sent(agrHash, _agrDetail, _agrDetail.srcRecipient, _submissionDeadline);
-        return agrHash;
+        bytes memory message = abi.encode(quoteHash);
+        sendMessage(_receiver, _quote.dstChainId, message, msg.value);
+        emit SrcDeposited(quoteHash, _quote, _quote.liquidityProvider, _submissionDeadline);
+        return quoteHash;
     }
 
-    function sendMessage2(AgreementDetail calldata _agrDetail) external payable whenNotPaused {
-        require(_agrDetail.releaseDeadline > block.timestamp, "past release deadline");
-        require(_agrDetail.dstChainId == uint64(block.chainid), "mismatch dst chainId");
-        bytes32 agrHash = getAgrHash(_agrDetail);
-        require(filledOrder[agrHash] == false, "order already filled");
-        IERC20(_agrDetail.dstToken).safeTransferFrom(msg.sender, _agrDetail.dstRecipient, _agrDetail.amount2);
-        filledOrder[agrHash] = true;
+    function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
+        require(_quote.deadline > block.timestamp, "past release deadline");
+        require(_quote.dstChainId == uint64(block.chainid), "mismatch dst chainId");
+        bytes32 quoteHash = getQuoteHash(_quote);
+        require(executedQuotes[quoteHash] == false, "quote already executed");
+        IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
+        executedQuotes[quoteHash] = true;
 
-        address _receiver = apps[_agrDetail.srcChainId];
+        address _receiver = remoteRfqContracts[_quote.srcChainId];
         require(_receiver != address(0), "no rfq contract on src chain");
-        bytes memory message = abi.encode(agrHash);
-        sendMessage(_receiver, _agrDetail.srcChainId, message, msg.value);
-        emit Msg2Sent(agrHash);
+        bytes memory message = abi.encode(quoteHash);
+        sendMessage(_receiver, _quote.srcChainId, message, msg.value);
+        emit DstTransferred(quoteHash);
     }
 
-    function executeMsg1AndSendMsg3(
-        AgreementDetail calldata _agrDetail,
+    function requestRefund(
+        Quote calldata _quote,
         bytes calldata _message,
         MsgDataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external payable nonReentrant whenNotPaused {
-        require(_agrDetail.releaseDeadline < block.timestamp, "not past release deadline");
-        bytes32 agrHash = getAgrHash(_agrDetail);
-        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, agrHash);
-        require(filledOrder[agrHash] == false, "order already filled");
-        delete unconsumedMsg[agrHash];
+        require(_quote.deadline < block.timestamp, "not past release deadline");
+        bytes32 quoteHash = getQuoteHash(_quote);
+        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
+        require(executedQuotes[quoteHash] == false, "quote already executed");
+        delete unconsumedMsg[quoteHash];
 
-        address _receiver = apps[_agrDetail.srcChainId];
+        address _receiver = remoteRfqContracts[_quote.srcChainId];
         require(_receiver != address(0), "no rfq contract on src chain");
-        bytes memory message = abi.encode(agrHash);
-        sendMessage(_receiver, _agrDetail.srcChainId, message, msg.value);
-        emit Msg3Sent(agrHash);
+        bytes memory message = abi.encode(quoteHash);
+        sendMessage(_receiver, _quote.srcChainId, message, msg.value);
+        emit RefundInitiated(quoteHash);
     }
 
-    function executeMsg2(
-        AgreementDetail calldata _agrDetail,
+    function srcRelease(
+        Quote calldata _quote,
         bytes calldata _message,
         MsgDataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
-        bytes32 agrHash = getAgrHash(_agrDetail);
-        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, agrHash);
-        require(orderBooks[agrHash] == true, "incorrect agreement hash");
-        uint256 amount = _agrDetail.amount1 - getRFQFee(_agrDetail.dstChainId, _agrDetail.amount1);
-        delete orderBooks[agrHash];
-        delete unconsumedMsg[agrHash];
-        IERC20(_agrDetail.srcToken).safeTransfer(_agrDetail.srcRecipient, amount);
-        emit Msg2Executed(agrHash, _agrDetail.srcRecipient, _agrDetail.srcToken, amount);
+        bytes32 quoteHash = getQuoteHash(_quote);
+        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
+        require(quotes[quoteHash] == true, "incorrect agreement hash");
+        uint256 amount = _quote.srcAmount - getRFQFee(_quote.dstChainId, _quote.srcAmount);
+        delete quotes[quoteHash];
+        delete unconsumedMsg[quoteHash];
+        IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, amount);
+        emit SrcReleased(quoteHash, _quote.liquidityProvider, _quote.srcToken, amount);
     }
 
-    function executeMsg3(
-        AgreementDetail calldata _agrDetail,
+    function executeRefund(
+        Quote calldata _quote,
         bytes calldata _message,
         MsgDataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
-        bytes32 agrHash = getAgrHash(_agrDetail);
-        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, agrHash);
-        require(orderBooks[agrHash] == true, "incorrect agreement hash");
-        delete orderBooks[agrHash];
-        delete unconsumedMsg[agrHash];
-        IERC20(_agrDetail.srcToken).safeTransfer(_agrDetail.refundTo, _agrDetail.amount1);
-        emit Msg3Executed(agrHash, _agrDetail.refundTo, _agrDetail.srcToken, _agrDetail.amount1);
+        bytes32 quoteHash = getQuoteHash(_quote);
+        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
+        require(quotes[quoteHash] == true, "incorrect agreement hash");
+        delete quotes[quoteHash];
+        delete unconsumedMsg[quoteHash];
+        address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
+        IERC20(_quote.srcToken).safeTransfer(receiver, _quote.srcAmount);
+        emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
     function executeMessage(
@@ -160,34 +164,36 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        address expectedSender = apps[_srcChainId];
-        require(expectedSender == _sender, "invalid message sender");
+        address expectedSender = remoteRfqContracts[_srcChainId];
+        if (expectedSender != _sender) {
+            return ExecutionStatus.Retry;
+        }
 
-        bytes32 agrHash = abi.decode(_message, (bytes32));
-        unconsumedMsg[agrHash] = true;
+        bytes32 quoteHash = abi.decode(_message, (bytes32));
+        unconsumedMsg[quoteHash] = true;
 
-        emit MessageReceived(agrHash);
+        emit MessageReceived(quoteHash);
         return ExecutionStatus.Success;
     }
 
     //=========================== helper functions ==========================
 
-    function getAgrHash(AgreementDetail calldata _agrDetail) public pure returns (bytes32) {
+    function getQuoteHash(Quote calldata _quote) public pure returns (bytes32) {
         return
             keccak256(
                 abi.encodePacked(
-                    _agrDetail.srcChainId,
-                    _agrDetail.srcToken,
-                    _agrDetail.amount1,
-                    _agrDetail.dstChainId,
-                    _agrDetail.dstToken,
-                    _agrDetail.amount2,
-                    _agrDetail.releaseDeadline,
-                    _agrDetail.nonce,
-                    _agrDetail.usrAddr,
-                    _agrDetail.dstRecipient,
-                    _agrDetail.refundTo,
-                    _agrDetail.srcRecipient
+                    _quote.srcChainId,
+                    _quote.srcToken,
+                    _quote.srcAmount,
+                    _quote.dstChainId,
+                    _quote.dstToken,
+                    _quote.dstAmount,
+                    _quote.deadline,
+                    _quote.nonce,
+                    _quote.sender,
+                    _quote.receiver,
+                    _quote.refundTo,
+                    _quote.liquidityProvider
                 )
             );
     }
@@ -206,39 +212,55 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
-        bytes32 _agrHash
+        bytes32 _quoteHash
     ) private {
-        bytes32 expectedAgrHash = abi.decode(_message, (bytes32));
-        require(_agrHash == expectedAgrHash, "mismatch agreement hash");
-        if (unconsumedMsg[_agrHash] == false) {
+        bytes32 expectedQuoteHash = abi.decode(_message, (bytes32));
+        require(_quoteHash == expectedQuoteHash, "mismatch agreement hash");
+        if (unconsumedMsg[_quoteHash] == false) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
-        assert(unconsumedMsg[_agrHash] == true);
+        assert(unconsumedMsg[_quoteHash] == true);
     }
 
     //=========================== admin operations ==========================
 
     function collectFee(address _token, uint256 _amount) external onlyOwner {
-        IERC20(_token).safeTransfer(msg.sender, _amount);
+        require(treasuryAddr != address(0), "0 treasury address");
+        IERC20(_token).safeTransfer(treasuryAddr, _amount);
+        emit FeeCollected(treasuryAddr, _token, _amount);
     }
 
-    function setApp(uint64 _chainId, address _app) external onlyOwner {
-        apps[_chainId] = _app;
-        emit AppUpdated(_chainId, _app);
-    }
-
-    function setFeePerc(uint64 _chainId, uint32 _feePerc) external onlyOwner {
-        require(_feePerc < 1e6, "too large fee percentage");
-        if (_chainId == 0) {
-            feePercGlobal = _feePerc;
-        } else {
-            feePercOverride[_chainId] = _feePerc;
+    function setRemoteRfqContracts(uint64[] calldata _chainIds, address[] calldata _remoteRfqContracts)
+        external
+        onlyOwner
+    {
+        require(_chainIds.length == _remoteRfqContracts.length, "mismatch length");
+        for (uint256 i = 0; i < _chainIds.length; i++) {
+            remoteRfqContracts[_chainIds[i]] = _remoteRfqContracts[i];
         }
-        emit FeePercUpdated(_chainId, _feePerc);
+        emit RfqContractsUpdated(_chainIds, _remoteRfqContracts);
+    }
+
+    function setFeePerc(uint64[] calldata _chainIds, uint32[] calldata _feePercs) external onlyOwner {
+        require(_chainIds.length == _feePercs.length, "mismatch length");
+        for (uint256 i = 0; i < _chainIds.length; i++) {
+            require(_feePercs[i] < 1e6, "too large fee percentage");
+            if (_chainIds[i] == 0) {
+                feePercGlobal = _feePercs[i];
+            } else {
+                feePercOverride[_chainIds[i]] = _feePercs[i];
+            }
+        }
+        emit FeePercUpdated(_chainIds, _feePercs);
     }
 
     function setSafeTime(uint64 _safeTime) external onlyOwner {
         safeTime = _safeTime;
         emit SafeTimeUpdated(_safeTime);
+    }
+
+    function setTreasuryAddr(address _treasuryAddr) external onlyOwner {
+        treasuryAddr = _treasuryAddr;
+        emit TreasuryAddrUpdated(_treasuryAddr);
     }
 }

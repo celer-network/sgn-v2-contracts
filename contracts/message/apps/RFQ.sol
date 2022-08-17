@@ -38,13 +38,15 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     uint32 public feePercGlobal;
     // dstChainId => feePercOverride
     mapping(uint64 => uint32) public feePercOverride;
+    // tokenAddr => feeBalance
+    mapping(address => uint256) public uncollectedFee;
 
-    event SrcDeposited(bytes32 hash, Quote detail, address srcRecipient, uint64 submissionDeadline);
-    event DstTransferred(bytes32 hash);
-    event RefundInitiated(bytes32 hash);
-    event MessageReceived(bytes32 hash);
-    event SrcReleased(bytes32 hash, address srcRecipient, address srcToken, uint256 amount);
-    event Refunded(bytes32 hash, address refundTo, address srcToken, uint256 amount);
+    event SrcDeposited(bytes32 quoteHash, Quote quote, address liquidityProvider);
+    event DstTransferred(bytes32 quoteHash);
+    event RefundInitiated(bytes32 quoteHash);
+    event MessageReceived(bytes32 quoteHash);
+    event SrcReleased(bytes32 quoteHash, address liquidityProvider, address srcToken, uint256 amount);
+    event Refunded(bytes32 quoteHash, address refundTo, address srcToken, uint256 amount);
     event RfqContractsUpdated(uint64[] chainIds, address[] remoteRfqContracts);
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event TreasuryAddrUpdated(address treasuryAddr);
@@ -66,20 +68,19 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
             "receiver and liquidityProvider should not be 0 address"
         );
         require(_quote.srcChainId == uint64(block.chainid), "mismatch src chainId");
-        require(_quote.sender == msg.sender, "mismatch usr addr");
-
+        require(_quote.sender == msg.sender, "mismatch sender");
         bytes32 quoteHash = getQuoteHash(_quote);
-        require(quotes[quoteHash] == false, "still pending order");
+        require(quotes[quoteHash] == false, "still pending quote");
         uint256 rfqFee = getRFQFee(_quote.dstChainId, _quote.srcAmount);
         require(rfqFee <= _quote.srcAmount, "too small amount to cover protocol fee");
-        IERC20(_quote.srcToken).safeTransferFrom(msg.sender, address(this), _quote.srcAmount);
-        quotes[quoteHash] = true;
-
         address _receiver = remoteRfqContracts[_quote.dstChainId];
         require(_receiver != address(0), "no rfq contract on dst chain");
+
         bytes memory message = abi.encode(quoteHash);
         sendMessage(_receiver, _quote.dstChainId, message, msg.value);
-        emit SrcDeposited(quoteHash, _quote, _quote.liquidityProvider, _submissionDeadline);
+        IERC20(_quote.srcToken).safeTransferFrom(msg.sender, address(this), _quote.srcAmount);
+        quotes[quoteHash] = true;
+        emit SrcDeposited(quoteHash, _quote, _quote.liquidityProvider);
         return quoteHash;
     }
 
@@ -88,13 +89,13 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         require(_quote.dstChainId == uint64(block.chainid), "mismatch dst chainId");
         bytes32 quoteHash = getQuoteHash(_quote);
         require(executedQuotes[quoteHash] == false, "quote already executed");
-        IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
-        executedQuotes[quoteHash] = true;
-
         address _receiver = remoteRfqContracts[_quote.srcChainId];
         require(_receiver != address(0), "no rfq contract on src chain");
+
         bytes memory message = abi.encode(quoteHash);
         sendMessage(_receiver, _quote.srcChainId, message, msg.value);
+        IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
+        executedQuotes[quoteHash] = true;
         emit DstTransferred(quoteHash);
     }
 
@@ -129,8 +130,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     ) external nonReentrant whenNotPaused {
         bytes32 quoteHash = getQuoteHash(_quote);
         receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(quotes[quoteHash] == true, "incorrect agreement hash");
-        uint256 amount = _quote.srcAmount - getRFQFee(_quote.dstChainId, _quote.srcAmount);
+        require(quotes[quoteHash] == true, "incorrect quote hash");
+        uint256 fee = getRFQFee(_quote.dstChainId, _quote.srcAmount);
+        uncollectedFee[_quote.srcToken] += fee;
+        uint256 amount = _quote.srcAmount - fee;
         delete quotes[quoteHash];
         delete unconsumedMsg[quoteHash];
         IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, amount);
@@ -147,7 +150,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     ) external nonReentrant whenNotPaused {
         bytes32 quoteHash = getQuoteHash(_quote);
         receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(quotes[quoteHash] == true, "incorrect agreement hash");
+        require(quotes[quoteHash] == true, "incorrect quote hash");
         delete quotes[quoteHash];
         delete unconsumedMsg[quoteHash];
         address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
@@ -212,20 +215,20 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes32 _quoteHash
     ) private {
         bytes32 expectedQuoteHash = abi.decode(_message, (bytes32));
-        require(_quoteHash == expectedQuoteHash, "mismatch agreement hash");
+        require(_quoteHash == expectedQuoteHash, "mismatch quote hash");
         if (unconsumedMsg[_quoteHash] == false) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
         assert(unconsumedMsg[_quoteHash] == true);
     }
 
-    //=========================== admin operations ==========================
-
-    function collectFee(address _token, uint256 _amount) external onlyOwner {
+    function collectFee(address _token) external {
         require(treasuryAddr != address(0), "0 treasury address");
-        IERC20(_token).safeTransfer(treasuryAddr, _amount);
-        emit FeeCollected(treasuryAddr, _token, _amount);
+        IERC20(_token).safeTransfer(treasuryAddr, uncollectedFee[_token]);
+        emit FeeCollected(treasuryAddr, _token, uncollectedFee[_token]);
     }
+
+    //=========================== admin operations ==========================
 
     function setRemoteRfqContracts(uint64[] calldata _chainIds, address[] calldata _remoteRfqContracts)
         external

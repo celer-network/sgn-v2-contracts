@@ -38,22 +38,20 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         Null,
         DepositedNormal, // sender deposited non-native token               || location: src chain
         DepositedNative, // sender deposited native token                   || location: src chain
-        ReleasedNormal,  // released non-native token to liquidityProvider  || location: src chain
-        ReleasedNative,  // released native token to liquidityProvider      || location: src chain
-        RefundedNormal,  // refunded non-native token to refundTo/Sender    || location: src chain
-        RefundedNative,  // refunded native token to refundTo/Sender        || location: src chain
-        ExecutedNormal,  // transferred non-native token to receiver        || location: dst chain
-        ExecutedNative   // transferred native token to reciever            || location: dst chain
+        ReleasedNormal, // released non-native token to liquidityProvider  || location: src chain
+        ReleasedNative, // released native token to liquidityProvider      || location: src chain
+        RefundedNormal, // refunded non-native token to refundTo/Sender    || location: src chain
+        RefundedNative, // refunded native token to refundTo/Sender        || location: src chain
+        ExecutedNormal, // transferred non-native token to receiver        || location: dst chain
+        ExecutedNative // transferred native token to reciever            || location: dst chain
     }
 
     address public nativeWrap;
     mapping(uint64 => address) public remoteRfqContracts;
+    // quoteHsh => bool
     mapping(bytes32 => bool) public unconsumedMsg;
-
-    // quotes on src chain
+    // quoteHash => QuoteStatus
     mapping(bytes32 => QuoteStatus) public quotes;
-    // executed quotes on dst chain
-    mapping(bytes32 => QuoteStatus) public executedQuotes;
 
     address public treasuryAddr;
     uint32 public feePercGlobal;
@@ -96,7 +94,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         external
         payable
         whenNotPaused
-    returns (bytes32)
+        returns (bytes32)
     {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.srcToken == nativeWrap, "Rfq: mismatch src token");
@@ -110,7 +108,11 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         return quoteHash;
     }
 
-    function _srcDepositCheck(Quote calldata _quote, uint64 _submissionDeadline) private view returns (bytes32, address) {
+    function _srcDepositCheck(Quote calldata _quote, uint64 _submissionDeadline)
+        private
+        view
+        returns (bytes32, address)
+    {
         require(_submissionDeadline > block.timestamp, "Rfq: past submission deadline");
         require(
             _quote.receiver != address(0) && _quote.liquidityProvider != address(0),
@@ -129,7 +131,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
 
     function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        executedQuotes[quoteHash] = QuoteStatus.ExecutedNormal;
+        quotes[quoteHash] = QuoteStatus.ExecutedNormal;
         bytes memory message = abi.encode(quoteHash);
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
@@ -141,21 +143,21 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         require(_quote.dstToken == nativeWrap, "Rfq: mismatch dst token");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        executedQuotes[quoteHash] = QuoteStatus.ExecutedNative;
+        quotes[quoteHash] = QuoteStatus.ExecutedNative;
         bytes memory message = abi.encode(quoteHash);
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
         {
-            (bool sent,) = _quote.receiver.call{value : _quote.dstAmount, gas : 50000}("");
+            (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
             require(sent, "Rfq: failed to send native token");
         }
         emit DstTransferred(quoteHash);
     }
 
-    function _dstTransferCheck(Quote calldata _quote) private view returns(bytes32, address) {
+    function _dstTransferCheck(Quote calldata _quote) private view returns (bytes32, address) {
         require(_quote.deadline > block.timestamp, "Rfq: past release deadline");
         require(_quote.dstChainId == uint64(block.chainid), "Rfq: mismatch dst chainId");
         bytes32 quoteHash = getQuoteHash(_quote);
-        require(executedQuotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
+        require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
         address msgReceiver = remoteRfqContracts[_quote.srcChainId];
         require(msgReceiver != address(0), "Rfq: no rfq contract on src chain");
         return (quoteHash, msgReceiver);
@@ -172,7 +174,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         require(_quote.deadline < block.timestamp, "Rfq: not past release deadline");
         bytes32 quoteHash = getQuoteHash(_quote);
         receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(executedQuotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
+        require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
         delete unconsumedMsg[quoteHash];
 
         address _receiver = remoteRfqContracts[_quote.srcChainId];
@@ -210,7 +212,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         quotes[quoteHash] = QuoteStatus.ReleasedNative;
         INativeWrap(_quote.srcToken).withdraw(amount);
         {
-            (bool sent,) = _quote.liquidityProvider.call{value : amount, gas : 50000}("");
+            (bool sent, ) = _quote.liquidityProvider.call{value: amount, gas: 50000}("");
             require(sent, "failed to send native token");
         }
         emit SrcReleased(quoteHash, _quote.liquidityProvider, _quote.srcToken, amount);
@@ -223,17 +225,19 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) private returns(bytes32, uint256) {
+    ) private returns (bytes32, uint256) {
         bytes32 quoteHash = getQuoteHash(_quote);
         receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(quotes[quoteHash] == QuoteStatus.DepositedNormal ||
-            quotes[quoteHash] == QuoteStatus.DepositedNative, "Rfq: incorrect quote hash");
+        require(
+            quotes[quoteHash] == QuoteStatus.DepositedNormal || quotes[quoteHash] == QuoteStatus.DepositedNative,
+            "Rfq: incorrect quote hash"
+        );
         uint256 amount = _deductAndAccumulateFee(_quote);
         delete unconsumedMsg[quoteHash];
         return (quoteHash, amount);
     }
 
-    function _deductAndAccumulateFee(Quote calldata _quote) private returns(uint256) {
+    function _deductAndAccumulateFee(Quote calldata _quote) private returns (uint256) {
         uint256 fee = getRFQFee(_quote.dstChainId, _quote.srcAmount);
         uncollectedFee[_quote.srcToken] += fee;
         return _quote.srcAmount - fee;
@@ -282,11 +286,13 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) private returns(bytes32) {
+    ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
         receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(quotes[quoteHash] == QuoteStatus.DepositedNormal ||
-            quotes[quoteHash] == QuoteStatus.DepositedNative, "Rfq: incorrect quote hash");
+        require(
+            quotes[quoteHash] == QuoteStatus.DepositedNormal || quotes[quoteHash] == QuoteStatus.DepositedNative,
+            "Rfq: incorrect quote hash"
+        );
         delete unconsumedMsg[quoteHash];
         return quoteHash;
     }

@@ -36,7 +36,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         ReleasedNative, // released native token to liquidityProvider     || location: src chain
         Refunded, // refunded non-native token to refundTo/Sender         || location: src chain
         RefundedNative, // refunded native token to refundTo/Sender       || location: src chain
-        RefundRequested, // refund requested                              || location: dst chain
+        RefundInitiated, // refund initiated                              || location: dst chain
         Executed, // transferred non-native token to receiver             || location: dst chain
         ExecutedNative // transferred native token to reciever            || location: dst chain
     }
@@ -56,7 +56,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     mapping(address => uint256) public uncollectedFee;
 
     event SrcDeposited(bytes32 quoteHash, Quote quote);
-    event DstTransferred(bytes32 quoteHash);
+    event DstTransferred(bytes32 quoteHash, address receiver, address dstToken, uint256 amount);
     event RefundInitiated(bytes32 quoteHash);
     event MessageReceived(bytes32 quoteHash);
     event SrcReleased(bytes32 quoteHash, address liquidityProvider, address srcToken, uint256 amount);
@@ -130,7 +130,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes memory message = abi.encode(quoteHash);
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
-        emit DstTransferred(quoteHash);
+        emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
     function dstTransferNative(Quote calldata _quote) external payable whenNotPaused {
@@ -145,7 +145,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
             (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
             require(sent, "Rfq: failed to send native token");
         }
-        emit DstTransferred(quoteHash);
+        emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
     function _dstTransferCheck(Quote calldata _quote) private view returns (bytes32, address) {
@@ -166,7 +166,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
 
-        quotes[quoteHash] = QuoteStatus.RefundRequested;
+        quotes[quoteHash] = QuoteStatus.RefundInitiated;
         bytes memory message = abi.encode(quoteHash);
         sendMessage(_receiver, _quote.srcChainId, message, msg.value);
         emit RefundInitiated(quoteHash);

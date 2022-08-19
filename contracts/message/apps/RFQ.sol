@@ -164,23 +164,14 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         return (quoteHash, msgReceiver);
     }
 
-    function requestRefund(
-        Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
-    ) external payable nonReentrant whenNotPaused {
+    function requestRefund(Quote calldata _quote) external payable nonReentrant whenNotPaused {
         require(_quote.deadline < block.timestamp, "Rfq: not past release deadline");
         address _receiver = remoteRfqContracts[_quote.srcChainId];
         require(_receiver != address(0), "Rfq: no rfq contract on src chain");
         bytes32 quoteHash = getQuoteHash(_quote);
-        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
-        delete unconsumedMsg[quoteHash];
 
-        quotes[quoteHash] == QuoteStatus.RefundInitiated;
+        quotes[quoteHash] = QuoteStatus.RefundInitiated;
         bytes memory message = abi.encode(quoteHash);
         sendMessage(_receiver, _quote.srcChainId, message, msg.value);
         emit RefundInitiated(quoteHash);

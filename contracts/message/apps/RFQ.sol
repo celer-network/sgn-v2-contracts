@@ -143,14 +143,18 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
-    function dstTransferNative(Quote calldata _quote) external payable whenNotPaused {
+    function dstTransferNative(Quote calldata _quote, bool _sameChainReleaseNative) external payable whenNotPaused {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.dstToken == nativeWrap, "Rfq: mismatch dst token");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        quotes[quoteHash] = QuoteStatus.ExecutedNative;
-        bytes memory message = abi.encode(quoteHash);
-        sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
+        if (_quote.srcChainId != _quote.dstChainId) {
+            quotes[quoteHash] = QuoteStatus.ExecutedNative;
+            bytes memory message = abi.encode(quoteHash);
+            sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
+        } else {
+            _release(_quote, quoteHash, _sameChainReleaseNative);
+        }
         {
             (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
             require(sent, "Rfq: failed to send native token");
@@ -159,7 +163,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     }
 
     function _dstTransferCheck(Quote calldata _quote) private view returns (bytes32, address) {
-        require(_quote.deadline > block.timestamp, "Rfq: past release deadline");
+        require(_quote.deadline > block.timestamp, "Rfq: past transfer deadline");
         require(_quote.dstChainId == uint64(block.chainid), "Rfq: mismatch dst chainId");
         bytes32 quoteHash = getQuoteHash(_quote);
         address msgReceiver = remoteRfqContracts[_quote.srcChainId];
@@ -189,7 +193,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     }
 
     function requestRefund(Quote calldata _quote) external payable whenNotPaused {
-        require(_quote.deadline < block.timestamp, "Rfq: not past release deadline");
+        require(_quote.deadline < block.timestamp, "Rfq: not past transfer deadline");
         require(_quote.dstChainId == uint64(block.chainid), "Rfq: mismatch dst chainId");
         address _receiver = remoteRfqContracts[_quote.srcChainId];
         require(_receiver != address(0), "Rfq: no rfq contract on src chain");
@@ -298,6 +302,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         if (_quote.srcChainId != _quote.dstChainId) {
             receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
             delete unconsumedMsg[quoteHash];
+        } else {
+            require(_quote.deadline < block.timestamp, "Rfq: not past transfer deadline");
         }
         return quoteHash;
     }

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
 import "../../safeguard/Pauser.sol";
+import "../../message/interfaces/IMessageBus.sol";
 import "../../interfaces/IWETH.sol";
 
 /** @title rfq contract */
@@ -176,7 +177,11 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         return (quoteHash, msgReceiver);
     }
 
-    function _release(Quote calldata _quote, bytes32 _quoteHash, bool _releaseNative) private {
+    function _release(
+        Quote calldata _quote,
+        bytes32 _quoteHash,
+        bool _releaseNative
+    ) private {
         uint256 amount = _deductAndAccumulateFee(_quote);
         if (_releaseNative) {
             quotes[_quoteHash] = QuoteStatus.ReleasedNative;
@@ -360,6 +365,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
             feePerc = feePercGlobal;
         }
         return (_amount * feePerc) / 1e6;
+    }
+
+    function getMsgFee(bytes calldata _message) public view returns (uint256) {
+        return IMessageBus(messageBus).calcFee(_message);
     }
 
     function receiveMsgAndCheckHash(

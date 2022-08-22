@@ -131,35 +131,49 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         return (quoteHash, msgReciever);
     }
 
-    function dstTransfer(Quote calldata _quote, bool _sameChainReleaseNative) external payable whenNotPaused {
+    function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        if (_quote.srcChainId != _quote.dstChainId) {
-            quotes[quoteHash] = QuoteStatus.Executed;
-            bytes memory message = abi.encode(quoteHash);
-            sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
-        } else {
-            _release(_quote, quoteHash, _sameChainReleaseNative);
-        }
+        quotes[quoteHash] = QuoteStatus.Executed;
+        bytes memory message = abi.encode(quoteHash);
+        sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
-    function dstTransferNative(Quote calldata _quote, bool _sameChainReleaseNative) external payable whenNotPaused {
+    function dstTransferNative(Quote calldata _quote) external payable whenNotPaused {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.dstToken == nativeWrap, "Rfq: mismatch dst token");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        if (_quote.srcChainId != _quote.dstChainId) {
-            quotes[quoteHash] = QuoteStatus.ExecutedNative;
-            bytes memory message = abi.encode(quoteHash);
-            sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
-        } else {
-            _release(_quote, quoteHash, _sameChainReleaseNative);
-        }
+        quotes[quoteHash] = QuoteStatus.ExecutedNative;
+        bytes memory message = abi.encode(quoteHash);
+        sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
         {
             (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
             require(sent, "Rfq: failed to send native token");
         }
+        emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
+    }
+
+    function sameChainTransfer(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
+        require(_quote.srcChainId == _quote.dstChainId, "Rfq: accept only same chain swap");
+        (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
+        IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
+        _release(_quote, quoteHash, _releaseNative);
+        emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
+    }
+
+    function sameChainTransferNative(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
+        require(_quote.srcChainId == _quote.dstChainId, "Rfq: accept only same chain swap");
+        require(nativeWrap != address(0), "Rfq: native wrap not set");
+        require(_quote.dstToken == nativeWrap, "Rfq: mismatch dst token");
+        require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
+        (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
+        {
+            (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
+            require(sent, "Rfq: failed to send native token");
+        }
+        _release(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 

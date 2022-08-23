@@ -268,6 +268,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
         receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
+        require(unconsumedMsg[quoteHash] == MessageType.Release, "Rfq: mismatch message type");
         require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
         delete unconsumedMsg[quoteHash];
         return quoteHash;
@@ -327,6 +328,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {
             receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
+            require(unconsumedMsg[quoteHash] == MessageType.Refund, "Rfq: mismatch message type");
             delete unconsumedMsg[quoteHash];
         } else {
             require(_quote.deadline < block.timestamp, "Rfq: not past transfer deadline");

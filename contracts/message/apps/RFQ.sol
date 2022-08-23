@@ -84,12 +84,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         whenNotPaused
         returns (bytes32)
     {
-        (bytes32 quoteHash, address msgReceiver) = _srcDepositCheck(_quote, _submissionDeadline);
-        quotes[quoteHash] = QuoteStatus.Deposited;
-        if (_quote.srcChainId != _quote.dstChainId) {
-            bytes memory message = abi.encode(quoteHash);
-            sendMessage(msgReceiver, _quote.dstChainId, message, msg.value);
-        }
+        bytes32 quoteHash = _srcDeposit(_quote, _submissionDeadline);
         IERC20(_quote.srcToken).safeTransferFrom(msg.sender, address(this), _quote.srcAmount);
         emit SrcDeposited(quoteHash, _quote);
         return quoteHash;
@@ -102,40 +97,33 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         returns (bytes32)
     {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
-        require(_quote.srcToken == nativeWrap, "Rfq: mismatch src token");
+        require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         require(msg.value >= _quote.srcAmount, "Rfq: insufficient amount");
-        (bytes32 quoteHash, address msgReceiver) = _srcDepositCheck(_quote, _submissionDeadline);
-        quotes[quoteHash] = QuoteStatus.Deposited;
-        if (_quote.srcChainId != _quote.dstChainId) {
-            bytes memory message = abi.encode(quoteHash);
-            sendMessage(msgReceiver, _quote.dstChainId, message, msg.value);
-        }
+        bytes32 quoteHash = _srcDeposit(_quote, _submissionDeadline);
         IWETH(nativeWrap).deposit{value: _quote.srcAmount}();
         emit SrcDeposited(quoteHash, _quote);
         return quoteHash;
     }
 
-    function _srcDepositCheck(Quote calldata _quote, uint64 _submissionDeadline)
-        private
-        view
-        returns (bytes32, address)
-    {
-        require(_submissionDeadline > block.timestamp, "Rfq: past submission deadline");
+    function _srcDeposit(Quote calldata _quote, uint64 _submissionDeadline) private returns (bytes32) {
+        require(_submissionDeadline > block.timestamp, "Rfq: submission deadline passed");
         require(
             _quote.receiver != address(0) && _quote.liquidityProvider != address(0),
-            "Rfq: receiver and liquidityProvider should not be 0 address"
+            "Rfq: invalid receiver or liquidityProvider"
         );
-        require(_quote.srcChainId == uint64(block.chainid), "Rfq: mismatch src chainId");
-        require(_quote.sender == msg.sender, "Rfq: mismatch sender");
+        require(_quote.srcChainId == uint64(block.chainid), "Rfq: src chainId mismatch");
+        require(_quote.sender == msg.sender, "Rfq: sender mismatch");
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote hash exists");
-        address msgReciever = remoteRfqContracts[_quote.dstChainId];
+
+        quotes[quoteHash] = QuoteStatus.Deposited;
         if (_quote.srcChainId != _quote.dstChainId) {
-            require(msgReciever != address(0), "Rfq: no rfq contract on dst chain");
+            address msgReceiver = remoteRfqContracts[_quote.dstChainId];
+            require(msgReceiver != address(0), "Rfq: dst contract not set");
+            bytes memory message = abi.encode(quoteHash);
+            sendMessage(msgReceiver, _quote.dstChainId, message, msg.value);
         }
-        uint256 rfqFee = getRfqFee(_quote.dstChainId, _quote.srcAmount);
-        require(rfqFee <= _quote.srcAmount, "Rfq: amount too small to cover protocol fee");
-        return (quoteHash, msgReciever);
+        return quoteHash;
     }
 
     function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
@@ -149,7 +137,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function dstTransferNative(Quote calldata _quote) external payable whenNotPaused {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
-        require(_quote.dstToken == nativeWrap, "Rfq: mismatch dst token");
+        require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
         quotes[quoteHash] = QuoteStatus.ExecutedNative;
@@ -163,42 +151,42 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     }
 
     function sameChainTransfer(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
-        require(_quote.srcChainId == _quote.dstChainId, "Rfq: accept only same chain swap");
+        require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
-        _release(_quote, quoteHash, _releaseNative);
+        _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
     function sameChainTransferNative(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
-        require(_quote.srcChainId == _quote.dstChainId, "Rfq: accept only same chain swap");
+        require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         require(nativeWrap != address(0), "Rfq: native wrap not set");
-        require(_quote.dstToken == nativeWrap, "Rfq: mismatch dst token");
+        require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
         {
             (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
             require(sent, "Rfq: failed to send native token");
         }
-        _release(_quote, quoteHash, _releaseNative);
+        _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
     function _dstTransferCheck(Quote calldata _quote) private view returns (bytes32, address) {
-        require(_quote.deadline > block.timestamp, "Rfq: past transfer deadline");
-        require(_quote.dstChainId == uint64(block.chainid), "Rfq: mismatch dst chainId");
+        require(_quote.deadline > block.timestamp, "Rfq: transfer deadline passed");
+        require(_quote.dstChainId == uint64(block.chainid), "Rfq: dst chainId mismatch");
         bytes32 quoteHash = getQuoteHash(_quote);
         address msgReceiver = remoteRfqContracts[_quote.srcChainId];
         if (_quote.srcChainId != _quote.dstChainId) {
             require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
-            require(msgReceiver != address(0), "Rfq: no rfq contract on dst chain");
+            require(msgReceiver != address(0), "Rfq: dst rfq contract not set");
         } else {
             require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: no deposit on same chain");
         }
         return (quoteHash, msgReceiver);
     }
 
-    function _release(
+    function _srcRelease(
         Quote calldata _quote,
         bytes32 _quoteHash,
         bool _releaseNative
@@ -219,10 +207,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     }
 
     function requestRefund(Quote calldata _quote) external payable whenNotPaused {
-        require(_quote.deadline < block.timestamp, "Rfq: not past transfer deadline");
-        require(_quote.dstChainId == uint64(block.chainid), "Rfq: mismatch dst chainId");
+        require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
+        require(_quote.dstChainId == uint64(block.chainid), "Rfq: dst chainId mismatch");
         address _receiver = remoteRfqContracts[_quote.srcChainId];
-        require(_receiver != address(0), "Rfq: no rfq contract on src chain");
+        require(_receiver != address(0), "Rfq: src rfq contract not set");
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
 
@@ -241,7 +229,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
         bytes32 quoteHash = _srcReleaseCheck(_quote, _message, _route, _sigs, _signers, _powers);
-        _release(_quote, quoteHash, false);
+        _srcRelease(_quote, quoteHash, false);
     }
 
     function srcReleaseNative(
@@ -253,9 +241,9 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
-        require(_quote.srcToken == nativeWrap, "Rfq: mismatch src token");
+        require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         bytes32 quoteHash = _srcReleaseCheck(_quote, _message, _route, _sigs, _signers, _powers);
-        _release(_quote, quoteHash, true);
+        _srcRelease(_quote, quoteHash, true);
     }
 
     function _srcReleaseCheck(
@@ -267,9 +255,9 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
-        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(unconsumedMsg[quoteHash] == MessageType.Release, "Rfq: mismatch message type");
         require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
+        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
+        require(unconsumedMsg[quoteHash] == MessageType.Release, "Rfq: message type mismatch");
         delete unconsumedMsg[quoteHash];
         return quoteHash;
     }
@@ -304,7 +292,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
-        require(_quote.srcToken == nativeWrap, "Rfq: mismatch src token");
+        require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         bytes32 quoteHash = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
         quotes[quoteHash] = QuoteStatus.RefundedNative;
         address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
@@ -328,10 +316,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {
             receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-            require(unconsumedMsg[quoteHash] == MessageType.Refund, "Rfq: mismatch message type");
+            require(unconsumedMsg[quoteHash] == MessageType.Refund, "Rfq: message type mismatch");
             delete unconsumedMsg[quoteHash];
         } else {
-            require(_quote.deadline < block.timestamp, "Rfq: not past transfer deadline");
+            require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
         }
         return quoteHash;
     }
@@ -358,7 +346,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     }
 
     function collectFee(address _token) external {
-        require(treasuryAddr != address(0), "Rfq: 0 treasury address");
+        require(treasuryAddr != address(0), "Rfq: treasury address not set");
         uint256 feeAmount = uncollectedFee[_token];
         uncollectedFee[_token] = 0;
         IERC20(_token).safeTransfer(treasuryAddr, feeAmount);
@@ -408,7 +396,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes32 _quoteHash
     ) private {
         bytes32 expectedQuoteHash = bytes32(_message);
-        require(_quoteHash == expectedQuoteHash, "Rfq: mismatch quote hash");
+        require(_quoteHash == expectedQuoteHash, "Rfq: quote hash mismatch");
         if (unconsumedMsg[_quoteHash] == MessageType.Null) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
@@ -421,7 +409,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         external
         onlyOwner
     {
-        require(_chainIds.length == _remoteRfqContracts.length, "Rfq: mismatch length");
+        require(_chainIds.length == _remoteRfqContracts.length, "Rfq: length mismatch");
         for (uint256 i = 0; i < _chainIds.length; i++) {
             remoteRfqContracts[_chainIds[i]] = _remoteRfqContracts[i];
         }
@@ -429,7 +417,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     }
 
     function setFeePerc(uint64[] calldata _chainIds, uint32[] calldata _feePercs) external onlyGovernor {
-        require(_chainIds.length == _feePercs.length, "Rfq: mismatch length");
+        require(_chainIds.length == _feePercs.length, "Rfq: length mismatch");
         for (uint256 i = 0; i < _chainIds.length; i++) {
             require(_feePercs[i] < 1e6, "Rfq: fee percentage too large");
             if (_chainIds[i] == 0) {

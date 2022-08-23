@@ -43,10 +43,16 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         ExecutedNative // transferred native token to reciever            || location: dst chain
     }
 
+    enum MessageType {
+        Null,
+        Release,
+        Refund
+    }
+
     address public nativeWrap;
     mapping(uint64 => address) public remoteRfqContracts;
     // quoteHsh => bool
-    mapping(bytes32 => bool) public unconsumedMsg;
+    mapping(bytes32 => MessageType) public unconsumedMsg;
     // quoteHash => QuoteStatus
     mapping(bytes32 => QuoteStatus) public quotes;
 
@@ -135,7 +141,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
         quotes[quoteHash] = QuoteStatus.Executed;
-        bytes memory message = abi.encode(quoteHash);
+        bytes memory message = bytes.concat(quoteHash, bytes1(uint8(MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -147,7 +153,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
         quotes[quoteHash] = QuoteStatus.ExecutedNative;
-        bytes memory message = abi.encode(quoteHash);
+        bytes memory message = bytes.concat(quoteHash, bytes1(uint8(MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
         {
             (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
@@ -221,7 +227,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
 
         quotes[quoteHash] = QuoteStatus.RefundInitiated;
-        bytes memory message = abi.encode(quoteHash);
+        bytes memory message = bytes.concat(quoteHash, bytes1(uint8(MessageType.Refund)));
         sendMessage(_receiver, _quote.srcChainId, message, msg.value);
         emit RefundInitiated(quoteHash);
     }
@@ -334,13 +340,16 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
+        require(_message.length == 33, "Rfq: incorrect message length");
         address expectedSender = remoteRfqContracts[_srcChainId];
         if (expectedSender != _sender) {
             return ExecutionStatus.Retry;
         }
 
-        bytes32 quoteHash = abi.decode(_message, (bytes32));
-        unconsumedMsg[quoteHash] = true;
+        bytes32 quoteHash = bytes32(_message);
+        MessageType msgType = abi.decode(_message[32:], (MessageType));
+        require(msgType != MessageType.Null, "Rfq: invalid message type");
+        unconsumedMsg[quoteHash] = msgType;
 
         emit MessageReceived(quoteHash);
         return ExecutionStatus.Success;
@@ -396,12 +405,12 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers,
         bytes32 _quoteHash
     ) private {
-        bytes32 expectedQuoteHash = abi.decode(_message, (bytes32));
+        bytes32 expectedQuoteHash = bytes32(_message);
         require(_quoteHash == expectedQuoteHash, "Rfq: mismatch quote hash");
-        if (unconsumedMsg[_quoteHash] == false) {
+        if (unconsumedMsg[_quoteHash] == MessageType.Null) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
-        assert(unconsumedMsg[_quoteHash] == true);
+        assert(unconsumedMsg[_quoteHash] != MessageType.Null);
     }
 
     //=========================== admin operations ==========================

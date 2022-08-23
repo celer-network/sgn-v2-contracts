@@ -51,7 +51,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         uint256 id; // token ID
         string uri; // tokenURI from source NFT
     }
-    // for non-evm dst chain, address type is bytes 
+    // for non-evm dst chain, address type is bytes
     struct NFTMsg2 {
         bytes user; // receiver of minted or withdrawn NFT
         bytes nft; // NFT contract on mint/withdraw chain
@@ -172,6 +172,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         msgBus(_dstBridge, _dstChid, abi.encode(NFTMsg(_receiver, _dstNft, _id, _uri)));
         emit Sent(_sender, _nft, _id, _dstChid, _receiver, _dstNft);
     }
+
     // for non-evm chains and address can't fit 20bytes or non-hex
     function sendMsg(
         uint64 _dstChid,
@@ -202,7 +203,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         }
         return xferOrMint(_message, srcChid);
     }
-    
+
     function executeMessage(
         bytes calldata sender,
         uint64 srcChid,
@@ -261,7 +262,11 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         require(dstNft != address(0), "dest NFT not found");
     }
 
-    function checkAddr2(address _nft, uint64 _dstChid) internal view returns (bytes memory dstBridge, bytes memory dstNft) {
+    function checkAddr2(address _nft, uint64 _dstChid)
+        internal
+        view
+        returns (bytes memory dstBridge, bytes memory dstNft)
+    {
         dstBridge = destBridge2[_dstChid];
         require(dstBridge.length != 0, "dest NFT Bridge not found");
         dstNft = destNFTAddr2[_nft][_dstChid];
@@ -299,6 +304,7 @@ contract NFTBridge is MessageReceiverApp, Pauser {
         destNFTAddr[srcNft][dstChid] = dstNft;
         emit SetDestNFT(srcNft, dstChid, dstNft);
     }
+
     // add to destNFTAddr2
     function setDestNFT(
         address srcNft,

@@ -8,11 +8,12 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
 import "../../safeguard/Pauser.sol";
+import "../../safeguard/Governor.sol";
 import "../../message/interfaces/IMessageBus.sol";
 import "../../interfaces/IWETH.sol";
 
 /** @title rfq contract */
-contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
+contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct Quote {
@@ -126,7 +127,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         if (_quote.srcChainId != _quote.dstChainId) {
             require(msgReciever != address(0), "Rfq: no rfq contract on dst chain");
         }
-        uint256 rfqFee = getRFQFee(_quote.dstChainId, _quote.srcAmount);
+        uint256 rfqFee = getRfqFee(_quote.dstChainId, _quote.srcAmount);
         require(rfqFee <= _quote.srcAmount, "Rfq: amount too small to cover protocol fee");
         return (quoteHash, msgReciever);
     }
@@ -267,7 +268,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
     }
 
     function _deductAndAccumulateFee(Quote calldata _quote) private returns (uint256) {
-        uint256 fee = getRFQFee(_quote.dstChainId, _quote.srcAmount);
+        uint256 fee = getRfqFee(_quote.dstChainId, _quote.srcAmount);
         uncollectedFee[_quote.srcToken] += fee;
         return _quote.srcAmount - fee;
     }
@@ -375,7 +376,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
             );
     }
 
-    function getRFQFee(uint64 _chainId, uint256 _amount) public view returns (uint256) {
+    function getRfqFee(uint64 _chainId, uint256 _amount) public view returns (uint256) {
         uint32 feePerc = feePercOverride[_chainId];
         if (feePerc == 0) {
             feePerc = feePercGlobal;
@@ -416,10 +417,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
         emit RfqContractsUpdated(_chainIds, _remoteRfqContracts);
     }
 
-    function setFeePerc(uint64[] calldata _chainIds, uint32[] calldata _feePercs) external onlyOwner {
+    function setFeePerc(uint64[] calldata _chainIds, uint32[] calldata _feePercs) external onlyGovernor {
         require(_chainIds.length == _feePercs.length, "Rfq: mismatch length");
         for (uint256 i = 0; i < _chainIds.length; i++) {
-            require(_feePercs[i] < 1e6, "Rfq: too large fee percentage");
+            require(_feePercs[i] < 1e6, "Rfq: fee percentage too large");
             if (_chainIds[i] == 0) {
                 feePercGlobal = _feePercs[i];
             } else {

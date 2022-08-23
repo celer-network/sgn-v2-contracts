@@ -347,8 +347,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, ReentrancyGuard {
 
     function collectFee(address _token) external {
         require(treasuryAddr != address(0), "Rfq: 0 treasury address");
-        IERC20(_token).safeTransfer(treasuryAddr, uncollectedFee[_token]);
-        emit FeeCollected(treasuryAddr, _token, uncollectedFee[_token]);
+        uint256 feeAmount = uncollectedFee[_token];
+        uncollectedFee[_token] = 0;
+        IERC20(_token).safeTransfer(treasuryAddr, feeAmount);
+        emit FeeCollected(treasuryAddr, _token, feeAmount);
     }
 
     //=========================== helper functions ==========================

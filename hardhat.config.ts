@@ -89,6 +89,9 @@ const bscPrivateKey = process.env.BSC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const arbitrumEndpoint = process.env.ARBITRUM_ENDPOINT || DEFAULT_ENDPOINT;
 const arbitrumPrivateKey = process.env.ARBITRUM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const arbitrumNovaEndpoint = process.env.ARBITRUM_NOVA_ENDPOINT || DEFAULT_ENDPOINT;
+const arbitrumNovaPrivateKey = process.env.ARBITRUM_NOVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const polygonEndpoint = process.env.POLYGON_ENDPOINT || DEFAULT_ENDPOINT;
 const polygonPrivateKey = process.env.POLYGON_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -287,6 +290,10 @@ const config: HardhatUserConfig = {
     arbitrum: {
       url: arbitrumEndpoint,
       accounts: [`0x${arbitrumPrivateKey}`]
+    },
+    arbitrumNova: {
+      url: arbitrumNovaEndpoint,
+      accounts: [`0x${arbitrumNovaPrivateKey}`]
     },
     polygon: {
       url: polygonEndpoint,

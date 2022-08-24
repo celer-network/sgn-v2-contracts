@@ -145,10 +145,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         quotes[quoteHash] = QuoteStatus.DstTransferredNative;
         bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
-        {
-            (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
-            require(sent, "Rfq: failed to send native token");
-        }
+        _sendNativeToken(_quote.receiver, _quote.dstAmount, false);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
@@ -166,10 +163,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
-        {
-            (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
-            require(sent, "Rfq: failed to send native token");
-        }
+        _sendNativeToken(_quote.receiver, _quote.dstAmount, false);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
@@ -186,40 +180,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
             require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: no deposit on same chain");
         }
         return (quoteHash, msgReceiver);
-    }
-
-    function _srcRelease(
-        Quote calldata _quote,
-        bytes32 _quoteHash,
-        bool _releaseNative
-    ) private {
-        protocolFee[_quote.srcToken] += (_quote.srcAmount - _quote.srcReleaseAmount);
-        if (_releaseNative) {
-            quotes[_quoteHash] = QuoteStatus.SrcReleasedNative;
-            IWETH(_quote.srcToken).withdraw(_quote.srcReleaseAmount);
-            {
-                (bool sent, ) = _quote.liquidityProvider.call{value: _quote.srcReleaseAmount, gas: 50000}("");
-                require(sent, "failed to send native token");
-            }
-        } else {
-            quotes[_quoteHash] = QuoteStatus.SrcReleased;
-            IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, _quote.srcReleaseAmount);
-        }
-        emit SrcReleased(_quoteHash, _quote.liquidityProvider, _quote.srcToken, _quote.srcReleaseAmount);
-    }
-
-    function requestRefund(Quote calldata _quote) external payable whenNotPaused {
-        require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
-        require(_quote.dstChainId == uint64(block.chainid), "Rfq: dst chainId mismatch");
-        address _receiver = remoteRfqContracts[_quote.srcChainId];
-        require(_receiver != address(0), "Rfq: src rfq contract not set");
-        bytes32 quoteHash = getQuoteHash(_quote);
-        require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
-
-        quotes[quoteHash] = QuoteStatus.DstRefundInitiated;
-        bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Refund)));
-        sendMessage(_receiver, _quote.srcChainId, message, msg.value);
-        emit RefundInitiated(quoteHash);
     }
 
     function srcRelease(
@@ -263,6 +223,36 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         return quoteHash;
     }
 
+    function _srcRelease(
+        Quote calldata _quote,
+        bytes32 _quoteHash,
+        bool _releaseNative
+    ) private {
+        protocolFee[_quote.srcToken] += (_quote.srcAmount - _quote.srcReleaseAmount);
+        if (_releaseNative) {
+            quotes[_quoteHash] = QuoteStatus.SrcReleasedNative;
+            _sendNativeToken(_quote.liquidityProvider, _quote.srcReleaseAmount, true);
+        } else {
+            quotes[_quoteHash] = QuoteStatus.SrcReleased;
+            IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, _quote.srcReleaseAmount);
+        }
+        emit SrcReleased(_quoteHash, _quote.liquidityProvider, _quote.srcToken, _quote.srcReleaseAmount);
+    }
+
+    function requestRefund(Quote calldata _quote) external payable whenNotPaused {
+        require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
+        require(_quote.dstChainId == uint64(block.chainid), "Rfq: dst chainId mismatch");
+        address _receiver = remoteRfqContracts[_quote.srcChainId];
+        require(_receiver != address(0), "Rfq: src rfq contract not set");
+        bytes32 quoteHash = getQuoteHash(_quote);
+        require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
+
+        quotes[quoteHash] = QuoteStatus.DstRefundInitiated;
+        bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Refund)));
+        sendMessage(_receiver, _quote.srcChainId, message, msg.value);
+        emit RefundInitiated(quoteHash);
+    }
+
     function executeRefund(
         Quote calldata _quote,
         bytes calldata _message,
@@ -291,11 +281,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes32 quoteHash = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
         address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
-        IWETH(_quote.srcToken).withdraw(_quote.srcAmount);
-        {
-            (bool sent, ) = _quote.liquidityProvider.call{value: _quote.srcAmount, gas: 50000}("");
-            require(sent, "failed to send native token");
-        }
+        _sendNativeToken(_quote.receiver, _quote.srcAmount, true);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
@@ -391,6 +377,18 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
         require(unconsumedMsg[bytes32(_message)], "Rfq: invalid msg");
+    }
+
+    function _sendNativeToken(
+        address _receiver,
+        uint256 _amount,
+        bool _wrapped
+    ) private {
+        if (_wrapped) {
+            IWETH(nativeWrap).withdraw(_amount);
+        }
+        (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+        require(sent, "Rfq: failed to send native token");
     }
 
     //=========================== admin operations ==========================

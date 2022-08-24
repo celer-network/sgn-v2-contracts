@@ -392,7 +392,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         if (!unconsumedMsg[bytes32(_message)]) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
-        require(unconsumedMsg[bytes32(_message)], "invalid msg");
+        require(unconsumedMsg[bytes32(_message)], "Rfq: invalid msg");
     }
 
     //=========================== admin operations ==========================

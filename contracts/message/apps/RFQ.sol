@@ -34,14 +34,14 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     enum QuoteStatus {
         Null,
-        Deposited, // sender deposited                                    || location: src chain
-        Released, // released non-native token to liquidityProvider       || location: src chain
-        ReleasedNative, // released native token to liquidityProvider     || location: src chain
-        Refunded, // refunded non-native token to refundTo/Sender         || location: src chain
-        RefundedNative, // refunded native token to refundTo/Sender       || location: src chain
-        RefundInitiated, // refund initiated                              || location: dst chain
-        Executed, // transferred non-native token to receiver             || location: dst chain
-        ExecutedNative // transferred native token to reciever            || location: dst chain
+        SrcDeposited, // sender deposited
+        SrcReleased, // released ERC20 token to liquidity provider
+        SrcReleasedNative, // released native token to liquidity provider
+        SrcRefunded, // refunded ERC20 token to refundTo/sender
+        SrcRefundedNative, // refunded native token to refundTo/sender
+        DstRefundInitiated, // refund initiated
+        DstTransferred, // transferred ERC20 token to receiver
+        DstTransferredNative // transferred native token to reciever
     }
 
     enum MessageType {
@@ -62,7 +62,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     // chainId => feePercOverride, support override fee perc of this chain
     mapping(uint64 => uint32) public feePercOverride;
     // tokenAddr => feeBalance
-    mapping(address => uint256) public uncollectedFee;
+    mapping(address => uint256) public protocolFee;
 
     event SrcDeposited(bytes32 quoteHash, Quote quote);
     event DstTransferred(bytes32 quoteHash, address receiver, address dstToken, uint256 amount);
@@ -118,7 +118,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256 rfqFee = getRfqFee(_quote.dstChainId, _quote.srcAmount);
         require(rfqFee <= _quote.srcAmount - _quote.srcReleaseAmount, "Rfq: insufficient protocol fee");
 
-        quotes[quoteHash] = QuoteStatus.Deposited;
+        quotes[quoteHash] = QuoteStatus.SrcDeposited;
         if (_quote.srcChainId != _quote.dstChainId) {
             address msgReceiver = remoteRfqContracts[_quote.dstChainId];
             require(msgReceiver != address(0), "Rfq: dst contract not set");
@@ -130,7 +130,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        quotes[quoteHash] = QuoteStatus.Executed;
+        quotes[quoteHash] = QuoteStatus.DstTransferred;
         bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
@@ -142,7 +142,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
-        quotes[quoteHash] = QuoteStatus.ExecutedNative;
+        quotes[quoteHash] = QuoteStatus.DstTransferredNative;
         bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
         {
@@ -183,7 +183,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
             require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
             require(msgReceiver != address(0), "Rfq: dst rfq contract not set");
         } else {
-            require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: no deposit on same chain");
+            require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: no deposit on same chain");
         }
         return (quoteHash, msgReceiver);
     }
@@ -193,16 +193,16 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes32 _quoteHash,
         bool _releaseNative
     ) private {
-        _accumulateFee(_quote.srcToken, _quote.srcAmount - _quote.srcReleaseAmount);
+        protocolFee[_quote.srcToken] += (_quote.srcAmount - _quote.srcReleaseAmount);
         if (_releaseNative) {
-            quotes[_quoteHash] = QuoteStatus.ReleasedNative;
+            quotes[_quoteHash] = QuoteStatus.SrcReleasedNative;
             IWETH(_quote.srcToken).withdraw(_quote.srcReleaseAmount);
             {
                 (bool sent, ) = _quote.liquidityProvider.call{value: _quote.srcReleaseAmount, gas: 50000}("");
                 require(sent, "failed to send native token");
             }
         } else {
-            quotes[_quoteHash] = QuoteStatus.Released;
+            quotes[_quoteHash] = QuoteStatus.SrcReleased;
             IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, _quote.srcReleaseAmount);
         }
         emit SrcReleased(_quoteHash, _quote.liquidityProvider, _quote.srcToken, _quote.srcReleaseAmount);
@@ -216,7 +216,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
 
-        quotes[quoteHash] = QuoteStatus.RefundInitiated;
+        quotes[quoteHash] = QuoteStatus.DstRefundInitiated;
         bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Refund)));
         sendMessage(_receiver, _quote.srcChainId, message, msg.value);
         emit RefundInitiated(quoteHash);
@@ -257,14 +257,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
-        require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
+        require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
         _receiveMessage(_message, _route, _sigs, _signers, _powers, quoteHash, MessageType.Release);
         delete unconsumedMsg[bytes32(_message)];
         return quoteHash;
-    }
-
-    function _accumulateFee(address _srcToken, uint256 _feeAmount) private {
-        uncollectedFee[_srcToken] += _feeAmount;
     }
 
     function executeRefund(
@@ -276,7 +272,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
         bytes32 quoteHash = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
-        quotes[quoteHash] = QuoteStatus.Refunded;
+        quotes[quoteHash] = QuoteStatus.SrcRefunded;
         address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
         IERC20(_quote.srcToken).safeTransfer(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
@@ -293,7 +289,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         bytes32 quoteHash = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
-        quotes[quoteHash] = QuoteStatus.RefundedNative;
+        quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
         address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
         IWETH(_quote.srcToken).withdraw(_quote.srcAmount);
         {
@@ -312,7 +308,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint256[] calldata _powers
     ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
-        require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
+        require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {
             _receiveMessage(_message, _route, _sigs, _signers, _powers, quoteHash, MessageType.Refund);
             delete unconsumedMsg[bytes32(_message)];
@@ -339,8 +335,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function collectFee(address _token) external {
         require(treasuryAddr != address(0), "Rfq: treasury address not set");
-        uint256 feeAmount = uncollectedFee[_token];
-        uncollectedFee[_token] = 0;
+        uint256 feeAmount = protocolFee[_token];
+        protocolFee[_token] = 0;
         IERC20(_token).safeTransfer(treasuryAddr, feeAmount);
         emit FeeCollected(treasuryAddr, _token, feeAmount);
     }

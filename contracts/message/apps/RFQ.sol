@@ -20,6 +20,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         uint64 srcChainId;
         address srcToken;
         uint256 srcAmount;
+        uint256 srcReleaseAmount;
         uint64 dstChainId;
         address dstToken;
         uint256 dstAmount;
@@ -114,6 +115,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(_quote.sender == msg.sender, "Rfq: sender mismatch");
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote hash exists");
+        uint256 rfqFee = getRfqFee(_quote.dstChainId, _quote.srcAmount);
+        require(rfqFee <= _quote.srcAmount - _quote.srcReleaseAmount, "Rfq: insufficient protocol fee");
 
         quotes[quoteHash] = QuoteStatus.Deposited;
         if (_quote.srcChainId != _quote.dstChainId) {
@@ -190,19 +193,19 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes32 _quoteHash,
         bool _releaseNative
     ) private {
-        uint256 amount = _deductAndAccumulateFee(_quote);
+        _accumulateFee(_quote.srcToken, _quote.srcAmount - _quote.srcReleaseAmount);
         if (_releaseNative) {
             quotes[_quoteHash] = QuoteStatus.ReleasedNative;
-            IWETH(_quote.srcToken).withdraw(amount);
+            IWETH(_quote.srcToken).withdraw(_quote.srcReleaseAmount);
             {
-                (bool sent, ) = _quote.liquidityProvider.call{value: amount, gas: 50000}("");
+                (bool sent, ) = _quote.liquidityProvider.call{value: _quote.srcReleaseAmount, gas: 50000}("");
                 require(sent, "failed to send native token");
             }
         } else {
             quotes[_quoteHash] = QuoteStatus.Released;
-            IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, amount);
+            IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, _quote.srcReleaseAmount);
         }
-        emit SrcReleased(_quoteHash, _quote.liquidityProvider, _quote.srcToken, amount);
+        emit SrcReleased(_quoteHash, _quote.liquidityProvider, _quote.srcToken, _quote.srcReleaseAmount);
     }
 
     function requestRefund(Quote calldata _quote) external payable whenNotPaused {
@@ -260,10 +263,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         return quoteHash;
     }
 
-    function _deductAndAccumulateFee(Quote calldata _quote) private returns (uint256) {
-        uint256 fee = getRfqFee(_quote.dstChainId, _quote.srcAmount);
-        uncollectedFee[_quote.srcToken] += fee;
-        return _quote.srcAmount - fee;
+    function _accumulateFee(address _srcToken, uint256 _feeAmount) private {
+        uncollectedFee[_srcToken] += _feeAmount;
     }
 
     function executeRefund(
@@ -353,6 +354,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
                     _quote.srcChainId,
                     _quote.srcToken,
                     _quote.srcAmount,
+                    _quote.srcReleaseAmount,
                     _quote.dstChainId,
                     _quote.dstToken,
                     _quote.dstAmount,

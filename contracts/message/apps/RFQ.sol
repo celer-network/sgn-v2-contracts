@@ -51,8 +51,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     address public nativeWrap;
     mapping(uint64 => address) public remoteRfqContracts;
-    // quoteHsh => bool
-    mapping(bytes32 => MessageType) public unconsumedMsg;
+    // msg => bool
+    mapping(bytes32 => bool) public unconsumedMsg;
     // quoteHash => QuoteStatus
     mapping(bytes32 => QuoteStatus) public quotes;
 
@@ -66,7 +66,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     event SrcDeposited(bytes32 quoteHash, Quote quote);
     event DstTransferred(bytes32 quoteHash, address receiver, address dstToken, uint256 amount);
     event RefundInitiated(bytes32 quoteHash);
-    event MessageReceived(bytes32 quoteHash);
     event SrcReleased(bytes32 quoteHash, address liquidityProvider, address srcToken, uint256 amount);
     event Refunded(bytes32 quoteHash, address refundTo, address srcToken, uint256 amount);
     event RfqContractsUpdated(uint64[] chainIds, address[] remoteRfqContracts);
@@ -120,7 +119,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         if (_quote.srcChainId != _quote.dstChainId) {
             address msgReceiver = remoteRfqContracts[_quote.dstChainId];
             require(msgReceiver != address(0), "Rfq: dst contract not set");
-            bytes memory message = abi.encode(quoteHash);
+            bytes memory message = abi.encodePacked(quoteHash);
             sendMessage(msgReceiver, _quote.dstChainId, message, msg.value);
         }
         return quoteHash;
@@ -129,7 +128,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     function dstTransfer(Quote calldata _quote) external payable whenNotPaused {
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
         quotes[quoteHash] = QuoteStatus.Executed;
-        bytes memory message = bytes.concat(quoteHash, bytes1(uint8(MessageType.Release)));
+        bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value);
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -141,7 +140,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
         quotes[quoteHash] = QuoteStatus.ExecutedNative;
-        bytes memory message = bytes.concat(quoteHash, bytes1(uint8(MessageType.Release)));
+        bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
         {
             (bool sent, ) = _quote.receiver.call{value: _quote.dstAmount, gas: 50000}("");
@@ -215,7 +214,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(quotes[quoteHash] == QuoteStatus.Null, "Rfq: quote already executed");
 
         quotes[quoteHash] = QuoteStatus.RefundInitiated;
-        bytes memory message = bytes.concat(quoteHash, bytes1(uint8(MessageType.Refund)));
+        bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Refund)));
         sendMessage(_receiver, _quote.srcChainId, message, msg.value);
         emit RefundInitiated(quoteHash);
     }
@@ -256,9 +255,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
-        receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-        require(unconsumedMsg[quoteHash] == MessageType.Release, "Rfq: message type mismatch");
-        delete unconsumedMsg[quoteHash];
+        _receiveMessage(_message, _route, _sigs, _signers, _powers, quoteHash, MessageType.Release);
+        delete unconsumedMsg[bytes32(_message)];
         return quoteHash;
     }
 
@@ -315,9 +313,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.Deposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {
-            receiveMsgAndCheckHash(_message, _route, _sigs, _signers, _powers, quoteHash);
-            require(unconsumedMsg[quoteHash] == MessageType.Refund, "Rfq: message type mismatch");
-            delete unconsumedMsg[quoteHash];
+            _receiveMessage(_message, _route, _sigs, _signers, _powers, quoteHash, MessageType.Refund);
+            delete unconsumedMsg[bytes32(_message)];
         } else {
             require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
         }
@@ -330,18 +327,12 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        require(_message.length == 33, "Rfq: incorrect message length");
+        require(_message.length == 32, "Rfq: incorrect message length");
         address expectedSender = remoteRfqContracts[_srcChainId];
         if (expectedSender != _sender) {
             return ExecutionStatus.Retry;
         }
-
-        bytes32 quoteHash = bytes32(_message);
-        MessageType msgType = abi.decode(_message[32:], (MessageType));
-        require(msgType != MessageType.Null, "Rfq: invalid message type");
-        unconsumedMsg[quoteHash] = msgType;
-
-        emit MessageReceived(quoteHash);
+        unconsumedMsg[bytes32(_message)] = true;
         return ExecutionStatus.Success;
     }
 
@@ -387,20 +378,21 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         return IMessageBus(messageBus).calcFee(_message);
     }
 
-    function receiveMsgAndCheckHash(
+    function _receiveMessage(
         bytes calldata _message,
         MsgDataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers,
-        bytes32 _quoteHash
+        bytes32 _quoteHash,
+        MessageType _msgType
     ) private {
-        bytes32 expectedQuoteHash = bytes32(_message);
-        require(_quoteHash == expectedQuoteHash, "Rfq: quote hash mismatch");
-        if (unconsumedMsg[_quoteHash] == MessageType.Null) {
+        bytes32 expectedMsg = keccak256(abi.encodePacked(_quoteHash, _msgType));
+        require(expectedMsg == bytes32(_message), "Rfq: msg not expected");
+        if (!unconsumedMsg[bytes32(_message)]) {
             IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
         }
-        assert(unconsumedMsg[_quoteHash] != MessageType.Null);
+        require(unconsumedMsg[bytes32(_message)], "invalid msg");
     }
 
     //=========================== admin operations ==========================

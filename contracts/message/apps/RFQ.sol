@@ -183,27 +183,22 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         return (quoteHash, msgReceiver);
     }
 
-    function srcRelease(
-        Quote calldata _quote,
-        bytes calldata _execMsgCallData
-    ) external nonReentrant whenNotPaused {
+    function srcRelease(Quote calldata _quote, bytes calldata _execMsgCallData) external nonReentrant whenNotPaused {
         bytes32 quoteHash = _srcReleaseCheck(_quote, _execMsgCallData);
         _srcRelease(_quote, quoteHash, false);
     }
 
-    function srcReleaseNative(
-        Quote calldata _quote,
-        bytes calldata _execMsgCallData
-    ) external nonReentrant whenNotPaused {
+    function srcReleaseNative(Quote calldata _quote, bytes calldata _execMsgCallData)
+        external
+        nonReentrant
+        whenNotPaused
+    {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         bytes32 quoteHash = _srcReleaseCheck(_quote, _execMsgCallData);
         _srcRelease(_quote, quoteHash, true);
     }
 
-    function _srcReleaseCheck(
-        Quote calldata _quote,
-        bytes calldata _execMsgCallData
-    ) private returns (bytes32) {
+    function _srcReleaseCheck(Quote calldata _quote, bytes calldata _execMsgCallData) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
         _receiveMessage(_execMsgCallData, quoteHash, MessageType.Release);
@@ -240,20 +235,18 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         emit RefundInitiated(quoteHash);
     }
 
-    function executeRefund(
-        Quote calldata _quote,
-        bytes calldata _execMsgCallData
-    ) external nonReentrant whenNotPaused {
+    function executeRefund(Quote calldata _quote, bytes calldata _execMsgCallData) external nonReentrant whenNotPaused {
         (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefunded;
         IERC20(_quote.srcToken).safeTransfer(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
-    function executeRefundNative(
-        Quote calldata _quote,
-        bytes calldata _execMsgCallData
-    ) external nonReentrant whenNotPaused {
+    function executeRefundNative(Quote calldata _quote, bytes calldata _execMsgCallData)
+        external
+        nonReentrant
+        whenNotPaused
+    {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
@@ -261,10 +254,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
-    function _executeRefund(
-        Quote calldata _quote,
-        bytes calldata _execMsgCallData
-    ) private returns (bytes32, address) {
+    function _executeRefund(Quote calldata _quote, bytes calldata _execMsgCallData) private returns (bytes32, address) {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {

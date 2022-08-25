@@ -138,14 +138,13 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     }
 
     function dstTransferNative(Quote calldata _quote) external payable whenNotPaused {
-        require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, address msgReceiver) = _dstTransferCheck(_quote);
         quotes[quoteHash] = QuoteStatus.DstTransferredNative;
         bytes memory message = abi.encodePacked(keccak256(abi.encodePacked(quoteHash, MessageType.Release)));
         sendMessage(msgReceiver, _quote.srcChainId, message, msg.value - _quote.dstAmount);
-        _sendNativeToken(_quote.receiver, _quote.dstAmount, false);
+        _transferNativeToken(_quote.receiver, _quote.dstAmount);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
 
@@ -159,11 +158,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function sameChainTransferNative(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
         require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
-        require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
-        _sendNativeToken(_quote.receiver, _quote.dstAmount, false);
+        _transferNativeToken(_quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
     }
@@ -202,7 +200,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
-        require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         bytes32 quoteHash = _srcReleaseCheck(_quote, _message, _route, _sigs, _signers, _powers);
         _srcRelease(_quote, quoteHash, true);
@@ -231,7 +228,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         protocolFee[_quote.srcToken] += (_quote.srcAmount - _quote.srcReleaseAmount);
         if (_releaseNative) {
             quotes[_quoteHash] = QuoteStatus.SrcReleasedNative;
-            _sendNativeToken(_quote.liquidityProvider, _quote.srcReleaseAmount, true);
+            _withdrawNativeToken(_quote.liquidityProvider, _quote.srcReleaseAmount);
         } else {
             quotes[_quoteHash] = QuoteStatus.SrcReleased;
             IERC20(_quote.srcToken).safeTransfer(_quote.liquidityProvider, _quote.srcReleaseAmount);
@@ -261,9 +258,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
-        bytes32 quoteHash = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
+        (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
         quotes[quoteHash] = QuoteStatus.SrcRefunded;
-        address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
         IERC20(_quote.srcToken).safeTransfer(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
@@ -276,12 +272,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         address[] calldata _signers,
         uint256[] calldata _powers
     ) external nonReentrant whenNotPaused {
-        require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
-        bytes32 quoteHash = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
+        (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
-        address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
-        _sendNativeToken(_quote.receiver, _quote.srcAmount, true);
+        _withdrawNativeToken(_quote.receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
@@ -292,7 +286,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) private returns (bytes32) {
+    ) private returns (bytes32, address) {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {
@@ -301,7 +295,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         } else {
             require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
         }
-        return quoteHash;
+        address receiver = (_quote.refundTo == address(0)) ? _quote.sender : _quote.refundTo;
+        return (quoteHash, receiver);
     }
 
     function executeMessage(
@@ -379,16 +374,17 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(unconsumedMsg[bytes32(_message)], "Rfq: invalid msg");
     }
 
-    function _sendNativeToken(
-        address _receiver,
-        uint256 _amount,
-        bool _wrapped
-    ) private {
-        if (_wrapped) {
-            IWETH(nativeWrap).withdraw(_amount);
-        }
+    function _transferNativeToken(address _receiver, uint256 _amount) private {
+        require(nativeWrap != address(0), "Rfq: native wrap not set");
         (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
-        require(sent, "Rfq: failed to send native token");
+        require(sent, "Rfq: failed to transfer native token");
+    }
+
+    function _withdrawNativeToken(address _receiver, uint256 _amount) private {
+        require(nativeWrap != address(0), "Rfq: native wrap not set");
+        IWETH(nativeWrap).withdraw(_amount);
+        (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+        require(sent, "Rfq: failed to withdraw native token");
     }
 
     //=========================== admin operations ==========================

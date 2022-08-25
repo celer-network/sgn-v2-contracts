@@ -84,9 +84,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         whenNotPaused
         returns (bytes32)
     {
-        bytes32 quoteHash = _srcDeposit(_quote, _submissionDeadline);
+        bytes32 quoteHash = _srcDeposit(_quote, _submissionDeadline, msg.value);
         IERC20(_quote.srcToken).safeTransferFrom(msg.sender, address(this), _quote.srcAmount);
-        emit SrcDeposited(quoteHash, _quote);
         return quoteHash;
     }
 
@@ -99,13 +98,16 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         require(nativeWrap != address(0), "Rfq: native wrap not set");
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         require(msg.value >= _quote.srcAmount, "Rfq: insufficient amount");
-        bytes32 quoteHash = _srcDeposit(_quote, _submissionDeadline);
+        bytes32 quoteHash = _srcDeposit(_quote, _submissionDeadline, msg.value - _quote.srcAmount);
         IWETH(nativeWrap).deposit{value: _quote.srcAmount}();
-        emit SrcDeposited(quoteHash, _quote);
         return quoteHash;
     }
 
-    function _srcDeposit(Quote calldata _quote, uint64 _submissionDeadline) private returns (bytes32) {
+    function _srcDeposit(
+        Quote calldata _quote,
+        uint64 _submissionDeadline,
+        uint256 _msgFee
+    ) private returns (bytes32) {
         require(_submissionDeadline > block.timestamp, "Rfq: submission deadline passed");
         require(
             _quote.receiver != address(0) && _quote.liquidityProvider != address(0),
@@ -123,8 +125,9 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
             address msgReceiver = remoteRfqContracts[_quote.dstChainId];
             require(msgReceiver != address(0), "Rfq: dst contract not set");
             bytes memory message = abi.encodePacked(quoteHash);
-            sendMessage(msgReceiver, _quote.dstChainId, message, msg.value);
+            sendMessage(msgReceiver, _quote.dstChainId, message, _msgFee);
         }
+        emit SrcDeposited(quoteHash, _quote);
         return quoteHash;
     }
 

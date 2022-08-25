@@ -185,41 +185,28 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function srcRelease(
         Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
+        bytes calldata _execMsgCallData
     ) external nonReentrant whenNotPaused {
-        bytes32 quoteHash = _srcReleaseCheck(_quote, _message, _route, _sigs, _signers, _powers);
+        bytes32 quoteHash = _srcReleaseCheck(_quote, _execMsgCallData);
         _srcRelease(_quote, quoteHash, false);
     }
 
     function srcReleaseNative(
         Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
+        bytes calldata _execMsgCallData
     ) external nonReentrant whenNotPaused {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
-        bytes32 quoteHash = _srcReleaseCheck(_quote, _message, _route, _sigs, _signers, _powers);
+        bytes32 quoteHash = _srcReleaseCheck(_quote, _execMsgCallData);
         _srcRelease(_quote, quoteHash, true);
     }
 
     function _srcReleaseCheck(
         Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
+        bytes calldata _execMsgCallData
     ) private returns (bytes32) {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
-        _receiveMessage(_message, _route, _sigs, _signers, _powers, quoteHash, MessageType.Release);
-        delete unconsumedMsg[bytes32(_message)];
+        _receiveMessage(_execMsgCallData, quoteHash, MessageType.Release);
         return quoteHash;
     }
 
@@ -255,13 +242,9 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function executeRefund(
         Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
+        bytes calldata _execMsgCallData
     ) external nonReentrant whenNotPaused {
-        (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
+        (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefunded;
         IERC20(_quote.srcToken).safeTransfer(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
@@ -269,14 +252,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function executeRefundNative(
         Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
+        bytes calldata _execMsgCallData
     ) external nonReentrant whenNotPaused {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
-        (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _message, _route, _sigs, _signers, _powers);
+        (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
         _withdrawNativeToken(_quote.receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
@@ -284,17 +263,12 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
 
     function _executeRefund(
         Quote calldata _quote,
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers
+        bytes calldata _execMsgCallData
     ) private returns (bytes32, address) {
         bytes32 quoteHash = getQuoteHash(_quote);
         require(quotes[quoteHash] == QuoteStatus.SrcDeposited, "Rfq: incorrect quote hash");
         if (_quote.srcChainId != _quote.dstChainId) {
-            _receiveMessage(_message, _route, _sigs, _signers, _powers, quoteHash, MessageType.Refund);
-            delete unconsumedMsg[bytes32(_message)];
+            _receiveMessage(_execMsgCallData, quoteHash, MessageType.Refund);
         } else {
             require(_quote.deadline < block.timestamp, "Rfq: transfer deadline not passed");
         }
@@ -361,20 +335,17 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
     }
 
     function _receiveMessage(
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
-        bytes[] calldata _sigs,
-        address[] calldata _signers,
-        uint256[] calldata _powers,
+        bytes calldata _execMsgCallData,
         bytes32 _quoteHash,
         MessageType _msgType
     ) private {
         bytes32 expectedMsg = keccak256(abi.encodePacked(_quoteHash, _msgType));
-        require(expectedMsg == bytes32(_message), "Rfq: msg not expected");
-        if (!unconsumedMsg[bytes32(_message)]) {
-            IMessageBus(messageBus).executeMessage(_message, _route, _sigs, _signers, _powers);
+        if (!unconsumedMsg[bytes32(expectedMsg)]) {
+            (bool success, ) = messageBus.call(_execMsgCallData);
+            require(success, "execute msg failed");
         }
-        require(unconsumedMsg[bytes32(_message)], "Rfq: invalid msg");
+        require(unconsumedMsg[bytes32(expectedMsg)], "Rfq: invalid msg");
+        delete unconsumedMsg[bytes32(expectedMsg)];
     }
 
     function _transferNativeToken(address _receiver, uint256 _amount) private {

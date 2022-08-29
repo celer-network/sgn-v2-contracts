@@ -277,7 +277,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         if (expectedSender != _sender) {
             return ExecutionStatus.Retry;
         }
-        unconsumedMsg[bytes32(_message)] = true;
+        unconsumedMsg[bytes32(_message[:32])] = true;
         return ExecutionStatus.Success;
     }
 
@@ -330,12 +330,12 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         MessageType _msgType
     ) private {
         bytes32 expectedMsg = keccak256(abi.encodePacked(_quoteHash, _msgType));
-        if (!unconsumedMsg[bytes32(expectedMsg)]) {
+        if (!unconsumedMsg[expectedMsg]) {
             (bool success, ) = messageBus.call(_execMsgCallData);
             require(success, "execute msg failed");
         }
-        require(unconsumedMsg[bytes32(expectedMsg)], "Rfq: invalid msg");
-        delete unconsumedMsg[bytes32(expectedMsg)];
+        require(unconsumedMsg[expectedMsg], "Rfq: invalid msg");
+        delete unconsumedMsg[expectedMsg];
     }
 
     function _transferNativeToken(address _receiver, uint256 _amount) private {

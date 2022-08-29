@@ -277,7 +277,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         if (expectedSender != _sender) {
             return ExecutionStatus.Retry;
         }
-        unconsumedMsg[bytes32(_message[:32])] = true;
+        unconsumedMsg[bytes32(_message)] = true;
         return ExecutionStatus.Success;
     }
 

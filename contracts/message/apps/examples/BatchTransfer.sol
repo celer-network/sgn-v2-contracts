@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.9;
 
-import "../framework/MessageSenderApp.sol";
-import "../framework/MessageReceiverApp.sol";
+import "../../framework/MessageSenderApp.sol";
+import "../../framework/MessageReceiverApp.sol";
 
 /** @title Sample app to test message passing flow, not for production use */
 contract BatchTransfer is MessageSenderApp, MessageReceiverApp {

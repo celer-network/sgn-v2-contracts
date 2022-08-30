@@ -4,8 +4,8 @@ pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../framework/MessageSenderApp.sol";
-import "../framework/MessageReceiverApp.sol";
+import "../../framework/MessageSenderApp.sol";
+import "../../framework/MessageReceiverApp.sol";
 
 /** @title Application to test message with transfer refund flow */
 contract MsgTest is MessageSenderApp, MessageReceiverApp {
@@ -22,6 +22,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
     );
     event Refunded(address receiver, address token, uint256 amount, bytes message);
     event MessageReceived(address sender, uint64 srcChainId, uint64 nonce, bytes message);
+    event Message2Received(bytes sender, uint64 srcChainId, uint64 nonce, bytes message);
 
     constructor(address _messageBus) {
         messageBus = _messageBus;
@@ -88,6 +89,16 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
         sendMessage(_receiver, _dstChainId, message, msg.value);
     }
 
+    function sendMessage(
+        bytes calldata _receiver,
+        uint64 _dstChainId,
+        bytes calldata _message
+    ) external payable {
+        bytes memory message = abi.encode(nonce, _message);
+        nonce++;
+        sendMessage(_receiver, _dstChainId, message, msg.value);
+    }
+
     function sendMessages(
         address _receiver,
         uint64 _dstChainId,
@@ -126,6 +137,17 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
             return ExecutionStatus.Retry;
         }
         emit MessageReceived(_sender, _srcChainId, n, message);
+        return ExecutionStatus.Success;
+    }
+
+    function executeMessage(
+        bytes calldata _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address // executor
+    ) external payable override onlyMessageBus returns (ExecutionStatus) {
+        (uint64 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
+        emit Message2Received(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }
 

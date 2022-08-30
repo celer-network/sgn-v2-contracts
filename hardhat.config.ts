@@ -25,6 +25,9 @@ const ropstenPrivateKey = process.env.ROPSTEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY
 const goerliEndpoint = process.env.GOERLI_ENDPOINT || DEFAULT_ENDPOINT;
 const goerliPrivateKey = process.env.GOERLI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const arbGoerliEndpoint = process.env.ARB_GOERLI_ENDPOINT || DEFAULT_ENDPOINT;
+const arbGoerliPrivateKey = process.env.ARB_GOERLI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const bscTestEndpoint = process.env.BSC_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const bscTestPrivateKey = process.env.BSC_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -205,6 +208,10 @@ const config: HardhatUserConfig = {
     goerli: {
       url: goerliEndpoint,
       accounts: [`0x${goerliPrivateKey}`]
+    },
+    arbGoerli: {
+      url: arbGoerliEndpoint,
+      accounts: [`0x${arbGoerliPrivateKey}`]
     },
     bscTest: {
       url: bscTestEndpoint,

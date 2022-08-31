@@ -4,7 +4,6 @@ pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../framework/MessageSenderApp.sol";
 import "../framework/MessageReceiverApp.sol";
 import "../../safeguard/Pauser.sol";
@@ -13,7 +12,7 @@ import "../../message/interfaces/IMessageBus.sol";
 import "../../interfaces/IWETH.sol";
 
 /** @title rfq contract */
-contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, ReentrancyGuard {
+contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     using SafeERC20 for IERC20;
 
     struct Quote {
@@ -183,16 +182,12 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         return (quoteHash, msgReceiver);
     }
 
-    function srcRelease(Quote calldata _quote, bytes calldata _execMsgCallData) external nonReentrant whenNotPaused {
+    function srcRelease(Quote calldata _quote, bytes calldata _execMsgCallData) external whenNotPaused {
         bytes32 quoteHash = _srcReleaseCheck(_quote, _execMsgCallData);
         _srcRelease(_quote, quoteHash, false);
     }
 
-    function srcReleaseNative(Quote calldata _quote, bytes calldata _execMsgCallData)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function srcReleaseNative(Quote calldata _quote, bytes calldata _execMsgCallData) external whenNotPaused {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         bytes32 quoteHash = _srcReleaseCheck(_quote, _execMsgCallData);
         _srcRelease(_quote, quoteHash, true);
@@ -235,18 +230,14 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor, Reentran
         emit RefundInitiated(quoteHash);
     }
 
-    function executeRefund(Quote calldata _quote, bytes calldata _execMsgCallData) external nonReentrant whenNotPaused {
+    function executeRefund(Quote calldata _quote, bytes calldata _execMsgCallData) external whenNotPaused {
         (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefunded;
         IERC20(_quote.srcToken).safeTransfer(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
-    function executeRefundNative(Quote calldata _quote, bytes calldata _execMsgCallData)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function executeRefundNative(Quote calldata _quote, bytes calldata _execMsgCallData) external whenNotPaused {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;

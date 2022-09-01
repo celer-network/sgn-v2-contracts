@@ -79,6 +79,9 @@ const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAUL
 const shibuyaTestnetEndpoint = process.env.SHIBUYA_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
 const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const cubeDevnetEndpoint = process.env.CUBE_DEVNET_ENDPOINT || DEFAULT_ENDPOINT;
+const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -277,6 +280,10 @@ const config: HardhatUserConfig = {
     shibuyaTestnet: {
       url: shibuyaTestnetEndpoint,
       accounts: [`0x${shibuyaTestnetPrivateKey}`]
+    },
+    cubeDevnet: {
+      url: cubeDevnetEndpoint,
+      accounts: [`0x${cubeDevnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

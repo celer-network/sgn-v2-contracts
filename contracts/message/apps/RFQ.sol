@@ -280,6 +280,9 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         emit FeeCollected(treasuryAddr, _token, feeAmount);
     }
 
+    // This is needed to receive ETH
+    receive() external payable {}
+
     //=========================== helper functions ==========================
 
     function getQuoteHash(Quote calldata _quote) public pure returns (bytes32) {

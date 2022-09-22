@@ -372,4 +372,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         treasuryAddr = _treasuryAddr;
         emit TreasuryAddrUpdated(_treasuryAddr);
     }
+
+    function setNativeWrap(address _nativeWrap) external onlyOwner {
+        nativeWrap = _nativeWrap;
+    }
 }

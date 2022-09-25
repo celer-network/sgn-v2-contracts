@@ -12,7 +12,14 @@
     "strict": true,
     "target": "es2020"
   },
-  "exclude": ["artifacts", "build", "cache", "node_modules"],
+  "exclude": [
+    "artifacts",
+    "artifacts-zk",
+    "build",
+    "cache",
+    "cache-zk",
+    "node_modules"
+  ],
   "include": [
     "deploy/**/*",
     "scripts/**/*",

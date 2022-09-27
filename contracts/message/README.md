@@ -1,6 +1,4 @@
-# cBridge General Message Passing [WIP]
-
-**Note: cBridge general message passing module is work in progress, and is subject to change in later iterations**
+# cBridge General Message Passing
 
 - [End-to-End Flow](#end-to-end-flow)
 - [Application Framework](#application-framework)

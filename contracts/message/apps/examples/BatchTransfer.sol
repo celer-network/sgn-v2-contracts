@@ -2,11 +2,10 @@
 
 pragma solidity 0.8.9;
 
-import "../../framework/MessageSenderApp.sol";
-import "../../framework/MessageReceiverApp.sol";
+import "../../framework/MessageApp.sol";
 
 /** @title Sample app to test message passing flow, not for production use */
-contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
+contract BatchTransfer is MessageApp {
     using SafeERC20 for IERC20;
 
     struct TransferRequest {
@@ -27,9 +26,7 @@ contract BatchTransfer is MessageSenderApp, MessageReceiverApp {
         TransferStatus status;
     }
 
-    constructor(address _messageBus) {
-        messageBus = _messageBus;
-    }
+    constructor(address _messageBus) MessageApp(_messageBus) {}
 
     // ============== functions and states on source chain ==============
 

@@ -27,17 +27,17 @@ We provide the [message bus contract](./messagebus) and [application framework](
 - To send cross-chain message and token transfer, the app needs to inherent [MsgSenderApp.sol](./framework/MessageSenderApp.sol) and call the utils functions.
 - To receive cross-chain message and token transfer, the app needs to inherent [MsgReceiverApp.sol](./framework/MessageReceiverApp.sol) and implement its virtual functions.
 
-### Example 1: [Batch Token Transfer](./apps/BatchTransfer.sol)
+### Example 1: [Batch Token Transfer](./apps/examples/BatchTransfer.sol)
 
-[BatchTransfer.sol](./apps/BatchTransfer.sol) is an example app that sends tokens from one sender at the source chain to multiple receivers at the destination chain through a single cross-chain token transfer. The high-level workflow consists of three steps:
+[BatchTransfer.sol](./apps/examples/BatchTransfer.sol) is an example app that sends tokens from one sender at the source chain to multiple receivers at the destination chain through a single cross-chain token transfer. The high-level workflow consists of three steps:
 
 1. Sender side calls `batchTransfer` at source chain, which internally calls app framework's `sendMessageWithTransfer` to send message and tokens.
 2. Receiver side implements the `executeMessageWithTransfer` interface to handle the batch transfer message, and distribute tokens to receiver accounts according to the message content. It also internally calls app framework's `sendMessage` to send a receipt to the source app.
 3. Sender side implements the `executeMessage` interface to handle the receipt message.
 
-### Example 2: [Cross Chain Swap](./apps/TransferSwap.sol)
+### Example 2: [Cross Chain Swap](./apps/examples/TransferSwap.sol)
 
-[TransferSwap.sol](./apps/TransferSwap.sol) is an example app that allows swapping one token on chain1 to another token on chain2 through cBridge and DEXes on both chain1 and chain2.
+[TransferSwap.sol](./apps/examples/TransferSwap.sol) is an example app that allows swapping one token on chain1 to another token on chain2 through cBridge and DEXes on both chain1 and chain2.
 
 For the simplicity of explanation, let's say we deploy this contract on chain1 and chain2, and we want to input tokenA on chain1 and gain tokenC on chain2.
 
@@ -77,12 +77,6 @@ tokenA -> swap -> tokenB -> out
 ### CAVEAT
 
 Since bridging tokens requires a nonce to deduplicate same-parameter transactions, it is important that `sendMessageWithTransfer` is called with a nonce that is unique for every transaction at a per-contract per-chain level, meaning your application should always call `transferWithSwap` with a different nonce every time. Duplicated nonce can result in duplicated transferids. Checkout how a transferId is computed [here](https://github.com/celer-network/sgn-v2-contracts/blob/c5583b9c6db54a85e4e2254d2d73aba5a9e909fa/contracts/Bridge.sol#L48).
-
-### Example 3: [Refund](./apps/TestRefund.sol)
-
-[TestRefund.sol](./apps/TestRefund.sol) was originally written for testing, but it also demostrates how you can handle a refund in case of bridging failures (bad slippage, non-existant token, amount too smol, etc...)
-
-The function `executeMessageWithTransferRefund` will be called by your executor automatically on the source chain when it finds out that there is any available refund for your contract in SGN. Like in `executeMessageWithTransfer`, you can expect that the tokens are guaranteed to arrive at the contract before the function is called. The `_message` you receive in this function is exactly the same as it was sent through `sendMessageWithTransfer`.
 
 ## Fee Mechanism
 

@@ -2,8 +2,7 @@
 
 pragma solidity >=0.8.9;
 
-import "../../framework/MessageSenderApp.sol";
-import "../../framework/MessageReceiverApp.sol";
+import "../../framework/MessageApp.sol";
 
 interface ISwapToken {
     // function sellBase(address to) external returns (uint256);
@@ -17,7 +16,7 @@ interface ISwapToken {
     ) external returns (uint256[] memory);
 }
 
-contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
+contract CrossChainSwap is MessageApp {
     using SafeERC20 for IERC20;
 
     address public dex; // needed on swap chain
@@ -29,7 +28,7 @@ contract CrossChainSwap is MessageSenderApp, MessageReceiverApp {
         uint32 cbrMaxSlippage; // _maxSlippage for cbridge send
     }
 
-    constructor(address dex_) {
+    constructor(address _messageBus, address dex_) MessageApp(_messageBus) {
         dex = dex_;
     }
 

@@ -34,7 +34,7 @@ interface IMessageReceiverApp {
 
     /**
      * @notice Called by MessageBus to execute a message with an associated token transfer.
-     * The contract that implements this can safely assume that the right amount of tokens have already been received.
+     * The contract is guaranteed to have received the right amount of tokens before this function is called.
      * @param _sender The address of the source app contract
      * @param _token The address of the token that comes out of the bridge
      * @param _amount The amount of tokens received at this contract through the cross-chain bridge.
@@ -55,6 +55,7 @@ interface IMessageReceiverApp {
      * @notice Only called by MessageBus if
      *         1. executeMessageWithTransfer reverts, or
      *         2. executeMessageWithTransfer returns ExecutionStatus.Fail
+     * The contract is guaranteed to have received the right amount of tokens before this function is called.
      * @param _sender The address of the source app contract
      * @param _token The address of the token that comes out of the bridge
      * @param _amount The amount of tokens received at this contract through the cross-chain bridge.
@@ -73,7 +74,7 @@ interface IMessageReceiverApp {
 
     /**
      * @notice Called by MessageBus to process refund of the original transfer from this contract.
-     * The contract that implements this can safely assume that refund has already been received.
+     * The contract is guaranteed to have received the refund before this function is called.
      * @param _token The token address of the original transfer
      * @param _amount The amount of the original transfer
      * @param _message The same message associated with the original transfer

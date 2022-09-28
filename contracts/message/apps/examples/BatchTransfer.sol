@@ -95,9 +95,7 @@ contract BatchTransfer is MessageApp {
         return ExecutionStatus.Success;
     }
 
-    // ============== functions on destination chain ==============
-
-    // handler function required by MsgReceiverApp
+    // receive receipts
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
@@ -110,7 +108,9 @@ contract BatchTransfer is MessageApp {
         return ExecutionStatus.Success;
     }
 
-    // handler function required by MsgReceiverApp
+    // ============== functions on destination chain ==============
+
+    // handle batchTransfer message, distribute tokens and send receipt
     function executeMessageWithTransfer(
         address _sender,
         address _token,
@@ -136,7 +136,6 @@ contract BatchTransfer is MessageApp {
         return ExecutionStatus.Success;
     }
 
-    // handler function required by MsgReceiverApp
     // called only if handleMessageWithTransfer above was reverted
     function executeMessageWithTransferFallback(
         address _sender,

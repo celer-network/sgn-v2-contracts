@@ -10,7 +10,7 @@ contract MsgExampleBasic is MessageApp {
 
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
-    // send message at source chain
+    // called by user on source chain to send cross-chain messages
     function sendMessage(
         address _dstContract,
         uint64 _dstChainId,
@@ -20,7 +20,7 @@ contract MsgExampleBasic is MessageApp {
         sendMessage(_dstContract, _dstChainId, message, msg.value);
     }
 
-    // receive message at destination chain
+    // called by MessageBus on destination chain to receive cross-chain messages
     function executeMessage(
         address _srcContract,
         uint64 _srcChainId,

@@ -43,8 +43,10 @@ contract BatchTransfer is MessageApp {
         _;
     }
 
+    // called by sender on source chain to send tokens to a list of
+    // <_accounts, _amounts> on the destination chain
     function batchTransfer(
-        address _receiver,
+        address _dstContract, // BatchTransfer contract address at the dst chain
         address _token,
         uint256 _amount,
         uint64 _dstChainId,
@@ -62,16 +64,16 @@ contract BatchTransfer is MessageApp {
         // require(minRecv > totalAmt, "invalid maxSlippage");
         nonce += 1;
         status[nonce] = BatchTransferStatus({
-            h: keccak256(abi.encodePacked(_receiver, _dstChainId)),
+            h: keccak256(abi.encodePacked(_dstContract, _dstChainId)),
             status: TransferStatus.Null
         });
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         bytes memory message = abi.encode(
             TransferRequest({nonce: nonce, accounts: _accounts, amounts: _amounts, sender: msg.sender})
         );
-        // MsgSenderApp util function
+        // send token and message to the destination chain
         sendMessageWithTransfer(
-            _receiver,
+            _dstContract,
             _token,
             _amount,
             _dstChainId,
@@ -83,7 +85,8 @@ contract BatchTransfer is MessageApp {
         );
     }
 
-    // called on source chain for handling of bridge failures (bad liquidity, bad slippage, etc...)
+    // called by MessageBus on source chain to handle message with token transfer failures (e.g., due to bad slippage).
+    // the associated token transfer is guaranteed to have already been refunded
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,
@@ -95,7 +98,7 @@ contract BatchTransfer is MessageApp {
         return ExecutionStatus.Success;
     }
 
-    // receive receipts
+    // called by MessageBus on source chain to receive receipts
     function executeMessage(
         address _sender,
         uint64 _srcChainId,
@@ -110,9 +113,11 @@ contract BatchTransfer is MessageApp {
 
     // ============== functions on destination chain ==============
 
-    // handle batchTransfer message, distribute tokens and send receipt
+    // called by MessageBus on destination chain to handle batchTransfer message by
+    // distributing tokens to receivers and sending receipt.
+    // the lump sum token transfer associated with the message is guaranteed to have already been received.
     function executeMessageWithTransfer(
-        address _sender,
+        address _srcContract,
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
@@ -131,14 +136,14 @@ contract BatchTransfer is MessageApp {
             IERC20(_token).safeTransfer(transfer.sender, remainder);
         }
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Success}));
-        // MsgSenderApp util function
-        sendMessage(_sender, _srcChainId, message, msg.value);
+        // send receipt back to the source chain contract
+        sendMessage(_srcContract, _srcChainId, message, msg.value);
         return ExecutionStatus.Success;
     }
 
-    // called only if handleMessageWithTransfer above was reverted
+    // called by MessageBus if handleMessageWithTransfer above got reverted
     function executeMessageWithTransferFallback(
-        address _sender,
+        address _srcContract,
         address _token,
         uint256 _amount,
         uint64 _srcChainId,
@@ -148,7 +153,8 @@ contract BatchTransfer is MessageApp {
         TransferRequest memory transfer = abi.decode((_message), (TransferRequest));
         IERC20(_token).safeTransfer(transfer.sender, _amount);
         bytes memory message = abi.encode(TransferReceipt({nonce: transfer.nonce, status: TransferStatus.Fail}));
-        sendMessage(_sender, _srcChainId, message, msg.value);
+        // send receipt back to the source chain contract
+        sendMessage(_srcContract, _srcChainId, message, msg.value);
         return ExecutionStatus.Success;
     }
 }

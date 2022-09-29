@@ -8,12 +8,15 @@ import "../../framework/MessageApp.sol";
 contract MsgExampleInOrder is MessageApp {
     event MessageReceived(address srcContract, uint64 srcChainId, address sender, uint64 seq, bytes message);
 
-    mapping(uint64 => mapping(address => uint64)) public sendSeq; // (dstChainId, dstContract) -> seq
-    mapping(uint64 => mapping(address => uint64)) public recvSeq; // (srcChainId, srcContract) -> seq
+    // map at source chain. (dstChainId, dstContract) -> seq
+    mapping(uint64 => mapping(address => uint64)) public sendSeq;
+
+    // map at destination chain (srcChainId, srcContract) -> seq
+    mapping(uint64 => mapping(address => uint64)) public recvSeq;
 
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
-    // send message at source chain
+    // called by user on source chain to send cross-chain message
     function sendMessage(
         address _dstContract,
         uint64 _dstChainId,
@@ -25,7 +28,7 @@ contract MsgExampleInOrder is MessageApp {
         sendSeq[_dstChainId][_dstContract] += 1;
     }
 
-    // receive message and destination chain
+    // called by MessageBus on destination chain to receive message
     function executeMessage(
         address _srcContract,
         uint64 _srcChainId,

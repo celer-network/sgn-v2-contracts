@@ -22,7 +22,7 @@ contract MsgExampleBasicTransfer is MessageApp {
 
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
-    // send message with token transfer at the source chain
+    // called by user on source chain to send cross-chain message with token transfer
     function sendMessageWithTransfer(
         address _dstContract,
         address _receiver,
@@ -49,7 +49,8 @@ contract MsgExampleBasicTransfer is MessageApp {
         );
     }
 
-    // receive message with token transfer at the destination chain
+    // called by MessageBus on destination chain to receive message.
+    // the associated token transfer is guaranteed to have already been received
     function executeMessageWithTransfer(
         address, // srcContract
         address _token,
@@ -64,7 +65,8 @@ contract MsgExampleBasicTransfer is MessageApp {
         return ExecutionStatus.Success;
     }
 
-    // handle refund of the transfer associated with the message at the source chain 
+    // called by MessageBus on source chain to handle message with refunded token transfer
+    // the associated token transfer is guaranteed to have already been refunded
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,

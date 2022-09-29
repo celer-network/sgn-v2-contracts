@@ -1,3 +1,1 @@
-# cBridge General Message Passing
-
-[Developer Docs](https://im-docs.celer.network/)
+[Celer Inter-chain Message (IM) Developer Docs](https://im-docs.celer.network/)

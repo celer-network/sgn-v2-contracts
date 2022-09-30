@@ -19,7 +19,7 @@ contract MsgExampleBasicTransfer is MessageApp {
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
     // called by user on source chain to send token with note to destination chain
-    function sendMessageWithTransfer(
+    function sendTokenWithNote(
         address _dstContract,
         address _token,
         uint256 _amount,

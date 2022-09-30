@@ -10,32 +10,27 @@ import "../../framework/MessageApp.sol";
 contract MsgExampleBasicTransfer is MessageApp {
     using SafeERC20 for IERC20;
 
-    event MessageWithTransferReceived(
-        address sender,
-        address token,
-        uint256 amount,
-        uint64 srcChainId,
-        address receiver,
-        bytes message
-    );
-    event MessageWithTransferRefunded(address sender, address token, uint256 amount, bytes message);
+    event MessageWithTransferReceived(address sender, address token, uint256 amount, uint64 srcChainId, bytes note);
+    event MessageWithTransferRefunded(address sender, address token, uint256 amount, bytes note);
+
+    // acccount, token -> balance
+    mapping(address => mapping(address => uint256)) public balances;
 
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
-    // called by user on source chain to send cross-chain message with token transfer
+    // called by user on source chain to send token with note to destination chain
     function sendMessageWithTransfer(
         address _dstContract,
-        address _receiver,
         address _token,
         uint256 _amount,
         uint64 _dstChainId,
         uint64 _nonce,
         uint32 _maxSlippage,
-        bytes calldata _message,
+        bytes calldata _note,
         MsgDataTypes.BridgeSendType _bridgeSendType
     ) external payable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        bytes memory message = abi.encode(msg.sender, _receiver, _message);
+        bytes memory message = abi.encode(msg.sender, _note);
         sendMessageWithTransfer(
             _dstContract,
             _token,
@@ -49,7 +44,7 @@ contract MsgExampleBasicTransfer is MessageApp {
         );
     }
 
-    // called by MessageBus on destination chain to receive message.
+    // called by MessageBus on destination chain to receive message, record and emit info.
     // the associated token transfer is guaranteed to have already been received
     function executeMessageWithTransfer(
         address, // srcContract
@@ -59,13 +54,13 @@ contract MsgExampleBasicTransfer is MessageApp {
         bytes memory _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        (address sender, address receiver, bytes memory message) = abi.decode((_message), (address, address, bytes));
-        IERC20(_token).safeTransfer(receiver, _amount);
-        emit MessageWithTransferReceived(sender, _token, _amount, _srcChainId, receiver, message);
+        (address sender, bytes memory note) = abi.decode((_message), (address, bytes));
+        balances[sender][_token] += _amount;
+        emit MessageWithTransferReceived(sender, _token, _amount, _srcChainId, note);
         return ExecutionStatus.Success;
     }
 
-    // called by MessageBus on source chain to handle message with refunded token transfer
+    // called by MessageBus on source chain to handle message with failed token transfer
     // the associated token transfer is guaranteed to have already been refunded
     function executeMessageWithTransferRefund(
         address _token,
@@ -73,9 +68,15 @@ contract MsgExampleBasicTransfer is MessageApp {
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
-        (address sender, , bytes memory message) = abi.decode((_message), (address, address, bytes));
+        (address sender, bytes memory note) = abi.decode((_message), (address, bytes));
         IERC20(_token).safeTransfer(sender, _amount);
-        emit MessageWithTransferRefunded(sender, _token, _amount, message);
+        emit MessageWithTransferRefunded(sender, _token, _amount, note);
         return ExecutionStatus.Success;
+    }
+
+    // called by user on destination chain to withdraw tokens
+    function withdraw(address _token, uint256 _amount) external {
+        balances[msg.sender][_token] -= _amount;
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 }

@@ -107,7 +107,10 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         uint64 _submissionDeadline,
         uint256 _msgFee
     ) private returns (bytes32) {
-        require(_submissionDeadline > block.timestamp, "Rfq: submission deadline passed");
+        require(
+            _submissionDeadline > block.timestamp && _quote.deadline > _submissionDeadline,
+            "Rfq: inappropriate deadline"
+        );
         require(
             _quote.receiver != address(0) && _quote.liquidityProvider != address(0),
             "Rfq: invalid receiver or liquidityProvider"
@@ -161,7 +164,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     function sameChainTransferNative(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
         require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
-        require(msg.value >= _quote.dstAmount, "Rfq: insufficient amount");
+        require(msg.value == _quote.dstAmount, "Rfq: native token amount mismatch");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
         _transferNativeToken(_quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);

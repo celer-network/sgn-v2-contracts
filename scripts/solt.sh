@@ -17,6 +17,7 @@ solFiles=(
   message/apps/MCNNFT
   message/apps/NFTBridge
   message/apps/MsgTest
+  message/apps/RFQ
   message/messagebus/MessageBus
   miscs/Faucet
   miscs/MintableERC20

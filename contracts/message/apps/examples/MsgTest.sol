@@ -4,11 +4,10 @@ pragma solidity >=0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../framework/MessageSenderApp.sol";
-import "../../framework/MessageReceiverApp.sol";
+import "../../framework/MessageApp.sol";
 
 /** @title Application to test message with transfer refund flow */
-contract MsgTest is MessageSenderApp, MessageReceiverApp {
+contract MsgTest is MessageApp {
     using SafeERC20 for IERC20;
     uint64 nonce;
 
@@ -24,9 +23,7 @@ contract MsgTest is MessageSenderApp, MessageReceiverApp {
     event MessageReceived(address sender, uint64 srcChainId, uint64 nonce, bytes message);
     event Message2Received(bytes sender, uint64 srcChainId, uint64 nonce, bytes message);
 
-    constructor(address _messageBus) {
-        messageBus = _messageBus;
-    }
+    constructor(address _messageBus) MessageApp(_messageBus) {}
 
     function sendMessageWithTransfer(
         address _receiver,

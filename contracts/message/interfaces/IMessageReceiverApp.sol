@@ -10,13 +10,34 @@ interface IMessageReceiverApp {
     }
 
     /**
-     * @notice Called by MessageBus (MessageBusReceiver) if the process is originated from MessageBus (MessageBusSender)'s
-     *         sendMessageWithTransfer it is only called when the tokens are checked to be arrived at this contract's address.
+     * @notice Called by MessageBus to execute a message
+     * @param _sender The address of the source app contract
+     * @param _srcChainId The source chain ID where the transfer is originated from
+     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _executor Address who called the MessageBus execution function
+     */
+    function executeMessage(
+        address _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address _executor
+    ) external payable returns (ExecutionStatus);
+
+    // same as above, except that sender is an non-evm chain address,
+    // otherwise same as above.
+    function executeMessage(
+        bytes calldata _sender,
+        uint64 _srcChainId,
+        bytes calldata _message,
+        address _executor
+    ) external payable returns (ExecutionStatus);
+
+    /**
+     * @notice Called by MessageBus to execute a message with an associated token transfer.
+     * The contract is guaranteed to have received the right amount of tokens before this function is called.
      * @param _sender The address of the source app contract
      * @param _token The address of the token that comes out of the bridge
      * @param _amount The amount of tokens received at this contract through the cross-chain bridge.
-     *        the contract that implements this contract can safely assume that the tokens will arrive before this
-     *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
      * @param _executor Address who called the MessageBus execution function
@@ -31,14 +52,13 @@ interface IMessageReceiverApp {
     ) external payable returns (ExecutionStatus);
 
     /**
-     * @notice Only called by MessageBus (MessageBusReceiver) if
+     * @notice Only called by MessageBus if
      *         1. executeMessageWithTransfer reverts, or
      *         2. executeMessageWithTransfer returns ExecutionStatus.Fail
+     * The contract is guaranteed to have received the right amount of tokens before this function is called.
      * @param _sender The address of the source app contract
      * @param _token The address of the token that comes out of the bridge
      * @param _amount The amount of tokens received at this contract through the cross-chain bridge.
-     *        the contract that implements this contract can safely assume that the tokens will arrive before this
-     *        function is called.
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
      * @param _executor Address who called the MessageBus execution function
@@ -53,7 +73,8 @@ interface IMessageReceiverApp {
     ) external payable returns (ExecutionStatus);
 
     /**
-     * @notice Called by MessageBus (MessageBusReceiver) to process refund of the original transfer from this contract
+     * @notice Called by MessageBus to process refund of the original transfer from this contract.
+     * The contract is guaranteed to have received the refund before this function is called.
      * @param _token The token address of the original transfer
      * @param _amount The amount of the original transfer
      * @param _message The same message associated with the original transfer
@@ -62,29 +83,6 @@ interface IMessageReceiverApp {
     function executeMessageWithTransferRefund(
         address _token,
         uint256 _amount,
-        bytes calldata _message,
-        address _executor
-    ) external payable returns (ExecutionStatus);
-
-    /**
-     * @notice Called by MessageBus (MessageBusReceiver)
-     * @param _sender The address of the source app contract
-     * @param _srcChainId The source chain ID where the transfer is originated from
-     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _executor Address who called the MessageBus execution function
-     */
-    function executeMessage(
-        address _sender,
-        uint64 _srcChainId,
-        bytes calldata _message,
-        address _executor
-    ) external payable returns (ExecutionStatus);
-
-    // execute message from non-evm chain with bytes for sender address,
-    // otherwise same as above.
-    function executeMessage(
-        bytes calldata _sender,
-        uint64 _srcChainId,
         bytes calldata _message,
         address _executor
     ) external payable returns (ExecutionStatus);

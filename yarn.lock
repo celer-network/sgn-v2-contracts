@@ -589,10 +589,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@matterlabs/hardhat-zksync-deploy@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@matterlabs/hardhat-zksync-deploy/-/hardhat-zksync-deploy-0.4.0.tgz#8a6ef1faf7d91cf2b32072eeaa7c7332fb4c27b1"
-  integrity sha512-r/xp+CL1+qVLNGoSehUe4u80QZRG8e4WEnhJ1JuJSxzOaoivqUDFblf8Q/TQkdFPrilBqpgTJzcPazDsWeH0SQ==
+"@matterlabs/hardhat-zksync-deploy@^0.5.2":
+  version "0.5.2"
+  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-deploy/-/hardhat-zksync-deploy-0.5.2.tgz#bac4e25f8fa3ef90993cc49610459c08673a0819"
+  integrity sha512-tjOVo4Tk8DTK7c3v7k6jCyT6ZfJj99WQycqif7sbzzHRg5DPrG+k0xTpnI+OyObz6kUF1Rq75WwSBC4hWBzfyQ==
   dependencies:
     glob "^8.0.1"
 
@@ -9872,7 +9872,7 @@ yocto-queue@^0.1.0:
   resolved "https://registry.yarnpkg.com/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zksync-web3@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/zksync-web3/-/zksync-web3-0.9.0.tgz#59bbd1844334804300d2a99a82158c66d92a395a"
-  integrity sha512-H0ERA2hteCJ/WUzdZeNmzdSigSizSnkk2IlN8RcdZ+hh9wdsJyVUEqUeav5tcbYpWwSgh6DxectRPQE8bMYuyQ==
+zksync-web3@latest:
+  version "0.11.1"
+  resolved "https://registry.npmmirror.com/zksync-web3/-/zksync-web3-0.11.1.tgz#039e3ec93b77a6908f6ad3819e15ef149e9d9dc6"
+  integrity sha512-8i0t4xYH+9ogwpKA8ztPNkFu86Qi/rNZrM6hDTb6wM3N1Trogttzz3phjkSO/1Z7JL+Hpzsh3fg+C8CtzLT8Rw==

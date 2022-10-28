@@ -83,12 +83,12 @@ const config: HardhatUserConfig = {
     }
   },
   zksolc: {
-    version: '1.1.6',
+    version: '1.2.0',
     compilerSource: 'binary',
     settings: {
       experimental: {
         dockerImage: 'matterlabs/zksolc',
-        tag: 'v1.1.6'
+        tag: 'v1.2.0'
       }
     }
   },

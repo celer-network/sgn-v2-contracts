@@ -1,0 +1,1 @@
+[{"inputs":[{"internalType":"bytes","name":"_msg","type":"bytes"},{"internalType":"bytes[]","name":"_sigs","type":"bytes[]"},{"internalType":"address[]","name":"_signers","type":"address[]"},{"internalType":"uint256[]","name":"_powers","type":"uint256[]"}],"name":"verifySigs","outputs":[],"stateMutability":"view","type":"function"}]

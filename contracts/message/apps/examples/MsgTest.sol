@@ -78,10 +78,9 @@ contract MsgTest is MessageApp {
 
     function sendMessage(
         address _receiver,
-        uint64 _dstChainId,
-        bytes calldata _message
+        uint64 _dstChainId
     ) external payable {
-        bytes memory message = abi.encode(nonce, _message);
+        bytes memory message = abi.encode(nonce, bytes("test101"));
         nonce++;
         sendMessage(_receiver, _dstChainId, message, msg.value);
     }
@@ -126,7 +125,8 @@ contract MsgTest is MessageApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (uint64 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
-        require(n != 100000000000001, "invalid nonce"); // test revert with reason
+        require(n != 100000000000001, "invalid nonce");
+        // test revert with reason
         if (n == 100000000000002) {
             // test revert without reason
             revert();
@@ -144,6 +144,7 @@ contract MsgTest is MessageApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (uint64 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
+        require(keccak256(message) != keccak256(bytes("test101")), MsgDataTypes.REVERT_MSG);
         emit Message2Received(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }

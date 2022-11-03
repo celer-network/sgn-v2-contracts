@@ -271,11 +271,11 @@ contract MessageBusReceiver is Ownable {
     }
 
     function executeMessageWithTransfer(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
-        private
-        returns (IMessageReceiverApp.ExecutionStatus)
+    private
+    returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
-        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value : msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransfer.selector,
                 _transfer.sender,
@@ -294,11 +294,11 @@ contract MessageBusReceiver is Ownable {
     }
 
     function executeMessageWithTransferFallback(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
-        private
-        returns (IMessageReceiverApp.ExecutionStatus)
+    private
+    returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
-        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value : msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransferFallback.selector,
                 _transfer.sender,
@@ -317,11 +317,11 @@ contract MessageBusReceiver is Ownable {
     }
 
     function executeMessageWithTransferRefund(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
-        private
-        returns (IMessageReceiverApp.ExecutionStatus)
+    private
+    returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
-        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value : msg.value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransferRefund.selector,
                 _transfer.token,
@@ -418,37 +418,37 @@ contract MessageBusReceiver is Ownable {
     }
 
     function computeMessageOnlyId(MsgDataTypes.Route memory _route, bytes calldata _message)
-        private
-        view
-        returns (bytes32)
+    private
+    view
+    returns (bytes32)
     {
         bytes memory sender = _route.senderBytes;
         if (sender.length == 0) {
             sender = abi.encodePacked(_route.sender);
         }
         return
-            keccak256(
-                abi.encodePacked(
-                    MsgDataTypes.MsgType.MessageOnly,
-                    sender,
-                    _route.receiver,
-                    _route.srcChainId,
-                    _route.srcTxHash,
-                    uint64(block.chainid),
-                    _message
-                )
-            );
+        keccak256(
+            abi.encodePacked(
+                MsgDataTypes.MsgType.MessageOnly,
+                sender,
+                _route.receiver,
+                _route.srcChainId,
+                _route.srcTxHash,
+                uint64(block.chainid),
+                _message
+            )
+        );
     }
 
     function executeMessage(MsgDataTypes.Route memory _route, bytes calldata _message)
-        private
-        returns (IMessageReceiverApp.ExecutionStatus)
+    private
+    returns (IMessageReceiverApp.ExecutionStatus)
     {
         uint256 gasLeftBeforeExecution = gasleft();
         bool ok;
         bytes memory res;
         if (_route.senderBytes.length == 0) {
-            (ok, res) = address(_route.receiver).call{value: msg.value}(
+            (ok, res) = address(_route.receiver).call{value : msg.value}(
                 abi.encodeWithSelector(
                     bytes4(keccak256(bytes("executeMessage(address,uint64,bytes,address)"))),
                     _route.sender,
@@ -458,7 +458,7 @@ contract MessageBusReceiver is Ownable {
                 )
             );
         } else {
-            (ok, res) = address(_route.receiver).call{value: msg.value}(
+            (ok, res) = address(_route.receiver).call{value : msg.value}(
                 abi.encodeWithSelector(
                     bytes4(keccak256(bytes("executeMessage(bytes,uint64,bytes,address)"))),
                     _route.senderBytes,
@@ -486,7 +486,25 @@ contract MessageBusReceiver is Ownable {
                 invalid()
             }
         }
-        emit CallReverted(getRevertMsg(_returnData));
+        string memory _msg = getRevertMsg(_returnData);
+        checkNotBeginWithPrefix(MsgDataTypes.REVERT_MSG, _msg);
+        emit CallReverted(_msg);
+    }
+
+    function checkNotBeginWithPrefix(string memory _prefix, string memory _msg) internal pure {
+        bytes memory prefixBytes = bytes(_prefix);
+        bytes memory msgBytes = bytes(_msg);
+
+        if (msgBytes.length >= prefixBytes.length) {
+            bool beginWith = true;
+            for (uint i = 0; i <= prefixBytes.length; i++) {
+                if (msgBytes [i] != prefixBytes [i]) {
+                    beginWith = false;
+                    break;
+                }
+            }
+            require(!beginWith, _msg);
+        }
     }
 
     // https://ethereum.stackexchange.com/a/83577
@@ -495,10 +513,11 @@ contract MessageBusReceiver is Ownable {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
         assembly {
-            // Slice the sighash.
+        // Slice the sighash.
             _returnData := add(_returnData, 0x04)
         }
-        return abi.decode(_returnData, (string)); // All that remains is the revert string
+        return abi.decode(_returnData, (string));
+        // All that remains is the revert string
     }
 
     function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {
@@ -552,7 +571,7 @@ contract MessageBusReceiver is Ownable {
     }
 
     function _bridgeTransfer(MsgDataTypes.TransferType t, MsgDataTypes.BridgeTransferParams calldata _transferParams)
-        private
+    private
     {
         if (t == MsgDataTypes.TransferType.LqRelay) {
             IBridge(liquidityBridge).relay(

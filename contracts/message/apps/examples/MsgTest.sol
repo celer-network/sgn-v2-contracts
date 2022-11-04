@@ -76,10 +76,7 @@ contract MsgTest is MessageApp {
         return ExecutionStatus.Success;
     }
 
-    function sendMessage(
-        address _receiver,
-        uint64 _dstChainId
-    ) external payable {
+    function sendMessage(address _receiver, uint64 _dstChainId) external payable {
         bytes memory message = abi.encode(nonce, bytes("test101"));
         nonce++;
         sendMessage(_receiver, _dstChainId, message, msg.value);

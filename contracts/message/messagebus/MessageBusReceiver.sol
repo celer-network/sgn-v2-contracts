@@ -516,8 +516,7 @@ contract MessageBusReceiver is Ownable {
             // Slice the sighash.
             _returnData := add(_returnData, 0x04)
         }
-        return abi.decode(_returnData, (string));
-        // All that remains is the revert string
+        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
     function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {

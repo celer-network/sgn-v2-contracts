@@ -122,8 +122,7 @@ contract MsgTest is MessageApp {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (uint64 n, bytes memory message) = abi.decode((_message), (uint64, bytes));
-        require(n != 100000000000001, "invalid nonce");
-        // test revert with reason
+        require(n != 100000000000001, "invalid nonce"); // test revert with reason
         if (n == 100000000000002) {
             // test revert without reason
             revert();

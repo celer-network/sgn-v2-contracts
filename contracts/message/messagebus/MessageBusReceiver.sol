@@ -496,14 +496,12 @@ contract MessageBusReceiver is Ownable {
         bytes memory msgBytes = bytes(_msg);
 
         if (msgBytes.length >= prefixBytes.length) {
-            bool beginWith = true;
-            for (uint256 i = 0; i <= prefixBytes.length; i++) {
+            for (uint256 i = 0; i < prefixBytes.length; i++) {
                 if (msgBytes[i] != prefixBytes[i]) {
-                    beginWith = false;
-                    break;
+                    return; // not match, return
                 }
             }
-            require(!beginWith, _msg);
+            revert(_msg); // match, revert
         }
     }
 

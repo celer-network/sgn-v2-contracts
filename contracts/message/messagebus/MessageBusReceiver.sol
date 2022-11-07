@@ -486,7 +486,23 @@ contract MessageBusReceiver is Ownable {
                 invalid()
             }
         }
-        emit CallReverted(getRevertMsg(_returnData));
+        string memory _msg = getRevertMsg(_returnData);
+        checkNotBeginWithPrefix(MsgDataTypes.REVERT_MSG, _msg);
+        emit CallReverted(_msg);
+    }
+
+    function checkNotBeginWithPrefix(string memory _prefix, string memory _msg) private pure {
+        bytes memory prefixBytes = bytes(_prefix);
+        bytes memory msgBytes = bytes(_msg);
+
+        if (msgBytes.length >= prefixBytes.length) {
+            for (uint256 i = 0; i < prefixBytes.length; i++) {
+                if (msgBytes[i] != prefixBytes[i]) {
+                    return; // not match, return
+                }
+            }
+            revert(_msg); // match, revert
+        }
     }
 
     // https://ethereum.stackexchange.com/a/83577

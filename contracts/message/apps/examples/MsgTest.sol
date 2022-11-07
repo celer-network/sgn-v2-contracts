@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity >=0.8.9;
+pragma solidity >=0.8.12;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -133,6 +133,7 @@ contract MsgTest is MessageApp {
         } else if (n == 100000000000003) {
             return ExecutionStatus.Retry;
         }
+        require(n != 100000000000004, string.concat(MsgDataTypes.REVERT_PREFIX, "invalid nonce")); // test revert with reason
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }

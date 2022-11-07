@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity 0.8.9;
+pragma solidity >=0.8.9;
 
 import "../libraries/MsgDataTypes.sol";
 import "../interfaces/IMessageReceiverApp.sol";
@@ -486,23 +486,9 @@ contract MessageBusReceiver is Ownable {
                 invalid()
             }
         }
-        string memory _msg = getRevertMsg(_returnData);
-        checkNotBeginWithPrefix(MsgDataTypes.REVERT_MSG, _msg);
-        emit CallReverted(_msg);
-    }
-
-    function checkNotBeginWithPrefix(string memory _prefix, string memory _msg) private pure {
-        bytes memory prefixBytes = bytes(_prefix);
-        bytes memory msgBytes = bytes(_msg);
-
-        if (msgBytes.length >= prefixBytes.length) {
-            for (uint256 i = 0; i < prefixBytes.length; i++) {
-                if (msgBytes[i] != prefixBytes[i]) {
-                    return; // not match, return
-                }
-            }
-            revert(_msg); // match, revert
-        }
+        string memory revertMsg = getRevertMsg(_returnData);
+        checkRevertPrefix(revertMsg);
+        emit CallReverted(revertMsg);
     }
 
     // https://ethereum.stackexchange.com/a/83577
@@ -515,6 +501,19 @@ contract MessageBusReceiver is Ownable {
             _returnData := add(_returnData, 0x04)
         }
         return abi.decode(_returnData, (string)); // All that remains is the revert string
+    }
+
+    function checkRevertPrefix(string memory _revertMsg) private pure {
+        bytes memory prefixBytes = bytes(MsgDataTypes.REVERT_PREFIX);
+        bytes memory msgBytes = bytes(_revertMsg);
+        if (msgBytes.length >= prefixBytes.length) {
+            for (uint256 i = 0; i < prefixBytes.length; i++) {
+                if (msgBytes[i] != prefixBytes[i]) {
+                    return; // prefix not match, return
+                }
+            }
+            revert(_revertMsg); // prefix match, revert
+        }
     }
 
     function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {

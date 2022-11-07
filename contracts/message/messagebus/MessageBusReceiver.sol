@@ -491,7 +491,7 @@ contract MessageBusReceiver is Ownable {
         emit CallReverted(_msg);
     }
 
-    function checkNotBeginWithPrefix(string memory _prefix, string memory _msg) internal pure {
+    function checkNotBeginWithPrefix(string memory _prefix, string memory _msg) private pure {
         bytes memory prefixBytes = bytes(_prefix);
         bytes memory msgBytes = bytes(_msg);
 

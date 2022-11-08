@@ -143,7 +143,7 @@ describe('Message Tests', function () {
         [admin.address],
         [parseUnits('1')]
       )
-    ).to.be.revertedWith('MESSAGE::REVERT:invalid nonce');
+    ).to.be.revertedWith('MSG::ABORT:invalid nonce');
   });
 
   it('should execute msg with transfer correctly', async function () {

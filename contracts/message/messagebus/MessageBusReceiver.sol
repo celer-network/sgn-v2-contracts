@@ -487,7 +487,9 @@ contract MessageBusReceiver is Ownable {
             }
         }
         string memory revertMsg = getRevertMsg(_returnData);
-        checkRevertPrefix(revertMsg);
+        // revert the execution if the revert message has the ABORT prefix
+        checkAbortPrefix(revertMsg);
+        // otherwiase, emit revert message, return and mark the execution as failed (non-retryable)
         emit CallReverted(revertMsg);
     }
 
@@ -503,8 +505,8 @@ contract MessageBusReceiver is Ownable {
         return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
-    function checkRevertPrefix(string memory _revertMsg) private pure {
-        bytes memory prefixBytes = bytes(MsgDataTypes.REVERT_PREFIX);
+    function checkAbortPrefix(string memory _revertMsg) private pure {
+        bytes memory prefixBytes = bytes(MsgDataTypes.ABORT_PREFIX);
         bytes memory msgBytes = bytes(_revertMsg);
         if (msgBytes.length >= prefixBytes.length) {
             for (uint256 i = 0; i < prefixBytes.length; i++) {

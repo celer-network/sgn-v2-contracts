@@ -134,7 +134,7 @@ contract MsgTest is MessageApp {
             return ExecutionStatus.Retry;
         }
         // test execution revert
-        require(n != 100000000000004, string.concat(MsgDataTypes.REVERT_PREFIX, "invalid nonce"));
+        require(n != 100000000000004, string.concat(MsgDataTypes.ABORT_PREFIX, "invalid nonce"));
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }

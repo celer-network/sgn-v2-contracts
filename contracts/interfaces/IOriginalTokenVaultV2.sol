@@ -20,6 +20,20 @@ interface IOriginalTokenVaultV2 {
     ) external returns (bytes32);
 
     /**
+    * @notice Lock native token as original token to trigger mint at a remote chain's PeggedTokenBridge
+     * @param _amount locked token amount
+     * @param _mintChainId destination chainId to mint tokens
+     * @param _mintAccount destination account to receive minted tokens
+     * @param _nonce user input to guarantee unique depositId
+     */
+    function depositNative(
+        uint256 _amount,
+        uint64 _mintChainId,
+        address _mintAccount,
+        uint64 _nonce
+    ) external payable returns (bytes32);
+
+    /**
      * @notice Withdraw locked original tokens triggered by a burn at a remote chain's PeggedTokenBridge.
      * @param _request The serialized Withdraw protobuf.
      * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by

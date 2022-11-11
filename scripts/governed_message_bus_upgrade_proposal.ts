@@ -40,6 +40,7 @@ async function upgrade(): Promise<void> {
   console.log('createProposal tx', tx);
   return;
 
+  // uncomment this if you want to actually submit the proposal
   // sends the createProposal tx
   // const tx = await gov['createProposal(address,bytes)'](proxyAdmin.address, hex2Bytes(data));
   // console.log('createProposal tx', tx.hash);

@@ -3,6 +3,8 @@
 pragma solidity >=0.8.0;
 
 library MsgDataTypes {
+    string constant ABORT_PREFIX = "MSG::ABORT:";
+
     // bridge operation type at the sender side (src chain)
     enum BridgeSendType {
         Null,

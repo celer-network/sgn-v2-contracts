@@ -20,7 +20,7 @@ interface IOriginalTokenVaultV2 {
     ) external returns (bytes32);
 
     /**
-    * @notice Lock native token as original token to trigger mint at a remote chain's PeggedTokenBridge
+     * @notice Lock native token as original token to trigger mint at a remote chain's PeggedTokenBridge
      * @param _amount locked token amount
      * @param _mintChainId destination chainId to mint tokens
      * @param _mintAccount destination account to receive minted tokens

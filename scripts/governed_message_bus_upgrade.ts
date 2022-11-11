@@ -14,8 +14,8 @@ async function upgrade(): Promise<void> {
   const msgbusProxyDeployment = await deployments.get('MessageBus_Proxy');
   console.log('MessageBus_Proxy', msgbusProxyDeployment.address);
 
-  const newImplDeployment = await deployments.get('MessageBus_Implementation');
-  console.log('new MessageBus_Implementation', newImplDeployment.address);
+  const implDeployment = await deployments.get('MessageBus_Implementation');
+  console.log('MessageBus_Implementation', implDeployment.address);
 
   const deployerSigner = await getDeployerSigner();
 
@@ -24,7 +24,7 @@ async function upgrade(): Promise<void> {
   const gov = await SimpleGovernance__factory.connect(govDeployment.address, deployerSigner);
   let data = '0x99a88ec4'; // upgrade(address,address)
   const abi = new AbiCoder();
-  const params = abi.encode(['address', 'address'], [msgbusProxyDeployment.address, newImplDeployment.address]);
+  const params = abi.encode(['address', 'address'], [msgbusProxyDeployment.address, implDeployment.address]);
   data = data.concat(params.replace('0x', ''));
 
   // uncomment this if you just want to check the encoded tx calldata

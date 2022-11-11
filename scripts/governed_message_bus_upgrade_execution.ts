@@ -14,8 +14,6 @@ async function execute(): Promise<void> {
 
   const data = encodeUpgradeData(msgbusProxyDeployment.address, implDeployment.address);
 
-  console.log('upgrade calldata', data);
-
   const proposalId = process.env.GOV_MSGBUS_UPGRADE_PROPOSAL_ID;
   if (!proposalId) {
     console.error('GOV_MSGBUS_UPGRADE_PROPOSAL_ID undefined');

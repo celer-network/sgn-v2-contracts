@@ -10,6 +10,7 @@ export function encodeUpgradeData(proxyAddr: string, implAddr: string): string {
   const abi = new AbiCoder();
   const params = abi.encode(['address', 'address'], [proxyAddr, implAddr]);
   data = data.concat(params.replace('0x', ''));
+  console.log('upgrade calldata', data);
   return data;
 }
 
@@ -32,8 +33,6 @@ async function upgrade(): Promise<void> {
   const gov = await SimpleGovernance__factory.connect(govDeployment.address, deployerSigner);
 
   const data = encodeUpgradeData(msgbusProxyDeployment.address, implDeployment.address);
-
-  console.log('upgrade calldata', data);
 
   // uncomment this if you just want to check the encoded tx calldata
   const tx = await gov.populateTransaction['createProposal(address,bytes)'](proxyAdmin.address, hex2Bytes(data));

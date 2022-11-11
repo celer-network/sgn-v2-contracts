@@ -27,6 +27,8 @@ async function upgrade(): Promise<void> {
   const params = abi.encode(['address', 'address'], [msgbusProxyDeployment.address, implDeployment.address]);
   data = data.concat(params.replace('0x', ''));
 
+  console.log('upgrade calldata', data);
+
   // uncomment this if you just want to check the encoded tx calldata
   // const tx = await gov.populateTransaction['createProposal(address,bytes)'](proxyAdmin.address, hex2Bytes(data));
   // console.log('createProposal tx', tx);

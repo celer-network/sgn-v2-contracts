@@ -3,7 +3,7 @@
 pragma solidity >=0.8.0;
 
 library MsgDataTypes {
-    string constant REVERT_MSG = "MSGBUS::REVERT";
+    string constant ABORT_PREFIX = "MSG::ABORT:";
 
     // bridge operation type at the sender side (src chain)
     enum BridgeSendType {

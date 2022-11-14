@@ -131,6 +131,19 @@ describe('Message Tests', function () {
       .withArgs('Transaction reverted silently')
       .to.emit(msgbus, 'Executed')
       .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_FAIL, msgtest.address, srcChainId, hash);
+
+    nonce = 100000000000004;
+    message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    await expect(
+      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+        message,
+        routeInfo,
+        res.sigs,
+        [admin.address],
+        [parseUnits('1')]
+      )
+    ).to.be.revertedWith('MSG::ABORT:invalid nonce');
   });
 
   it('should execute msg with transfer correctly', async function () {

@@ -132,7 +132,12 @@ library BridgeTransferLib {
         BridgeSendType _bridgeSendType,
         address _bridgeAddr
     ) internal returns (bytes32) {
-        require(_bridgeSendType == BridgeSendType.Liquidity || _bridgeSendType == BridgeSendType.PegDeposit || _bridgeSendType == BridgeSendType.PegV2Deposit, "Lib: invalid bridge send type");
+        require(
+            _bridgeSendType == BridgeSendType.Liquidity ||
+                _bridgeSendType == BridgeSendType.PegDeposit ||
+                _bridgeSendType == BridgeSendType.PegV2Deposit,
+            "Lib: invalid bridge send type"
+        );
         address _token = INativeWrap(_bridgeAddr).nativeWrap();
         bytes32 transferId;
         if (_bridgeSendType == BridgeSendType.Liquidity) {
@@ -147,7 +152,12 @@ library BridgeTransferLib {
             );
         } else {
             // _bridgeSendType == BridgeSendType.PegV2Deposit
-            transferId = IOriginalTokenVaultV2(_bridgeAddr).depositNative{value: msg.value}(_amount, _dstChainId, _receiver, _nonce);
+            transferId = IOriginalTokenVaultV2(_bridgeAddr).depositNative{value: msg.value}(
+                _amount,
+                _dstChainId,
+                _receiver,
+                _nonce
+            );
         }
         return transferId;
     }

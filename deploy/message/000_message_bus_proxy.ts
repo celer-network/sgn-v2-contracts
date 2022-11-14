@@ -55,6 +55,6 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   );
 };
 
-deployFunc.tags = ['MessageBus'];
+deployFunc.tags = ['MessageBusProxy'];
 deployFunc.dependencies = [];
 export default deployFunc;

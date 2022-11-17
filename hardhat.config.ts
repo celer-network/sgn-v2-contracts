@@ -185,6 +185,9 @@ const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
 const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const fncyEndpoint = process.env.FNCY_ENDPOINT || DEFAULT_ENDPOINT;
+const fncyPrivateKey = process.env.FNCY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const nervosGodwokenEndpoint = process.env.NERVOS_GODWOKEN_ENDPOINT || DEFAULT_ENDPOINT;
 const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -422,6 +425,10 @@ const config: HardhatUserConfig = {
     kava: {
       url: kavaEndpoint,
       accounts: [`0x${kavaPrivateKey}`]
+    },
+    fncy: {
+      url: fncyEndpoint,
+      accounts: [`0x${fncyPrivateKey}`]
     },
     nervosGodwoken: {
       url: nervosGodwokenEndpoint,

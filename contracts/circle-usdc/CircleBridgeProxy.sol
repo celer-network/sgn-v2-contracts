@@ -2,13 +2,14 @@
 
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./FeeOperator.sol";
 import "../interfaces/ICircleBridge.sol";
 import "../safeguard/Governor.sol";
 
-contract CircleBridgeProxy is FeeOperator, Governor {
+contract CircleBridgeProxy is FeeOperator, Governor, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public immutable circleBridge;
@@ -19,11 +20,12 @@ contract CircleBridgeProxy is FeeOperator, Governor {
     /// per dest chain id executor fee in this chain's USDC token
     mapping(uint64 => uint256) public dstTxFee;
     
-    mapping(uint64 => uint32) public chidToDomain;
+    // 0 is regarded as not registered. Set to a negative value if target domain is actually 0.
+    mapping(uint64 => int32) public chidToDomain;
 
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event TxFeeUpdated(uint64[] chainIds, uint256[] fees);
-    event ChidToDomainUpdated(uint64[] chainIds, uint32[] domains);
+    event ChidToDomainUpdated(uint64[] chainIds, int32[] domains);
     event Deposited(address sender, bytes32 recipient, uint64 dstChid, uint256 amount, uint256 fee, uint64 nonce);
 
     constructor(
@@ -38,16 +40,19 @@ contract CircleBridgeProxy is FeeOperator, Governor {
         uint64 _dstChid,
         bytes32 _mintRecipient,
         address _burnToken
-    ) external returns (uint64 _nonce) {
-        uint32 dstDomain = chidToDomain[_dstChid];
+    ) external nonReentrant returns (uint64 _nonce) {
+        int32 dstDomain = chidToDomain[_dstChid];
         require (dstDomain != 0, "dst domain not registered");
+        if (dstDomain < 0) {
+            dstDomain = 0; // a negative value indicates the target domain is 0 actually.
+        }
         uint256 fee = totalFee(_amount, _dstChid);
         require (_amount > fee, "fee not covered");
 
         IERC20(_burnToken).safeTransferFrom(msg.sender, address(this), _amount);
         uint256 bridgeAmt = _amount - fee;
         IERC20(_burnToken).safeIncreaseAllowance(circleBridge, bridgeAmt);
-        _nonce = ICircleBridge(circleBridge).depositForBurn(bridgeAmt, dstDomain, _mintRecipient, _burnToken);
+        _nonce = ICircleBridge(circleBridge).depositForBurn(bridgeAmt, uint32(dstDomain), _mintRecipient, _burnToken);
         IERC20(_burnToken).safeApprove(circleBridge, 0);
         emit Deposited(msg.sender, _mintRecipient, _dstChid, _amount, fee, _nonce);
     }
@@ -84,7 +89,7 @@ contract CircleBridgeProxy is FeeOperator, Governor {
         emit TxFeeUpdated(_chainIds, _fees);
     }
 
-    function setChidToDomain(uint64[] calldata _chainIds, uint32[] calldata _domains) external onlyGovernor {
+    function setChidToDomain(uint64[] calldata _chainIds, int32[] calldata _domains) external onlyGovernor {
         require(_chainIds.length == _domains.length, "length mismatch");
         for (uint256 i = 0; i < _chainIds.length; i++) {
             chidToDomain[_chainIds[i]] = _domains[i];

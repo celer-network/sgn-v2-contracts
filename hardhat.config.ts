@@ -82,6 +82,9 @@ const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFA
 const cubeDevnetEndpoint = process.env.CUBE_DEVNET_ENDPOINT || DEFAULT_ENDPOINT;
 const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -191,6 +194,9 @@ const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFA
 const klaytnEndpoint = process.env.KLAYTN_ENDPOINT || DEFAULT_ENDPOINT;
 const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
+const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -284,6 +290,10 @@ const config: HardhatUserConfig = {
     cubeDevnet: {
       url: cubeDevnetEndpoint,
       accounts: [`0x${cubeDevnetPrivateKey}`]
+    },
+    oasysTest: {
+      url: oasysTestEndpoint,
+      accounts: [`0x${oasysTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -431,6 +441,10 @@ const config: HardhatUserConfig = {
       url: klaytnEndpoint,
       accounts: [`0x${klaytnPrivateKey}`],
       gasPrice: 250000000000
+    },
+    oasys: {
+      url: oasysEndpoint,
+      accounts: [`0x${oasysPrivateKey}`]
     }
   },
   namedAccounts: {

@@ -26,7 +26,7 @@ contract CircleBridgeProxy is FeeOperator, Governor, ReentrancyGuard {
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event TxFeeUpdated(uint64[] chainIds, uint256[] fees);
     event ChidToDomainUpdated(uint64[] chainIds, int32[] domains);
-    event Deposited(address sender, bytes32 recipient, uint64 dstChid, uint256 amount, uint256 fee, uint64 nonce);
+    event Deposited(address sender, bytes32 recipient, uint64 dstChid, uint256 amount, uint256 txFee, uint256 percFee, uint64 nonce);
 
     constructor(
         address _circleBridge,
@@ -46,7 +46,7 @@ contract CircleBridgeProxy is FeeOperator, Governor, ReentrancyGuard {
         if (dstDomain < 0) {
             dstDomain = 0; // a negative value indicates the target domain is 0 actually.
         }
-        uint256 fee = totalFee(_amount, _dstChid);
+        (uint256 fee, uint256 txFee, uint256 percFee) = totalFee(_amount, _dstChid);
         require (_amount > fee, "fee not covered");
 
         IERC20(_burnToken).safeTransferFrom(msg.sender, address(this), _amount);
@@ -54,18 +54,20 @@ contract CircleBridgeProxy is FeeOperator, Governor, ReentrancyGuard {
         IERC20(_burnToken).safeIncreaseAllowance(circleBridge, bridgeAmt);
         _nonce = ICircleBridge(circleBridge).depositForBurn(bridgeAmt, uint32(dstDomain), _mintRecipient, _burnToken);
         IERC20(_burnToken).safeApprove(circleBridge, 0);
-        emit Deposited(msg.sender, _mintRecipient, _dstChid, _amount, fee, _nonce);
+        emit Deposited(msg.sender, _mintRecipient, _dstChid, _amount, txFee, percFee, _nonce);
     }
 
     function totalFee(
         uint256 _amount,
         uint64 _dstChid
-    ) public view returns (uint256 _fee) {
+    ) public view returns (uint256 _fee, uint256 _txFee, uint256 _percFee) {
         uint32 feePerc = feePercOverride[_dstChid];
         if (feePerc == 0) {
             feePerc = feePercGlobal;
         }
-        return (_amount * feePerc) / 1e6 + dstTxFee[_dstChid];
+        _txFee = dstTxFee[_dstChid];
+        _percFee = (_amount * feePerc) / 1e6;
+        _fee = _txFee + _percFee;
     }
 
     function setFeePerc(uint64[] calldata _chainIds, uint32[] calldata _feePercs) external onlyGovernor {

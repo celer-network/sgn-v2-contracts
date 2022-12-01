@@ -8,8 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./FeeOperator.sol";
 import "../interfaces/ICircleBridge.sol";
 import "../safeguard/Governor.sol";
+import "../safeguard/Pauser.sol";
 
-contract CircleBridgeProxy is FeeOperator, Governor, ReentrancyGuard {
+contract CircleBridgeProxy is FeeOperator, Governor, Pauser, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public immutable circleBridge;
@@ -40,7 +41,7 @@ contract CircleBridgeProxy is FeeOperator, Governor, ReentrancyGuard {
         uint64 _dstChid,
         bytes32 _mintRecipient,
         address _burnToken
-    ) external nonReentrant returns (uint64 _nonce) {
+    ) external nonReentrant whenNotPaused returns (uint64 _nonce) {
         int32 dstDomain = chidToDomain[_dstChid];
         require (dstDomain != 0, "dst domain not registered");
         if (dstDomain < 0) {

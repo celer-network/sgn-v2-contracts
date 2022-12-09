@@ -197,6 +197,9 @@ const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const spsEndpoint = process.env.SPS_ENDPOINT || DEFAULT_ENDPOINT;
+const spsPrivateKey = process.env.SPS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -445,6 +448,10 @@ const config: HardhatUserConfig = {
     oasys: {
       url: oasysEndpoint,
       accounts: [`0x${oasysPrivateKey}`]
+    },
+    sps: {
+      url: spsEndpoint,
+      accounts: [`0x${spsPrivateKey}`]
     }
   },
   namedAccounts: {

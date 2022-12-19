@@ -359,10 +359,6 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         return IMessageBus(messageBus).calcFee(_message);
     }
 
-    function getAllowedSigner(address _marketMaker) public view returns (address) {
-        return allowedSigner[_marketMaker];
-    }
-
     function getSignerOfQuoteHash(bytes32 _quoteHash, bytes calldata _sig) public view returns (address) {
         bytes32 msgHash = keccak256(abi.encodePacked(block.chainid, address(this), "AllowedTransfer", _quoteHash))
             .toEthSignedMessageHash();

@@ -370,10 +370,12 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         bytes32 _quoteHash,
         bytes calldata _sig
     ) public view {
-        address signer = (allowedSigner[_liquidityProvider] == address(0))
-            ? _liquidityProvider
-            : allowedSigner[_liquidityProvider];
-        require(signer == getSignerOfQuoteHash(_quoteHash, _sig), "Rfq: not allowed signer");
+        address signer = getSignerOfQuoteHash(_quoteHash, _sig);
+        require(
+            signer == _liquidityProvider ||
+                (allowedSigner[_liquidityProvider] != address(0) && signer == allowedSigner[_liquidityProvider]),
+            "Rfq: not allowed signer"
+        );
     }
 
     function _receiveMessage(

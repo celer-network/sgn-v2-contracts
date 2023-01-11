@@ -30,6 +30,20 @@ contract XC20BridgeHub is Ownable, IXC20BridgeHub, Pausable {
     event TokenPairPaused(address indexed bridgeToken, address indexed canonicalToken);
     event TokenPairUnpaused(address indexed bridgeToken, address indexed canonicalToken);
     event TokenPairLimitSet(address indexed bridgeToken, address indexed canonicalToken, uint256 limit);
+    event BridgeSwappedForCanonical(
+        address indexed bridgeToken,
+        address indexed canonicalToken,
+        uint256 bridgeTokenAmount,
+        uint256 refund,
+        uint256 canonicalTokenAmount
+    );
+    event CanonicalSwappedForBridge(
+        address indexed bridgeToken,
+        address indexed canonicalToken,
+        uint256 canonicalTokenAmount,
+        uint256 refund,
+        uint256 bridgeTokenAmount
+    );
 
     /**
      * @dev Pauses a token pair.
@@ -127,8 +141,14 @@ contract XC20BridgeHub is Ownable, IXC20BridgeHub, Pausable {
      * @dev Swaps intermediary bridge token for canonical XC-20 token.
      * @param _bridgeToken The intermediary bridge token
      * @param _amount The amount to swap
+     * @return The canonical token amount
      */
-    function swapBridgeForCanonical(address _bridgeToken, uint256 _amount) external override whenNotPaused {
+    function swapBridgeForCanonical(address _bridgeToken, uint256 _amount)
+        external
+        override
+        whenNotPaused
+        returns (uint256)
+    {
         TokenPair memory pair = tokenPairMap[_bridgeToken];
         require(pair.bridgeToken != address(0), "XC20BridgeHub: non-existent bridge token");
         require(!pair.paused, "XC20BridgeHub: token pair paused");
@@ -137,21 +157,55 @@ contract XC20BridgeHub is Ownable, IXC20BridgeHub, Pausable {
             pair.limit > 0 && (bridgeErc20.balanceOf(address(this))) + _amount <= pair.limit,
             "XC20BridgeHub: exceeds bridge limit"
         );
-        bridgeErc20.safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(pair.canonicalToken).safeTransfer(msg.sender, _amount);
+
+        address canonicalToken = pair.canonicalToken;
+        uint256 delta = transferIn(_bridgeToken, _amount);
+        (uint256 canonicalTokenAmount, uint256 refund) = calcTransferAmountWithDecimals(
+            delta,
+            IERC20Metadata(_bridgeToken).decimals(),
+            IERC20Metadata(canonicalToken).decimals()
+        );
+        if (refund > 0) {
+            IERC20(_bridgeToken).safeTransfer(msg.sender, refund);
+        }
+        if (canonicalTokenAmount > 0) {
+            IERC20(pair.canonicalToken).safeTransfer(msg.sender, _amount);
+        }
+        emit BridgeSwappedForCanonical(_bridgeToken, canonicalToken, _amount, refund, canonicalTokenAmount);
+        return canonicalTokenAmount;
     }
 
     /**
      * @dev Swaps canonical XC-20 token for intermediary bridge token.
      * @param _bridgeToken The intermediary bridge token
      * @param _amount The amount to swap
+     * @return The bridge token amount
      */
-    function swapCanonicalForBridge(address _bridgeToken, uint256 _amount) external override whenNotPaused {
+    function swapCanonicalForBridge(address _bridgeToken, uint256 _amount)
+        external
+        override
+        whenNotPaused
+        returns (uint256)
+    {
         TokenPair memory pair = tokenPairMap[_bridgeToken];
         require(pair.bridgeToken != address(0), "XC20BridgeHub: non-existent bridge token");
         require(!pair.paused, "XC20BridgeHub: token pair paused");
-        IERC20(pair.canonicalToken).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(_bridgeToken).safeTransfer(msg.sender, _amount);
+
+        address canonicalToken = pair.canonicalToken;
+        uint256 delta = transferIn(canonicalToken, _amount);
+        (uint256 bridgeTokenAmount, uint256 refund) = calcTransferAmountWithDecimals(
+            delta,
+            IERC20Metadata(canonicalToken).decimals(),
+            IERC20Metadata(_bridgeToken).decimals()
+        );
+        if (refund > 0) {
+            IERC20(canonicalToken).safeTransfer(msg.sender, refund);
+        }
+        if (bridgeTokenAmount > 0) {
+            IERC20(_bridgeToken).safeTransfer(msg.sender, _amount);
+        }
+        emit CanonicalSwappedForBridge(_bridgeToken, canonicalToken, _amount, refund, bridgeTokenAmount);
+        return bridgeTokenAmount;
     }
 
     /**
@@ -163,6 +217,41 @@ contract XC20BridgeHub is Ownable, IXC20BridgeHub, Pausable {
             _pause();
         } else {
             _unpause();
+        }
+    }
+
+    /**
+     * @dev Transfers the amount of tokens into the hub.
+     * @param _token The token address
+     * @param _amount The transfer amount
+     * @return The balance change
+     */
+    function transferIn(address _token, uint256 _amount) internal returns (uint256) {
+        uint256 balanceBefore = IERC20(_token).balanceOf(address(this));
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        uint256 balanceAfter = IERC20(_token).balanceOf(address(this));
+        return balanceAfter - balanceBefore;
+    }
+
+    /**
+     * @dev Calculates the transfer amount and if applicable, refund amount, taking into account the
+     * difference between token decimals.
+     * @param _amount The original amount
+     * @param _aDecimals The decimals of token A
+     * @param _bDecimals The decimals of token B
+     */
+    function calcTransferAmountWithDecimals(
+        uint256 _amount,
+        uint256 _aDecimals,
+        uint256 _bDecimals
+    ) internal pure returns (uint256 newAmount, uint256 refund) {
+        if (_aDecimals > _bDecimals) {
+            newAmount = _amount / (10**(_aDecimals - _bDecimals));
+            refund = _amount - newAmount * (10**(_aDecimals - _bDecimals));
+        } else if (_aDecimals < _bDecimals) {
+            newAmount = _amount * (10**(_bDecimals - _aDecimals));
+        } else {
+            newAmount = _amount;
         }
     }
 }

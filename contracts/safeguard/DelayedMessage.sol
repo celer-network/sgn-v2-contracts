@@ -8,8 +8,7 @@ abstract contract DelayedMessage is Governor {
     // universal unique id => delay start time
     // this id is not the msgId
     mapping(bytes32 => uint256) public delayedMessages;
-    // dstContract => delay period
-    mapping(address => uint256) public delayPeriods; // in seconds
+    uint256 public delayPeriod; // in seconds
     // in order to unify each message even in case of several same callData sent to the same dstContract
     uint32 public nonce;
 
@@ -23,20 +22,12 @@ abstract contract DelayedMessage is Governor {
     );
     event DelayedMessageExecuted(bytes32 id);
 
-    event DelayPeriodUpdated(address receiver, uint256 period);
+    event DelayPeriodUpdated(uint256 period);
 
-    function setDelayThresholds(address[] calldata _receivers, uint256[] calldata _periods) external onlyGovernor {
-        require(_receivers.length == _periods.length, "length mismatch");
-        for (uint256 i = 0; i < _receivers.length; i++) {
-            delayPeriods[_receivers[i]] = _periods[i];
-            emit DelayPeriodUpdated(_receivers[i], _periods[i]);
-        }
+    function setDelayPeriod(uint256 _period) external onlyGovernor {
+        delayPeriod = _period;
+        emit DelayPeriodUpdated(_period);
     }
-
-    //    function setDelayPeriod(uint256 _period) external onlyGovernor {
-    //        delayPeriod = _period;
-    //        emit DelayPeriodUpdated(_period);
-    //    }
 
     function _addDelayedMessage(
         address _srcContract,
@@ -65,7 +56,7 @@ abstract contract DelayedMessage is Governor {
             abi.encodePacked(_srcContract, _srcChainId, _dstContract, uint64(block.chainid), _callData, _nonce)
         );
         require(delayedMessages[id] > 0, "delayed message not exist");
-        require(block.timestamp > delayedMessages[id] + delayPeriods[_dstContract], "delayed message still locked");
+        require(block.timestamp > delayedMessages[id] + delayPeriod, "delayed message still locked");
         delete delayedMessages[id];
         emit DelayedMessageExecuted(id);
     }

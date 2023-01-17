@@ -13,7 +13,14 @@ abstract contract DelayedMessage is Governor {
     // in order to unify each message even in case of several same callData sent to the same dstContract
     uint32 public nonce;
 
-    event DelayedMessageAdded(bytes32 id, address srcContract, uint64 srcChainId, address dstContract, bytes callData, uint32 nonce);
+    event DelayedMessageAdded(
+        bytes32 id,
+        address srcContract,
+        uint64 srcChainId,
+        address dstContract,
+        bytes callData,
+        uint32 nonce
+    );
     event DelayedMessageExecuted(bytes32 id);
 
     event DelayPeriodUpdated(address receiver, uint256 period);
@@ -26,10 +33,10 @@ abstract contract DelayedMessage is Governor {
         }
     }
 
-//    function setDelayPeriod(uint256 _period) external onlyGovernor {
-//        delayPeriod = _period;
-//        emit DelayPeriodUpdated(_period);
-//    }
+    //    function setDelayPeriod(uint256 _period) external onlyGovernor {
+    //        delayPeriod = _period;
+    //        emit DelayPeriodUpdated(_period);
+    //    }
 
     function _addDelayedMessage(
         address _srcContract,
@@ -38,14 +45,7 @@ abstract contract DelayedMessage is Governor {
         bytes memory _callData
     ) internal {
         bytes32 id = keccak256(
-            abi.encodePacked(
-                _srcContract,
-                _srcChainId,
-                _dstContract,
-                uint64(block.chainid),
-                _callData,
-                nonce
-            )
+            abi.encodePacked(_srcContract, _srcChainId, _dstContract, uint64(block.chainid), _callData, nonce)
         );
         require(delayedMessages[id] == 0, "delayed message already exists");
         delayedMessages[id] = uint256(block.timestamp);
@@ -62,14 +62,7 @@ abstract contract DelayedMessage is Governor {
         uint32 _nonce
     ) internal {
         bytes32 id = keccak256(
-            abi.encodePacked(
-                _srcContract,
-                _srcChainId,
-                _dstContract,
-                uint64(block.chainid),
-                _callData,
-                _nonce
-            )
+            abi.encodePacked(_srcContract, _srcChainId, _dstContract, uint64(block.chainid), _callData, _nonce)
         );
         require(delayedMessages[id] > 0, "delayed message not exist");
         require(block.timestamp > delayedMessages[id] + delayPeriods[_dstContract], "delayed message still locked");

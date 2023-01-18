@@ -9,6 +9,10 @@ import "../../../safeguard/DelayedMessage.sol";
 // A HelloWorld example for basic cross-chain message passing
 contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
     event MessageReceived(address srcContract, uint64 srcChainId, address dstContract, bytes callData);
+    event AllowedSenderUpdated(address dstContract, uint64 srcChainId, address srcContract, bool allowed);
+
+    // dstContract => srcChainId => srcContract => allowed or not
+    mapping(address => mapping(uint64 => mapping(address => bool))) public allowedSender;
 
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
@@ -61,5 +65,20 @@ contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
             _returnData := add(_returnData, 0x04)
         }
         return abi.decode(_returnData, (string)); // All that remains is the revert string
+    }
+
+    // =============== Admin operation ===============
+
+    function setAllowedSender(
+        address _dstContract,
+        uint64 _srcChainId,
+        address[] calldata _srcContracts,
+        bool[] calldata _alloweds
+    ) external onlyOwner {
+        require(_srcContracts.length == _alloweds.length, "length mismatch");
+        for (uint256 i = 0; i < _srcContracts.length; i++) {
+            allowedSender[_dstContract][_srcChainId][_srcContracts[i]] = _alloweds[i];
+            emit AllowedSenderUpdated(_dstContract, _srcChainId, _srcContracts[i], _alloweds[i]);
+        }
     }
 }

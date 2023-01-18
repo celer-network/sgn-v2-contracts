@@ -24,6 +24,7 @@ contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
         address // executor
     ) external payable override onlyMessageBus returns (ExecutionStatus) {
         (address dstContract, bytes memory callData) = abi.decode(_message, (address, bytes));
+        require(allowedSender[dstContract][_srcChainId][_srcContract], "not allowed sender");
         bool delay = delayPeriod > 0 ? true : false;
         if (delay) {
             _addDelayedMessage(_srcContract, _srcChainId, dstContract, callData);

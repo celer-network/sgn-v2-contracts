@@ -22,7 +22,7 @@ contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
         uint64 _srcChainId,
         bytes calldata _message,
         address // executor
-    ) external payable override onlyMessageBus returns (ExecutionStatus) {
+    ) external payable override onlyMessageBus whenNotPaused returns (ExecutionStatus) {
         (address dstContract, bytes memory callData) = abi.decode(_message, (address, bytes));
         require(allowedSender[dstContract][_srcChainId][_srcContract], "not allowed sender");
         bool delay = delayPeriod > 0 ? true : false;
@@ -40,7 +40,7 @@ contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
         address _dstContract,
         bytes calldata _callData,
         uint32 _nonce
-    ) external payable {
+    ) external payable whenNotPaused {
         _executeDelayedMessage(_srcContract, _srcChainId, _dstContract, _callData, _nonce);
         externalCall(_dstContract, _callData);
         emit MessageReceived(_srcContract, _srcChainId, _dstContract, _callData);

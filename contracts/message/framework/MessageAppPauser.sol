@@ -11,7 +11,8 @@ abstract contract MessageAppPauser is Pauser {
      * the contract is not paused. 
      *
      * Added the ABORT_PREFIX ("MSG::ABORT:") in front of the revert message to
-     * work with the Celer IM MessageBus contract.
+     * work with the Celer IM MessageBus contract, so that the message execution
+     * can be retried later when the contract is unpaused.
      */
     modifier whenNotMsgPaused() {
         require(!paused(), string.concat(MsgDataTypes.ABORT_PREFIX, "Pausable: paused"));

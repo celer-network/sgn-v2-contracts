@@ -7,8 +7,8 @@ import "../../safeguard/Pauser.sol";
 
 abstract contract MessageAppPauser is Pauser {
     /**
-     * @dev Modifier to make the message execution function callable only when 
-     * the contract is not paused. 
+     * @dev Modifier to make the message execution function callable only when
+     * the contract is not paused.
      *
      * Added the ABORT_PREFIX ("MSG::ABORT:") in front of the revert message to
      * work with the Celer IM MessageBus contract, so that the message execution

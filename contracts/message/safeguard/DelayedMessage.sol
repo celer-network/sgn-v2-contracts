@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity 0.8.17;
+pragma solidity >=0.8.0;
 
 import "../../safeguard/Ownable.sol";
 
@@ -10,14 +10,7 @@ abstract contract DelayedMessage is Ownable {
     uint256 public delayPeriod; // in seconds
     uint32 public nonce;
 
-    event DelayedMessageAdded(
-        bytes32 id,
-        address srcContract,
-        uint64 srcChainId,
-        address dstContract,
-        bytes callData,
-        uint32 nonce
-    );
+    event DelayedMessageAdded(bytes32 id, address srcContract, uint64 srcChainId, bytes message, uint32 nonce);
     event DelayedMessageExecuted(bytes32 id);
 
     event DelayPeriodUpdated(uint256 period);
@@ -25,14 +18,11 @@ abstract contract DelayedMessage is Ownable {
     function _addDelayedMessage(
         address _srcContract,
         uint64 _srcChainId,
-        address _dstContract,
-        bytes memory _callData
+        bytes calldata _message
     ) internal {
-        bytes32 id = keccak256(
-            abi.encodePacked(_srcContract, _srcChainId, _dstContract, uint64(block.chainid), _callData, nonce)
-        );
+        bytes32 id = keccak256(abi.encodePacked(_srcContract, _srcChainId, _message, uint64(block.chainid), nonce));
         delayedMessages[id] = uint256(block.timestamp);
-        emit DelayedMessageAdded(id, _srcContract, _srcChainId, _dstContract, _callData, nonce);
+        emit DelayedMessageAdded(id, _srcContract, _srcChainId, _message, nonce);
         nonce += 1;
     }
 
@@ -40,13 +30,10 @@ abstract contract DelayedMessage is Ownable {
     function _executeDelayedMessage(
         address _srcContract,
         uint64 _srcChainId,
-        address _dstContract,
-        bytes memory _callData,
+        bytes memory _message,
         uint32 _nonce
     ) internal {
-        bytes32 id = keccak256(
-            abi.encodePacked(_srcContract, _srcChainId, _dstContract, uint64(block.chainid), _callData, _nonce)
-        );
+        bytes32 id = keccak256(abi.encodePacked(_srcContract, _srcChainId, _message, uint64(block.chainid), _nonce));
         require(delayedMessages[id] > 0, "delayed message not exist");
         require(block.timestamp > delayedMessages[id] + delayPeriod, "delayed message still locked");
         delete delayedMessages[id];

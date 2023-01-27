@@ -29,7 +29,7 @@ contract MessageReceiverAdapter is MessageApp, MessageAppPauser, DelayedMessage 
         (address dstContract, bytes memory callData) = abi.decode(_message, (address, bytes));
         require(allowedSender[dstContract][_srcChainId][_srcContract], "not allowed sender");
         if (delayPeriod > 0) {
-            _addDelayedMessage(_srcContract, _srcChainId, dstContract, callData);
+            _addDelayedMessage(_srcContract, _srcChainId, _message);
         } else {
             _externalCall(_srcContract, _srcChainId, dstContract, callData);
         }
@@ -40,12 +40,12 @@ contract MessageReceiverAdapter is MessageApp, MessageAppPauser, DelayedMessage 
     function executeDelayedMessage(
         address _srcContract,
         uint64 _srcChainId,
-        address _dstContract,
-        bytes calldata _callData,
+        bytes calldata _message,
         uint32 _nonce
     ) external payable whenNotPaused {
-        _executeDelayedMessage(_srcContract, _srcChainId, _dstContract, _callData, _nonce);
-        _externalCall(_srcContract, _srcChainId, _dstContract, _callData);
+        _executeDelayedMessage(_srcContract, _srcChainId, _message, _nonce);
+        (address dstContract, bytes memory callData) = abi.decode(_message, (address, bytes));
+        _externalCall(_srcContract, _srcChainId, dstContract, callData);
     }
 
     function _externalCall(

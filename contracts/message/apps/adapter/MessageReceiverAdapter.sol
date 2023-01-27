@@ -16,7 +16,10 @@ contract MessageReceiverAdapter is MessageApp, MessageAppPauser, DelayedMessage 
 
     constructor(address _messageBus) MessageApp(_messageBus) {}
 
-    // called by MessageBus on destination chain to receive cross-chain messages
+    // Called by MessageBus on destination chain to receive cross-chain messages.
+    // The message is abi.encode of (dst_contract_address, dst_contract_calldata).
+    // If a delayed period is configured, the message would be put in a delayed message queue,
+    // otherwise, the external call to the dst contract will be executed immediately
     function executeMessage(
         address _srcContract,
         uint64 _srcChainId,
@@ -33,6 +36,7 @@ contract MessageReceiverAdapter is MessageApp, MessageAppPauser, DelayedMessage 
         return ExecutionStatus.Success;
     }
 
+    // execute external call to the dst contract after the message delay period is passed.
     function executeDelayedMessage(
         address _srcContract,
         uint64 _srcChainId,

@@ -2,14 +2,12 @@
 
 pragma solidity 0.8.17;
 
-import "./Governor.sol";
+import "../../safeguard/Ownable.sol";
 
-abstract contract DelayedMessage is Governor {
-    // universal unique id => delay start time
-    // this id is not the msgId
+abstract contract DelayedMessage is Ownable {
+    // universal unique id (not msgId) => delay start time
     mapping(bytes32 => uint256) public delayedMessages;
     uint256 public delayPeriod; // in seconds
-    // in order to unify each message even in case of several same callData sent to the same dstContract
     uint32 public nonce;
 
     event DelayedMessageAdded(
@@ -24,11 +22,6 @@ abstract contract DelayedMessage is Governor {
 
     event DelayPeriodUpdated(uint256 period);
 
-    function setDelayPeriod(uint256 _period) external onlyGovernor {
-        delayPeriod = _period;
-        emit DelayPeriodUpdated(_period);
-    }
-
     function _addDelayedMessage(
         address _srcContract,
         uint64 _srcChainId,
@@ -38,7 +31,6 @@ abstract contract DelayedMessage is Governor {
         bytes32 id = keccak256(
             abi.encodePacked(_srcContract, _srcChainId, _dstContract, uint64(block.chainid), _callData, nonce)
         );
-        require(delayedMessages[id] == 0, "delayed message already exists");
         delayedMessages[id] = uint256(block.timestamp);
         emit DelayedMessageAdded(id, _srcContract, _srcChainId, _dstContract, _callData, nonce);
         nonce += 1;
@@ -59,5 +51,10 @@ abstract contract DelayedMessage is Governor {
         require(block.timestamp > delayedMessages[id] + delayPeriod, "delayed message still locked");
         delete delayedMessages[id];
         emit DelayedMessageExecuted(id);
+    }
+
+    function setDelayPeriod(uint256 _period) external onlyOwner {
+        delayPeriod = _period;
+        emit DelayPeriodUpdated(_period);
     }
 }

@@ -3,12 +3,12 @@
 pragma solidity >=0.8.9;
 
 import "../../framework/MessageApp.sol";
-import "../../../safeguard/Pauser.sol";
-import "../../../safeguard/DelayedMessage.sol";
+import "../../safeguard/MessageAppPauser.sol";
+import "../../safeguard/DelayedMessage.sol";
+import "../../../libraries/Utils.sol";
 
-// A HelloWorld example for basic cross-chain message passing
-contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
-    event MessageReceived(address srcContract, uint64 srcChainId, address dstContract, bytes callData);
+contract MessageReceiverAdapter is MessageApp, MessageAppPauser, DelayedMessage {
+    event ExternalCall(address srcContract, uint64 srcChainId, address dstContract, bytes callData);
     event AllowedSenderUpdated(address dstContract, uint64 srcChainId, address srcContract, bool allowed);
 
     // dstContract => srcChainId => srcContract => allowed or not
@@ -22,16 +22,15 @@ contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
         uint64 _srcChainId,
         bytes calldata _message,
         address // executor
-    ) external payable override onlyMessageBus whenNotPaused returns (ExecutionStatus) {
+    ) external payable override onlyMessageBus whenNotMsgPaused returns (ExecutionStatus) {
         (address dstContract, bytes memory callData) = abi.decode(_message, (address, bytes));
         require(allowedSender[dstContract][_srcChainId][_srcContract], "not allowed sender");
-        bool delay = delayPeriod > 0 ? true : false;
-        if (delay) {
+        if (delayPeriod > 0) {
             _addDelayedMessage(_srcContract, _srcChainId, dstContract, callData);
-            return ExecutionStatus.Success;
+        } else {
+            _externalCall(_srcContract, _srcChainId, dstContract, callData);
         }
-        emit MessageReceived(_srcContract, _srcChainId, dstContract, callData);
-        return externalCall(dstContract, callData);
+        return ExecutionStatus.Success;
     }
 
     function executeDelayedMessage(
@@ -42,33 +41,21 @@ contract MessageReceiverAdapter is MessageApp, DelayedMessage, Pauser {
         uint32 _nonce
     ) external payable whenNotPaused {
         _executeDelayedMessage(_srcContract, _srcChainId, _dstContract, _callData, _nonce);
-        externalCall(_dstContract, _callData);
-        emit MessageReceived(_srcContract, _srcChainId, _dstContract, _callData);
+        _externalCall(_srcContract, _srcChainId, _dstContract, _callData);
     }
 
-    // as long as external call is good, execution status would be considered always as Success.
-    function externalCall(address _dstContract, bytes memory _callData) internal returns (ExecutionStatus) {
+    function _externalCall(
+        address _srcContract,
+        uint64 _srcChainId,
+        address _dstContract,
+        bytes memory _callData
+    ) internal {
         (bool ok, bytes memory returnData) = _dstContract.call{value: msg.value}(_callData);
         if (!ok) {
-            // Bubble up the revert from the returnData
-            revert(getRevertMsg(returnData));
+            revert(Utils.getRevertMsg(returnData));
         }
-        return ExecutionStatus.Success;
+        emit ExternalCall(_srcContract, _srcChainId, _dstContract, _callData);
     }
-
-    // https://ethereum.stackexchange.com/a/83577
-    // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
-        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-        if (_returnData.length < 68) return "Transaction reverted silently";
-        assembly {
-            // Slice the sighash.
-            _returnData := add(_returnData, 0x04)
-        }
-        return abi.decode(_returnData, (string)); // All that remains is the revert string
-    }
-
-    // =============== Admin operation ===============
 
     function setAllowedSender(
         address _dstContract,

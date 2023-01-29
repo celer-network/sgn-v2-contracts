@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "../../safeguard/MessageAppPauser.sol";
-import "./IUniswapMultiMsgReceiver.sol";
+import "./IMultiMsgReceiver.sol";
 import "../../../libraries/Utils.sol";
 
 interface IMessageReceiverApp {
@@ -50,11 +50,10 @@ contract CelerMsgReceiver is MessageAppPauser, IMessageReceiverApp {
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus whenNotMsgPaused returns (ExecutionStatus) {
-        (IUniswapMultiMsgReceiver.Message memory message) = abi.decode(_message, (IUniswapMultiMsgReceiver.Message));
+        IMultiMsgReceiver.Message memory message = abi.decode(_message, (IMultiMsgReceiver.Message));
         require(_srcContract == msgSender, "not allowed message sender");
         require(_srcChainId == 1, "invalid src chain id");
-        try IUniswapMultiMsgReceiver(message.multiMsgReceiver).relayMessage(message) {
-        } catch (bytes memory lowLevelData) {
+        try IMultiMsgReceiver(message.multiMsgReceiver).relayMessage(message) {} catch (bytes memory lowLevelData) {
             revert(Utils.getRevertMsg(lowLevelData));
         }
         return ExecutionStatus.Success;

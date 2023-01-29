@@ -10,12 +10,10 @@ interface IMsgSender {
 
     struct Message {
         MessageType messageType;
-        string senderName;
-        // receiver is UniswapMultiMsgReceiver contract on destination chain
+        string bridgeName;
         address multiMsgReceiver;
         uint64 dstChainId;
         uint32 nonce;
-        // target is uniswap v3 contract on destination chain
         address target;
         bytes callData;
     }

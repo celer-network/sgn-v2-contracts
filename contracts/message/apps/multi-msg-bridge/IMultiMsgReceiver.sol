@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity >=0.8.9;
+pragma solidity 0.8.17;
 
-library MessageStruct {
+interface IMultiMsgReceiver {
     enum MessageType {
         ExternalMessage,
         InternalMessage
@@ -10,13 +10,13 @@ library MessageStruct {
 
     struct Message {
         MessageType messageType;
-        string senderName;
-        // receiver is UniswapMultiMsgReceiver contract on destination chain
+        string bridgeName;
         address multiMsgReceiver;
         uint64 dstChainId;
         uint32 nonce;
-        // target is uniswap v3 contract on destination chain
         address target;
         bytes callData;
     }
+
+    function relayMessage(Message calldata _message) external;
 }

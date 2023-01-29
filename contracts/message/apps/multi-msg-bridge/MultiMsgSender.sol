@@ -4,12 +4,14 @@ pragma solidity >=0.8.9;
 
 import "./IMsgSender.sol";
 
-contract UniswapMultiMsgSender {
+contract MultiMsgSender {
     address[] public msgSenders;
-    address public timelock;
+    address public caller;
     uint32 public nonce;
 
+    event SingleMsgSent(string indexed bridgeName, uint32 indexed nonce, address senderAddr);
     event MultiMsgSent(
+        uint32 nonce,
         uint64 dstChainId,
         address multiMsgReceiver,
         address target,
@@ -19,17 +21,17 @@ contract UniswapMultiMsgSender {
     event MsgSenderAdded(address msgSenders);
     event MsgSenderRemoved(address msgSenders);
 
-    modifier onlyTimelock() {
-        require(msg.sender == timelock, "not uniswap timelock contract");
+    modifier onlyCaller() {
+        require(msg.sender == caller, "not caller");
         _;
     }
 
     constructor(
-        address _timelock,
+        address _caller,
         address[] memory _msgSenders,
         address[] memory _msgReceivers
     ) {
-        timelock = _timelock;
+        caller = _caller;
         require(_msgSenders.length == _msgReceivers.length, "mismatch length");
         for (uint256 i = 0; i < _msgSenders.length; i++) {
             _addMsgSender(_msgSenders[i], _msgReceivers[i]);
@@ -41,7 +43,7 @@ contract UniswapMultiMsgSender {
         address _multiMsgReceiver,
         address _target,
         bytes calldata _callData
-    ) external payable onlyTimelock {
+    ) external payable onlyCaller {
         IMsgSender.Message memory message = IMsgSender.Message(
             IMsgSender.MessageType.ExternalMessage,
             "",
@@ -57,18 +59,20 @@ contract UniswapMultiMsgSender {
             totalFee += fee;
             require(totalFee <= msg.value, "insufficient message fee");
             IMsgSender(msgSenders[i]).sendMessage{value: fee}(message);
+            emit SingleMsgSent(IMsgSender(msgSenders[i]).getMsgSenderName(), nonce, msgSenders[i]);
         }
-        emit MultiMsgSent(_dstChainId, _multiMsgReceiver, _target, _callData, msgSenders);
+        emit MultiMsgSent(nonce, _dstChainId, _multiMsgReceiver, _target, _callData, msgSenders);
+        nonce++;
     }
 
-    function addMsgSenders(address[] calldata _msgSenders, address[] calldata _msgReceivers) external onlyTimelock {
+    function addMsgSenders(address[] calldata _msgSenders, address[] calldata _msgReceivers) external onlyCaller {
         require(_msgSenders.length == _msgReceivers.length, "mismatch length");
         for (uint256 i = 0; i < _msgSenders.length; i++) {
             _addMsgSender(_msgSenders[i], _msgReceivers[i]);
         }
     }
 
-    function removeMsgSenders(address[] calldata _msgSenders) external onlyTimelock {
+    function removeMsgSenders(address[] calldata _msgSenders) external onlyCaller {
         for (uint256 i = 0; i < _msgSenders.length; i++) {
             _removeMsgSender(_msgSenders[i]);
         }

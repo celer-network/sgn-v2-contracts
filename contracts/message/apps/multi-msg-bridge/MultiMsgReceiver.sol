@@ -2,9 +2,9 @@
 
 pragma solidity >=0.8.9;
 
-import "./IUniswapMultiMsgReceiver.sol";
+import "./IMultiMsgReceiver.sol";
 
-contract UniswapMultiMsgReceiver is IUniswapMultiMsgReceiver {
+contract MultiMsgReceiver is IMultiMsgReceiver {
     mapping(address => uint32) public msgReceiversPower;
     enum MsgStatus {
         Unkonwn,
@@ -18,6 +18,9 @@ contract UniswapMultiMsgReceiver is IUniswapMultiMsgReceiver {
 
     event MsgReceiverUpdated(address msgReceiver, uint32 power);
     event PowerThresholdUpdated(uint64 powerThreshold);
+    event SingleMsgReceived(string indexed bridgeName, uint32 indexed nonce, address receiverAddr);
+    event ExternalMsgExecuted(uint32 nonce, address target, bytes callData);
+    event InternalMsgExecuted(uint32 nonce, bytes callData);
 
     modifier onlyMsgReceiver() {
         require(msgReceiversPower[msg.sender] > 0, "not allowed msg receiver");
@@ -41,8 +44,8 @@ contract UniswapMultiMsgReceiver is IUniswapMultiMsgReceiver {
         powerThreshold = _powerThreshold;
     }
 
-    function relayMessage(IUniswapMultiMsgReceiver.Message calldata _message) external override onlyMsgReceiver {
-        require(address(this) == _message.multiMsgReceiver, "mismatch uniswap multi-msg receiver");
+    function relayMessage(IMultiMsgReceiver.Message calldata _message) external override onlyMsgReceiver {
+        require(address(this) == _message.multiMsgReceiver, "mismatch multi-msg receiver");
         bytes32 msgId = getMsgId(_message);
         if (msgsStatus[_message.nonce] == MsgStatus.Unkonwn) {
             msgsStatus[_message.nonce] = MsgStatus.Pending;
@@ -50,6 +53,7 @@ contract UniswapMultiMsgReceiver is IUniswapMultiMsgReceiver {
         } else {
             require(msgsId[_message.nonce] == msgId, "mismatch message id");
         }
+        emit SingleMsgReceived(_message.bridgeName, _message.nonce, msg.sender);
         msgsPower[_message.nonce] += msgReceiversPower[msg.sender];
         _executeMessage(_message);
     }
@@ -66,18 +70,20 @@ contract UniswapMultiMsgReceiver is IUniswapMultiMsgReceiver {
         emit PowerThresholdUpdated(_powerThreshold);
     }
 
-    function getMsgId(IUniswapMultiMsgReceiver.Message calldata _message) public pure returns (bytes32) {
+    function getMsgId(IMultiMsgReceiver.Message calldata _message) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(_message.messageType, _message.nonce, _message.target, _message.callData));
     }
 
-    function _executeMessage(IUniswapMultiMsgReceiver.Message calldata _message) private {
+    function _executeMessage(IMultiMsgReceiver.Message calldata _message) private {
         if (msgsStatus[_message.nonce] == MsgStatus.Pending && msgsPower[_message.nonce] >= powerThreshold) {
-            if (_message.messageType == IUniswapMultiMsgReceiver.MessageType.ExternalMessage) {
+            if (_message.messageType == IMultiMsgReceiver.MessageType.ExternalMessage) {
                 (bool ok, ) = _message.target.call(_message.callData);
                 require(ok, "external message execution failed");
+                emit ExternalMsgExecuted(_message.nonce, _message.target, _message.callData);
             } else {
                 (bool ok, ) = address(this).call(_message.callData);
                 require(ok, "internal message execution failed");
+                emit InternalMsgExecuted(_message.nonce, _message.callData);
             }
             msgsStatus[_message.nonce] = MsgStatus.Done;
         }

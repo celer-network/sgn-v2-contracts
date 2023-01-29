@@ -54,9 +54,7 @@ contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
     ) external payable override onlyMessageBus whenNotMsgPaused returns (ExecutionStatus) {
         MessageStruct.Message memory message = abi.decode(_message, (MessageStruct.Message));
         require(_srcContract == senderAdapters[_srcChainId], "not allowed message sender");
-        try IMultiMsgReceiver(multiMsgReceiver).receiveMessage(message) {} catch (bytes memory lowLevelData) {
-            revert(Utils.getRevertMsg(lowLevelData));
-        }
+        IMultiMsgReceiver(multiMsgReceiver).receiveMessage(message);
         return ExecutionStatus.Success;
     }
 

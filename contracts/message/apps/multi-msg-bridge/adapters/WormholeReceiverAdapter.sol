@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache 2
-// todo
-pragma solidity ^0.8.9;
+
+pragma solidity >=0.8.9;
+
+import "../MessageStruct.sol";
+import "../IMultiMsgReceiver.sol";
 
 interface Structs {
     struct Provider {
@@ -30,30 +33,37 @@ interface Structs {
         uint64 sequence;
         uint8 consistencyLevel;
         bytes payload;
-
         uint32 guardianSetIndex;
         Signature[] signatures;
-
         bytes32 hash;
     }
 }
 
 interface IWormhole {
-    function parseAndVerifyVM(bytes calldata encodedVM) external view returns (Structs.VM memory vm, bool valid, string memory reason);
+    function parseAndVerifyVM(bytes calldata encodedVM)
+        external
+        view
+        returns (
+            Structs.VM memory vm,
+            bool valid,
+            string memory reason
+        );
 }
 
-contract WormholeMsgReceiver {
-    string public name = "Uniswap Wormhole Message Receiver";
-
-    bytes32 public messageSender;
-
+contract WormholeReceiverAdapter {
+    bytes32 public immutable senderAdapter;
+    address public immutable multiMsgReceiver;
+    IWormhole private immutable wormhole;
     mapping(bytes32 => bool) public processedMessages;
 
-    IWormhole private immutable wormhole;
-
-    constructor(address bridgeAddress, bytes32 _messageSender) {
-        wormhole = IWormhole(bridgeAddress);
-        messageSender = _messageSender;
+    constructor(
+        address _multiMsgReceiver,
+        address _bridgeAddress,
+        bytes32 _senderAdapter
+    ) {
+        multiMsgReceiver = _multiMsgReceiver;
+        wormhole = IWormhole(_bridgeAddress);
+        senderAdapter = _senderAdapter;
     }
 
     function receiveMessage(bytes[] memory whMessages) public {
@@ -63,21 +73,20 @@ contract WormholeMsgReceiver {
         require(valid, reason);
 
         // Ensure the emitterAddress of this VAA is the Uniswap message sender
-        require(messageSender == vm.emitterAddress, "Invalid Emitter Address!");
+        require(senderAdapter == vm.emitterAddress, "Invalid Emitter Address!");
 
         //verify destination
-        (address[] memory targets, uint256[] memory values, bytes[] memory datas, address messageReceiver) = abi.decode(vm.payload,(address[], uint256[], bytes[], address));
-        require (messageReceiver == address(this), "Message not for this dest");
+        (MessageStruct.Message memory message, address receiverAdapter) = abi.decode(
+            vm.payload,
+            (MessageStruct.Message, address)
+        );
+        require(receiverAdapter == address(this), "Message not for this dest");
 
         // replay protection
         require(!processedMessages[vm.hash], "Message already processed");
         processedMessages[vm.hash] = true;
 
-        //execute message
-        require(targets.length == datas.length && targets.length == values.length, 'Inconsistent argument lengths');
-        for (uint256 i = 0; i < targets.length; i++) {
-            (bool success, ) = targets[i].call{value: values[i]}(datas[i]);
-            require(success, 'Sub-call failed');
-        }
+        //send message to MultiMsgReceiver
+        IMultiMsgReceiver(multiMsgReceiver).receiveMessage(message);
     }
 }

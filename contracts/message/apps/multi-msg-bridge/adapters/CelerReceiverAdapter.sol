@@ -2,9 +2,10 @@
 
 pragma solidity 0.8.17;
 
-import "../../safeguard/MessageAppPauser.sol";
-import "./IMultiMsgReceiver.sol";
-import "../../../libraries/Utils.sol";
+import "../../../safeguard/MessageAppPauser.sol";
+import "../IMultiMsgReceiver.sol";
+import "../MessageStruct.sol";
+import "../../../../libraries/Utils.sol";
 
 interface IMessageReceiverApp {
     enum ExecutionStatus {
@@ -28,34 +29,44 @@ interface IMessageReceiverApp {
     ) external payable returns (ExecutionStatus);
 }
 
-contract CelerMsgReceiver is MessageAppPauser, IMessageReceiverApp {
-    address public immutable msgSender;
+contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
+    mapping(uint64 => address) public senderAdapters;
     address public immutable msgBus;
+    address public immutable multiMsgReceiver;
 
     modifier onlyMessageBus() {
         require(msg.sender == msgBus, "caller is not message bus");
         _;
     }
 
-    constructor(address _msgBus, address _msgSender) {
+    constructor(address _multiMsgReceiver, address _msgBus) {
+        multiMsgReceiver = _multiMsgReceiver;
         msgBus = _msgBus;
-        msgSender = _msgSender;
     }
 
     // Called by MessageBus on destination chain to receive cross-chain messages.
-    // The message is abi.encode of (dst_contract_address, dst_contract_calldata).
+    // The message is abi.encode of (MessageStruct.Message).
     function executeMessage(
         address _srcContract,
         uint64 _srcChainId,
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus whenNotMsgPaused returns (ExecutionStatus) {
-        IMultiMsgReceiver.Message memory message = abi.decode(_message, (IMultiMsgReceiver.Message));
-        require(_srcContract == msgSender, "not allowed message sender");
-        require(_srcChainId == 1, "invalid src chain id");
-        try IMultiMsgReceiver(message.multiMsgReceiver).relayMessage(message) {} catch (bytes memory lowLevelData) {
+        MessageStruct.Message memory message = abi.decode(_message, (MessageStruct.Message));
+        require(_srcContract == senderAdapters[_srcChainId], "not allowed message sender");
+        try IMultiMsgReceiver(multiMsgReceiver).receiveMessage(message) {} catch (bytes memory lowLevelData) {
             revert(Utils.getRevertMsg(lowLevelData));
         }
         return ExecutionStatus.Success;
+    }
+
+    function updateSenderAdapter(uint64[] calldata _srcChainIds, address[] calldata _senderAdapters)
+        external
+        onlyOwner
+    {
+        require(_srcChainIds.length == _senderAdapters.length, "mismatch length");
+        for (uint256 i = 0; i < _srcChainIds.length; i++) {
+            senderAdapters[_srcChainIds[i]] = _senderAdapters[i];
+        }
     }
 }

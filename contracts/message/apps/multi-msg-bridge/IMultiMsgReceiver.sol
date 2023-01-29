@@ -2,21 +2,8 @@
 
 pragma solidity 0.8.17;
 
+import "./MessageStruct.sol";
+
 interface IMultiMsgReceiver {
-    enum MessageType {
-        ExternalMessage,
-        InternalMessage
-    }
-
-    struct Message {
-        MessageType messageType;
-        string bridgeName;
-        address multiMsgReceiver;
-        uint64 dstChainId;
-        uint32 nonce;
-        address target;
-        bytes callData;
-    }
-
-    function relayMessage(Message calldata _message) external;
+    function receiveMessage(MessageStruct.Message calldata _message) external;
 }

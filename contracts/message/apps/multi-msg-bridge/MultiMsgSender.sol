@@ -2,102 +2,102 @@
 
 pragma solidity >=0.8.9;
 
-import "./IMsgSender.sol";
+import "./ISenderAdapter.sol";
+import "./MessageStruct.sol";
 
 contract MultiMsgSender {
-    address[] public msgSenders;
+    address[] public senderAdapters;
     address public caller;
     uint32 public nonce;
 
-    event SingleMsgSent(string indexed bridgeName, uint32 indexed nonce, address senderAddr);
     event MultiMsgSent(
+        MessageStruct.MessageType messageType,
         uint32 nonce,
         uint64 dstChainId,
-        address multiMsgReceiver,
         address target,
         bytes callData,
-        address[] msgSenders
+        address[] senderAdapters
     );
-    event MsgSenderAdded(address msgSenders);
-    event MsgSenderRemoved(address msgSenders);
+    event SenderAdapterAdded(address senderAdapter);
+    event SenderAdapterRemoved(address senderAdapter);
 
     modifier onlyCaller() {
         require(msg.sender == caller, "not caller");
         _;
     }
 
-    constructor(
-        address _caller,
-        address[] memory _msgSenders,
-        address[] memory _msgReceivers
-    ) {
+    constructor(address _caller, address[] memory _senderAdapters) {
         caller = _caller;
-        require(_msgSenders.length == _msgReceivers.length, "mismatch length");
-        for (uint256 i = 0; i < _msgSenders.length; i++) {
-            _addMsgSender(_msgSenders[i], _msgReceivers[i]);
+        for (uint256 i = 0; i < _senderAdapters.length; i++) {
+            _addSenderAdapter(_senderAdapters[i]);
         }
     }
 
-    function sendMessage(
+    /*
+        @param _target indicates where _callData is given to on dst chain. Zero address means _callData will be given to
+            MultiMsgReceiver on dst chain.
+    */
+    function remoteCall(
         uint64 _dstChainId,
-        address _multiMsgReceiver,
         address _target,
         bytes calldata _callData
     ) external payable onlyCaller {
-        IMsgSender.Message memory message = IMsgSender.Message(
-            IMsgSender.MessageType.ExternalMessage,
+        MessageStruct.Message memory message = MessageStruct.Message(
+            MessageStruct.MessageType.ExternalMessage,
             "",
-            _multiMsgReceiver,
+            uint64(block.chainid),
             _dstChainId,
             nonce,
             _target,
             _callData
         );
+        if (_target == address(0)) {
+            message.messageType = MessageStruct.MessageType.InternalMessage;
+        }
         uint256 totalFee;
-        for (uint256 i = 0; i < msgSenders.length; i++) {
-            uint256 fee = IMsgSender(msgSenders[i]).getMessageFee(message);
+        for (uint256 i = 0; i < senderAdapters.length; i++) {
+            uint256 fee = ISenderAdapter(senderAdapters[i]).getMessageFee(message);
             totalFee += fee;
-            require(totalFee <= msg.value, "insufficient message fee");
-            IMsgSender(msgSenders[i]).sendMessage{value: fee}(message);
-            emit SingleMsgSent(IMsgSender(msgSenders[i]).getMsgSenderName(), nonce, msgSenders[i]);
+            ISenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message);
         }
-        emit MultiMsgSent(nonce, _dstChainId, _multiMsgReceiver, _target, _callData, msgSenders);
+        emit MultiMsgSent(message.messageType, nonce, _dstChainId, _target, _callData, senderAdapters);
         nonce++;
-    }
-
-    function addMsgSenders(address[] calldata _msgSenders, address[] calldata _msgReceivers) external onlyCaller {
-        require(_msgSenders.length == _msgReceivers.length, "mismatch length");
-        for (uint256 i = 0; i < _msgSenders.length; i++) {
-            _addMsgSender(_msgSenders[i], _msgReceivers[i]);
+        if (totalFee < msg.value) {
+            payable(tx.origin).transfer(msg.value - totalFee);
         }
     }
 
-    function removeMsgSenders(address[] calldata _msgSenders) external onlyCaller {
-        for (uint256 i = 0; i < _msgSenders.length; i++) {
-            _removeMsgSender(_msgSenders[i]);
+    function addSenderAdapters(address[] calldata _senderAdapters) external onlyCaller {
+        for (uint256 i = 0; i < _senderAdapters.length; i++) {
+            _addSenderAdapter(_senderAdapters[i]);
         }
     }
 
-    function _addMsgSender(address _msgSender, address _msgReceiver) private {
-        for (uint256 i = 0; i < msgSenders.length; i++) {
-            if (msgSenders[i] == _msgSender) {
+    function removeSenderAdapters(address[] calldata _senderAdapters) external onlyCaller {
+        for (uint256 i = 0; i < _senderAdapters.length; i++) {
+            _removeSenderAdapter(_senderAdapters[i]);
+        }
+    }
+
+    function _addSenderAdapter(address _senderAdapter) private {
+        for (uint256 i = 0; i < senderAdapters.length; i++) {
+            if (senderAdapters[i] == _senderAdapter) {
                 return;
             }
         }
-        msgSenders.push(_msgSender);
-        IMsgSender(_msgSender).setMsgReceiver(_msgReceiver);
-        emit MsgSenderAdded(_msgSender);
+        senderAdapters.push(_senderAdapter);
+        emit SenderAdapterAdded(_senderAdapter);
     }
 
-    function _removeMsgSender(address _msgSender) private {
-        uint256 lastIndex = msgSenders.length - 1;
-        for (uint256 i = 0; i < msgSenders.length; i++) {
-            if (msgSenders[i] == _msgSender) {
+    function _removeSenderAdapter(address _senderAdapter) private {
+        uint256 lastIndex = senderAdapters.length - 1;
+        for (uint256 i = 0; i < senderAdapters.length; i++) {
+            if (senderAdapters[i] == _senderAdapter) {
                 if (i < lastIndex) {
-                    msgSenders[i] = msgSenders[lastIndex];
+                    senderAdapters[i] = senderAdapters[lastIndex];
                 }
-                msgSenders.pop();
-                emit MsgSenderRemoved(_msgSender);
+                senderAdapters.pop();
+                emit SenderAdapterRemoved(_senderAdapter);
                 return;
             }
         }

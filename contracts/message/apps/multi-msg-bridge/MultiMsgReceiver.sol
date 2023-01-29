@@ -3,27 +3,32 @@
 pragma solidity >=0.8.9;
 
 import "./IMultiMsgReceiver.sol";
+import "./MessageStruct.sol";
 
 contract MultiMsgReceiver is IMultiMsgReceiver {
-    mapping(address => uint32) public msgReceiversPower;
+    mapping(address => uint32) public receiverAdaptersPower;
     enum MsgStatus {
         Unkonwn,
         Pending,
         Done
     }
     uint64 public powerThreshold;
-    mapping(uint32 => MsgStatus) public msgsStatus;
-    mapping(uint32 => uint64) public msgsPower;
-    mapping(uint32 => bytes32) public msgsId;
+    mapping(bytes32 => MsgStatus) public msgsStatus;
+    mapping(bytes32 => uint64) public msgsPower;
 
-    event MsgReceiverUpdated(address msgReceiver, uint32 power);
+    event ReceiverAdapterUpdated(address receiverAdapter, uint32 power);
     event PowerThresholdUpdated(uint64 powerThreshold);
-    event SingleMsgReceived(string indexed bridgeName, uint32 indexed nonce, address receiverAddr);
-    event ExternalMsgExecuted(uint32 nonce, address target, bytes callData);
-    event InternalMsgExecuted(uint32 nonce, bytes callData);
+    event SingleMsgReceived(
+        uint64 indexed srcChainId,
+        string indexed bridgeName,
+        uint32 indexed nonce,
+        address receiverAddr
+    );
+    event ExternalMsgExecuted(uint64 srcChainId, uint32 nonce, address target, bytes callData);
+    event InternalMsgExecuted(uint64 srcChainId, uint32 nonce, bytes callData);
 
-    modifier onlyMsgReceiver() {
-        require(msgReceiversPower[msg.sender] > 0, "not allowed msg receiver");
+    modifier onlyReceiverAdapter() {
+        require(receiverAdaptersPower[msg.sender] > 0, "not allowed receiver adapter");
         _;
     }
 
@@ -33,35 +38,31 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
     }
 
     constructor(
-        address[] memory _msgReceivers,
+        address[] memory _receiverAdapters,
         uint32[] memory _powers,
         uint64 _powerThreshold
     ) {
-        require(_msgReceivers.length == _powers.length, "mismatch length");
-        for (uint256 i = 0; i < _msgReceivers.length; i++) {
-            _updateMsgReceiver(_msgReceivers[i], _powers[i]);
+        require(_receiverAdapters.length == _powers.length, "mismatch length");
+        for (uint256 i = 0; i < _receiverAdapters.length; i++) {
+            _updateReceiverAdapter(_receiverAdapters[i], _powers[i]);
         }
         powerThreshold = _powerThreshold;
     }
 
-    function relayMessage(IMultiMsgReceiver.Message calldata _message) external override onlyMsgReceiver {
-        require(address(this) == _message.multiMsgReceiver, "mismatch multi-msg receiver");
+    function receiveMessage(MessageStruct.Message calldata _message) external override onlyReceiverAdapter {
         bytes32 msgId = getMsgId(_message);
-        if (msgsStatus[_message.nonce] == MsgStatus.Unkonwn) {
-            msgsStatus[_message.nonce] = MsgStatus.Pending;
-            msgsId[_message.nonce] = msgId;
-        } else {
-            require(msgsId[_message.nonce] == msgId, "mismatch message id");
+        if (msgsStatus[msgId] == MsgStatus.Unkonwn) {
+            msgsStatus[msgId] = MsgStatus.Pending;
         }
-        emit SingleMsgReceived(_message.bridgeName, _message.nonce, msg.sender);
-        msgsPower[_message.nonce] += msgReceiversPower[msg.sender];
-        _executeMessage(_message);
+        emit SingleMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
+        msgsPower[msgId] += receiverAdaptersPower[msg.sender];
+        _executeMessage(_message, msgId);
     }
 
     function updateMsgReceiver(address[] calldata _msgReceivers, uint32[] calldata _powers) external onlySelf {
         require(_msgReceivers.length == _powers.length, "mismatch length");
         for (uint256 i = 0; i < _msgReceivers.length; i++) {
-            _updateMsgReceiver(_msgReceivers[i], _powers[i]);
+            _updateReceiverAdapter(_msgReceivers[i], _powers[i]);
         }
     }
 
@@ -70,27 +71,37 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
         emit PowerThresholdUpdated(_powerThreshold);
     }
 
-    function getMsgId(IMultiMsgReceiver.Message calldata _message) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_message.messageType, _message.nonce, _message.target, _message.callData));
+    function getMsgId(MessageStruct.Message calldata _message) public pure returns (bytes32) {
+        return
+            keccak256(
+                abi.encodePacked(
+                    _message.messageType,
+                    _message.srcChainId,
+                    _message.dstChainId,
+                    _message.nonce,
+                    _message.target,
+                    _message.callData
+                )
+            );
     }
 
-    function _executeMessage(IMultiMsgReceiver.Message calldata _message) private {
-        if (msgsStatus[_message.nonce] == MsgStatus.Pending && msgsPower[_message.nonce] >= powerThreshold) {
-            if (_message.messageType == IMultiMsgReceiver.MessageType.ExternalMessage) {
+    function _executeMessage(MessageStruct.Message calldata _message, bytes32 _msgId) private {
+        if (msgsStatus[_msgId] == MsgStatus.Pending && msgsPower[_msgId] >= powerThreshold) {
+            if (_message.messageType == MessageStruct.MessageType.ExternalMessage) {
                 (bool ok, ) = _message.target.call(_message.callData);
                 require(ok, "external message execution failed");
-                emit ExternalMsgExecuted(_message.nonce, _message.target, _message.callData);
+                emit ExternalMsgExecuted(_message.srcChainId, _message.nonce, _message.target, _message.callData);
             } else {
                 (bool ok, ) = address(this).call(_message.callData);
                 require(ok, "internal message execution failed");
-                emit InternalMsgExecuted(_message.nonce, _message.callData);
+                emit InternalMsgExecuted(_message.srcChainId, _message.nonce, _message.callData);
             }
-            msgsStatus[_message.nonce] = MsgStatus.Done;
+            msgsStatus[_msgId] = MsgStatus.Done;
         }
     }
 
-    function _updateMsgReceiver(address _msgReceiver, uint32 _power) private {
-        msgReceiversPower[_msgReceiver] = _power;
-        emit MsgReceiverUpdated(_msgReceiver, _power);
+    function _updateReceiverAdapter(address _receiverAdapter, uint32 _power) private {
+        receiverAdaptersPower[_receiverAdapter] = _power;
+        emit ReceiverAdapterUpdated(_receiverAdapter, _power);
     }
 }

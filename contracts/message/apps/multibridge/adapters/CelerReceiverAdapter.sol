@@ -5,7 +5,6 @@ pragma solidity 0.8.17;
 import "../../../safeguard/MessageAppPauser.sol";
 import "../IMultiBridgeReceiver.sol";
 import "../MessageStruct.sol";
-import "../../../../libraries/Utils.sol";
 
 interface IMessageReceiverApp {
     enum ExecutionStatus {

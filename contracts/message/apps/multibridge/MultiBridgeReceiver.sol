@@ -4,8 +4,9 @@ pragma solidity >=0.8.9;
 
 import "./IMultiBridgeReceiver.sol";
 import "./MessageStruct.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MultiBridgeReceiver is IMultiBridgeReceiver {
+contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     // receiverAdapter => power of message bridge which this receiverAdapter belongs to
     mapping(address => uint32) public receiverAdaptersPower;
     // minimum accumulated power for each message to be executed
@@ -52,16 +53,17 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver {
         _;
     }
 
-    constructor(
+    function initialize(
         address[] memory _receiverAdapters,
         uint32[] memory _powers,
         uint64 _powerThreshold
-    ) {
+    ) external onlyOwner {
         require(_receiverAdapters.length == _powers.length, "mismatch length");
         for (uint256 i = 0; i < _receiverAdapters.length; i++) {
             _updateReceiverAdapter(_receiverAdapters[i], _powers[i]);
         }
         powerThreshold = _powerThreshold;
+        renounceOwnership();
     }
 
     /**

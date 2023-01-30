@@ -9,7 +9,7 @@ contract MultiBridgeSender {
     // current available senderAdapters of message bridges
     address[] public senderAdapters;
     // who has access to remoteCall function
-    address public caller;
+    address public immutable caller;
     uint32 public nonce;
 
     event MultiBridgeMsgSent(uint32 nonce, uint64 dstChainId, address target, bytes callData, address[] senderAdapters);
@@ -21,11 +21,8 @@ contract MultiBridgeSender {
         _;
     }
 
-    constructor(address _caller, address[] memory _senderAdapters) {
+    constructor(address _caller) {
         caller = _caller;
-        for (uint256 i = 0; i < _senderAdapters.length; i++) {
-            _addSenderAdapter(_senderAdapters[i]);
-        }
     }
 
     /**

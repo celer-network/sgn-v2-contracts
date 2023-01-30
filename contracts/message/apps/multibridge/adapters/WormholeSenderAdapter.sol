@@ -4,6 +4,7 @@ pragma solidity >=0.8.9;
 
 import "../ISenderAdapter.sol";
 import "../MessageStruct.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IWormhole {
     function publishMessage(
@@ -15,10 +16,9 @@ interface IWormhole {
     function messageFee() external view returns (uint256);
 }
 
-contract WormholeSenderAdapter is ISenderAdapter {
+contract WormholeSenderAdapter is ISenderAdapter, Ownable {
     string public name = "wormhole";
-    address public immutable multiMsgSender;
-    address public owner;
+    address public multiBridgeSender;
     address public receiverAdapter;
 
     uint8 consistencyLevel = 1;
@@ -27,19 +27,12 @@ contract WormholeSenderAdapter is ISenderAdapter {
 
     IWormhole private immutable wormhole;
 
-    constructor(address _bridgeAddress, address _multiMsgSender) {
+    constructor(address _bridgeAddress) {
         wormhole = IWormhole(_bridgeAddress);
-        multiMsgSender = _multiMsgSender;
-        owner = msg.sender;
     }
 
     modifier onlyMultiBridgeSender() {
-        require(msg.sender == multiMsgSender, "not multi-bridge msg sender");
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "sender not owner");
+        require(msg.sender == multiBridgeSender, "not multi-bridge msg sender");
         _;
     }
 
@@ -57,7 +50,7 @@ contract WormholeSenderAdapter is ISenderAdapter {
         receiverAdapter = _receiverAdapter;
     }
 
-    function setOwner(address newOwner) external onlyOwner {
-        owner = newOwner;
+    function setMultiBridgeSender(address _multiBridgeSender) external onlyOwner {
+        multiBridgeSender = _multiBridgeSender;
     }
 }

@@ -9,18 +9,17 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CelerSenderAdapter is ISenderAdapter, Ownable {
     string public constant name = "celer";
-    address public immutable multiMsgSender;
+    address public multiBridgeSender;
     address public immutable msgBus;
     // dstChainId => receiverAdapter address
     mapping(uint64 => address) public receiverAdapters;
 
     modifier onlyMultiBridgeSender() {
-        require(msg.sender == multiMsgSender, "not multi-bridge msg sender");
+        require(msg.sender == multiBridgeSender, "not multi-bridge msg sender");
         _;
     }
 
-    constructor(address _multiMsgSender, address _msgBus) {
-        multiMsgSender = _multiMsgSender;
+    constructor(address _msgBus) {
         msgBus = _msgBus;
     }
 
@@ -47,5 +46,9 @@ contract CelerSenderAdapter is ISenderAdapter, Ownable {
         for (uint256 i = 0; i < _dstChainIds.length; i++) {
             receiverAdapters[_dstChainIds[i]] = _receiverAdapters[i];
         }
+    }
+
+    function setMultiBridgeSender(address _multiBridgeSender) external onlyOwner {
+        multiBridgeSender = _multiBridgeSender;
     }
 }

@@ -4,6 +4,7 @@ pragma solidity >=0.8.9;
 
 import "../MessageStruct.sol";
 import "../IMultiBridgeReceiver.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface Structs {
     struct Provider {
@@ -50,20 +51,14 @@ interface IWormhole {
         );
 }
 
-contract WormholeReceiverAdapter {
-    bytes32 public immutable senderAdapter;
-    address public immutable multiBridgeReceiver;
+contract WormholeReceiverAdapter is Ownable {
+    bytes32 public senderAdapter;
+    address public multiBridgeReceiver;
     IWormhole private immutable wormhole;
     mapping(bytes32 => bool) public processedMessages;
 
-    constructor(
-        address _multiBridgeReceiver,
-        address _bridgeAddress,
-        bytes32 _senderAdapter
-    ) {
-        multiBridgeReceiver = _multiBridgeReceiver;
+    constructor(address _bridgeAddress) {
         wormhole = IWormhole(_bridgeAddress);
-        senderAdapter = _senderAdapter;
     }
 
     function receiveMessage(bytes[] memory whMessages) public {
@@ -88,5 +83,13 @@ contract WormholeReceiverAdapter {
 
         //send message to MultiBridgeReceiver
         IMultiBridgeReceiver(multiBridgeReceiver).receiveMessage(message);
+    }
+
+    function setSenderAdapter(bytes32 _senderAdapter) external onlyOwner {
+        senderAdapter = _senderAdapter;
+    }
+
+    function setMultiBridgeReceiver(address _multiBridgeReceiver) external onlyOwner {
+        multiBridgeReceiver = _multiBridgeReceiver;
     }
 }

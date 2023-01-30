@@ -31,15 +31,14 @@ interface IMessageReceiverApp {
 contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
     mapping(uint64 => address) public senderAdapters;
     address public immutable msgBus;
-    address public immutable multiBridgeReceiver;
+    address public multiBridgeReceiver;
 
     modifier onlyMessageBus() {
         require(msg.sender == msgBus, "caller is not message bus");
         _;
     }
 
-    constructor(address _multiBridgeReceiver, address _msgBus) {
-        multiBridgeReceiver = _multiBridgeReceiver;
+    constructor(address _msgBus) {
         msgBus = _msgBus;
     }
 
@@ -65,5 +64,9 @@ contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
         for (uint256 i = 0; i < _srcChainIds.length; i++) {
             senderAdapters[_srcChainIds[i]] = _senderAdapters[i];
         }
+    }
+
+    function setMultiBridgeReceiver(address _multiBridgeReceiver) external onlyOwner {
+        multiBridgeReceiver = _multiBridgeReceiver;
     }
 }

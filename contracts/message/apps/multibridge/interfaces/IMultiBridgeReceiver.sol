@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "./MessageStruct.sol";
+import "../MessageStruct.sol";
 
 interface IMultiBridgeReceiver {
     /**

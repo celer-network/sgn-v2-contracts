@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.9;
 
-import "../ISenderAdapter.sol";
+import "../interfaces/IBridgeSenderAdapter.sol";
 import "../MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -16,7 +16,7 @@ interface IWormhole {
     function messageFee() external view returns (uint256);
 }
 
-contract WormholeSenderAdapter is ISenderAdapter, Ownable {
+contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
     string public name = "wormhole";
     address public multiBridgeSender;
     address public receiverAdapter;

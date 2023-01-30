@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.9;
 
-import "./ISenderAdapter.sol";
+import "./interfaces/IBridgeSenderAdapter.sol";
 import "./MessageStruct.sol";
 
 contract MultiBridgeSender {
@@ -52,9 +52,9 @@ contract MultiBridgeSender {
         );
         uint256 totalFee;
         for (uint256 i = 0; i < senderAdapters.length; i++) {
-            uint256 fee = ISenderAdapter(senderAdapters[i]).getMessageFee(message);
+            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(message);
             totalFee += fee;
-            ISenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message);
+            IBridgeSenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message);
         }
         emit MultiBridgeMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);
         nonce++;
@@ -102,7 +102,7 @@ contract MultiBridgeSender {
         );
         uint256 totalFee;
         for (uint256 i = 0; i < senderAdapters.length; i++) {
-            uint256 fee = ISenderAdapter(senderAdapters[i]).getMessageFee(message);
+            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(message);
             totalFee += fee;
         }
         return totalFee;

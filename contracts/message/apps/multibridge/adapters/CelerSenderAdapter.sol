@@ -3,11 +3,11 @@
 pragma solidity 0.8.17;
 
 import "../../../interfaces/IMessageBus.sol";
-import "../ISenderAdapter.sol";
+import "../interfaces/IBridgeSenderAdapter.sol";
 import "../MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CelerSenderAdapter is ISenderAdapter, Ownable {
+contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
     string public constant name = "celer";
     address public multiBridgeSender;
     address public immutable msgBus;

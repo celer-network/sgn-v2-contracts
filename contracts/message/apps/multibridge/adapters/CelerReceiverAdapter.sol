@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "../../../safeguard/MessageAppPauser.sol";
-import "../IMultiBridgeReceiver.sol";
+import "../interfaces/IMultiBridgeReceiver.sol";
 import "../MessageStruct.sol";
 
 interface IMessageReceiverApp {

@@ -2,14 +2,14 @@
 
 pragma solidity >=0.8.9;
 
-import "./MessageStruct.sol";
+import "../MessageStruct.sol";
 
 /**
  * @dev Contract interface which should be implemented by any message bridge.
  *
  * Message bridge can implement their favourite encode&decode way for MessageStruct.Message.
  */
-interface ISenderAdapter {
+interface IBridgeSenderAdapter {
     /**
      * @dev Return native token amount in wei required by this message bridge for sending a MessageStruct.Message.
      */

@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.9;
 
-import "./IMultiBridgeReceiver.sol";
+import "./interfaces/IMultiBridgeReceiver.sol";
 import "./MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 

@@ -8,7 +8,7 @@ import "./MessageStruct.sol";
 contract MultiMsgReceiver is IMultiMsgReceiver {
     mapping(address => uint32) public receiverAdaptersPower;
     enum MsgStatus {
-        Unkonwn,
+        Null,
         Pending,
         Done
     }
@@ -24,8 +24,7 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
         uint32 indexed nonce,
         address receiverAddr
     );
-    event ExternalMsgExecuted(uint64 srcChainId, uint32 nonce, address target, bytes callData);
-    event InternalMsgExecuted(uint64 srcChainId, uint32 nonce, bytes callData);
+    event MessageExecuted(uint64 srcChainId, uint32 nonce, address target, bytes callData);
 
     modifier onlyReceiverAdapter() {
         require(receiverAdaptersPower[msg.sender] > 0, "not allowed receiver adapter");
@@ -51,7 +50,7 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
 
     function receiveMessage(MessageStruct.Message calldata _message) external override onlyReceiverAdapter {
         bytes32 msgId = getMsgId(_message);
-        if (msgsStatus[msgId] == MsgStatus.Unkonwn) {
+        if (msgsStatus[msgId] == MsgStatus.Null) {
             msgsStatus[msgId] = MsgStatus.Pending;
         }
         emit SingleMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
@@ -75,7 +74,6 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
         return
             keccak256(
                 abi.encodePacked(
-                    _message.messageType,
                     _message.srcChainId,
                     _message.dstChainId,
                     _message.nonce,
@@ -87,15 +85,9 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
 
     function _executeMessage(MessageStruct.Message calldata _message, bytes32 _msgId) private {
         if (msgsStatus[_msgId] == MsgStatus.Pending && msgsPower[_msgId] >= powerThreshold) {
-            if (_message.messageType == MessageStruct.MessageType.ExternalMessage) {
-                (bool ok, ) = _message.target.call(_message.callData);
-                require(ok, "external message execution failed");
-                emit ExternalMsgExecuted(_message.srcChainId, _message.nonce, _message.target, _message.callData);
-            } else {
-                (bool ok, ) = address(this).call(_message.callData);
-                require(ok, "internal message execution failed");
-                emit InternalMsgExecuted(_message.srcChainId, _message.nonce, _message.callData);
-            }
+            (bool ok, ) = _message.target.call(_message.callData);
+            require(ok, "external message execution failed");
+            emit MessageExecuted(_message.srcChainId, _message.nonce, _message.target, _message.callData);
             msgsStatus[_msgId] = MsgStatus.Done;
         }
     }

@@ -5,12 +5,12 @@ pragma solidity >=0.8.9;
 import "./ISenderAdapter.sol";
 import "./MessageStruct.sol";
 
-contract MultiMsgSender {
+contract MultiBridgeSender {
     address[] public senderAdapters;
     address public caller;
     uint32 public nonce;
 
-    event MultiMsgSent(uint32 nonce, uint64 dstChainId, address target, bytes callData, address[] senderAdapters);
+    event MultiBridgeMsgSent(uint32 nonce, uint64 dstChainId, address target, bytes callData, address[] senderAdapters);
     event SenderAdapterAdded(address senderAdapter);
     event SenderAdapterRemoved(address senderAdapter);
 
@@ -48,7 +48,7 @@ contract MultiMsgSender {
             totalFee += fee;
             ISenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message);
         }
-        emit MultiMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);
+        emit MultiBridgeMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);
         nonce++;
         if (totalFee < msg.value) {
             payable(tx.origin).transfer(msg.value - totalFee);

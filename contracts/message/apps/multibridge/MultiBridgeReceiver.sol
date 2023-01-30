@@ -2,10 +2,10 @@
 
 pragma solidity >=0.8.9;
 
-import "./IMultiMsgReceiver.sol";
+import "./IMultiBridgeReceiver.sol";
 import "./MessageStruct.sol";
 
-contract MultiMsgReceiver is IMultiMsgReceiver {
+contract MultiBridgeReceiver is IMultiBridgeReceiver {
     mapping(address => uint32) public receiverAdaptersPower;
     enum MsgStatus {
         Null,
@@ -18,7 +18,7 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
 
     event ReceiverAdapterUpdated(address receiverAdapter, uint32 power);
     event PowerThresholdUpdated(uint64 powerThreshold);
-    event SingleMsgReceived(
+    event SingleBridgeMsgReceived(
         uint64 indexed srcChainId,
         string indexed bridgeName,
         uint32 indexed nonce,
@@ -53,7 +53,7 @@ contract MultiMsgReceiver is IMultiMsgReceiver {
         if (msgsStatus[msgId] == MsgStatus.Null) {
             msgsStatus[msgId] = MsgStatus.Pending;
         }
-        emit SingleMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
+        emit SingleBridgeMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
         msgsPower[msgId] += receiverAdaptersPower[msg.sender];
         _executeMessage(_message, msgId);
     }

@@ -33,8 +33,8 @@ contract WormholeSenderAdapter is ISenderAdapter {
         owner = msg.sender;
     }
 
-    modifier onlyMultiMsgSender() {
-        require(msg.sender == multiMsgSender, "not multi-msg sender");
+    modifier onlyMultiBridgeSender() {
+        require(msg.sender == multiMsgSender, "not multi-bridge msg sender");
         _;
     }
 
@@ -47,7 +47,7 @@ contract WormholeSenderAdapter is ISenderAdapter {
         return wormhole.messageFee();
     }
 
-    function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiMsgSender {
+    function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiBridgeSender {
         bytes memory payload = abi.encode(_message, receiverAdapter);
         wormhole.publishMessage{value: msg.value}(_message.nonce, payload, consistencyLevel);
         emit MessageSent(payload, receiverAdapter);

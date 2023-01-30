@@ -4,6 +4,6 @@ pragma solidity 0.8.17;
 
 import "./MessageStruct.sol";
 
-interface IMultiMsgReceiver {
+interface IMultiBridgeReceiver {
     function receiveMessage(MessageStruct.Message calldata _message) external;
 }

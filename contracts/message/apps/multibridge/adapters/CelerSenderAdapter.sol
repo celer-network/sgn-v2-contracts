@@ -14,8 +14,8 @@ contract CelerSenderAdapter is ISenderAdapter {
     mapping(uint64 => address) public receiverAdapters;
     address public owner;
 
-    modifier onlyMultiMsgSender() {
-        require(msg.sender == multiMsgSender, "not multi-msg sender");
+    modifier onlyMultiBridgeSender() {
+        require(msg.sender == multiMsgSender, "not multi-bridge msg sender");
         _;
     }
 
@@ -35,7 +35,7 @@ contract CelerSenderAdapter is ISenderAdapter {
         return IMessageBus(msgBus).calcFee(abi.encode(_message));
     }
 
-    function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiMsgSender {
+    function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiBridgeSender {
         _message.bridgeName = name;
         require(receiverAdapters[_message.dstChainId] != address(0), "no receiver adapter");
         IMessageBus(msgBus).sendMessage{value: msg.value}(

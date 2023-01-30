@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 import "../../../safeguard/MessageAppPauser.sol";
-import "../IMultiMsgReceiver.sol";
+import "../IMultiBridgeReceiver.sol";
 import "../MessageStruct.sol";
 import "../../../../libraries/Utils.sol";
 
@@ -32,15 +32,15 @@ interface IMessageReceiverApp {
 contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
     mapping(uint64 => address) public senderAdapters;
     address public immutable msgBus;
-    address public immutable multiMsgReceiver;
+    address public immutable multiBridgeReceiver;
 
     modifier onlyMessageBus() {
         require(msg.sender == msgBus, "caller is not message bus");
         _;
     }
 
-    constructor(address _multiMsgReceiver, address _msgBus) {
-        multiMsgReceiver = _multiMsgReceiver;
+    constructor(address _multiBridgeReceiver, address _msgBus) {
+        multiBridgeReceiver = _multiBridgeReceiver;
         msgBus = _msgBus;
     }
 
@@ -54,7 +54,7 @@ contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
     ) external payable override onlyMessageBus whenNotMsgPaused returns (ExecutionStatus) {
         MessageStruct.Message memory message = abi.decode(_message, (MessageStruct.Message));
         require(_srcContract == senderAdapters[_srcChainId], "not allowed message sender");
-        IMultiMsgReceiver(multiMsgReceiver).receiveMessage(message);
+        IMultiBridgeReceiver(multiBridgeReceiver).receiveMessage(message);
         return ExecutionStatus.Success;
     }
 

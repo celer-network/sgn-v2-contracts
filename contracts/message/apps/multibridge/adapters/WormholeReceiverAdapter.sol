@@ -3,7 +3,7 @@
 pragma solidity >=0.8.9;
 
 import "../MessageStruct.sol";
-import "../IMultiMsgReceiver.sol";
+import "../IMultiBridgeReceiver.sol";
 
 interface Structs {
     struct Provider {
@@ -52,16 +52,16 @@ interface IWormhole {
 
 contract WormholeReceiverAdapter {
     bytes32 public immutable senderAdapter;
-    address public immutable multiMsgReceiver;
+    address public immutable multiBridgeReceiver;
     IWormhole private immutable wormhole;
     mapping(bytes32 => bool) public processedMessages;
 
     constructor(
-        address _multiMsgReceiver,
+        address _multiBridgeReceiver,
         address _bridgeAddress,
         bytes32 _senderAdapter
     ) {
-        multiMsgReceiver = _multiMsgReceiver;
+        multiBridgeReceiver = _multiBridgeReceiver;
         wormhole = IWormhole(_bridgeAddress);
         senderAdapter = _senderAdapter;
     }
@@ -86,7 +86,7 @@ contract WormholeReceiverAdapter {
         require(!processedMessages[vm.hash], "Message already processed");
         processedMessages[vm.hash] = true;
 
-        //send message to MultiMsgReceiver
-        IMultiMsgReceiver(multiMsgReceiver).receiveMessage(message);
+        //send message to MultiBridgeReceiver
+        IMultiBridgeReceiver(multiBridgeReceiver).receiveMessage(message);
     }
 }

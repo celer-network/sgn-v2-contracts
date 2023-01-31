@@ -16,13 +16,8 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     // total power of all bridge adapters
     uint64 public totalPower;
 
-    enum MsgStatus {
-        Null, // default status which indicates a message has not been received yet
-        Pending, // Pending indicates a message has been received, but not has sufficient power
-        Done // Done indicates a message has been received, and has been executed
-    }
     struct MsgInfo {
-        MsgStatus status;
+        bool executed;
         uint64 power; // current accumulated power
         mapping(address => bool) from; // bridge receiver adapters that has already delivered this message.
     }
@@ -73,12 +68,8 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     function receiveMessage(MessageStruct.Message calldata _message) external override onlyReceiverAdapter {
         bytes32 msgId = getMsgId(_message);
         MsgInfo storage msgInfo = msgInfos[msgId];
-        require(msgInfo.status != MsgStatus.Done, "message already executed");
         require(msgInfo.from[msg.sender] == false, "already received from this bridge adapter");
         msgInfo.from[msg.sender] = true;
-        if (msgInfo.status == MsgStatus.Null) {
-            msgInfo.status = MsgStatus.Pending;
-        }
         emit SingleBridgeMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
 
         msgInfo.power += receiverAdapterPowers[msg.sender];
@@ -130,12 +121,10 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
      * has reached the power threshold (the same message has been delivered by enough multiple bridges).
      */
     function _executeMessage(MessageStruct.Message calldata _message, MsgInfo storage _msgInfo) private {
-        if (
-            _msgInfo.status == MsgStatus.Pending && _msgInfo.power >= (totalPower * quorumThreshold) / THRESHOLD_DECIMAL
-        ) {
+        if (!_msgInfo.executed && _msgInfo.power >= (totalPower * quorumThreshold) / THRESHOLD_DECIMAL) {
             (bool ok, ) = _message.target.call(_message.callData);
             require(ok, "external message execution failed");
-            _msgInfo.status = MsgStatus.Done;
+            _msgInfo.executed = true;
             emit MessageExecuted(_message.srcChainId, _message.nonce, _message.target, _message.callData);
         }
     }

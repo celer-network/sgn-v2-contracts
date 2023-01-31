@@ -32,6 +32,18 @@ interface ICoreRelayer {
 
     function getDefaultRelayParams() external pure returns (bytes memory relayParams);
 
+    function quoteGasDeliveryFee(
+        uint16 targetChain,
+        uint32 gasLimit,
+        IRelayProvider relayProvider
+    ) external pure returns (uint256 deliveryQuote);
+
+    function quoteApplicationBudgetFee(
+        uint16 targetChain,
+        uint256 targetAmount,
+        IRelayProvider provider
+    ) external pure returns (uint256 nativeQuote);
+
     struct DeliveryRequest {
         uint16 targetChain;
         bytes32 targetAddress;
@@ -54,10 +66,12 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
 
     IWormhole private immutable wormhole;
     ICoreRelayer private immutable relayer;
+    IRelayProvider private relayProvider;
 
     constructor(address _bridgeAddress, address _relayer) {
         wormhole = IWormhole(_bridgeAddress);
         relayer = ICoreRelayer(_relayer);
+        relayProvider = relayer.getDefaultRelayProvider();
     }
 
     modifier onlyMultiBridgeSender() {
@@ -65,23 +79,28 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
         _;
     }
 
-    function getMessageFee(MessageStruct.Message memory) external view override returns (uint256) {
-        return wormhole.messageFee();
+    function getMessageFee(MessageStruct.Message memory _message) external view override returns (uint256) {
+        uint256 fee = wormhole.messageFee();
+        uint256 deliveryCost = relayer.quoteGasDeliveryFee(idMap[_message.dstChainId], 500000, relayProvider);
+        uint256 applicationBudget = relayer.quoteApplicationBudgetFee(idMap[_message.dstChainId], 100, relayProvider);
+        return fee + deliveryCost + applicationBudget;
     }
 
     function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiBridgeSender {
         bytes memory payload = abi.encode(_message, receiverAdapter);
-        wormhole.publishMessage(_message.nonce, payload, consistencyLevel);
+        uint256 msgFee = wormhole.messageFee();
+        wormhole.publishMessage{value: msgFee}(_message.nonce, payload, consistencyLevel);
 
+        uint256 relayFee = msg.value - msgFee;
         ICoreRelayer.DeliveryRequest memory request = ICoreRelayer.DeliveryRequest(
             idMap[_message.dstChainId], //targetChain
             bytes32(uint256(uint160(receiverAdapter))), //targetAddress
             bytes32(uint256(uint160(address(this)))), //refundAddress
-            msg.value, //computeBudget
+            relayFee, //computeBudget
             0, //applicationBudget
             relayer.getDefaultRelayParams() //relayerParams
         );
-        relayer.requestDelivery{value: msg.value}(request, _message.nonce, relayer.getDefaultRelayProvider());
+        relayer.requestDelivery{value: relayFee}(request, _message.nonce, relayProvider);
 
         emit MessageSent(payload, receiverAdapter);
     }

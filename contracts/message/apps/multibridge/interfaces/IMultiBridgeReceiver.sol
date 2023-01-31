@@ -6,18 +6,13 @@ import "../MessageStruct.sol";
 
 interface IMultiBridgeReceiver {
     /**
-     * @notice Receive MessageStruct.Message from allowed receiverAdapter of message bridge.
-     * This function call only be called once for each message by each allowed receiverAdapter.
+     * @notice Receive messages from from allowed bridge receiver adapters.
+     * If the accumulated power of a message has reached the power threshold,
+     * this message will be executed immediately, which will invoke an external function call
+     * according to the message content.
      *
-     * During function call, if the accumulated power of this message has reached or exceeded
-     * the power threshold, this message will be executed immediately.
-     *
-     * Message execution would result in a solidity external message call, which has two possible type of target:
-     * 1. other contract for whatever purpose;
-     * 2. this contract for sake of adjusting params like receiverAdaptersPower or powerThreshold.
-     *
-     * @dev Every receiver adapter should call this function with well decoded MessageStruct.Message
-     * when receiver adapter receives a message produced by corresponding sender adapter on source chain.
+     * @dev Every receiver adapter should call this function with decoded MessageStruct.Message
+     * when receiver adapter receives a message produced by a corresponding sender adapter on the source chain.
      */
     function receiveMessage(MessageStruct.Message calldata _message) external;
 }

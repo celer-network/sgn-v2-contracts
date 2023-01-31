@@ -8,8 +8,8 @@ library MessageStruct {
      *
      * @param srcChainId is the id of chain where this message is sent from.
      * @param dstChainId is the id of chain where this message is sent to.
-     * @param nonce is an incrementing number held by MultiBridgeSender for message-id-uniqueness sake.
-     * @param target is the expected contract to be called on dst chain.
+     * @param nonce is an incrementing number held by MultiBridgeSender to ensure msgId uniqueness
+     * @param target is the contract to be called on dst chain.
      * @param callData is the data to be sent to target by low-level call(eg. address(target).call(callData)).
      * @param bridgeName is the message bridge name used for senting this message.
      */

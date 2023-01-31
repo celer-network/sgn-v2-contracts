@@ -6,15 +6,15 @@ import "./interfaces/IBridgeSenderAdapter.sol";
 import "./MessageStruct.sol";
 
 contract MultiBridgeSender {
-    // current available senderAdapters of message bridges
+    // List of bridge sender adapters
     address[] public senderAdapters;
-    // who has access to remoteCall function
+    // The dApp contract that can use this multi-bridge sender for cross-chain remoteCall.
+    // This means the current MultiBridgeSender is only intended to be used by a single dApp.
     address public immutable caller;
     uint32 public nonce;
 
     event MultiBridgeMsgSent(uint32 nonce, uint64 dstChainId, address target, bytes callData, address[] senderAdapters);
-    event SenderAdapterAdded(address senderAdapter);
-    event SenderAdapterRemoved(address senderAdapter);
+    event SenderAdapterUpdated(address senderAdapter, bool add); // add being false indicates removal of the adapter
 
     modifier onlyCaller() {
         require(msg.sender == caller, "not caller");
@@ -26,15 +26,15 @@ contract MultiBridgeSender {
     }
 
     /**
-     * @notice Send cross-chain messages via all available message bridge to realize a remote call on destination chain.
-     * Native token is required by each message bridge to send message. Any native token remained will be transfer back
-     * to msg.sender, which requires caller should be able to receive native token.
+     * @notice Call a remote function on a destination chain by sending multiple copies of a cross-chain message
+     * via all available bridges.
      *
-     * Better call estimateTotalMessageFee() for getting total message fee before calling
-     * or preparing calldata for this function
+     * A fee in native token may be required by each message bridge to send messages. Any native token fee remained
+     * will be refunded back to msg.sender, which requires caller being able to receive native token.
+     * Caller can use estimateTotalMessageFee() to get total message fees before calling this function
      *
-     * @param _dstChainId is the id of destination chain.
-     * @param _target indicates where _callData is given to on dst chain.
+     * @param _dstChainId is the destination chainId.
+     * @param _target is the contract address on the destination chain.
      * @param _callData is the data to be sent to _target by low-level call(eg. address(_target).call(_callData)).
      */
     function remoteCall(
@@ -51,6 +51,7 @@ contract MultiBridgeSender {
             ""
         );
         uint256 totalFee;
+        // send copies of the message through multiple bridges
         for (uint256 i = 0; i < senderAdapters.length; i++) {
             uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(message);
             totalFee += fee;
@@ -58,15 +59,14 @@ contract MultiBridgeSender {
         }
         emit MultiBridgeMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);
         nonce++;
-        // give back remaining native token to msg.sender
+        // refund remaining native token to msg.sender
         if (totalFee < msg.value) {
             payable(msg.sender).transfer(msg.value - totalFee);
         }
     }
 
     /**
-     * @notice Add the sender adapter of a new message bridge.
-     * Supports adding multiple adapters at once.
+     * @notice Add bridge sender adapters
      */
     function addSenderAdapters(address[] calldata _senderAdapters) external onlyCaller {
         for (uint256 i = 0; i < _senderAdapters.length; i++) {
@@ -75,8 +75,7 @@ contract MultiBridgeSender {
     }
 
     /**
-     * @notice Remove the sender adapter of an available message bridge.
-     * Supports removing multiple adapters at once.
+     * @notice Remove bridge sender adapters
      */
     function removeSenderAdapters(address[] calldata _senderAdapters) external onlyCaller {
         for (uint256 i = 0; i < _senderAdapters.length; i++) {
@@ -115,7 +114,7 @@ contract MultiBridgeSender {
             }
         }
         senderAdapters.push(_senderAdapter);
-        emit SenderAdapterAdded(_senderAdapter);
+        emit SenderAdapterUpdated(_senderAdapter, true);
     }
 
     function _removeSenderAdapter(address _senderAdapter) private {
@@ -126,7 +125,7 @@ contract MultiBridgeSender {
                     senderAdapters[i] = senderAdapters[lastIndex];
                 }
                 senderAdapters.pop();
-                emit SenderAdapterRemoved(_senderAdapter);
+                emit SenderAdapterUpdated(_senderAdapter, false);
                 return;
             }
         }

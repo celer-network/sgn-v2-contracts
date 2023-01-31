@@ -5,8 +5,7 @@ pragma solidity >=0.8.9;
 import "../MessageStruct.sol";
 
 /**
- * @dev Contract interface which should be implemented by any message bridge.
- *
+ * @dev Adapter that connects MultiBridgeSender and each message bridge.
  * Message bridge can implement their favourite encode&decode way for MessageStruct.Message.
  */
 interface IBridgeSenderAdapter {

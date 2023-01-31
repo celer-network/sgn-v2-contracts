@@ -60,9 +60,20 @@ The message execution will invoke a function call according to the message conte
 
 ### add new bridge and update threshold
 
-If a new bridge (e.g. Bridge4) needs to be added in this framework, following steps are recommended to do it:
+If a new bridge (e.g. Bridge4) needs to be added in this framework, following steps are recommended to make it:
 
-* Pre-requisite: 
+* Pre-requisite: Bridge4 should be able to send message from the source chain to all destination chains that have already been supported by all the other 3 bridges.
+* Bridge4 provider implement and deploy `Bridge4 Adapter` on source chain and all destination chains. And `Bridge4 Adapter` should meet the following requirements.
+  * On source chain, `Bridge4 Adapter` should only accept `sendMessage()` invocation from `MultiBridgeSender`.
+  * On destination chain, `Bridge4 Adapter` should call `receiveMessage()` of `MultiBridgeReceiver` each time it receives message data from `Bridge4 Contracts`.
+  * On destination chain, `Bridge4 Adapter` should ensure that received message data is valid if and only if it was sent from `Bridge4 Adapter` on source chain.
+  * If an owner like role is involved for adjusting contract param to meet above requirements, renounce it at the end in order to let all `Bridge4 Adapter` be unchangeable.
+* Open source codes of `Bridge4 Adapter` on source chain and destination chain, and let community help check above 4 requirements. Besides, let community decide the power value for `Bridge4`.
+* Configure `Bridge4 Adapter` on source chain as an allowed bridge sender adapter in `MultiBridgeSender`. `Caller` makes a call to `addSenderAdapters()` of `MultiBridgeSender` with address of `Bridge4 Adapter` on source chain.
+* Configure `Bridge4 Adapter` on destination chain as an allowed bridge receiver adapter in `MultiBridgeReceiver`. This step can only be realized by cross-chain message. So refer to [send message](#send-message-on-source-chain), we need to:
+  * Prepare a calldata for calling `updateReceiverAdapter()` of `MultiBridgeReceiver`. Input params are address of `Bridge4 Adapter` on destination chain and the power decided by the community.
+  * `Caller` call `remoteCall()` of `MultiBridgeSender` with correct `_dstChainId`, `_target = <address of Bridge4 Adapter on destination chain>` and `_callData = <calldata prepare in previous step>.
+* Besides, updating quorum threshold is similar to configure a new bridge receiver adapter on destination chain. It requires also a call of `remoteCall()` from `Caller` but with different calldata, which is for calling `updateQuorumThreshold()` with new quorum threshold as input param. 
 
 ## Example
 

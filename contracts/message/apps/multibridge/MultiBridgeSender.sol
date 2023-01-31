@@ -31,7 +31,7 @@ contract MultiBridgeSender {
      *
      * A fee in native token may be required by each message bridge to send messages. Any native token fee remained
      * will be refunded back to msg.sender, which requires caller being able to receive native token.
-     * Caller can use estimateTotalMessageFee() to get total message fees before calling this function
+     * Caller can use estimateTotalMessageFee() to get total message fees before calling this function.
      *
      * @param _dstChainId is the destination chainId.
      * @param _target is the contract address on the destination chain.

@@ -58,6 +58,12 @@ The message execution will invoke a function call according to the message conte
 └────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### add new bridge and update threshold
+
+If a new bridge (e.g. Bridge4) needs to be added in this framework, following steps are recommended to do it:
+
+* Pre-requisite: 
+
 ## Example
 
 Use case: contract A on Goerli send message to contract B on BSC Testnet in order to call `enableFeeAmount()` for state change. Apply a 2-of-3 messages governance model with message bridge C, D and E.

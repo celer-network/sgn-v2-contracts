@@ -6,7 +6,7 @@ import "../MessageStruct.sol";
 
 interface IMultiBridgeReceiver {
     /**
-     * @notice Receive messages from from allowed bridge receiver adapters.
+     * @notice Receive messages from allowed bridge receiver adapters.
      * If the accumulated power of a message has reached the power threshold,
      * this message will be executed immediately, which will invoke an external function call
      * according to the message content.

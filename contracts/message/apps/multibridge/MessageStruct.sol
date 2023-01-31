@@ -11,7 +11,7 @@ library MessageStruct {
      * @param nonce is an incrementing number held by MultiBridgeSender to ensure msgId uniqueness
      * @param target is the contract to be called on dst chain.
      * @param callData is the data to be sent to target by low-level call(eg. address(target).call(callData)).
-     * @param bridgeName is the message bridge name used for senting this message.
+     * @param bridgeName is the message bridge name used for sending this message.
      */
     struct Message {
         uint64 srcChainId;

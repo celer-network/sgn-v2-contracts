@@ -1,72 +1,61 @@
-# A Brief Introduction for MultiBridge
+# Send Cross-Chain Messages through Multiple Bridges
 
-Here we propose a solution for any developer who is for Vendor-Lock-in-Free implementation of cross-chain message passing and wants to build their business logic with cross-chain message without a single service provider, but a message governance based on utilizing services from multiple providers.
+This is a solution for cross-chain message passing without vendor lock-in and with enhanced security beyond any single bridge.
+A message with multiple copies are sent through different bridges to the destination chains, and will only be executed at the destination chain when the same message has been delivered by a quorum of different bridges.
 
-The framework to be introduced here is suitable for the scenario where messages are going to be sent from one source chain to multiple destination chain. Besides, it requires also there is only one sender on source chain. But there is no limit for the receiver on destination chain.
+The current solution are designed for messages being sent from one source chain to multiple destination chains. It also that there is only one permitted sender on the source chain. For example, one use case could be a governance contract on Ethereum
+calling functions of contracts on other EVM chains.
 
 ## Workflow
 
 ### Send message on source chain
 
-In order to send message to destintion chain or technically speaking realize a remote call, sender on source chain should call `remoteCall()` of `MultiBridgeSender` with sufficient native token as message fee, as well as `_dstChainId`, `_target` and `_callData`. See [here](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/MultiBridgeSender.sol#L39-L41) for param doc. `_target` will be the real message receiver. A successful call would make `MultiBridgeSender` call `sendMessage()` of every available SenderAdapter to send message via different message bridge. Given a structured data which contains infos about caller's remote call, each SenderAdapter would encode it in their desire way and "sent" the result to their underlying infrastructure.
-
-> Note. `MultiBridgeSender` contract maintains an array of available SenderAdapter.
-
-> Note. A structured message looks like [this](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/MessageStruct.sol#L16). Messages sent via different SenderAdapters are same, except the `bridgeName` field which indicates the name of used message bridge.
+To send message to execute a remote call on the destintion chain, sender on the source chain should call [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) of `MultiBridgeSender`, which invokes `sendMessage()` of every bridge sender apdater to send messages via different message bridges. 
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────┐
-│ Source chain                                                                       │
-│                                                                                    │
-│                                                             ┌────────────────────┐ │  ┌──────────────────────┐
-│                                                         ┌──►│ CelerSenderAdapter ├─┼─►│ Celer Infrastructure │
-│                                                         │   └────────────────────┘ │  └──────────────────────┘
-│                                                         │                          │
-│ ┌────────┐remoteCall()┌───────────────────┐sendMessage()│   ┌────────────────────┐ │  ┌──────────────────────┐
-│ │ Caller ├───────────►│ MultiBridgeSender ├─────────────┼──►│ D****SenderAdapter ├─┼─►│ D**** Infrastructure │
-│ └────────┘            └───────────────────┘             │   └────────────────────┘ │  └──────────────────────┘
-│                                                         │                          │
-│                                                         │   ┌────────────────────┐ │  ┌──────────────────────┐
-│                                                         └──►│ E****SenderAdapter ├─┼─►│ E**** Infrastructure │
-│                                                             └────────────────────┘ │  └──────────────────────┘
-│                                                                                    │
-└────────────────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Source chain                                                                                            │
+│                                                                                                         │
+│                                                             ┌─────────────────┐   ┌───────────────────┐ │
+│                                                         ┌──►│ Bridge1 Adapter ├──►│ Bridge1 Contracts │ │
+│                                                         │   └─────────────────┘   └───────────────────┘ │
+│                                                         │                                               │
+│ ┌────────┐remoteCall()┌───────────────────┐sendMessage()│   ┌─────────────────┐   ┌───────────────────┐ │
+│ │ Caller ├───────────►│ MultiBridgeSender ├─────────────┼──►│ Bridge2 Adapter ├──►│ Bridge2 Contracts │ │
+│ └────────┘            └───────────────────┘             │   └─────────────────┘   └───────────────────┘ │
+│                                                         │                                               │
+│                                                         │   ┌─────────────────┐   ┌───────────────────┐ │
+│                                                         └──►│ Bridge3 Adapter ├──►│ Bridge3 Contracts │ │
+│                                                             └─────────────────┘   └───────────────────┘ │
+│                                                                                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Receive message on destination chain
 
-Corresponding to the fact that `MultiBridgeSender` sends message to every SenderAdapter on source chain, on destination chain, MultiBridgeReceiver will receive messages from every ReceiverAdapter. This receiving process happens when each ReceiverAdapter get encoded message data from their message bridge infrastructure. After necessary security check, each ReceiverAdapter would decode message and call `receiveMessage()` of MultiBrideReceiver.
+On the destination chain, MultiBridgeReceiver receives messages from every bridge receiver adapter. Each receiver adapter gets encoded message data from its bridge contracts, and then decode the message and call `receiveMessage()` of `MultiBrideReceiver`.
 
-> Note. Similar to `MultiBridgeSender`, `MultiBridgeReceiver` maintain a map from ReceiverAdapter address to its power. Only adapter with non-zero power has access to `receiveMessage()` function.
+`MultiBridgeReceiver` maintains a map from bridge adapter address to its power. Only adapter with non-zero power has access to `receiveMessage()` function. **If the accumulated power of a message has reached the a threshold, which means enough number of different bridges have delivered a same message, the message will be executed** by the `MultiBrideReceiver` contract.
 
-Within `MultiBridgeReceiver`, a message governance get involved. In current implementation, an adjustable power threshold is introduced to realize a simple n-of-m governance model. Every ReceiverAdapter has its own power value stored in `MultiBridgeReceiver`.
-
-> Note. By hashing all fields except `bridgeName`, we get a unique id for each set of related messages, which are sent in same tx on source chain but via different senders.
-
-Every time a message get received, we calculate the unique id, get current accumulated power by this id and augment it by the power of the ReceiverAdapter where this message come from. Once the accumulated power reach or exceed the power threshold after augmentation, this message will be executed immediately. In another word, a solidity low-level call to receiver(or target) would be triggerred.
-
-For the receiver(or target), there are two possibilities, which are:
-
-- any other contract on destination chain for whatever purpose.
-- `MultiBridgeReceiver` itself for sake of updating ReceiverAdapters' power or adjust power threshold.
+The message execution will invoke a function call according to the message content, which will either call functions of other contracts, or call the param adjustment functions of the `MultiBridgeReceiver` itself. Note that the only legit message sender is the trusted dApp contract on the source chain, which means only that single dApp contract has the ability to execute functions calls through the `MultiBridgeReceiver` contracts on different other chains.
 
 ```
-                          ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-                          │ Destination chain                                                                        │
-                          │                                                                                          │
-┌──────────────────────┐  │  ┌──────────────────────┐                                                                │
-│ Celer Infrastructure ├──┼─►│ CelerReceiverAdapter ├──┐                                                             │
-└──────────────────────┘  │  └──────────────────────┘  │                                       solidity              │
-                          │                            │                                       low-level             │
-┌──────────────────────┐  │  ┌──────────────────────┐  │receiveMessage()┌─────────────────────┐call     ┌──────────┐ │
-│ D**** Infrastructure ├──┼─►│ D****ReceiverAdapter ├──┼───────────────►│ MultiBridgeReceiver ├────────►│ Receiver │ │
-└──────────────────────┘  │  └──────────────────────┘  │                └─────────────────────┘         └──────────┘ │
-                          │                            │      * Message governance get invovled   * Receiver could be│
-┌──────────────────────┐  │  ┌──────────────────────┐  │      in MultiBridgeReceiver during       MultiBridgeReceiver│
-│ E**** Infrastructure ├──┼─►│ E****ReceiverAdapter ├──┘      receiving messages from adapters                       │
-└──────────────────────┘  │  └──────────────────────┘         before making a low-level call                         │
-                          │                                                                                          │
-                          └──────────────────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Destination chain                                                                                          │
+│                                                                                                            │
+│ ┌───────────────────┐   ┌─────────────────┐                                                                │
+│ │ Bridge1 Contracts ├──►│ Bridge1 Adapter ├──┐                                                             │
+│ └───────────────────┘   └─────────────────┘  │                                                             │
+│                                              │                                                             │
+│ ┌───────────────────┐   ┌─────────────────┐  │receiveMessage()┌─────────────────────┐ call()  ┌──────────┐ │
+│ │ Bridge1 Contracts ├──►│ Bridge2 Adapter ├──┼───────────────►│ MultiBridgeReceiver ├────────►│ Receiver │ │
+│ └───────────────────┘   └─────────────────┘  │                └─────────────────────┘         └──────────┘ │
+│                                              │                                                             │
+│ ┌───────────────────┐   ┌─────────────────┐  │                                                             │
+│ │ Bridge2 Contracts ├──►│ Bridge3 Adapter ├──┘                                                             │
+│ └───────────────────┘   └─────────────────┘                                                                │
+│                                                                                                            │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Example

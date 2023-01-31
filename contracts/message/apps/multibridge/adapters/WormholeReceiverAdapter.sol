@@ -51,36 +51,47 @@ interface IWormhole {
         );
 }
 
-contract WormholeReceiverAdapter is Ownable {
+interface IWormholeReceiver {
+    function receiveWormholeMessages(bytes[] memory vaas, bytes[] memory additionalData) external payable;
+}
+
+contract WormholeReceiverAdapter is IWormholeReceiver, Ownable {
     bytes32 public senderAdapter;
     address public multiBridgeReceiver;
     IWormhole private immutable wormhole;
+    address private immutable relayer;
     mapping(bytes32 => bool) public processedMessages;
 
-    constructor(address _bridgeAddress) {
+    constructor(address _bridgeAddress, address _relayer) {
         wormhole = IWormhole(_bridgeAddress);
+        relayer = _relayer;
     }
 
-    function receiveMessage(bytes[] memory whMessages) public {
-        (Structs.VM memory vm, bool valid, string memory reason) = wormhole.parseAndVerifyVM(whMessages[0]);
+    modifier onlyRelayerContract() {
+        require(msg.sender == relayer, "msg.sender is not CoreRelayer contract.");
+        _;
+    }
 
+    function receiveWormholeMessages(bytes[] memory whMessages, bytes[] memory)
+        public
+        payable
+        override
+        onlyRelayerContract
+    {
+        (Structs.VM memory vm, bool valid, string memory reason) = wormhole.parseAndVerifyVM(whMessages[0]);
         //validate
         require(valid, reason);
-
         // Ensure the emitterAddress of this VAA is the Uniswap message sender
         require(senderAdapter == vm.emitterAddress, "Invalid Emitter Address!");
-
         //verify destination
         (MessageStruct.Message memory message, address receiverAdapter) = abi.decode(
             vm.payload,
             (MessageStruct.Message, address)
         );
         require(receiverAdapter == address(this), "Message not for this dest");
-
         // replay protection
         require(!processedMessages[vm.hash], "Message already processed");
         processedMessages[vm.hash] = true;
-
         //send message to MultiBridgeReceiver
         IMultiBridgeReceiver(multiBridgeReceiver).receiveMessage(message);
     }

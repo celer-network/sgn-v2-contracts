@@ -63,10 +63,9 @@ The message execution will invoke a function call according to the message conte
 Below are steps to add a new bridge (e.g. Bridge4) by the dApp community.
 
 1. Bridge4 provider should implement and deploy Bridge4 adapters on source chain and all destination chains. The adapter contracts should meet the following requirements.
-    - On source chain, the sender adapter should only accept `sendMessage()` call from `MultiBridgeSender`.
-    - On destination chain, the receiver adapter should call `receiveMessage()` of `MultiBridgeReceiver` each time it receives a message the Bridge4 contracts.
-    - On destination chain, the receiver adapter should only accept messages sent from the Bridge4 sender adapter on the source chain.
-    - Renounce any ownership or special roles of the adapter contract after inital parameter setup.
+    - On the source chain, the sender adapter should only accept `sendMessage()` call from `MultiBridgeSender`.
+    - On the destination chain, the receiver adapter should only accept messages sent from the Bridge4 sender adapter on the source chain, and then call `receiveMessage()` of `MultiBridgeReceiver` for each valid message.
+    - Renounce any ownership or special roles of the adapter contracts after inital parameter setup.
 2. Bridge4 provider deploy and open source the adapter contracts. dApp community should review the code and check if the requirements above are met.
 3. dApp contract (`Caller`) on the source chain adds the new Bridge4 sender adapter to `MultiBridgeSender` on the source chain by calling the `addSenderAdapters()` function of `MultiBridgeSender`.
 4. dApp contract (`Caller`) on the source chain adds the new Bridge4 receiver adapter to `MultiBridgeReceiver` on the destination chain by calling the [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) function of `MultiBridgeSender`, with arguments to call [`updateReceiverAdapter()`](https://github.com/celer-network/sgn-v2-contracts/blob/60706f4eb6a179a9518bccf8408299f42a44f988/contracts/message/apps/multibridge/MultiBridgeReceiver.sol#L78-L88) of the `MultiBridgeReceiver` on the destination chain.

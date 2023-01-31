@@ -11,6 +11,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     // minimum accumulated power precentage for each message to be executed
     uint64 public quorumThreshold;
 
+    address[] public receiverAdapters;
     // receiverAdapter => power of bridge receive adapers
     mapping(address => uint64) public receiverAdapterPowers;
     // total power of all bridge adapters
@@ -18,7 +19,6 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
 
     struct MsgInfo {
         bool executed;
-        uint64 power; // current accumulated power
         mapping(address => bool) from; // bridge receiver adapters that has already delivered this message.
     }
     // msgId => MsgInfo
@@ -72,7 +72,6 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
         msgInfo.from[msg.sender] = true;
         emit SingleBridgeMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
 
-        msgInfo.power += receiverAdapterPowers[msg.sender];
         _executeMessage(_message, msgInfo);
     }
 
@@ -121,7 +120,11 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
      * has reached the power threshold (the same message has been delivered by enough multiple bridges).
      */
     function _executeMessage(MessageStruct.Message calldata _message, MsgInfo storage _msgInfo) private {
-        if (!_msgInfo.executed && _msgInfo.power >= (totalPower * quorumThreshold) / THRESHOLD_DECIMAL) {
+        if (_msgInfo.executed) {
+            return;
+        }
+        uint64 msgPower = _computeMessagePower(_msgInfo);
+        if (msgPower >= (totalPower * quorumThreshold) / THRESHOLD_DECIMAL) {
             (bool ok, ) = _message.target.call(_message.callData);
             require(ok, "external message execution failed");
             _msgInfo.executed = true;
@@ -129,10 +132,49 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
         }
     }
 
+    function _computeMessagePower(MsgInfo storage _msgInfo) private view returns (uint64) {
+        uint64 msgPower;
+        for (uint32 i = 0; i < receiverAdapters.length; i++) {
+            address adapter = receiverAdapters[i];
+            if (_msgInfo.from[adapter]) {
+                msgPower += receiverAdapterPowers[adapter];
+            }
+        }
+        return msgPower;
+    }
+
     function _updateReceiverAdapter(address _receiverAdapter, uint32 _power) private {
         totalPower -= receiverAdapterPowers[_receiverAdapter];
         totalPower += _power;
-        receiverAdapterPowers[_receiverAdapter] = _power;
+        if (_power > 0) {
+            _setReceiverAdapter(_receiverAdapter, _power);
+        } else {
+            _removeReceiverAdapter(_receiverAdapter);
+        }
         emit ReceiverAdapterUpdated(_receiverAdapter, _power);
+    }
+
+    function _setReceiverAdapter(address _receiverAdapter, uint32 _power) private {
+        require(_power > 0, "zero power");
+        if (receiverAdapterPowers[_receiverAdapter] == 0) {
+            receiverAdapters.push(_receiverAdapter);
+        }
+        receiverAdapterPowers[_receiverAdapter] = _power;
+    }
+
+    function _removeReceiverAdapter(address _receiverAdapter) private {
+        require(receiverAdapterPowers[_receiverAdapter] > 0, "not a receiver adapter");
+        uint256 lastIndex = receiverAdapters.length - 1;
+        for (uint256 i = 0; i < receiverAdapters.length; i++) {
+            if (receiverAdapters[i] == _receiverAdapter) {
+                if (i < lastIndex) {
+                    receiverAdapters[i] = receiverAdapters[lastIndex];
+                }
+                receiverAdapters.pop();
+                receiverAdapterPowers[_receiverAdapter] = 0;
+                return;
+            }
+        }
+        revert("receiver adapter not found"); // this should never happen
     }
 }

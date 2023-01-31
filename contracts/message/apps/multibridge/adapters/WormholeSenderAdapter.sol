@@ -46,6 +46,7 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
     string public name = "wormhole";
     address public multiBridgeSender;
     address public receiverAdapter;
+    mapping(uint64 => uint16) idMap;
 
     uint8 consistencyLevel = 1;
 
@@ -73,7 +74,7 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
         wormhole.publishMessage(_message.nonce, payload, consistencyLevel);
 
         ICoreRelayer.DeliveryRequest memory request = ICoreRelayer.DeliveryRequest(
-            uint16(_message.dstChainId), //targetChain
+            idMap[_message.dstChainId], //targetChain
             bytes32(uint256(uint160(receiverAdapter))), //targetAddress
             bytes32(uint256(uint160(address(this)))), //refundAddress
             msg.value, //computeBudget
@@ -83,6 +84,13 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
         relayer.requestDelivery{value: msg.value}(request, _message.nonce, relayer.getDefaultRelayProvider());
 
         emit MessageSent(payload, receiverAdapter);
+    }
+
+    function setChainIdMap(uint64[] calldata _origIds, uint16[] calldata _whIds) external onlyOwner {
+        require(_origIds.length == _whIds.length, "mismatch length");
+        for (uint256 i = 0; i < _origIds.length; i++) {
+            idMap[_origIds[i]] = _whIds[i];
+        }
     }
 
     function setReceiverAdapter(address _receiverAdapter) external onlyOwner {

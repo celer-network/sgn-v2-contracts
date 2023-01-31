@@ -58,22 +58,20 @@ The message execution will invoke a function call according to the message conte
 └────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### add new bridge and update threshold
+### Add new bridge and update threshold
 
-If a new bridge (e.g. Bridge4) needs to be added in this framework, following steps are recommended to make it:
+Below are steps to add a new bridge (e.g. Bridge4) by the dApp community.
 
-* Pre-requisite: Bridge4 should be able to send message from the source chain to all destination chains that have already been supported by all the other 3 bridges.
-* Bridge4 provider implement and deploy `Bridge4 Adapter` on source chain and all destination chains. And `Bridge4 Adapter` should meet the following requirements.
-  * On source chain, `Bridge4 Adapter` should only accept `sendMessage()` invocation from `MultiBridgeSender`.
-  * On destination chain, `Bridge4 Adapter` should call `receiveMessage()` of `MultiBridgeReceiver` each time it receives message data from `Bridge4 Contracts`.
-  * On destination chain, `Bridge4 Adapter` should ensure that received message data is valid if and only if it was sent from `Bridge4 Adapter` on source chain.
-  * If an owner like role is involved for adjusting contract param to meet above requirements, renounce it at the end in order to let all `Bridge4 Adapter` be unchangeable.
-* Open source codes of `Bridge4 Adapter` on source chain and destination chain, and let community help check above 4 requirements. Besides, let community decide the power value for `Bridge4`.
-* Configure `Bridge4 Adapter` on source chain as an allowed bridge sender adapter in `MultiBridgeSender`. `Caller` makes a call to `addSenderAdapters()` of `MultiBridgeSender` with address of `Bridge4 Adapter` on source chain.
-* Configure `Bridge4 Adapter` on destination chain as an allowed bridge receiver adapter in `MultiBridgeReceiver`. This step can only be realized by cross-chain message. So refer to [send message](#send-message-on-source-chain), we need to:
-  * Prepare a calldata for calling `updateReceiverAdapter()` of `MultiBridgeReceiver`. Input params are address of `Bridge4 Adapter` on destination chain and the power decided by the community.
-  * `Caller` call `remoteCall()` of `MultiBridgeSender` with correct `_dstChainId`, `_target = <address of Bridge4 Adapter on destination chain>` and `_callData = <calldata prepare in previous step>.
-* Besides, updating quorum threshold is similar to configure a new bridge receiver adapter on destination chain. It requires also a call of `remoteCall()` from `Caller` but with different calldata, which is for calling `updateQuorumThreshold()` with new quorum threshold as input param. 
+1. Bridge4 provider should implement and deploy Bridge4 adapters on source chain and all destination chains. The adapter contracts should meet the following requirements.
+  - On source chain, the sender adapter should only accept `sendMessage()` call from `MultiBridgeSender`.
+  - On destination chain, the receiver adapter should call `receiveMessage()` of `MultiBridgeReceiver` each time it receives a message the Bridge4 contracts.
+  - On destination chain, the receiver adapter should only accept messages sent from the Bridge4 sender adapter on the source chain.
+  - Renounce any ownership or special roles of the adapter contract after inital parameter setup.
+2. Bridge4 provider deploy and open source the adapter contracts. dApp community should review the code and check if the requirements above are met.
+3. dApp contract (`Caller`) on the source chain adds the new bridge sender adapter to `MultiBridgeSender` on the source chain by calling the `addSenderAdapters()` function of `MultiBridgeSender`.
+4. dApp contract (`Caller`) on the source chain adds the new bridge receiver adapter to `MultiBridgeReceiver` on the destination chain by calling the [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) function of `MultiBridgeSender`, with arguments to call [`updateReceiverAdapter()`](https://github.com/celer-network/sgn-v2-contracts/blob/60706f4eb6a179a9518bccf8408299f42a44f988/contracts/message/apps/multibridge/MultiBridgeReceiver.sol#L78-L88) of the `MultiBridgeReceiver` on the destination chain.
+
+Updating quorum threshold is similar to configure a new bridge receiver adapter on destination chain. It requires a `remoteCall()` from the source chain `Caller` with calldata calling [`updateQuorumThreshold()`](https://github.com/celer-network/sgn-v2-contracts/blob/60706f4eb6a179a9518bccf8408299f42a44f988/contracts/message/apps/multibridge/MultiBridgeReceiver.sol#L90-L99) of the `MultiBridgeReceiver` on the destination chain.
 
 ## Example
 

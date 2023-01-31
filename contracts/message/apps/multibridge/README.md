@@ -10,7 +10,7 @@ calling remote functions of contracts on other EVM chains. Each dApp who wants t
 
 ### Send message on source chain
 
-To send a message to execute a remote call on the destintion chain, sender on the source chain should call [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) of `MultiBridgeSender`, which invokes `sendMessage()` of every bridge sender apdater to send messages via different message bridges. 
+To send a message to execute a remote call on the destintion chain, sender on the source chain should call [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) of `MultiBridgeSender`, which invokes `sendMessage()` of every bridge sender apdater to send messages via different message bridges.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐

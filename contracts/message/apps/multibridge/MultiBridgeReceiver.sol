@@ -7,10 +7,14 @@ import "./MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
+    uint256 public constant THRESHOLD_DECIMAL = 100;
+    // minimum accumulated power precentage for each message to be executed
+    uint64 public quorumThreshold;
+
     // receiverAdapter => power of bridge receive adapers
-    mapping(address => uint32) public receiverAdapterPowers;
-    // minimum accumulated power for each message to be executed
-    uint64 public powerThreshold;
+    mapping(address => uint64) public receiverAdapterPowers;
+    // total power of all bridge adapters
+    uint64 public totalPower;
 
     enum MsgStatus {
         Null, // default status which indicates a message has not been received yet
@@ -25,8 +29,8 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     // msgId => MsgInfo
     mapping(bytes32 => MsgInfo) public msgInfos;
 
-    event ReceiverAdapterUpdated(address receiverAdapter, uint32 power);
-    event PowerThresholdUpdated(uint64 powerThreshold);
+    event ReceiverAdapterUpdated(address receiverAdapter, uint64 power);
+    event QuorumThresholdUpdated(uint64 quorumThreshold);
     event SingleBridgeMsgReceived(uint64 srcChainId, string indexed bridgeName, uint32 nonce, address receiverAddr);
     event MessageExecuted(uint64 srcChainId, uint32 nonce, address target, bytes callData);
 
@@ -50,13 +54,13 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     function initialize(
         address[] memory _receiverAdapters,
         uint32[] memory _powers,
-        uint64 _powerThreshold
+        uint64 _quorumThreshold
     ) external onlyOwner {
         require(_receiverAdapters.length == _powers.length, "mismatch length");
         for (uint256 i = 0; i < _receiverAdapters.length; i++) {
             _updateReceiverAdapter(_receiverAdapters[i], _powers[i]);
         }
-        powerThreshold = _powerThreshold;
+        quorumThreshold = _quorumThreshold;
         renounceOwnership();
     }
 
@@ -69,11 +73,12 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     function receiveMessage(MessageStruct.Message calldata _message) external override onlyReceiverAdapter {
         bytes32 msgId = getMsgId(_message);
         MsgInfo storage msgInfo = msgInfos[msgId];
+        require(msgInfo.status != MsgStatus.Done, "message already executed");
+        require(msgInfo.from[msg.sender] == false, "already received from this bridge adapter");
+        msgInfo.from[msg.sender] = true;
         if (msgInfo.status == MsgStatus.Null) {
             msgInfo.status = MsgStatus.Pending;
         }
-        require(msgInfo.from[msg.sender] == false, "already received from this bridge adapter");
-        msgInfo.from[msg.sender] = true;
         emit SingleBridgeMsgReceived(_message.srcChainId, _message.bridgeName, _message.nonce, msg.sender);
 
         msgInfo.power += receiverAdapterPowers[msg.sender];
@@ -93,13 +98,14 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     }
 
     /**
-     * @notice Update power threshold of message execution.
+     * @notice Update power quorum threshold of message execution.
      * This function can only be called by _executeMessage() invoked within receiveMessage() of this contract,
      * which means the only party who can make these updates is the caller of the MultiBridgeSender at the source chain.
      */
-    function updatePowerThreshold(uint64 _powerThreshold) external onlySelf {
-        powerThreshold = _powerThreshold;
-        emit PowerThresholdUpdated(_powerThreshold);
+    function updateQuorumThreshold(uint64 _quorumThreshold) external onlySelf {
+        require(_quorumThreshold < THRESHOLD_DECIMAL, "invalid threshold");
+        quorumThreshold = _quorumThreshold;
+        emit QuorumThresholdUpdated(_quorumThreshold);
     }
 
     /**
@@ -124,7 +130,9 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
      * has reached the power threshold (the same message has been delivered by enough multiple bridges).
      */
     function _executeMessage(MessageStruct.Message calldata _message, MsgInfo storage _msgInfo) private {
-        if (_msgInfo.status == MsgStatus.Pending && _msgInfo.power >= powerThreshold) {
+        if (
+            _msgInfo.status == MsgStatus.Pending && _msgInfo.power >= (totalPower * quorumThreshold) / THRESHOLD_DECIMAL
+        ) {
             (bool ok, ) = _message.target.call(_message.callData);
             require(ok, "external message execution failed");
             _msgInfo.status = MsgStatus.Done;
@@ -133,6 +141,8 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     }
 
     function _updateReceiverAdapter(address _receiverAdapter, uint32 _power) private {
+        totalPower -= receiverAdapterPowers[_receiverAdapter];
+        totalPower += _power;
         receiverAdapterPowers[_receiverAdapter] = _power;
         emit ReceiverAdapterUpdated(_receiverAdapter, _power);
     }

@@ -3,14 +3,14 @@
 This is a solution for cross-chain message passing without vendor lock-in and with enhanced security beyond any single bridge.
 A message with multiple copies are sent through different bridges to the destination chains, and will only be executed at the destination chain when the same message has been delivered by a quorum of different bridges.
 
-The current solution are designed for messages being sent from one source chain to multiple destination chains. It also that there is only one permitted sender on the source chain. For example, one use case could be a governance contract on Ethereum
-calling functions of contracts on other EVM chains.
+The current solution are designed for messages being sent from one source chain to multiple destination chains. It also requires that there is only one permitted sender on the source chain. For example, one use case could be a governance contract on Ethereum
+calling remote functions of contracts on other EVM chains. Each dApp who wants to utilize this framework needs to deploy its own set of contracts.
 
 ## Workflow
 
 ### Send message on source chain
 
-To send message to execute a remote call on the destintion chain, sender on the source chain should call [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) of `MultiBridgeSender`, which invokes `sendMessage()` of every bridge sender apdater to send messages via different message bridges. 
+To send a message to execute a remote call on the destintion chain, sender on the source chain should call [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) of `MultiBridgeSender`, which invokes `sendMessage()` of every bridge sender apdater to send messages via different message bridges. 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐

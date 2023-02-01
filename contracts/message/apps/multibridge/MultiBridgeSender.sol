@@ -15,6 +15,7 @@ contract MultiBridgeSender {
 
     event MultiBridgeMsgSent(uint32 nonce, uint64 dstChainId, address target, bytes callData, address[] senderAdapters);
     event SenderAdapterUpdated(address senderAdapter, bool add); // add being false indicates removal of the adapter
+    event ErrorSendMessage(address senderAdapters, MessageStruct.Message message);
 
     modifier onlyCaller() {
         require(msg.sender == caller, "not caller");
@@ -54,8 +55,14 @@ contract MultiBridgeSender {
         // send copies of the message through multiple bridges
         for (uint256 i = 0; i < senderAdapters.length; i++) {
             uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(message);
-            totalFee += fee;
-            IBridgeSenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message);
+            // if one bridge is paused it shouldn't halt the process
+            try IBridgeSenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message) {
+                totalFee += fee;
+            }
+            catch 
+            {
+                 emit ErrorSendMessage(senderAdapters[i], message);
+            }
         }
         emit MultiBridgeMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);
         nonce++;

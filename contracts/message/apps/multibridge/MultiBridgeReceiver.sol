@@ -52,6 +52,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
         uint64 _quorumThreshold
     ) external onlyOwner {
         require(_receiverAdapters.length == _powers.length, "mismatch length");
+        require(_quorumThreshold <= THRESHOLD_DECIMAL, "invalid threshold");
         for (uint256 i = 0; i < _receiverAdapters.length; i++) {
             _updateReceiverAdapter(_receiverAdapters[i], _powers[i]);
         }
@@ -93,7 +94,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
      * which means the only party who can make these updates is the caller of the MultiBridgeSender at the source chain.
      */
     function updateQuorumThreshold(uint64 _quorumThreshold) external onlySelf {
-        require(_quorumThreshold < THRESHOLD_DECIMAL, "invalid threshold");
+        require(_quorumThreshold <= THRESHOLD_DECIMAL, "invalid threshold");
         quorumThreshold = _quorumThreshold;
         emit QuorumThresholdUpdated(_quorumThreshold);
     }

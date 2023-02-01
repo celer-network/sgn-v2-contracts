@@ -73,25 +73,53 @@ Updating the quorum threshold is similar to configuring a new bridge receiver ad
 
 ## Example
 
-Use case: contract A on Goerli send message to contract B on BSC Testnet in order to call `enableFeeAmount()` for state change. Apply a 2-of-3 messages governance model with message bridge C, D and E.
+Use case: `Caller`(address: 0x58b529F9084D7eAA598EB3477Fe36064C5B7bbC1) on Avalanche Fuji send message to [`UniswapV3Factory` on BSC Testnet](https://testnet.bscscan.com/address/0x0bec2a9e08658eaa15935c25cff953cab2934c85) through `Celer` and `Wormhole`, in order to call `enableFeeAmount()` for state change.
 
 ### Deployment and initialization
 
-- Deploy `MultiBridgeSender` on Goerli, set address of A as allowed [caller](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/MultiBridgeSender.sol#L12).
-- Deploy `MultiBridgeReceiver` on BSC Testnet.
-- Each message bridge provider prepare their own `SenderAdapter` and `ReceiverAdapter`, named with a prefix of their bridge name. Take preparation of `CSenderAdapter` and `CReceiverAdapter` as an example.
-  - Deploy `CSenderAdapter` on Goerli, set address of `MultiBridgeSender` as [multiBridgeSender](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/adapters/CelerSenderAdapter.sol#L12).
-  - Deploy `CReceiverAdapter` on BSC Testnet, set address of `MultiBridgeReceiver` as [multiBridgeReceiver](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/adapters/CelerReceiverAdapter.sol#L34).
-  - Call [updateReceiverAdapter()](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/adapters/CelerSenderAdapter.sol#L42) of `CSenderAdapter`, set address of `CReceiverAdapter` on BSC Testnet(chain id 97) as a valid ReceiverAdapter.
-  - Call [updateSenderAdapter()](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/adapters/CelerReceiverAdapter.sol#L60) of `CReceiverAdapter`, set address of `CSenderAdapter` on Goerli(chain id 5) as a valid SenderAdapter.
-  - Transfer ownership of `CSenderAdapter` and `CReceiverAdapter` to address(0).
-- Once all message bridges are ready, somehow let contract A call [addSenderAdapters()](https://github.com/celer-network/sgn-v2-contracts/blob/1cbc2a3038463e7569b1a459c3519c7fcfeaaa4a/contracts/message/apps/multibridge/MultiBridgeSender.sol#L74) of `MultiBridgeSender` with an address array of `CSenderAdapter`, `DSenderAdapter` and `ESenderAdapter`.
-- Call `initialize()` of `MultiBridgeReceiver`, with an address array of `CReceiverAdapter`, `DReceiverAdapter` and `EReceiverAdapter`, and power threshold 2.
+- Deploy `MultiBridgeSender` on Avalanche Fuji with `Caller`'s address, [tx link](https://testnet.snowtrace.io/tx/0x59552174e6b703b5b955f105011e9b5ffff4540008a83d1a03a7b957e25678f0).
+- Deploy `MultiBridgeReceiver` on BSC Testnet, [tx link](https://testnet.bscscan.com/tx/0x5583bbf67d2c3a61a829707e6a69dad1802bcb04b91c203a2669fe23b75c04c2).
+- Deploy `CelerSenderAdapter` on Avalanche Fuji, [tx link](https://testnet.snowtrace.io/tx/0xb8ecfb91c88ac4fca1270c214ec54d03ec459a33cab76358c6fbe17a6dbb9588). Set `multiBridgeSender`, [tx link](https://testnet.snowtrace.io/tx/0x7dcebb3169ef443cdf5893a0653b76a13999ebfea0bc9120e8b2aa5a565c1d03).
+- Deploy `CelerReceiverAdapter` on BSC Testnet, [tx link](https://testnet.bscscan.com/tx/0x1a21abd8d0acd6208f6c179f6cae3222e4642bfe27d37cdbdaf60df34b230ef8). Set `multiBridgeReceiver`, [tx link](https://testnet.bscscan.com/tx/0xe9791cc984fbf5925b079d74198cefd7b0477e45eec6f3a90665fc1512096fbd).
+- Register `CelerReceiverAdapter` in `CelerSenderAdapter`, [tx link](https://testnet.snowtrace.io/tx/0xf41951f31a274af5748cce0250b4b7e193f99adc43a1af53aa368ec10acf7d01).
+- Register `CelerSenderAdapter` in `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x4887c0d53594654291a546964433df88b1190185e79dd0b487310ee0562569ef).
+- Renounce owner of `CelerSenderAdapter` and `CelerReceiverAdapter`. **Not actually did in this example for easier debugging**.
+- Deployer of `MultiBridgeReceiver` initialize this contact, register `CelerReceiverAdapter` with power `10000`, and set `quorumThreshold` to `100`, [tx link](https://testnet.bscscan.com/tx/0x578dc2edf7969819eec0a941c127ae619de1cf5040fad666a022d383b13eec5e).
+- `Caller` register `CelerSenderAdapter` in `MultiBridgeSender`, [tx link](https://testnet.snowtrace.io/tx/0x21e2a97077259a7a1d9bb9cbc2c8f9101a1576e04f40d6fb08b51b87cec55e6e).
 
-### Sending your message
+### Test cross-chain updating quorum threshold through single bridge(Celer)
 
-Prepare a calldata for contract B for calling `enableFeeAmount()`, then somehow let contract A call `remoteCall()` of `MultiBridgeSender` with `_dstChainId = 97`, `_target = <address of contract B>` and `_callData = <calldata you prepared>`.
+`Caller` make a call to `remoteCall()` of `MultiBridgeSender` with calldata calling `updateQuorumThreshold()` of `MultiBridgeReceiver`, in order to update quorum threshold to `98`, [tx link](https://testnet.snowtrace.io/tx/0x2cc5746f2b95fe4cea4bfbc901867f6f2245f90cb05447ce0294122e7878a8cd).
 
-### Result
+`MultiBridgeReceiver` receive message from `CelerReceiverAdapter` and update quorum threshold to `98`, [tx link](https://testnet.bscscan.com/tx/0xee2ba1f80abd8018d46c4cd26758c4b979c7760e6babc53efb171114864a345c).
 
-Imagine that the messages sent via C, D and E received by `MultiBridgeReceiver` on BSC Testnet in an order of `1.C 2.D 3.E`. During receiving message sent via D, accumulated power reaches power threshold 2, which result in message execution(the calldata will be sent to contract B).
+### Add a new bridge Wormhole
+
+- Deploy `WormholeSenderAdapter` on Avalanche Fuji, [tx link](https://testnet.snowtrace.io/tx/0x15d2c38a34a16900eb1fea45772d77db098edf6007de87fa556ebadabcfa1b09). Set `multiBridgeSender`, [tx link](https://testnet.snowtrace.io/tx/0x03f344717822f17570f79fad8c464de50910a2c31bcd4ad6b696c300de26dcbf). Set a chain id map from formal chain id to the one used by Wormhole, [tx link](https://testnet.snowtrace.io/tx/0x03f344717822f17570f79fad8c464de50910a2c31bcd4ad6b696c300de26dcbf).
+- Deploy `WormholeReceiverAdapter` on BSC Testnet, [tx link](https://testnet.bscscan.com/tx/0xa2f7ddf9090c2cff94e9464aa69dc8d5a2bca07eb6c43202d94bbdccc5505e32). Set `multiBridgeReceiver`, [tx link](https://testnet.bscscan.com/tx/0xc3775851890604b5b1428eccd9b1a7776e5e5825899771e1159fd17beaa58870).
+- Register `WormholeReceiverAdapter` in `WormholeSenderAdapter`, [tx link](https://testnet.snowtrace.io/tx/0xe8e64d5410b078f202e1f15b4862ce15ee69603c172f9e073f2b84502fe7f507).
+- Register `WormholeSenderAdapter` in `WormholeReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x3d8268fbe9774673b94653391adf75c995aaac562c18cc04ffd4aea5e1e6d1aa).
+- Renounce owner of `WormholeSenderAdapter` and `WormholeReceiverAdapter`. **Not actually did in this example for easier debugging**.
+- `Caller` make a call to `remoteCall()` of `MultiBridgeSender` with calldata calling `updateReceiverAdapter()` of `MultiBridgeReceiver`, in order to register `WormholeReceiverAdapter` in `MultiBridgeReceiver` with power `10000`, [tx link](https://testnet.snowtrace.io/tx/0x132487b65c81bf48fecb5d5896ff806977f963a63ed9d86db9b71b9f8e11beea).
+- `MultiBridgeReceiver` receive message from `CelerReceiverAdapter` and register`WormholeReceiverAdapter` with power `10000`, [tx link](https://testnet.bscscan.com/tx/0x74ff55798eb5388711cfb310bf523b8f369b233879ae4db004bea1165be21c59).
+- `Caller` register `WormholeSenderAdapter` in `MultiBridgeSender`, [tx link](https://testnet.snowtrace.io/tx/0xaa0b63c1c3a890eb661c21b6dcfb0b9816f604d2ecd912f00073ff99f7738a48).
+
+### Test cross-chain updating quorum threshold through two bridges(Celer&Wormhole)
+
+`Caller` make a call to `remoteCall()` of `MultiBridgeSender` with calldata calling `updateQuorumThreshold()` of `MultiBridgeReceiver`, in order to update quorum threshold to `96`, [tx link](https://testnet.snowtrace.io/tx/0x57066c9809d0e0d139cd611982b9c04121fd2ead1a812c43bb91ecb4aa25b8a2).
+
+`MultiBridgeReceiver` receive message from `WormholeReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0xe72cecfe6656120f9d7eaf8565f2d26acfd650e9bc0f5d1754104e435c84f1fa). Accumulated power of this message is `10000/20000` and not reaches quorum threshold `98/100`.
+
+`MultiBridgeReceiver` receive message from `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x0ceaf9315cfd2a9c42c597a3aba4566ac5b15f54dce42bc25e96d0bdd12475ff). Accumulated power of this message changes to `20000/20000` and reaches quorum threshold `98/100`. Then within the same tx, quorum threshold is updated to `96`. 
+
+### Test cross-chain calling enableFeeAmount() of UniswapV3Factory
+
+`UniswapV3Factory` for testing is deployed on BSC Testnet, [tx link](https://testnet.bscscan.com/tx/0x279030c5e404058c3d669e55797e0400d174f7ef373267d18378b157d76d46ed).
+
+Transfer owner of `UniswapV3Factory` to `MultiBridgeReceiver`, because `enableFeeAmount()` is only callable from owner. [tx link](https://testnet.bscscan.com/tx/0x1255f37a8a7a3aa7fa13e2321038d557db14fc99a8e65324f58acdb16de3cac4).
+
+`Caller` make a call to `remoteCall()` of `MultiBridgeSender` with calldata calling `enableFeeAmount()` of `UniswapV3Factory`, in order to update `feeAmountTickSpacing[40] = 40`, [tx link](https://testnet.snowtrace.io/tx/0xa6f2b3af99773f6d03b5b31b37e95732366fbe6d25a5c2dc6358ab88860047a0).
+
+`MultiBridgeReceiver` receive message from `WormholeReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x2db8178ce5130945fee24fc7da3d5273921234dd6fa10655f5baaea6f90cb2f5). Accumulated power of this message is `10000/20000` and not reaches quorum threshold `96/100`.
+
+`MultiBridgeReceiver` receive message from `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0xfbb0680033a841cadf197cf6b85f5794f764f2edeb27192353edd3cf668987fe). Accumulated power of this message changes to `20000/20000` and reaches quorum threshold `96/100`. Then within the same tx, `MultiBridgeReceiver` invoke `enableFeeAmount()` of `UniswapV3Factory` and set `feeAmountTickSpacing[40] = 40`. 

@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/DeBridge/IDeBridgeGate.sol";
 import "../interfaces/DeBridge/ICallProxy.sol";
 import "../interfaces/DeBridge/IDeBridgeReceiverAdapter.sol";
-import "../libraries/DeBridge/Flags.sol";
 
 contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
     /* ========== STATE VARIABLES ========== */
@@ -54,16 +53,10 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
             _message
         );
 
-        uint256 flags;
-        flags = Flags.setFlag(flags, Flags.REVERT_IF_EXTERNAL_FAIL, true);
-        flags = Flags.setFlag(flags, Flags.PROXY_WITH_SENDER, true);
-
         bytes32 submissionId = deBridgeGate.sendMessage{value: msg.value}(
             _message.dstChainId, //_dstChainId,
             abi.encodePacked(receiver), //_targetContractAddress
-            executeMethodData, //_targetContractCalldata,
-            flags,
-            0
+            executeMethodData //_targetContractCalldata,
         );
 
         emit SentMessage(submissionId, _message);

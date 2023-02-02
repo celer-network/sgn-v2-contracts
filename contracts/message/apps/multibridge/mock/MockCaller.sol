@@ -2,8 +2,8 @@
 
 pragma solidity >=0.8.9;
 
-import "./MessageStruct.sol";
-import "./MultiBridgeSender.sol";
+import "../MessageStruct.sol";
+import "../MultiBridgeSender.sol";
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 

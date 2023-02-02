@@ -1,7 +1,7 @@
 # Send Cross-Chain Messages through Multiple Bridges
 
 This is a solution for cross-chain message passing without vendor lock-in and with enhanced security beyond any single bridge.
-A message with multiple copies is sent through different bridges to the destination chains, and will only be executed at the destination chain when the same message has been delivered by a quorum of different bridges.
+**A message with multiple copies is sent through different bridges to the destination chains, and will only be executed at the destination chain when the same message has been delivered by a quorum of different bridges.**
 
 The current solution is designed for messages being sent from one source chain to multiple destination chains. It also requires that there is only one permitted sender on the source chain. For example, one use case could be a governance contract on Ethereum calling remote functions of contracts on other EVM chains. Each dApp who wants to utilize this framework needs to deploy its own set of contracts.
 
@@ -34,9 +34,9 @@ To send a message to execute a remote call on the destination chain, sender on t
 
 On the destination chain, MultiBridgeReceiver receives messages from every bridge receiver adapter. Each receiver adapter gets encoded message data from its bridge contracts, and then decodes the message and call `receiveMessage()` of `MultiBrideReceiver`.
 
-`MultiBridgeReceiver` maintains a map from bridge adapter address to its power. Only adapter with non-zero power has access to `receiveMessage()` function. **If the accumulated power of a message has reached a threshold, which means enough different bridges have delivered a same message, the message will be executed** by the `MultiBrideReceiver` contract.
+`MultiBridgeReceiver` maintains a map from bridge adapter address to its power. Only adapter with non-zero power has access to `receiveMessage()` function. If the accumulated power of a message has reached a threshold, which means enough different bridges have delivered a same message, the message will be executed by the `MultiBrideReceiver` contract.
 
-The message execution will invoke a function call according to the message content, which will either call functions of other contracts, or call the param adjustment functions of the `MultiBridgeReceiver` itself. Note that the only legit message sender is the trusted dApp contract on the source chain, which means only that single dApp contract can execute function calls through the `MultiBridgeReceiver` contracts on different other chains.
+The message execution will invoke a function call according to the message content, which will either call functions of other receiver contracts, or call the param adjustment functions (e.g., add/remove adapter, update threshold) of the `MultiBridgeReceiver` itself. **Note that the only legit message sender is the trusted caller on the source chain, which means only that single source chain caller can trigger function calls of the `MultiBridgeReceiver` contracts on desitnation chains.**
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────────┐

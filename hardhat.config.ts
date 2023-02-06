@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
+import 'hardhat-change-network';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';

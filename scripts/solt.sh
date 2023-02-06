@@ -43,6 +43,12 @@ solFiles=(
   staking/Viewer
   test-helpers/DummySwap
   test-helpers/WETH
+  message/apps/multibridge/adapters/WormholeSenderAdapter
+  message/apps/multibridge/adapters/WormholeReceiverAdapter
+  message/apps/multibridge/adapters/CelerSenderAdapter
+  message/apps/multibridge/adapters/CelerReceiverAdapter
+  message/apps/multibridge/MultiBridgeSender
+  message/apps/multibridge/MultiBridgeReceiver
 )
 
 run_solt_write() {

@@ -11,9 +11,8 @@ import "./interfaces/ICallProxy.sol";
 import "../../MessageStruct.sol";
 
 contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter {
-    
     /* ========== STATE VARIABLES ========== */
-    
+
     mapping(uint256 => address) public senderAdapters;
     IDeBridgeGate public immutable deBridgeGate;
     address public multiBridgeReceiver;
@@ -36,7 +35,7 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter 
 
         address nativeSender = toAddress(callProxy.submissionNativeSender(), 0);
         uint256 submissionChainIdFrom = callProxy.submissionChainIdFrom();
-        
+
         if (senderAdapters[submissionChainIdFrom] != nativeSender) {
             revert NativeSenderBadRole(nativeSender, submissionChainIdFrom);
         }
@@ -52,9 +51,7 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter 
     /* ========== PUBLIC METHODS ========== */
 
     // Called by DeBridge CallProxy on destination chain to receive cross-chain messages.
-    function executeMessage(
-        MessageStruct.Message memory _message
-    ) external onlySenderAdapter whenNotPaused {
+    function executeMessage(MessageStruct.Message memory _message) external onlySenderAdapter whenNotPaused {
         IMultiBridgeReceiver(multiBridgeReceiver).receiveMessage(_message);
     }
 

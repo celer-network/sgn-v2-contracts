@@ -41,7 +41,7 @@ contract MockCaller is AccessControl {
     }
 
     function addSenderAdapters(address[] calldata _senderAdapters) external onlyAdmin {
-       bridgeSender.addSenderAdapters(_senderAdapters);
+        bridgeSender.addSenderAdapters(_senderAdapters);
     }
 
     function removeSenderAdapters(address[] calldata _senderAdapters) external onlyAdmin {

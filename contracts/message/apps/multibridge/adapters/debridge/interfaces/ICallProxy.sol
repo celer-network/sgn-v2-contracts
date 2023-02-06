@@ -2,9 +2,9 @@
 pragma solidity ^0.8.7;
 
 interface ICallProxy {
-
     /// @dev Chain from which the current submission is received
     function submissionChainIdFrom() external view returns (uint256);
+
     /// @dev Native sender of the current submission
     function submissionNativeSender() external view returns (bytes memory);
 

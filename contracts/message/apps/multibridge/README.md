@@ -62,9 +62,9 @@ The message execution will invoke a function call according to the message conte
 Below are steps to add a new bridge (e.g., Bridge4) by the dApp community.
 
 1. Bridge4 provider should implement and deploy Bridge4 adapters on the source chain and all destination chains. The adapter contracts should meet the following requirements.
-    - On the source chain, the sender adapter should only accept `sendMessage()` call from `MultiBridgeSender`.
-    - On the destination chain, the receiver adapter should only accept messages sent from the Bridge4 sender adapter on the source chain, and then call `receiveMessage()` of `MultiBridgeReceiver` for each valid message.
-    - Renounce any ownership or special roles of the adapter contracts after initial setup.
+   - On the source chain, the sender adapter should only accept `sendMessage()` call from `MultiBridgeSender`.
+   - On the destination chain, the receiver adapter should only accept messages sent from the Bridge4 sender adapter on the source chain, and then call `receiveMessage()` of `MultiBridgeReceiver` for each valid message.
+   - Renounce any ownership or special roles of the adapter contracts after initial setup.
 2. Bridge4 provider deploys the adapter contracts and makes them open source. The dApp community should review the code and check if the requirements above are met.
 3. dApp contract (`Caller`) on the source chain adds the new Bridge4 receiver adapter to `MultiBridgeReceiver` on the destination chain by calling the [`remoteCall()`](https://github.com/celer-network/sgn-v2-contracts/blob/261fe55b320393a1336156b5771867a36db43198/contracts/message/apps/multibridge/MultiBridgeSender.sol#L28-L40) function of `MultiBridgeSender`, with arguments to call [`updateReceiverAdapter()`](https://github.com/celer-network/sgn-v2-contracts/blob/60706f4eb6a179a9518bccf8408299f42a44f988/contracts/message/apps/multibridge/MultiBridgeReceiver.sol#L78-L88) of the `MultiBridgeReceiver` on the destination chain.
 4. dApp contract (`Caller`) on the source chain adds the new Bridge4 sender adapter to `MultiBridgeSender` on the source chain by calling the `addSenderAdapters()` function of `MultiBridgeSender`.
@@ -110,7 +110,7 @@ Use case: `Caller`(address: 0x58b529F9084D7eAA598EB3477Fe36064C5B7bbC1) on Avala
 
 `MultiBridgeReceiver` receive message from `WormholeReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0xe72cecfe6656120f9d7eaf8565f2d26acfd650e9bc0f5d1754104e435c84f1fa). Accumulated power of this message is `10000/20000` and not reaches quorum threshold `98/100`.
 
-`MultiBridgeReceiver` receive message from `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x0ceaf9315cfd2a9c42c597a3aba4566ac5b15f54dce42bc25e96d0bdd12475ff). Accumulated power of this message changes to `20000/20000` and reaches quorum threshold `98/100`. Then within the same tx, quorum threshold is updated to `96`. 
+`MultiBridgeReceiver` receive message from `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x0ceaf9315cfd2a9c42c597a3aba4566ac5b15f54dce42bc25e96d0bdd12475ff). Accumulated power of this message changes to `20000/20000` and reaches quorum threshold `98/100`. Then within the same tx, quorum threshold is updated to `96`.
 
 ### Test cross-chain calling enableFeeAmount() of UniswapV3Factory
 
@@ -122,4 +122,4 @@ Transfer owner of `UniswapV3Factory` to `MultiBridgeReceiver`, because `enableFe
 
 `MultiBridgeReceiver` receive message from `WormholeReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0x2db8178ce5130945fee24fc7da3d5273921234dd6fa10655f5baaea6f90cb2f5). Accumulated power of this message is `10000/20000` and not reaches quorum threshold `96/100`.
 
-`MultiBridgeReceiver` receive message from `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0xfbb0680033a841cadf197cf6b85f5794f764f2edeb27192353edd3cf668987fe). Accumulated power of this message changes to `20000/20000` and reaches quorum threshold `96/100`. Then within the same tx, `MultiBridgeReceiver` invoke `enableFeeAmount()` of `UniswapV3Factory` and set `feeAmountTickSpacing[40] = 40`. 
+`MultiBridgeReceiver` receive message from `CelerReceiverAdapter`, [tx link](https://testnet.bscscan.com/tx/0xfbb0680033a841cadf197cf6b85f5794f764f2edeb27192353edd3cf668987fe). Accumulated power of this message changes to `20000/20000` and reaches quorum threshold `96/100`. Then within the same tx, `MultiBridgeReceiver` invoke `enableFeeAmount()` of `UniswapV3Factory` and set `feeAmountTickSpacing[40] = 40`.

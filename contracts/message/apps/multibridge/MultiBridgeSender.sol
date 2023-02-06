@@ -58,10 +58,8 @@ contract MultiBridgeSender {
             // if one bridge is paused it shouldn't halt the process
             try IBridgeSenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message) {
                 totalFee += fee;
-            }
-            catch 
-            {
-                 emit ErrorSendMessage(senderAdapters[i], message);
+            } catch {
+                emit ErrorSendMessage(senderAdapters[i], message);
             }
         }
         emit MultiBridgeMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);

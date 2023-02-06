@@ -67,12 +67,10 @@ interface IDeBridgeGate {
 
     /// @dev Returns whether the transfer with the submissionId was claimed.
     /// submissionId is generated in getSubmissionIdFrom
-    function isSubmissionUsed(bytes32 submissionId) view external returns (bool);
+    function isSubmissionUsed(bytes32 submissionId) external view returns (bool);
 
     /// @dev Returns native token info by wrapped token address
-    function getNativeInfo(address token) view external returns (
-        uint256 nativeChainId,
-        bytes memory nativeAddress);
+    function getNativeInfo(address token) external view returns (uint256 nativeChainId, bytes memory nativeAddress);
 
     /// @dev Returns address of the proxy to execute user's calls.
     function callProxy() external view returns (address);
@@ -144,7 +142,7 @@ interface IDeBridgeGate {
         bool _useAssetFee,
         uint32 _referralCode,
         bytes calldata _autoParams
-    ) external payable returns (bytes32 submissionId) ;
+    ) external payable returns (bytes32 submissionId);
 
     /// @dev Is used for transfers [into the native chain](https://docs.debridge.finance/the-core-protocol/transfers#transfer-from-secondary-chain-to-native-chain)
     /// to unlock the designated amount of asset from collateral and transfer it to the receiver.
@@ -172,10 +170,7 @@ interface IDeBridgeGate {
     /// @dev Returns asset fixed fee value for specified debridge and chainId.
     /// @param _debridgeId Asset identifier.
     /// @param _chainId Chain id.
-    function getDebridgeChainAssetFixedFee(
-        bytes32 _debridgeId,
-        uint256 _chainId
-    ) external view returns (uint256);
+    function getDebridgeChainAssetFixedFee(bytes32 _debridgeId, uint256 _chainId) external view returns (uint256);
 
     /* ========== EVENTS ========== */
 
@@ -217,35 +212,19 @@ interface IDeBridgeGate {
         uint16 minReservesBps
     );
 
-    event MonitoringSendEvent(
-        bytes32 submissionId,
-        uint256 nonce,
-        uint256 lockedOrMintedAmount,
-        uint256 totalSupply
-    );
+    event MonitoringSendEvent(bytes32 submissionId, uint256 nonce, uint256 lockedOrMintedAmount, uint256 totalSupply);
 
-    event MonitoringClaimEvent(
-        bytes32 submissionId,
-        uint256 lockedOrMintedAmount,
-        uint256 totalSupply
-    );
+    event MonitoringClaimEvent(bytes32 submissionId, uint256 lockedOrMintedAmount, uint256 totalSupply);
 
     /// @dev Emitted when the asset is allowed/disallowed to be transferred to the chain.
     event ChainSupportUpdated(uint256 chainId, bool isSupported, bool isChainFrom);
     /// @dev Emitted when the supported chains are updated.
-    event ChainsSupportUpdated(
-        uint256 chainIds,
-        ChainSupportInfo chainSupportInfo,
-        bool isChainFrom);
+    event ChainsSupportUpdated(uint256 chainIds, ChainSupportInfo chainSupportInfo, bool isChainFrom);
 
     /// @dev Emitted when the new call proxy is set.
     event CallProxyUpdated(address callProxy);
     /// @dev Emitted when the transfer request is executed.
-    event AutoRequestExecuted(
-        bytes32 submissionId,
-        bool indexed success,
-        address callProxy
-    );
+    event AutoRequestExecuted(bytes32 submissionId, bool indexed success, address callProxy);
 
     /// @dev Emitted when a submission is blocked.
     event Blocked(bytes32 submissionId);
@@ -256,9 +235,7 @@ interface IDeBridgeGate {
     event WithdrawnFee(bytes32 debridgeId, uint256 fee);
 
     /// @dev Emitted when globalFixedNativeFee and globalTransferFeeBps are updated.
-    event FixedNativeFeeUpdated(
-        uint256 globalFixedNativeFee,
-        uint256 globalTransferFeeBps);
+    event FixedNativeFeeUpdated(uint256 globalFixedNativeFee, uint256 globalTransferFeeBps);
 
     /// @dev Emitted when globalFixedNativeFee is updated by feeContractUpdater
     event FixedNativeFeeAutoUpdated(uint256 globalFixedNativeFee);

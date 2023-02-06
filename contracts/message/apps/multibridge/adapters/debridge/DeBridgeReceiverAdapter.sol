@@ -4,11 +4,11 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "../interfaces/IMultiBridgeReceiver.sol";
-import "../interfaces/DeBridge/IDeBridgeReceiverAdapter.sol";
-import "../interfaces/DeBridge/IDeBridgeGate.sol";
-import "../interfaces/DeBridge/ICallProxy.sol";
-import "../MessageStruct.sol";
+import "../../interfaces/IMultiBridgeReceiver.sol";
+import "./interfaces/IDeBridgeReceiverAdapter.sol";
+import "./interfaces/IDeBridgeGate.sol";
+import "./interfaces/ICallProxy.sol";
+import "../../MessageStruct.sol";
 
 contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter {
     

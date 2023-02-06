@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.17;
 
-import "../../../interfaces/IMessageBus.sol";
-import "../interfaces/IBridgeSenderAdapter.sol";
-import "../MessageStruct.sol";
+import "../../../../interfaces/IMessageBus.sol";
+import "../../interfaces/IBridgeSenderAdapter.sol";
+import "../../MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/DeBridge/IDeBridgeGate.sol";
-import "../interfaces/DeBridge/ICallProxy.sol";
-import "../interfaces/DeBridge/IDeBridgeReceiverAdapter.sol";
+import "./interfaces/IDeBridgeGate.sol";
+import "./interfaces/ICallProxy.sol";
+import "./interfaces/IDeBridgeReceiverAdapter.sol";
 
 contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
     /* ========== STATE VARIABLES ========== */
@@ -40,7 +40,7 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
 
     /* ========== PUBLIC METHODS ========== */
 
-    function getMessageFee(MessageStruct.Message memory _message) external view returns (uint256) {
+    function getMessageFee(MessageStruct.Message memory) external view returns (uint256) {
         return deBridgeGate.globalFixedNativeFee();
     }
 

@@ -2,8 +2,8 @@
 
 pragma solidity >=0.8.9;
 
-import "../interfaces/IBridgeSenderAdapter.sol";
-import "../MessageStruct.sol";
+import "../../interfaces/IBridgeSenderAdapter.sol";
+import "../../MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IWormhole {

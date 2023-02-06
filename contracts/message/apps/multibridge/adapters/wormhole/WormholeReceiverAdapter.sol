@@ -2,8 +2,8 @@
 
 pragma solidity >=0.8.9;
 
-import "../MessageStruct.sol";
-import "../interfaces/IMultiBridgeReceiver.sol";
+import "../../MessageStruct.sol";
+import "../../interfaces/IMultiBridgeReceiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface Structs {

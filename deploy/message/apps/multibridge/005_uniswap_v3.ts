@@ -9,13 +9,13 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const result = await deploy('MockCaller', {
+  await deploy('UniswapV3Factory', {
     from: deployer,
-    log: true
+    log: true,
+    args: []
   });
-  await hre.run('verify:verify', { address: result.address });
 };
 
-deployFunc.tags = ['000_mock_caller'];
+deployFunc.tags = ['UniswapV3Factory'];
 deployFunc.dependencies = [];
 export default deployFunc;

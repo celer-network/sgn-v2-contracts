@@ -5,12 +5,13 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "../../interfaces/IMultiBridgeReceiver.sol";
+import "../../interfaces/IBridgeReceiverAdapter.sol";
 import "./interfaces/IDeBridgeReceiverAdapter.sol";
 import "./interfaces/IDeBridgeGate.sol";
 import "./interfaces/ICallProxy.sol";
 import "../../MessageStruct.sol";
 
-contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter {
+contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter, IBridgeReceiverAdapter {
     /* ========== STATE VARIABLES ========== */
 
     mapping(uint256 => address) public senderAdapters;
@@ -65,17 +66,18 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter 
         _unpause();
     }
 
-    function updateSenderAdapter(uint256[] calldata _srcChainIds, address[] calldata _senderAdapters)
+    function updateSenderAdapter(uint64[] calldata _srcChainIds, address[] calldata _senderAdapters)
         external
+        override
         onlyOwner
     {
         require(_srcChainIds.length == _senderAdapters.length, "mismatch length");
         for (uint256 i = 0; i < _srcChainIds.length; i++) {
-            senderAdapters[_srcChainIds[i]] = _senderAdapters[i];
+            senderAdapters[uint256(_srcChainIds[i])] = _senderAdapters[i];
         }
     }
 
-    function setMultiBridgeReceiver(address _multiBridgeReceiver) external onlyOwner {
+    function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
         multiBridgeReceiver = _multiBridgeReceiver;
     }
 

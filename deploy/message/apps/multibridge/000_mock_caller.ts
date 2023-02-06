@@ -9,18 +9,13 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const constructorArgs = [
-    "0x43dE2d77BF8027e25dBD179B491e8d64f38398aA" //_deBridgeGate
-  ];
-
-  const result = await deploy('DeBridgeReceiverAdapter', {
+  const mockCaller = await deploy('MockCaller', {
     from: deployer,
-    log: true,
-    args: constructorArgs
+    log: true
   });
-  await hre.run('verify:verify', { address: result.address, constructorArguments: constructorArgs  });
+  await hre.run('verify:verify', { address: mockCaller.address });
 };
 
-deployFunc.tags = ['004_debridge_receiver'];
+deployFunc.tags = ['MockCaller'];
 deployFunc.dependencies = [];
 export default deployFunc;

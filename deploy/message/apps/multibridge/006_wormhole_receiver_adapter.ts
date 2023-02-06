@@ -9,18 +9,15 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const constructorArgs = [
-    "0x43dE2d77BF8027e25dBD179B491e8d64f38398aA" //_deBridgeGate
-  ];
-
-  const result = await deploy('DeBridgeSenderAdapter', {
+  const args = [process.env.MULTI_BRIDGE_WORMHOLE_DST_BRIDGE, process.env.MULTI_BRIDGE_WORMHOLE_DST_RELAYER];
+  const wormholeReceiverAdapter = await deploy('WormholeReceiverAdapter', {
     from: deployer,
     log: true,
-    args: constructorArgs
+    args: args
   });
-  await hre.run('verify:verify', { address: result.address, constructorArguments: constructorArgs  });
+  await hre.run('verify:verify', { address: wormholeReceiverAdapter.address, constructorArguments: args });
 };
 
-deployFunc.tags = ['003_debridge_sender'];
+deployFunc.tags = ['WormholeReceiverAdapter'];
 deployFunc.dependencies = [];
 export default deployFunc;

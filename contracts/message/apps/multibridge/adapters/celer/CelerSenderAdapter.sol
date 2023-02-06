@@ -40,6 +40,7 @@ contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
 
     function updateReceiverAdapter(uint64[] calldata _dstChainIds, address[] calldata _receiverAdapters)
         external
+        override
         onlyOwner
     {
         require(_dstChainIds.length == _receiverAdapters.length, "mismatch length");
@@ -48,7 +49,7 @@ contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
         }
     }
 
-    function setMultiBridgeSender(address _multiBridgeSender) external onlyOwner {
+    function setMultiBridgeSender(address _multiBridgeSender) external override onlyOwner {
         multiBridgeSender = _multiBridgeSender;
     }
 }

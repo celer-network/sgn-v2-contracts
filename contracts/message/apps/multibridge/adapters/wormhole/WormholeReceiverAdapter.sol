@@ -5,6 +5,7 @@ pragma solidity >=0.8.9;
 import "../../MessageStruct.sol";
 import "../../interfaces/IMultiBridgeReceiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../interfaces/IBridgeReceiverAdapter.sol";
 
 interface Structs {
     struct Provider {
@@ -55,8 +56,9 @@ interface IWormholeReceiver {
     function receiveWormholeMessages(bytes[] memory vaas, bytes[] memory additionalData) external payable;
 }
 
-contract WormholeReceiverAdapter is IWormholeReceiver, Ownable {
-    bytes32 public senderAdapter;
+contract WormholeReceiverAdapter is IBridgeReceiverAdapter, IWormholeReceiver, Ownable {
+    mapping(uint64 => uint16) idMap;
+    mapping(uint16 => bytes32) public senderAdapters;
     address public multiBridgeReceiver;
     IWormhole private immutable wormhole;
     address private immutable relayer;
@@ -82,7 +84,7 @@ contract WormholeReceiverAdapter is IWormholeReceiver, Ownable {
         //validate
         require(valid, reason);
         // Ensure the emitterAddress of this VAA is the Uniswap message sender
-        require(senderAdapter == vm.emitterAddress, "Invalid Emitter Address!");
+        require(senderAdapters[vm.emitterChainId] == vm.emitterAddress, "Invalid Emitter Address!");
         //verify destination
         (MessageStruct.Message memory message, address receiverAdapter) = abi.decode(
             vm.payload,
@@ -96,11 +98,27 @@ contract WormholeReceiverAdapter is IWormholeReceiver, Ownable {
         IMultiBridgeReceiver(multiBridgeReceiver).receiveMessage(message);
     }
 
-    function setSenderAdapter(bytes32 _senderAdapter) external onlyOwner {
-        senderAdapter = _senderAdapter;
+    function setChainIdMap(uint64[] calldata _origIds, uint16[] calldata _whIds) external onlyOwner {
+        require(_origIds.length == _whIds.length, "mismatch length");
+        for (uint256 i = 0; i < _origIds.length; i++) {
+            idMap[_origIds[i]] = _whIds[i];
+        }
     }
 
-    function setMultiBridgeReceiver(address _multiBridgeReceiver) external onlyOwner {
+    function updateSenderAdapter(uint64[] calldata _srcChainIds, address[] calldata _senderAdapters)
+        external
+        override
+        onlyOwner
+    {
+        require(_srcChainIds.length == _senderAdapters.length, "mismatch length");
+        for (uint256 i = 0; i < _srcChainIds.length; i++) {
+            uint16 wormholeId = idMap[_srcChainIds[i]];
+            require(wormholeId != 0, "unrecognized srcChainId");
+            senderAdapters[wormholeId] = bytes32(uint256(uint160(_senderAdapters[i])));
+        }
+    }
+
+    function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
         multiBridgeReceiver = _multiBridgeReceiver;
     }
 }

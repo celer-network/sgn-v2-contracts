@@ -9,21 +9,15 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  // TODO: set real caller
-  const mockCallerAddress = (await deployments.get("MockCaller")).address;
-
-  const constructorArgs = [
-    mockCallerAddress //caller
-  ];
-
-  const result = await deploy('MultiBridgeSender', {
+  const args = [process.env.MULTI_BRIDGE_CELER_DST_MESSAGE_BUS];
+  const celerReceiverAdapter = await deploy('CelerReceiverAdapter', {
     from: deployer,
     log: true,
-    args: constructorArgs
+    args: args
   });
-  await hre.run('verify:verify', { address: result.address, constructorArguments: constructorArgs });
+  await hre.run('verify:verify', { address: celerReceiverAdapter.address, constructorArguments: args });
 };
 
-deployFunc.tags = ['001_multi_bridge_sender'];
+deployFunc.tags = ['CelerReceiverAdapter'];
 deployFunc.dependencies = [];
 export default deployFunc;

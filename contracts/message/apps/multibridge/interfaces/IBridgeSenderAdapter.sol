@@ -18,4 +18,14 @@ interface IBridgeSenderAdapter {
      * @dev Send a MessageStruct.Message through this message bridge.
      */
     function sendMessage(MessageStruct.Message memory _message) external payable;
+
+    /**
+     * @dev Owner update receiver adapter address on dst chain.
+     */
+    function updateReceiverAdapter(uint64[] calldata _dstChainIds, address[] calldata _receiverAdapters) external;
+
+    /**
+     * @dev Owner setup MultiBridgeSender.
+     */
+    function setMultiBridgeSender(address _multiBridgeSender) external;
 }

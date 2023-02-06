@@ -2,12 +2,10 @@
 
 pragma solidity 0.8.17;
 
-import "../../../../interfaces/IMessageBus.sol";
 import "../../interfaces/IBridgeSenderAdapter.sol";
 import "../../MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IDeBridgeGate.sol";
-import "./interfaces/ICallProxy.sol";
 import "./interfaces/IDeBridgeReceiverAdapter.sol";
 
 contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
@@ -66,6 +64,7 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
 
     function updateReceiverAdapter(uint64[] calldata _dstChainIds, address[] calldata _receiverAdapters)
         external
+        override
         onlyOwner
     {
         require(_dstChainIds.length == _receiverAdapters.length, "mismatch length");
@@ -75,7 +74,7 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
         }
     }
 
-    function setMultiBridgeSender(address _multiBridgeSender) external onlyOwner {
+    function setMultiBridgeSender(address _multiBridgeSender) external override onlyOwner {
         multiBridgeSender = _multiBridgeSender;
     }
 }

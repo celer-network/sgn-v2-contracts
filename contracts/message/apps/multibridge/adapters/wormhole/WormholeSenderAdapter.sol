@@ -57,8 +57,9 @@ interface ICoreRelayer {
 contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
     string public name = "wormhole";
     address public multiBridgeSender;
-    address public receiverAdapter;
     mapping(uint64 => uint16) idMap;
+    // dstChainId => receiverAdapter address
+    mapping(uint16 => address) public receiverAdapters;
 
     uint8 consistencyLevel = 1;
 
@@ -87,6 +88,7 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
     }
 
     function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiBridgeSender {
+        address receiverAdapter = receiverAdapters[idMap[_message.dstChainId]];
         bytes memory payload = abi.encode(_message, receiverAdapter);
         uint256 msgFee = wormhole.messageFee();
         wormhole.publishMessage{value: msgFee}(_message.nonce, payload, consistencyLevel);
@@ -112,11 +114,20 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
         }
     }
 
-    function setReceiverAdapter(address _receiverAdapter) external onlyOwner {
-        receiverAdapter = _receiverAdapter;
+    function updateReceiverAdapter(uint64[] calldata _dstChainIds, address[] calldata _receiverAdapters)
+        external
+        override
+        onlyOwner
+    {
+        require(_dstChainIds.length == _receiverAdapters.length, "mismatch length");
+        for (uint256 i = 0; i < _dstChainIds.length; i++) {
+            uint16 wormholeId = idMap[_dstChainIds[i]];
+            require(wormholeId != 0, "unrecognized dstChainId");
+            receiverAdapters[wormholeId] = _receiverAdapters[i];
+        }
     }
 
-    function setMultiBridgeSender(address _multiBridgeSender) external onlyOwner {
+    function setMultiBridgeSender(address _multiBridgeSender) external override onlyOwner {
         multiBridgeSender = _multiBridgeSender;
     }
 }

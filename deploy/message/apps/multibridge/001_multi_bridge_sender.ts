@@ -9,13 +9,15 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const result = await deploy('MultiBridgeReceiver', {
+  const args = [process.env.MULTI_BRIDGE_CALLER];
+  const multiBridgeSender = await deploy('MultiBridgeSender', {
     from: deployer,
-    log: true
+    log: true,
+    args: args
   });
-  await hre.run('verify:verify', { address: result.address });
+  await hre.run('verify:verify', { address: multiBridgeSender.address, constructorArguments: args });
 };
 
-deployFunc.tags = ['002_multi_bridge_receiver'];
+deployFunc.tags = ['MultiBridgeSender'];
 deployFunc.dependencies = [];
 export default deployFunc;

@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 
 import "../../../../safeguard/MessageAppPauser.sol";
 import "../../interfaces/IMultiBridgeReceiver.sol";
+import "../../interfaces/IBridgeReceiverAdapter.sol";
 import "../../MessageStruct.sol";
 
 interface IMessageReceiverApp {
@@ -28,7 +29,7 @@ interface IMessageReceiverApp {
     ) external payable returns (ExecutionStatus);
 }
 
-contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
+contract CelerReceiverAdapter is IBridgeReceiverAdapter, MessageAppPauser, IMessageReceiverApp {
     mapping(uint64 => address) public senderAdapters;
     address public immutable msgBus;
     address public multiBridgeReceiver;
@@ -58,6 +59,7 @@ contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
 
     function updateSenderAdapter(uint64[] calldata _srcChainIds, address[] calldata _senderAdapters)
         external
+        override
         onlyOwner
     {
         require(_srcChainIds.length == _senderAdapters.length, "mismatch length");
@@ -66,7 +68,7 @@ contract CelerReceiverAdapter is MessageAppPauser, IMessageReceiverApp {
         }
     }
 
-    function setMultiBridgeReceiver(address _multiBridgeReceiver) external onlyOwner {
+    function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
         multiBridgeReceiver = _multiBridgeReceiver;
     }
 }

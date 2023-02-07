@@ -37,7 +37,8 @@ contract MockCaller is AccessControl {
         address _target,
         bytes calldata _callData
     ) external payable onlyCaller {
-        bridgeSender.remoteCall{value: msg.value}(_dstChainId, _target, _callData);
+        uint256 totalFee = bridgeSender.estimateTotalMessageFee(_dstChainId, _target, _callData);
+        bridgeSender.remoteCall{value: totalFee}(_dstChainId, _target, _callData);
     }
 
     function addSenderAdapters(address[] calldata _senderAdapters) external onlyAdmin {
@@ -47,4 +48,13 @@ contract MockCaller is AccessControl {
     function removeSenderAdapters(address[] calldata _senderAdapters) external onlyAdmin {
         bridgeSender.removeSenderAdapters(_senderAdapters);
     }
+
+    function drainNativeToken() external onlyAdmin {
+        uint256 balance = address(this).balance;
+        if (balance > 0) {
+            payable(msg.sender).transfer(balance);
+        }
+    }
+
+    receive() external payable {}
 }

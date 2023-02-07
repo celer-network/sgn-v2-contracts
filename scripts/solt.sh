@@ -49,6 +49,7 @@ solFiles=(
   message/apps/multibridge/adapters/CelerReceiverAdapter
   message/apps/multibridge/MultiBridgeSender
   message/apps/multibridge/MultiBridgeReceiver
+  message/apps/multibridge/mock/MockCaller
 )
 
 run_solt_write() {

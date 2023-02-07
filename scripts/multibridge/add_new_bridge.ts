@@ -17,9 +17,9 @@ const multiBridgeSenderAddr = process.env.MULTI_BRIDGE_SENDER as string;
 const multiBridgeReceiverAddr = process.env.MULTI_BRIDGE_RECEIVER as string;
 const srcChain = process.env.MULTI_BRIDGE_SRC_CHAIN as string;
 const dstChain = process.env.MULTI_BRIDGE_DST_CHAIN as string;
-const senderAdaptersAddr = (process.env.MULTI_BRIDGE_NEW_SENDER_ADAPTERS as string).split(',');
-const receiverAdaptersAddr = (process.env.MULTI_BRIDGE_NEW_RECEIVER_ADAPTERS as string).split(',');
-const receiverPowers = (process.env.MULTI_BRIDGE_NEW_RECEIVER_POWERS as string).split(',');
+const senderAdaptersAddr = (process.env.MULTI_BRIDGE_SENDER_ADAPTERS as string).split(',');
+const receiverAdaptersAddr = (process.env.MULTI_BRIDGE_RECEIVER_ADAPTERS as string).split(',');
+const receiverPowers = (process.env.MULTI_BRIDGE_RECEIVER_POWERS as string).split(',');
 
 async function addNewBridge(): Promise<void> {
   if (!mockCallerAddr || !multiBridgeSenderAddr || !multiBridgeReceiverAddr || !srcChain || !dstChain) {
@@ -55,8 +55,11 @@ async function addNewBridge(): Promise<void> {
   console.log("remote call to multiBridgeReceiver for updating receiver adapter");
   const callData = multiBridgeReceiver.interface.encodeFunctionData("updateReceiverAdapter", [receiverAdaptersAddr, receiverPowers]);
   const messageTotalFee = await multiBridgeSender.estimateTotalMessageFee(dstChainId, multiBridgeSenderAddr, callData);
+  console.log("total fee ", messageTotalFee.toString());
   let srcPayableOverrides = <PayableOverrides>srcFeeOverrides;
   srcPayableOverrides.value = messageTotalFee;
+  // in case of bad gas estimation
+  srcPayableOverrides.gasLimit = 1000000;
   tx = await mockCaller.remoteCall(dstChainId,
       multiBridgeReceiverAddr,
       callData,

@@ -88,7 +88,9 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
     }
 
     function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiBridgeSender {
+        _message.bridgeName = name;
         address receiverAdapter = receiverAdapters[idMap[_message.dstChainId]];
+        require(receiverAdapter != address(0), "no receiver adapter");
         bytes memory payload = abi.encode(_message, receiverAdapter);
         uint256 msgFee = wormhole.messageFee();
         wormhole.publishMessage{value: msgFee}(_message.nonce, payload, consistencyLevel);

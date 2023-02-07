@@ -14,8 +14,8 @@ const multiBridgeSenderAddr = process.env.MULTI_BRIDGE_SENDER as string;
 const multiBridgeReceiverAddr = process.env.MULTI_BRIDGE_RECEIVER as string;
 const srcChain = process.env.MULTI_BRIDGE_SRC_CHAIN as string;
 const dstChain = process.env.MULTI_BRIDGE_DST_CHAIN as string;
-const senderAdaptersAddr = (process.env.MULTI_BRIDGE_INIT_SENDER_ADAPTERS as string).split(',');
-const receiverAdaptersAddr = (process.env.MULTI_BRIDGE_INIT_RECEIVER_ADAPTERS as string).split(',');
+const senderAdaptersAddr = (process.env.MULTI_BRIDGE_SENDER_ADAPTERS as string).split(',');
+const receiverAdaptersAddr = (process.env.MULTI_BRIDGE_RECEIVER_ADAPTERS as string).split(',');
 
 async function setupAdapters(): Promise<void> {
   if (!srcChain || !dstChain) {

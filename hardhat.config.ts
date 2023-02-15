@@ -79,6 +79,9 @@ const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAUL
 const shibuyaTestnetEndpoint = process.env.SHIBUYA_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
 const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const antiMatTestnetEndpoint = process.env.ANTIMAT_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -277,6 +280,10 @@ const config: HardhatUserConfig = {
     shibuyaTestnet: {
       url: shibuyaTestnetEndpoint,
       accounts: [`0x${shibuyaTestnetPrivateKey}`]
+    },
+    antiMatTest: {
+      url: antiMatTestnetEndpoint,
+      accounts: [`0x${antiMatTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

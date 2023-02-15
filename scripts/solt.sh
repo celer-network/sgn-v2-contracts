@@ -33,6 +33,7 @@ solFiles=(
   pegged-bridge/tokens/SwapBridgeToken
   pegged-bridge/tokens/customized/FraxBridgeToken
   pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner
+  pegged-bridge/customized/PeggedNativeTokenBridge
   staking/Govern
   staking/SGN
   staking/Staking

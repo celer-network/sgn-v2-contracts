@@ -34,6 +34,9 @@ contract CelerReceiverAdapter is IBridgeReceiverAdapter, MessageAppPauser, IMess
     address public immutable msgBus;
     address public multiBridgeReceiver;
 
+    event SenderAdapterUpdated(uint64 srcChainId, address senderAdapter);
+    event MultiBridgeReceiverSet(address multiBridgeReceiver);
+
     modifier onlyMessageBus() {
         require(msg.sender == msgBus, "caller is not message bus");
         _;
@@ -65,10 +68,12 @@ contract CelerReceiverAdapter is IBridgeReceiverAdapter, MessageAppPauser, IMess
         require(_srcChainIds.length == _senderAdapters.length, "mismatch length");
         for (uint256 i = 0; i < _srcChainIds.length; i++) {
             senderAdapters[_srcChainIds[i]] = _senderAdapters[i];
+            emit SenderAdapterUpdated(_srcChainIds[i], _senderAdapters[i]);
         }
     }
 
     function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
         multiBridgeReceiver = _multiBridgeReceiver;
+        emit MultiBridgeReceiverSet(_multiBridgeReceiver);
     }
 }

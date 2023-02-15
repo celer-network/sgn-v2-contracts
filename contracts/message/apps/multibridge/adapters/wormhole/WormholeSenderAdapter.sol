@@ -64,6 +64,8 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
     uint8 consistencyLevel = 1;
 
     event MessageSent(bytes payload, address indexed messageReceiver);
+    event ReceiverAdapterUpdated(uint64 dstChainId, address receiverAdapter);
+    event MultiBridgeSenderSet(address multiBridgeSender);
 
     IWormhole private immutable wormhole;
     ICoreRelayer private immutable relayer;
@@ -126,10 +128,12 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
             uint16 wormholeId = idMap[_dstChainIds[i]];
             require(wormholeId != 0, "unrecognized dstChainId");
             receiverAdapters[wormholeId] = _receiverAdapters[i];
+            emit ReceiverAdapterUpdated(_dstChainIds[i], _receiverAdapters[i]);
         }
     }
 
     function setMultiBridgeSender(address _multiBridgeSender) external override onlyOwner {
         multiBridgeSender = _multiBridgeSender;
+        emit MultiBridgeSenderSet(_multiBridgeSender);
     }
 }

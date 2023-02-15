@@ -21,7 +21,8 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
     /* ========== EVENTS ========== */
 
     event SentMessage(bytes32 submissionId, MessageStruct.Message _message);
-    event UpdatedReceiverAdapter(uint64 dstChainId, address receiverAdapter);
+    event ReceiverAdapterUpdated(uint64 dstChainId, address receiverAdapter);
+    event MultiBridgeSenderSet(address multiBridgeSender);
 
     /* ========== MODIFIERS ========== */
 
@@ -70,11 +71,12 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
         require(_dstChainIds.length == _receiverAdapters.length, "mismatch length");
         for (uint256 i = 0; i < _dstChainIds.length; i++) {
             receiverAdapters[_dstChainIds[i]] = _receiverAdapters[i];
-            emit UpdatedReceiverAdapter(_dstChainIds[i], _receiverAdapters[i]);
+            emit ReceiverAdapterUpdated(_dstChainIds[i], _receiverAdapters[i]);
         }
     }
 
     function setMultiBridgeSender(address _multiBridgeSender) external override onlyOwner {
         multiBridgeSender = _multiBridgeSender;
+        emit MultiBridgeSenderSet(_multiBridgeSender);
     }
 }

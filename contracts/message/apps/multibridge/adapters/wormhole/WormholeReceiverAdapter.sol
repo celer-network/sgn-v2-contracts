@@ -64,6 +64,9 @@ contract WormholeReceiverAdapter is IBridgeReceiverAdapter, IWormholeReceiver, O
     address private immutable relayer;
     mapping(bytes32 => bool) public processedMessages;
 
+    event SenderAdapterUpdated(uint64 srcChainId, address senderAdapter);
+    event MultiBridgeReceiverSet(address multiBridgeReceiver);
+
     constructor(address _bridgeAddress, address _relayer) {
         wormhole = IWormhole(_bridgeAddress);
         relayer = _relayer;
@@ -115,10 +118,12 @@ contract WormholeReceiverAdapter is IBridgeReceiverAdapter, IWormholeReceiver, O
             uint16 wormholeId = idMap[_srcChainIds[i]];
             require(wormholeId != 0, "unrecognized srcChainId");
             senderAdapters[wormholeId] = bytes32(uint256(uint160(_senderAdapters[i])));
+            emit SenderAdapterUpdated(_srcChainIds[i], _senderAdapters[i]);
         }
     }
 
     function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
         multiBridgeReceiver = _multiBridgeReceiver;
+        emit MultiBridgeReceiverSet(_multiBridgeReceiver);
     }
 }

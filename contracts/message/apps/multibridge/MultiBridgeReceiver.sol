@@ -126,9 +126,9 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
         }
         uint64 msgPower = _computeMessagePower(_msgInfo);
         if (msgPower >= (totalPower * quorumThreshold) / THRESHOLD_DECIMAL) {
+            _msgInfo.executed = true;
             (bool ok, ) = _message.target.call(_message.callData);
             require(ok, "external message execution failed");
-            _msgInfo.executed = true;
             emit MessageExecuted(_message.srcChainId, _message.nonce, _message.target, _message.callData);
         }
     }

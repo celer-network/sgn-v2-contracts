@@ -25,8 +25,8 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter,
 
     /* ========== EVENTS ========== */
 
-    event SentMessage(bytes32 submissionId, MessageStruct.Message _message);
-    event UpdatedSenderAdapter(uint256 srcChainId, address senderAdapter);
+    event SenderAdapterUpdated(uint64 srcChainId, address senderAdapter);
+    event MultiBridgeReceiverSet(address multiBridgeReceiver);
 
     /* ========== MODIFIERS ========== */
 
@@ -74,11 +74,13 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter,
         require(_srcChainIds.length == _senderAdapters.length, "mismatch length");
         for (uint256 i = 0; i < _srcChainIds.length; i++) {
             senderAdapters[uint256(_srcChainIds[i])] = _senderAdapters[i];
+            emit SenderAdapterUpdated(_srcChainIds[i], _senderAdapters[i]);
         }
     }
 
     function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
         multiBridgeReceiver = _multiBridgeReceiver;
+        emit MultiBridgeReceiverSet(_multiBridgeReceiver);
     }
 
     /* ========== INTERNAL METHODS ========== */

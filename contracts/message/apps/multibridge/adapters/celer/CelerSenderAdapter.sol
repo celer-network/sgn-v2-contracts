@@ -14,6 +14,9 @@ contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
     // dstChainId => receiverAdapter address
     mapping(uint64 => address) public receiverAdapters;
 
+    event ReceiverAdapterUpdated(uint64 dstChainId, address receiverAdapter);
+    event MultiBridgeSenderSet(address multiBridgeSender);
+
     modifier onlyMultiBridgeSender() {
         require(msg.sender == multiBridgeSender, "not multi-bridge msg sender");
         _;
@@ -46,10 +49,12 @@ contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
         require(_dstChainIds.length == _receiverAdapters.length, "mismatch length");
         for (uint256 i = 0; i < _dstChainIds.length; i++) {
             receiverAdapters[_dstChainIds[i]] = _receiverAdapters[i];
+            emit ReceiverAdapterUpdated(_dstChainIds[i], _receiverAdapters[i]);
         }
     }
 
     function setMultiBridgeSender(address _multiBridgeSender) external override onlyOwner {
         multiBridgeSender = _multiBridgeSender;
+        emit MultiBridgeSenderSet(_multiBridgeSender);
     }
 }

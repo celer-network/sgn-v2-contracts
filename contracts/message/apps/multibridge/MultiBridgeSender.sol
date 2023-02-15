@@ -3,6 +3,7 @@
 pragma solidity >=0.8.9;
 
 import "./interfaces/IBridgeSenderAdapter.sol";
+import "./interfaces/IMultiBridgeReceiver.sol";
 import "./MessageStruct.sol";
 
 contract MultiBridgeSender {
@@ -35,11 +36,13 @@ contract MultiBridgeSender {
      * Caller can use estimateTotalMessageFee() to get total message fees before calling this function.
      *
      * @param _dstChainId is the destination chainId.
+     * @param _multiBridgeReceiver is the MultiBridgeReceiver address on destination chain.
      * @param _target is the contract address on the destination chain.
      * @param _callData is the data to be sent to _target by low-level call(eg. address(_target).call(_callData)).
      */
     function remoteCall(
         uint64 _dstChainId,
+        address _multiBridgeReceiver,
         address _target,
         bytes calldata _callData
     ) external payable onlyCaller {
@@ -51,12 +54,25 @@ contract MultiBridgeSender {
             _callData,
             ""
         );
+        bytes memory data;
         uint256 totalFee;
         // send copies of the message through multiple bridges
         for (uint256 i = 0; i < senderAdapters.length; i++) {
-            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(message);
+            message.bridgeName = IBridgeSenderAdapter(senderAdapters[i]).name();
+            data = abi.encodeWithSelector(IMultiBridgeReceiver.receiveMessage.selector, message);
+            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(
+                uint256(_dstChainId),
+                _multiBridgeReceiver,
+                data
+            );
             // if one bridge is paused it shouldn't halt the process
-            try IBridgeSenderAdapter(senderAdapters[i]).sendMessage{value: fee}(message) {
+            try
+                IBridgeSenderAdapter(senderAdapters[i]).dispatchMessage{value: fee}(
+                    uint256(_dstChainId),
+                    _multiBridgeReceiver,
+                    data
+                )
+            {
                 totalFee += fee;
             } catch {
                 emit ErrorSendMessage(senderAdapters[i], message);
@@ -93,6 +109,7 @@ contract MultiBridgeSender {
      */
     function estimateTotalMessageFee(
         uint64 _dstChainId,
+        address _multiBridgeReceiver,
         address _target,
         bytes calldata _callData
     ) public view returns (uint256) {
@@ -104,9 +121,16 @@ contract MultiBridgeSender {
             _callData,
             ""
         );
+        bytes memory data;
         uint256 totalFee;
         for (uint256 i = 0; i < senderAdapters.length; i++) {
-            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(message);
+            message.bridgeName = IBridgeSenderAdapter(senderAdapters[i]).name();
+            data = abi.encodeWithSelector(IMultiBridgeReceiver.receiveMessage.selector, message);
+            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(
+                uint256(_dstChainId),
+                _multiBridgeReceiver,
+                data
+            );
             totalFee += fee;
         }
         return totalFee;

@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "../../../../interfaces/IMessageBus.sol";
 import "../../interfaces/IBridgeSenderAdapter.sol";
-import "../../MessageStruct.sol";
+import "../../interfaces/IMultiBridgeReceiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
@@ -12,9 +12,10 @@ contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
     address public multiBridgeSender;
     address public immutable msgBus;
     // dstChainId => receiverAdapter address
-    mapping(uint64 => address) public receiverAdapters;
+    mapping(uint256 => address) public receiverAdapters;
+    uint32 public nonce;
 
-    event ReceiverAdapterUpdated(uint64 dstChainId, address receiverAdapter);
+    event ReceiverAdapterUpdated(uint256 dstChainId, address receiverAdapter);
     event MultiBridgeSenderSet(address multiBridgeSender);
 
     modifier onlyMultiBridgeSender() {
@@ -26,22 +27,32 @@ contract CelerSenderAdapter is IBridgeSenderAdapter, Ownable {
         msgBus = _msgBus;
     }
 
-    function getMessageFee(MessageStruct.Message memory _message) external view override returns (uint256) {
-        _message.bridgeName = name;
-        return IMessageBus(msgBus).calcFee(abi.encode(_message));
+    function getMessageFee(
+        uint256,
+        address _to,
+        bytes calldata _data
+    ) external view override returns (uint256) {
+        return IMessageBus(msgBus).calcFee(abi.encode(bytes32(uint256(nonce)), msg.sender, _to, _data));
     }
 
-    function sendMessage(MessageStruct.Message memory _message) external payable override onlyMultiBridgeSender {
-        _message.bridgeName = name;
-        require(receiverAdapters[_message.dstChainId] != address(0), "no receiver adapter");
+    function dispatchMessage(
+        uint256 _toChainId,
+        address _to,
+        bytes calldata _data
+    ) external payable override onlyMultiBridgeSender returns (bytes32) {
+        require(receiverAdapters[_toChainId] != address(0), "no receiver adapter");
+        bytes32 msgId = bytes32(uint256(nonce));
         IMessageBus(msgBus).sendMessage{value: msg.value}(
-            receiverAdapters[_message.dstChainId],
-            _message.dstChainId,
-            abi.encode(_message)
+            receiverAdapters[_toChainId],
+            _toChainId,
+            abi.encode(msgId, msg.sender, _to, _data)
         );
+        emit MessageDispatched(msgId, msg.sender, _toChainId, _to, _data);
+        nonce++;
+        return msgId;
     }
 
-    function updateReceiverAdapter(uint64[] calldata _dstChainIds, address[] calldata _receiverAdapters)
+    function updateReceiverAdapter(uint256[] calldata _dstChainIds, address[] calldata _receiverAdapters)
         external
         override
         onlyOwner

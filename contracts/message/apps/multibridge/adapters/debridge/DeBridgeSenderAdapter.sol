@@ -3,7 +3,6 @@
 pragma solidity 0.8.17;
 
 import "../../interfaces/IBridgeSenderAdapter.sol";
-import "../../MessageStruct.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IDeBridgeGate.sol";
 import "./interfaces/IDeBridgeReceiverAdapter.sol";
@@ -14,14 +13,15 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
     string public constant name = "deBridge";
     address public multiBridgeSender;
     IDeBridgeGate public immutable deBridgeGate;
+    uint32 public nonce;
 
     // dstChainId => receiverAdapter address
-    mapping(uint64 => address) public receiverAdapters;
+    mapping(uint256 => address) public receiverAdapters;
 
     /* ========== EVENTS ========== */
 
-    event SentMessage(bytes32 submissionId, MessageStruct.Message _message);
-    event ReceiverAdapterUpdated(uint64 dstChainId, address receiverAdapter);
+    event SentMessage(bytes32 submissionId, uint256 toChainId, address to, bytes data);
+    event ReceiverAdapterUpdated(uint256 dstChainId, address receiverAdapter);
     event MultiBridgeSenderSet(address multiBridgeSender);
 
     /* ========== MODIFIERS ========== */
@@ -39,31 +39,42 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
 
     /* ========== PUBLIC METHODS ========== */
 
-    function getMessageFee(MessageStruct.Message memory) external view returns (uint256) {
+    function getMessageFee(
+        uint256,
+        address,
+        bytes calldata
+    ) external view returns (uint256) {
         return deBridgeGate.globalFixedNativeFee();
     }
 
-    function sendMessage(MessageStruct.Message memory _message) external payable onlyMultiBridgeSender {
-        _message.bridgeName = name;
-        require(receiverAdapters[_message.dstChainId] != address(0), "no receiver adapter");
-        address receiver = receiverAdapters[_message.dstChainId];
+    function dispatchMessage(
+        uint256 _toChainId,
+        address _to,
+        bytes calldata _data
+    ) external payable override onlyMultiBridgeSender returns (bytes32) {
+        require(receiverAdapters[_toChainId] != address(0), "no receiver adapter");
+        address receiver = receiverAdapters[_toChainId];
         bytes memory executeMethodData = abi.encodeWithSelector(
             IDeBridgeReceiverAdapter.executeMessage.selector,
-            _message
+            msg.sender,
+            _to,
+            _data,
+            bytes32(uint256(nonce++))
         );
 
         bytes32 submissionId = deBridgeGate.sendMessage{value: msg.value}(
-            _message.dstChainId, //_dstChainId,
+            _toChainId, //_dstChainId,
             abi.encodePacked(receiver), //_targetContractAddress
             executeMethodData //_targetContractCalldata,
         );
 
-        emit SentMessage(submissionId, _message);
+        emit SentMessage(submissionId, _toChainId, _to, _data);
+        return bytes32(uint256(nonce++));
     }
 
     /* ========== ADMIN METHODS ========== */
 
-    function updateReceiverAdapter(uint64[] calldata _dstChainIds, address[] calldata _receiverAdapters)
+    function updateReceiverAdapter(uint256[] calldata _dstChainIds, address[] calldata _receiverAdapters)
         external
         override
         onlyOwner

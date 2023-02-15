@@ -20,7 +20,6 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
 
     /* ========== EVENTS ========== */
 
-    event SentMessage(bytes32 submissionId, uint256 toChainId, address to, bytes data);
     event ReceiverAdapterUpdated(uint256 dstChainId, address receiverAdapter);
     event MultiBridgeSenderSet(address multiBridgeSender);
 
@@ -54,22 +53,24 @@ contract DeBridgeSenderAdapter is IBridgeSenderAdapter, Ownable {
     ) external payable override onlyMultiBridgeSender returns (bytes32) {
         require(receiverAdapters[_toChainId] != address(0), "no receiver adapter");
         address receiver = receiverAdapters[_toChainId];
+        bytes32 msgId = bytes32(uint256(nonce));
         bytes memory executeMethodData = abi.encodeWithSelector(
             IDeBridgeReceiverAdapter.executeMessage.selector,
             msg.sender,
             _to,
             _data,
-            bytes32(uint256(nonce++))
+            msgId
         );
 
-        bytes32 submissionId = deBridgeGate.sendMessage{value: msg.value}(
+        deBridgeGate.sendMessage{value: msg.value}(
             _toChainId, //_dstChainId,
             abi.encodePacked(receiver), //_targetContractAddress
             executeMethodData //_targetContractCalldata,
         );
 
-        emit SentMessage(submissionId, _toChainId, _to, _data);
-        return bytes32(uint256(nonce++));
+        emit MessageDispatched(msgId, msg.sender, _toChainId, _to, _data);
+        nonce++;
+        return msgId;
     }
 
     /* ========== ADMIN METHODS ========== */

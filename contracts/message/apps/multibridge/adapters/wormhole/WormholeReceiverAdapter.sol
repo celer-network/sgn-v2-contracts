@@ -91,10 +91,13 @@ contract WormholeReceiverAdapter is IBridgeReceiverAdapter, IWormholeReceiver, O
             .decode(vm.payload, (address, address, bytes, address));
         require(receiverAdapter == address(this), "Message not for this dest");
         // replay protection
-        require(!processedMessages[vm.hash], "Message already processed");
-        processedMessages[vm.hash] = true;
-        //send message to MultiBridgeReceiver
         bytes32 msgId = bytes32(uint256(vm.nonce));
+        if (processedMessages[vm.hash]) {
+            revert MessageIdAlreadyExecuted(msgId);
+        } else {
+            processedMessages[vm.hash] = true;
+        }
+        //send message to MultiBridgeReceiver
         (bool ok, bytes memory lowLevelData) = multiBridgeReceiver.call(
             abi.encodePacked(data, msgId, uint256(reverseIdMap[vm.emitterChainId]), multiBridgeSendeer)
         );

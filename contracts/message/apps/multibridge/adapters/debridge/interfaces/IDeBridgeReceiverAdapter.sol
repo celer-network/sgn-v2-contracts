@@ -6,6 +6,6 @@ interface IDeBridgeReceiverAdapter {
         address multiBridgeSender,
         address multiBridgeReceiver,
         bytes calldata data,
-        bytes32 nonce
+        bytes32 msgId
     ) external;
 }

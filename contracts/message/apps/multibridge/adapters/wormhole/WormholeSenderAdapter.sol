@@ -113,7 +113,7 @@ contract WormholeSenderAdapter is IBridgeSenderAdapter, Ownable {
             relayer.getDefaultRelayParams() //relayerParams
         );
         relayer.requestDelivery{value: relayFee}(request, nonce, relayProvider);
-        bytes32 msgId = bytes32(uint256(nonce++));
+        bytes32 msgId = bytes32(uint256(nonce));
         emit MessageDispatched(msgId, msg.sender, _toChainId, _to, _data);
         nonce++;
         return msgId;

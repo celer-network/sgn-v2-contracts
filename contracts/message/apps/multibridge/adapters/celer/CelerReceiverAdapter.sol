@@ -35,10 +35,8 @@ contract CelerReceiverAdapter is IBridgeReceiverAdapter, MessageAppPauser, IMess
     mapping(uint256 => address) public senderAdapters;
     address public immutable msgBus;
     mapping(bytes32 => bool) public executedMessages;
-    //    address public multiBridgeReceiver;
 
     event SenderAdapterUpdated(uint256 srcChainId, address senderAdapter);
-    //    event MultiBridgeReceiverSet(address multiBridgeReceiver);
 
     modifier onlyMessageBus() {
         require(msg.sender == msgBus, "caller is not message bus");
@@ -57,29 +55,29 @@ contract CelerReceiverAdapter is IBridgeReceiverAdapter, MessageAppPauser, IMess
         bytes calldata _message,
         address // executor
     ) external payable override onlyMessageBus whenNotMsgPaused returns (ExecutionStatus) {
-        (bytes32 nonce, address multiBridgeSender, address multiBridgeReceiver, bytes memory data) = abi.decode(
+        (bytes32 msgId, address multiBridgeSender, address multiBridgeReceiver, bytes memory data) = abi.decode(
             _message,
             (bytes32, address, address, bytes)
         );
         require(_srcContract == senderAdapters[uint256(_srcChainId)], "not allowed message sender");
-        if (executedMessages[nonce]) {
-            revert MessageIdAlreadyExecuted(nonce);
+        if (executedMessages[msgId]) {
+            revert MessageIdAlreadyExecuted(msgId);
         } else {
-            executedMessages[nonce] = true;
+            executedMessages[msgId] = true;
         }
         (bool ok, bytes memory lowLevelData) = multiBridgeReceiver.call(
-            abi.encodePacked(data, nonce, uint256(_srcChainId), multiBridgeSender)
+            abi.encodePacked(data, msgId, uint256(_srcChainId), multiBridgeSender)
         );
         if (!ok) {
             string memory reason = Utils.getRevertMsg(lowLevelData);
             revert(
                 string.concat(
                     ABORT_PREFIX,
-                    string(abi.encodeWithSelector(MessageFailure.selector, nonce, bytes(reason)))
+                    string(abi.encodeWithSelector(MessageFailure.selector, msgId, bytes(reason)))
                 )
             );
         } else {
-            emit MessageIdExecuted(uint256(_srcChainId), nonce);
+            emit MessageIdExecuted(uint256(_srcChainId), msgId);
             return ExecutionStatus.Success;
         }
     }
@@ -95,9 +93,4 @@ contract CelerReceiverAdapter is IBridgeReceiverAdapter, MessageAppPauser, IMess
             emit SenderAdapterUpdated(_srcChainIds[i], _senderAdapters[i]);
         }
     }
-
-    //    function setMultiBridgeReceiver(address _multiBridgeReceiver) external override onlyOwner {
-    //        multiBridgeReceiver = _multiBridgeReceiver;
-    //        emit MultiBridgeReceiverSet(_multiBridgeReceiver);
-    //    }
 }

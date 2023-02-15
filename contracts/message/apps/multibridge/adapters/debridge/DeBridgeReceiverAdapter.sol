@@ -38,7 +38,7 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter,
         address _multiBridgeSender,
         address _multiBridgeReceiver,
         bytes calldata _data,
-        bytes32 _nonce
+        bytes32 _msgId
     ) external whenNotPaused {
         ICallProxy callProxy = ICallProxy(deBridgeGate.callProxy());
         if (address(callProxy) != msg.sender) revert CallProxyBadRole();
@@ -50,18 +50,18 @@ contract DeBridgeReceiverAdapter is Ownable, Pausable, IDeBridgeReceiverAdapter,
             revert NativeSenderBadRole(nativeSender, submissionChainIdFrom);
         }
 
-        if (executedMessages[_nonce]) {
-            revert MessageIdAlreadyExecuted(_nonce);
+        if (executedMessages[_msgId]) {
+            revert MessageIdAlreadyExecuted(_msgId);
         } else {
-            executedMessages[_nonce] = true;
+            executedMessages[_msgId] = true;
         }
         (bool ok, bytes memory lowLevelData) = _multiBridgeReceiver.call(
-            abi.encodePacked(_data, _nonce, submissionChainIdFrom, _multiBridgeSender)
+            abi.encodePacked(_data, _msgId, submissionChainIdFrom, _multiBridgeSender)
         );
         if (!ok) {
-            revert MessageFailure(_nonce, lowLevelData);
+            revert MessageFailure(_msgId, lowLevelData);
         } else {
-            emit MessageIdExecuted(submissionChainIdFrom, _nonce);
+            emit MessageIdExecuted(submissionChainIdFrom, _msgId);
         }
     }
 

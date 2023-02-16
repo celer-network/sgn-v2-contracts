@@ -34,11 +34,12 @@ contract MockCaller is AccessControl {
 
     function remoteCall(
         uint64 _dstChainId,
+        address _multiBridgeReceiver,
         address _target,
         bytes calldata _callData
     ) external payable onlyCaller {
-        uint256 totalFee = bridgeSender.estimateTotalMessageFee(_dstChainId, _target, _callData);
-        bridgeSender.remoteCall{value: totalFee}(_dstChainId, _target, _callData);
+        uint256 totalFee = bridgeSender.estimateTotalMessageFee(_dstChainId, _multiBridgeReceiver, _target, _callData);
+        bridgeSender.remoteCall{value: totalFee}(_dstChainId, _multiBridgeReceiver, _target, _callData);
     }
 
     function addSenderAdapters(address[] calldata _senderAdapters) external onlyAdmin {

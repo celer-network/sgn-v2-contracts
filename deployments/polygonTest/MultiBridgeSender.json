@@ -1,0 +1,366 @@
+{
+  "address": "0x7A1Fca8F42cf135Fae9bDaDFeD1a233cCDC3Aeba",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_caller",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "senderAdapters",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint64",
+              "name": "srcChainId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "dstChainId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint32",
+              "name": "nonce",
+              "type": "uint32"
+            },
+            {
+              "internalType": "address",
+              "name": "target",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes",
+              "name": "callData",
+              "type": "bytes"
+            },
+            {
+              "internalType": "string",
+              "name": "bridgeName",
+              "type": "string"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct MessageStruct.Message",
+          "name": "message",
+          "type": "tuple"
+        }
+      ],
+      "name": "ErrorSendMessage",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "nonce",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "dstChainId",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "callData",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "address[]",
+          "name": "senderAdapters",
+          "type": "address[]"
+        }
+      ],
+      "name": "MultiBridgeMsgSent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "senderAdapter",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "add",
+          "type": "bool"
+        }
+      ],
+      "name": "SenderAdapterUpdated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_senderAdapters",
+          "type": "address[]"
+        }
+      ],
+      "name": "addSenderAdapters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "caller",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_dstChainId",
+          "type": "uint64"
+        },
+        {
+          "internalType": "address",
+          "name": "_multiBridgeReceiver",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_target",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_callData",
+          "type": "bytes"
+        }
+      ],
+      "name": "estimateTotalMessageFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nonce",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_dstChainId",
+          "type": "uint64"
+        },
+        {
+          "internalType": "address",
+          "name": "_multiBridgeReceiver",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_target",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_callData",
+          "type": "bytes"
+        }
+      ],
+      "name": "remoteCall",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_senderAdapters",
+          "type": "address[]"
+        }
+      ],
+      "name": "removeSenderAdapters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "senderAdapters",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x203781a51fd9db4bd5fa833e530711f7aa4f4535ba50e0caa2610a1e65b82145",
+  "receipt": {
+    "to": null,
+    "from": "0xFf370251BDbe480b1164C383Df99B9EbD3FA12C3",
+    "contractAddress": "0x7A1Fca8F42cf135Fae9bDaDFeD1a233cCDC3Aeba",
+    "transactionIndex": 2,
+    "gasUsed": "1010661",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000028000002000000000000000000000000000000000000000000000000000800000000000000000040100000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000040000000004000000000000000000001000000000002000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000100000",
+    "blockHash": "0x3cbdbb66d9cbd5b6b48aec925787493aacec0e11f1cdc58d6e2992e7a9cc2262",
+    "transactionHash": "0x203781a51fd9db4bd5fa833e530711f7aa4f4535ba50e0caa2610a1e65b82145",
+    "logs": [
+      {
+        "transactionIndex": 2,
+        "blockNumber": 32101771,
+        "transactionHash": "0x203781a51fd9db4bd5fa833e530711f7aa4f4535ba50e0caa2610a1e65b82145",
+        "address": "0x0000000000000000000000000000000000001010",
+        "topics": [
+          "0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63",
+          "0x0000000000000000000000000000000000000000000000000000000000001010",
+          "0x000000000000000000000000ff370251bdbe480b1164c383df99b9ebd3fa12c3",
+          "0x000000000000000000000000c275dc8be39f50d12f66b6a63629c39da5bae5bd"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000000562c946d70b000000000000000000000000000000000000000000000000000299f8177bdda2a5000000000000000000000000000000000000000000000d9a19e550197b4543040000000000000000000000000000000000000000000000000294954e350697a5000000000000000000000000000000000000000000000d9a19eab2e2c21c4e04",
+        "logIndex": 7,
+        "blockHash": "0x3cbdbb66d9cbd5b6b48aec925787493aacec0e11f1cdc58d6e2992e7a9cc2262"
+      }
+    ],
+    "blockNumber": 32101771,
+    "cumulativeGasUsed": "1178342",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xc3c4e615a692f1DA0757523a7a7DdEf96bA7E042"
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "f0ff772b27e18f703fe2c68e46ad4021",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_caller\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"senderAdapters\",\"type\":\"address\"},{\"components\":[{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"dstChainId\",\"type\":\"uint64\"},{\"internalType\":\"uint32\",\"name\":\"nonce\",\"type\":\"uint32\"},{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"callData\",\"type\":\"bytes\"},{\"internalType\":\"string\",\"name\":\"bridgeName\",\"type\":\"string\"}],\"indexed\":false,\"internalType\":\"struct MessageStruct.Message\",\"name\":\"message\",\"type\":\"tuple\"}],\"name\":\"ErrorSendMessage\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"nonce\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"dstChainId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"callData\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"senderAdapters\",\"type\":\"address[]\"}],\"name\":\"MultiBridgeMsgSent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"senderAdapter\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"add\",\"type\":\"bool\"}],\"name\":\"SenderAdapterUpdated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_senderAdapters\",\"type\":\"address[]\"}],\"name\":\"addSenderAdapters\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"caller\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"_dstChainId\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"_multiBridgeReceiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_target\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_callData\",\"type\":\"bytes\"}],\"name\":\"estimateTotalMessageFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nonce\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint64\",\"name\":\"_dstChainId\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"_multiBridgeReceiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_target\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_callData\",\"type\":\"bytes\"}],\"name\":\"remoteCall\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_senderAdapters\",\"type\":\"address[]\"}],\"name\":\"removeSenderAdapters\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"senderAdapters\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"remoteCall(uint64,address,address,bytes)\":{\"params\":{\"_callData\":\"is the data to be sent to _target by low-level call(eg. address(_target).call(_callData)).\",\"_dstChainId\":\"is the destination chainId.\",\"_multiBridgeReceiver\":\"is the MultiBridgeReceiver address on destination chain.\",\"_target\":\"is the contract address on the destination chain.\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"addSenderAdapters(address[])\":{\"notice\":\"Add bridge sender adapters\"},\"estimateTotalMessageFee(uint64,address,address,bytes)\":{\"notice\":\"A helper function for estimating total required message fee by all available message bridges.\"},\"remoteCall(uint64,address,address,bytes)\":{\"notice\":\"Call a remote function on a destination chain by sending multiple copies of a cross-chain message via all available bridges. A fee in native token may be required by each message bridge to send messages. Any native token fee remained will be refunded back to msg.sender, which requires caller being able to receive native token. Caller can use estimateTotalMessageFee() to get total message fees before calling this function.\"},\"removeSenderAdapters(address[])\":{\"notice\":\"Remove bridge sender adapters\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/message/apps/multibridge/MultiBridgeSender.sol\":\"MultiBridgeSender\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":800},\"remappings\":[]},\"sources\":{\"contracts/message/apps/multibridge/MessageStruct.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\r\\n\\r\\npragma solidity >=0.8.9;\\r\\n\\r\\nlibrary MessageStruct {\\r\\n    /**\\r\\n     * @dev Message indicates a remote call to target contract on destination chain.\\r\\n     *\\r\\n     * @param srcChainId is the id of chain where this message is sent from.\\r\\n     * @param dstChainId is the id of chain where this message is sent to.\\r\\n     * @param nonce is an incrementing number held by MultiBridgeSender to ensure msgId uniqueness\\r\\n     * @param target is the contract to be called on dst chain.\\r\\n     * @param callData is the data to be sent to target by low-level call(eg. address(target).call(callData)).\\r\\n     * @param bridgeName is the message bridge name used for sending this message.\\r\\n     */\\r\\n    struct Message {\\r\\n        uint64 srcChainId;\\r\\n        uint64 dstChainId;\\r\\n        uint32 nonce;\\r\\n        address target;\\r\\n        bytes callData;\\r\\n        string bridgeName;\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xf6d9ea95bc7ab487a1a0bc845a9efcb9410c7ea9688a418fd2b7e2005141b696\",\"license\":\"GPL-3.0-only\"},\"contracts/message/apps/multibridge/MultiBridgeSender.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\r\\n\\r\\npragma solidity >=0.8.9;\\r\\n\\r\\nimport \\\"./interfaces/IBridgeSenderAdapter.sol\\\";\\r\\nimport \\\"./interfaces/IMultiBridgeReceiver.sol\\\";\\r\\nimport \\\"./MessageStruct.sol\\\";\\r\\n\\r\\ncontract MultiBridgeSender {\\r\\n    // List of bridge sender adapters\\r\\n    address[] public senderAdapters;\\r\\n    // The dApp contract that can use this multi-bridge sender for cross-chain remoteCall.\\r\\n    // This means the current MultiBridgeSender is only intended to be used by a single dApp.\\r\\n    address public immutable caller;\\r\\n    uint32 public nonce;\\r\\n\\r\\n    event MultiBridgeMsgSent(uint32 nonce, uint64 dstChainId, address target, bytes callData, address[] senderAdapters);\\r\\n    event SenderAdapterUpdated(address senderAdapter, bool add); // add being false indicates removal of the adapter\\r\\n    event ErrorSendMessage(address senderAdapters, MessageStruct.Message message);\\r\\n\\r\\n    modifier onlyCaller() {\\r\\n        require(msg.sender == caller, \\\"not caller\\\");\\r\\n        _;\\r\\n    }\\r\\n\\r\\n    constructor(address _caller) {\\r\\n        caller = _caller;\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @notice Call a remote function on a destination chain by sending multiple copies of a cross-chain message\\r\\n     * via all available bridges.\\r\\n     *\\r\\n     * A fee in native token may be required by each message bridge to send messages. Any native token fee remained\\r\\n     * will be refunded back to msg.sender, which requires caller being able to receive native token.\\r\\n     * Caller can use estimateTotalMessageFee() to get total message fees before calling this function.\\r\\n     *\\r\\n     * @param _dstChainId is the destination chainId.\\r\\n     * @param _multiBridgeReceiver is the MultiBridgeReceiver address on destination chain.\\r\\n     * @param _target is the contract address on the destination chain.\\r\\n     * @param _callData is the data to be sent to _target by low-level call(eg. address(_target).call(_callData)).\\r\\n     */\\r\\n    function remoteCall(\\r\\n        uint64 _dstChainId,\\r\\n        address _multiBridgeReceiver,\\r\\n        address _target,\\r\\n        bytes calldata _callData\\r\\n    ) external payable onlyCaller {\\r\\n        MessageStruct.Message memory message = MessageStruct.Message(\\r\\n            uint64(block.chainid),\\r\\n            _dstChainId,\\r\\n            nonce,\\r\\n            _target,\\r\\n            _callData,\\r\\n            \\\"\\\"\\r\\n        );\\r\\n        bytes memory data;\\r\\n        uint256 totalFee;\\r\\n        // send copies of the message through multiple bridges\\r\\n        for (uint256 i = 0; i < senderAdapters.length; i++) {\\r\\n            message.bridgeName = IBridgeSenderAdapter(senderAdapters[i]).name();\\r\\n            data = abi.encodeWithSelector(IMultiBridgeReceiver.receiveMessage.selector, message);\\r\\n            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(\\r\\n                uint256(_dstChainId),\\r\\n                _multiBridgeReceiver,\\r\\n                data\\r\\n            );\\r\\n            // if one bridge is paused it shouldn't halt the process\\r\\n            try\\r\\n                IBridgeSenderAdapter(senderAdapters[i]).dispatchMessage{value: fee}(\\r\\n                    uint256(_dstChainId),\\r\\n                    _multiBridgeReceiver,\\r\\n                    data\\r\\n                )\\r\\n            {\\r\\n                totalFee += fee;\\r\\n            } catch {\\r\\n                emit ErrorSendMessage(senderAdapters[i], message);\\r\\n            }\\r\\n        }\\r\\n        emit MultiBridgeMsgSent(nonce, _dstChainId, _target, _callData, senderAdapters);\\r\\n        nonce++;\\r\\n        // refund remaining native token to msg.sender\\r\\n        if (totalFee < msg.value) {\\r\\n            payable(msg.sender).transfer(msg.value - totalFee);\\r\\n        }\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @notice Add bridge sender adapters\\r\\n     */\\r\\n    function addSenderAdapters(address[] calldata _senderAdapters) external onlyCaller {\\r\\n        for (uint256 i = 0; i < _senderAdapters.length; i++) {\\r\\n            _addSenderAdapter(_senderAdapters[i]);\\r\\n        }\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @notice Remove bridge sender adapters\\r\\n     */\\r\\n    function removeSenderAdapters(address[] calldata _senderAdapters) external onlyCaller {\\r\\n        for (uint256 i = 0; i < _senderAdapters.length; i++) {\\r\\n            _removeSenderAdapter(_senderAdapters[i]);\\r\\n        }\\r\\n    }\\r\\n\\r\\n    /**\\r\\n     * @notice A helper function for estimating total required message fee by all available message bridges.\\r\\n     */\\r\\n    function estimateTotalMessageFee(\\r\\n        uint64 _dstChainId,\\r\\n        address _multiBridgeReceiver,\\r\\n        address _target,\\r\\n        bytes calldata _callData\\r\\n    ) public view returns (uint256) {\\r\\n        MessageStruct.Message memory message = MessageStruct.Message(\\r\\n            uint64(block.chainid),\\r\\n            _dstChainId,\\r\\n            nonce,\\r\\n            _target,\\r\\n            _callData,\\r\\n            \\\"\\\"\\r\\n        );\\r\\n        bytes memory data;\\r\\n        uint256 totalFee;\\r\\n        for (uint256 i = 0; i < senderAdapters.length; i++) {\\r\\n            message.bridgeName = IBridgeSenderAdapter(senderAdapters[i]).name();\\r\\n            data = abi.encodeWithSelector(IMultiBridgeReceiver.receiveMessage.selector, message);\\r\\n            uint256 fee = IBridgeSenderAdapter(senderAdapters[i]).getMessageFee(\\r\\n                uint256(_dstChainId),\\r\\n                _multiBridgeReceiver,\\r\\n                data\\r\\n            );\\r\\n            totalFee += fee;\\r\\n        }\\r\\n        return totalFee;\\r\\n    }\\r\\n\\r\\n    function _addSenderAdapter(address _senderAdapter) private {\\r\\n        for (uint256 i = 0; i < senderAdapters.length; i++) {\\r\\n            if (senderAdapters[i] == _senderAdapter) {\\r\\n                return;\\r\\n            }\\r\\n        }\\r\\n        senderAdapters.push(_senderAdapter);\\r\\n        emit SenderAdapterUpdated(_senderAdapter, true);\\r\\n    }\\r\\n\\r\\n    function _removeSenderAdapter(address _senderAdapter) private {\\r\\n        uint256 lastIndex = senderAdapters.length - 1;\\r\\n        for (uint256 i = 0; i < senderAdapters.length; i++) {\\r\\n            if (senderAdapters[i] == _senderAdapter) {\\r\\n                if (i < lastIndex) {\\r\\n                    senderAdapters[i] = senderAdapters[lastIndex];\\r\\n                }\\r\\n                senderAdapters.pop();\\r\\n                emit SenderAdapterUpdated(_senderAdapter, false);\\r\\n                return;\\r\\n            }\\r\\n        }\\r\\n    }\\r\\n}\\r\\n\",\"keccak256\":\"0xb142a864c7decd8576734d2e971055ef0e1f0ca2551b98850d3ffc16fc33564e\",\"license\":\"GPL-3.0-only\"},\"contracts/message/apps/multibridge/interfaces/EIP5164/MessageDispatcher.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\r\\n\\r\\npragma solidity >=0.8.9;\\r\\n\\r\\n/**\\r\\n * @dev The MessageDispatcher lives on the origin chain and dispatches messages to the MessageExecutor for execution.\\r\\n * More about MessageDispatcher of EIP5164, see https://eips.ethereum.org/EIPS/eip-5164#messagedispatcher.\\r\\n */\\r\\ninterface MessageDispatcher {\\r\\n    /**\\r\\n     * @dev The MessageDispatched event MUST be emitted by the MessageDispatcher when an individual message is dispatched.\\r\\n     */\\r\\n    event MessageDispatched(\\r\\n        bytes32 indexed messageId,\\r\\n        address indexed from,\\r\\n        uint256 indexed toChainId,\\r\\n        address to,\\r\\n        bytes data\\r\\n    );\\r\\n}\\r\\n\",\"keccak256\":\"0x251076e11f98a786d888588736ce1bf70eae2d8fcd9ab14208fe828d13c4d270\",\"license\":\"GPL-3.0-only\"},\"contracts/message/apps/multibridge/interfaces/EIP5164/SingleMessageDispatcher.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\r\\n\\r\\npragma solidity >=0.8.9;\\r\\n\\r\\nimport \\\"./MessageDispatcher.sol\\\";\\r\\n\\r\\n/**\\r\\n * @dev The SingleMessageDispatcher is an extension of MessageDispatcher that defines a method, dispatchMessage,\\r\\n * for dispatching an individual message to be executed on the toChainId.\\r\\n * More about SingleMessageDispatcher of EIP5164, see https://eips.ethereum.org/EIPS/eip-5164#singlemessagedispatcher.\\r\\n */\\r\\ninterface SingleMessageDispatcher is MessageDispatcher {\\r\\n    /**\\r\\n     * @dev A method for dispatching an individual message to be executed on the toChainId.\\r\\n     */\\r\\n    function dispatchMessage(\\r\\n        uint256 toChainId,\\r\\n        address to,\\r\\n        bytes calldata data\\r\\n    ) external payable returns (bytes32 messageId);\\r\\n}\\r\\n\",\"keccak256\":\"0xa3ca3480d156095cff1fd4635bae37e3aa6bb380c244f8b91d4086bd25888613\",\"license\":\"GPL-3.0-only\"},\"contracts/message/apps/multibridge/interfaces/IBridgeSenderAdapter.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\r\\n\\r\\npragma solidity >=0.8.9;\\r\\n\\r\\nimport \\\"../MessageStruct.sol\\\";\\r\\nimport \\\"./EIP5164/SingleMessageDispatcher.sol\\\";\\r\\n\\r\\n/**\\r\\n * @dev Adapter that connects MultiBridgeSender and each message bridge.\\r\\n * Message bridge can implement their favourite encode&decode way for MessageStruct.Message.\\r\\n */\\r\\ninterface IBridgeSenderAdapter is SingleMessageDispatcher {\\r\\n    /**\\r\\n     * @dev Return name of this message bridge.\\r\\n     */\\r\\n    function name() external view returns (string memory);\\r\\n\\r\\n    /**\\r\\n     * @dev Return native token amount in wei required by this message bridge for sending a message.\\r\\n     */\\r\\n    function getMessageFee(\\r\\n        uint256 toChainId,\\r\\n        address to,\\r\\n        bytes calldata data\\r\\n    ) external view returns (uint256);\\r\\n\\r\\n    //    /**\\r\\n    //     * @dev Send a MessageStruct.Message through this message bridge.\\r\\n    //     */\\r\\n    //    function sendMessage(MessageStruct.Message memory _message) external payable;\\r\\n\\r\\n    /**\\r\\n     * @dev Owner update receiver adapter address on dst chain.\\r\\n     */\\r\\n    function updateReceiverAdapter(uint256[] calldata _dstChainIds, address[] calldata _receiverAdapters) external;\\r\\n\\r\\n    /**\\r\\n     * @dev Owner setup MultiBridgeSender.\\r\\n     */\\r\\n    function setMultiBridgeSender(address _multiBridgeSender) external;\\r\\n}\\r\\n\",\"keccak256\":\"0xbf8af9be8f2ef1bd2d303e1940dc82e5441337bf498ec3f7a4fc0c5f17062183\",\"license\":\"GPL-3.0-only\"},\"contracts/message/apps/multibridge/interfaces/IMultiBridgeReceiver.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\r\\n\\r\\npragma solidity 0.8.17;\\r\\n\\r\\nimport \\\"../MessageStruct.sol\\\";\\r\\n\\r\\ninterface IMultiBridgeReceiver {\\r\\n    /**\\r\\n     * @notice Receive messages from allowed bridge receiver adapters.\\r\\n     * If the accumulated power of a message has reached the power threshold,\\r\\n     * this message will be executed immediately, which will invoke an external function call\\r\\n     * according to the message content.\\r\\n     *\\r\\n     * @dev Every receiver adapter should call this function with decoded MessageStruct.Message\\r\\n     * when receiver adapter receives a message produced by a corresponding sender adapter on the source chain.\\r\\n     */\\r\\n    function receiveMessage(MessageStruct.Message calldata _message) external;\\r\\n}\\r\\n\",\"keccak256\":\"0x7f734828a6b013c06df48d85a83fae5b66a86d94fb59fb68c3af98c14d49cf17\",\"license\":\"GPL-3.0-only\"}},\"version\":1}",
+  "bytecode": "0x60a060405234801561001057600080fd5b506040516111ee3803806111ee83398101604081905261002f91610040565b6001600160a01b0316608052610070565b60006020828403121561005257600080fd5b81516001600160a01b038116811461006957600080fd5b9392505050565b60805161114e6100a060003960008181610179015281816101a601528181610261015261033c015261114e6000f3fe6080604052600436106100705760003560e01c8063d27766271161004e578063d2776627146100ee578063e016caa514610126578063e113782f14610139578063fc9c8d391461016757600080fd5b8063affed0e014610075578063b2221178146100ac578063cd388685146100ce575b600080fd5b34801561008157600080fd5b506001546100929063ffffffff1681565b60405163ffffffff90911681526020015b60405180910390f35b3480156100b857600080fd5b506100cc6100c7366004610c3f565b61019b565b005b3480156100da57600080fd5b506100cc6100e9366004610c3f565b610256565b3480156100fa57600080fd5b5061010e610109366004610cb4565b610307565b6040516001600160a01b0390911681526020016100a3565b6100cc610134366004610ce9565b610331565b34801561014557600080fd5b50610159610154366004610ce9565b61079d565b6040519081526020016100a3565b34801561017357600080fd5b5061010e7f000000000000000000000000000000000000000000000000000000000000000081565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146102055760405162461bcd60e51b815260206004820152600a6024820152693737ba1031b0b63632b960b11b60448201526064015b60405180910390fd5b60005b818110156102515761023f83838381811061022557610225610d95565b905060200201602081019061023a9190610dab565b6109e7565b8061024981610de3565b915050610208565b505050565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146102bb5760405162461bcd60e51b815260206004820152600a6024820152693737ba1031b0b63632b960b11b60448201526064016101fc565b60005b81811015610251576102f58383838181106102db576102db610d95565b90506020020160208101906102f09190610dab565b610ad8565b806102ff81610de3565b9150506102be565b6000818154811061031757600080fd5b6000918252602090912001546001600160a01b0316905081565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146103965760405162461bcd60e51b815260206004820152600a6024820152693737ba1031b0b63632b960b11b60448201526064016101fc565b6040805160c08101825267ffffffffffffffff4681168252871660208083019190915260015463ffffffff16828401526001600160a01b03861660608301528251601f850182900482028101820190935283835260009260808301918690869081908401838280828437600092018290525093855250506040805160208181019092528381529301929092529192506060919050805b6000548110156106d0576000818154811061044957610449610d95565b6000918252602082200154604080516306fdde0360e01b815290516001600160a01b03909216926306fdde03926004808401938290030181865afa158015610495573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526104bd9190810190610e36565b60a0850152604051637565733b60e01b906104dc908690602401610f8b565b604051602081830303815290604052906001600160e01b0319166020820180516001600160e01b0383818316178352505050509250600080828154811061052557610525610d95565b600091825260209091200154604051636398134b60e11b81526001600160a01b039091169063c73026969061056c9067ffffffffffffffff8e16908d908990600401610f9e565b602060405180830381865afa158015610589573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906105ad9190610fc6565b9050600082815481106105c2576105c2610d95565b60009182526020909120015460405163fe39827b60e01b81526001600160a01b039091169063fe39827b90839061060b9067ffffffffffffffff8f16908e908a90600401610f9e565b60206040518083038185885af193505050508015610646575060408051601f3d908101601f1916820190925261064391810190610fc6565b60015b6106af577fb59acfcbe2fcea0187a9b47e58d8d0ad975955b4ac2917db58831a3cecdb3c1d6000838154811061067e5761067e610d95565b6000918252602090912001546040516106a2916001600160a01b0316908890610fdf565b60405180910390a16106bd565b506106ba8184611009565b92505b50806106c881610de3565b91505061042c565b506001546040517f5bd075036dd28190b1e3a09504030a4a8c62f5b2ce2ac69476b9869e25446f35916107169163ffffffff909116908b908a908a908a90600090611022565b60405180910390a16001805463ffffffff16906000610734836110cc565b91906101000a81548163ffffffff021916908363ffffffff160217905550503481101561079357336108fc61076983346110ef565b6040518115909202916000818181858888f19350505050158015610791573d6000803e3d6000fd5b505b5050505050505050565b6040805160c08101825267ffffffffffffffff4681168252871660208083019190915260015463ffffffff16828401526001600160a01b03861660608301528251601f85018290048202810182019093528383526000928392916080830191908790879081908401838280828437600092018290525093855250506040805160208181019092528381529301929092529192506060919050805b6000548110156109da576000818154811061085457610854610d95565b6000918252602082200154604080516306fdde0360e01b815290516001600160a01b03909216926306fdde03926004808401938290030181865afa1580156108a0573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526108c89190810190610e36565b60a0850152604051637565733b60e01b906108e7908690602401610f8b565b604051602081830303815290604052906001600160e01b0319166020820180516001600160e01b0383818316178352505050509250600080828154811061093057610930610d95565b600091825260209091200154604051636398134b60e11b81526001600160a01b039091169063c7302696906109779067ffffffffffffffff8f16908e908990600401610f9e565b602060405180830381865afa158015610994573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109b89190610fc6565b90506109c48184611009565b92505080806109d290610de3565b915050610837565b5098975050505050505050565b60005b600054811015610a4157816001600160a01b031660008281548110610a1157610a11610d95565b6000918252602090912001546001600160a01b031603610a2f575050565b80610a3981610de3565b9150506109ea565b5060008054600180820183559180527f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56301805473ffffffffffffffffffffffffffffffffffffffff19166001600160a01b0384169081179091556040805191825260208201929092527fbc277492c0704299115877b8cf05a6d100cf36fd553bef773832f1f097aa0677910160405180910390a150565b60008054610ae8906001906110ef565b905060005b60005481101561025157826001600160a01b031660008281548110610b1457610b14610d95565b6000918252602090912001546001600160a01b031603610c2d5781811015610ba25760008281548110610b4957610b49610d95565b600091825260208220015481546001600160a01b03909116919083908110610b7357610b73610d95565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055505b6000805480610bb357610bb3611102565b600082815260208082206000199084018101805473ffffffffffffffffffffffffffffffffffffffff19169055909201909255604080516001600160a01b0387168152918201929092527fbc277492c0704299115877b8cf05a6d100cf36fd553bef773832f1f097aa0677910160405180910390a1505050565b80610c3781610de3565b915050610aed565b60008060208385031215610c5257600080fd5b823567ffffffffffffffff80821115610c6a57600080fd5b818501915085601f830112610c7e57600080fd5b813581811115610c8d57600080fd5b8660208260051b8501011115610ca257600080fd5b60209290920196919550909350505050565b600060208284031215610cc657600080fd5b5035919050565b80356001600160a01b0381168114610ce457600080fd5b919050565b600080600080600060808688031215610d0157600080fd5b853567ffffffffffffffff8082168214610d1a57600080fd5b819650610d2960208901610ccd565b9550610d3760408901610ccd565b94506060880135915080821115610d4d57600080fd5b818801915088601f830112610d6157600080fd5b813581811115610d7057600080fd5b896020828501011115610d8257600080fd5b9699959850939650602001949392505050565b634e487b7160e01b600052603260045260246000fd5b600060208284031215610dbd57600080fd5b610dc682610ccd565b9392505050565b634e487b7160e01b600052601160045260246000fd5b600060018201610df557610df5610dcd565b5060010190565b634e487b7160e01b600052604160045260246000fd5b60005b83811015610e2d578181015183820152602001610e15565b50506000910152565b600060208284031215610e4857600080fd5b815167ffffffffffffffff80821115610e6057600080fd5b818401915084601f830112610e7457600080fd5b815181811115610e8657610e86610dfc565b604051601f8201601f19908116603f01168101908382118183101715610eae57610eae610dfc565b81604052828152876020848701011115610ec757600080fd5b610ed8836020830160208801610e12565b979650505050505050565b60008151808452610efb816020860160208601610e12565b601f01601f19169290920160200192915050565b600067ffffffffffffffff8083511684528060208401511660208501525063ffffffff60408301511660408401526001600160a01b036060830151166060840152608082015160c06080850152610f6960c0850182610ee3565b905060a083015184820360a0860152610f828282610ee3565b95945050505050565b602081526000610dc66020830184610f0f565b8381526001600160a01b0383166020820152606060408201526000610f826060830184610ee3565b600060208284031215610fd857600080fd5b5051919050565b6001600160a01b03831681526040602082015260006110016040830184610f0f565b949350505050565b8082018082111561101c5761101c610dcd565b92915050565b63ffffffff871681526000602067ffffffffffffffff8816818401526001600160a01b03808816604085015260a060608501528560a0850152858760c0860137600060c08786018101829052601f19601f8901168601868103820160808801528754918101829052878352848320929160e0909101905b808310156110bb57835485168252600193840193929092019190850190611099565b509c9b505050505050505050505050565b600063ffffffff8083168181036110e5576110e5610dcd565b6001019392505050565b8181038181111561101c5761101c610dcd565b634e487b7160e01b600052603160045260246000fdfea2646970667358221220a046e2de166a805503da3884fdd53ff704322ccb9773f43cd95973a48ccc8dff64736f6c63430008110033",
+  "deployedBytecode": "0x6080604052600436106100705760003560e01c8063d27766271161004e578063d2776627146100ee578063e016caa514610126578063e113782f14610139578063fc9c8d391461016757600080fd5b8063affed0e014610075578063b2221178146100ac578063cd388685146100ce575b600080fd5b34801561008157600080fd5b506001546100929063ffffffff1681565b60405163ffffffff90911681526020015b60405180910390f35b3480156100b857600080fd5b506100cc6100c7366004610c3f565b61019b565b005b3480156100da57600080fd5b506100cc6100e9366004610c3f565b610256565b3480156100fa57600080fd5b5061010e610109366004610cb4565b610307565b6040516001600160a01b0390911681526020016100a3565b6100cc610134366004610ce9565b610331565b34801561014557600080fd5b50610159610154366004610ce9565b61079d565b6040519081526020016100a3565b34801561017357600080fd5b5061010e7f000000000000000000000000000000000000000000000000000000000000000081565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146102055760405162461bcd60e51b815260206004820152600a6024820152693737ba1031b0b63632b960b11b60448201526064015b60405180910390fd5b60005b818110156102515761023f83838381811061022557610225610d95565b905060200201602081019061023a9190610dab565b6109e7565b8061024981610de3565b915050610208565b505050565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146102bb5760405162461bcd60e51b815260206004820152600a6024820152693737ba1031b0b63632b960b11b60448201526064016101fc565b60005b81811015610251576102f58383838181106102db576102db610d95565b90506020020160208101906102f09190610dab565b610ad8565b806102ff81610de3565b9150506102be565b6000818154811061031757600080fd5b6000918252602090912001546001600160a01b0316905081565b336001600160a01b037f000000000000000000000000000000000000000000000000000000000000000016146103965760405162461bcd60e51b815260206004820152600a6024820152693737ba1031b0b63632b960b11b60448201526064016101fc565b6040805160c08101825267ffffffffffffffff4681168252871660208083019190915260015463ffffffff16828401526001600160a01b03861660608301528251601f850182900482028101820190935283835260009260808301918690869081908401838280828437600092018290525093855250506040805160208181019092528381529301929092529192506060919050805b6000548110156106d0576000818154811061044957610449610d95565b6000918252602082200154604080516306fdde0360e01b815290516001600160a01b03909216926306fdde03926004808401938290030181865afa158015610495573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526104bd9190810190610e36565b60a0850152604051637565733b60e01b906104dc908690602401610f8b565b604051602081830303815290604052906001600160e01b0319166020820180516001600160e01b0383818316178352505050509250600080828154811061052557610525610d95565b600091825260209091200154604051636398134b60e11b81526001600160a01b039091169063c73026969061056c9067ffffffffffffffff8e16908d908990600401610f9e565b602060405180830381865afa158015610589573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906105ad9190610fc6565b9050600082815481106105c2576105c2610d95565b60009182526020909120015460405163fe39827b60e01b81526001600160a01b039091169063fe39827b90839061060b9067ffffffffffffffff8f16908e908a90600401610f9e565b60206040518083038185885af193505050508015610646575060408051601f3d908101601f1916820190925261064391810190610fc6565b60015b6106af577fb59acfcbe2fcea0187a9b47e58d8d0ad975955b4ac2917db58831a3cecdb3c1d6000838154811061067e5761067e610d95565b6000918252602090912001546040516106a2916001600160a01b0316908890610fdf565b60405180910390a16106bd565b506106ba8184611009565b92505b50806106c881610de3565b91505061042c565b506001546040517f5bd075036dd28190b1e3a09504030a4a8c62f5b2ce2ac69476b9869e25446f35916107169163ffffffff909116908b908a908a908a90600090611022565b60405180910390a16001805463ffffffff16906000610734836110cc565b91906101000a81548163ffffffff021916908363ffffffff160217905550503481101561079357336108fc61076983346110ef565b6040518115909202916000818181858888f19350505050158015610791573d6000803e3d6000fd5b505b5050505050505050565b6040805160c08101825267ffffffffffffffff4681168252871660208083019190915260015463ffffffff16828401526001600160a01b03861660608301528251601f85018290048202810182019093528383526000928392916080830191908790879081908401838280828437600092018290525093855250506040805160208181019092528381529301929092529192506060919050805b6000548110156109da576000818154811061085457610854610d95565b6000918252602082200154604080516306fdde0360e01b815290516001600160a01b03909216926306fdde03926004808401938290030181865afa1580156108a0573d6000803e3d6000fd5b505050506040513d6000823e601f3d908101601f191682016040526108c89190810190610e36565b60a0850152604051637565733b60e01b906108e7908690602401610f8b565b604051602081830303815290604052906001600160e01b0319166020820180516001600160e01b0383818316178352505050509250600080828154811061093057610930610d95565b600091825260209091200154604051636398134b60e11b81526001600160a01b039091169063c7302696906109779067ffffffffffffffff8f16908e908990600401610f9e565b602060405180830381865afa158015610994573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906109b89190610fc6565b90506109c48184611009565b92505080806109d290610de3565b915050610837565b5098975050505050505050565b60005b600054811015610a4157816001600160a01b031660008281548110610a1157610a11610d95565b6000918252602090912001546001600160a01b031603610a2f575050565b80610a3981610de3565b9150506109ea565b5060008054600180820183559180527f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56301805473ffffffffffffffffffffffffffffffffffffffff19166001600160a01b0384169081179091556040805191825260208201929092527fbc277492c0704299115877b8cf05a6d100cf36fd553bef773832f1f097aa0677910160405180910390a150565b60008054610ae8906001906110ef565b905060005b60005481101561025157826001600160a01b031660008281548110610b1457610b14610d95565b6000918252602090912001546001600160a01b031603610c2d5781811015610ba25760008281548110610b4957610b49610d95565b600091825260208220015481546001600160a01b03909116919083908110610b7357610b73610d95565b9060005260206000200160006101000a8154816001600160a01b0302191690836001600160a01b031602179055505b6000805480610bb357610bb3611102565b600082815260208082206000199084018101805473ffffffffffffffffffffffffffffffffffffffff19169055909201909255604080516001600160a01b0387168152918201929092527fbc277492c0704299115877b8cf05a6d100cf36fd553bef773832f1f097aa0677910160405180910390a1505050565b80610c3781610de3565b915050610aed565b60008060208385031215610c5257600080fd5b823567ffffffffffffffff80821115610c6a57600080fd5b818501915085601f830112610c7e57600080fd5b813581811115610c8d57600080fd5b8660208260051b8501011115610ca257600080fd5b60209290920196919550909350505050565b600060208284031215610cc657600080fd5b5035919050565b80356001600160a01b0381168114610ce457600080fd5b919050565b600080600080600060808688031215610d0157600080fd5b853567ffffffffffffffff8082168214610d1a57600080fd5b819650610d2960208901610ccd565b9550610d3760408901610ccd565b94506060880135915080821115610d4d57600080fd5b818801915088601f830112610d6157600080fd5b813581811115610d7057600080fd5b896020828501011115610d8257600080fd5b9699959850939650602001949392505050565b634e487b7160e01b600052603260045260246000fd5b600060208284031215610dbd57600080fd5b610dc682610ccd565b9392505050565b634e487b7160e01b600052601160045260246000fd5b600060018201610df557610df5610dcd565b5060010190565b634e487b7160e01b600052604160045260246000fd5b60005b83811015610e2d578181015183820152602001610e15565b50506000910152565b600060208284031215610e4857600080fd5b815167ffffffffffffffff80821115610e6057600080fd5b818401915084601f830112610e7457600080fd5b815181811115610e8657610e86610dfc565b604051601f8201601f19908116603f01168101908382118183101715610eae57610eae610dfc565b81604052828152876020848701011115610ec757600080fd5b610ed8836020830160208801610e12565b979650505050505050565b60008151808452610efb816020860160208601610e12565b601f01601f19169290920160200192915050565b600067ffffffffffffffff8083511684528060208401511660208501525063ffffffff60408301511660408401526001600160a01b036060830151166060840152608082015160c06080850152610f6960c0850182610ee3565b905060a083015184820360a0860152610f828282610ee3565b95945050505050565b602081526000610dc66020830184610f0f565b8381526001600160a01b0383166020820152606060408201526000610f826060830184610ee3565b600060208284031215610fd857600080fd5b5051919050565b6001600160a01b03831681526040602082015260006110016040830184610f0f565b949350505050565b8082018082111561101c5761101c610dcd565b92915050565b63ffffffff871681526000602067ffffffffffffffff8816818401526001600160a01b03808816604085015260a060608501528560a0850152858760c0860137600060c08786018101829052601f19601f8901168601868103820160808801528754918101829052878352848320929160e0909101905b808310156110bb57835485168252600193840193929092019190850190611099565b509c9b505050505050505050505050565b600063ffffffff8083168181036110e5576110e5610dcd565b6001019392505050565b8181038181111561101c5761101c610dcd565b634e487b7160e01b600052603160045260246000fdfea2646970667358221220a046e2de166a805503da3884fdd53ff704322ccb9773f43cd95973a48ccc8dff64736f6c63430008110033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "remoteCall(uint64,address,address,bytes)": {
+        "params": {
+          "_callData": "is the data to be sent to _target by low-level call(eg. address(_target).call(_callData)).",
+          "_dstChainId": "is the destination chainId.",
+          "_multiBridgeReceiver": "is the MultiBridgeReceiver address on destination chain.",
+          "_target": "is the contract address on the destination chain."
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "addSenderAdapters(address[])": {
+        "notice": "Add bridge sender adapters"
+      },
+      "estimateTotalMessageFee(uint64,address,address,bytes)": {
+        "notice": "A helper function for estimating total required message fee by all available message bridges."
+      },
+      "remoteCall(uint64,address,address,bytes)": {
+        "notice": "Call a remote function on a destination chain by sending multiple copies of a cross-chain message via all available bridges. A fee in native token may be required by each message bridge to send messages. Any native token fee remained will be refunded back to msg.sender, which requires caller being able to receive native token. Caller can use estimateTotalMessageFee() to get total message fees before calling this function."
+      },
+      "removeSenderAdapters(address[])": {
+        "notice": "Remove bridge sender adapters"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 19545,
+        "contract": "contracts/message/apps/multibridge/MultiBridgeSender.sol:MultiBridgeSender",
+        "label": "senderAdapters",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_array(t_address)dyn_storage"
+      },
+      {
+        "astId": 19549,
+        "contract": "contracts/message/apps/multibridge/MultiBridgeSender.sol:MultiBridgeSender",
+        "label": "nonce",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_uint32"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_address)dyn_storage": {
+        "base": "t_address",
+        "encoding": "dynamic_array",
+        "label": "address[]",
+        "numberOfBytes": "32"
+      },
+      "t_uint32": {
+        "encoding": "inplace",
+        "label": "uint32",
+        "numberOfBytes": "4"
+      }
+    }
+  }
+}

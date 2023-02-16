@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import { L1StandardERC20 } from "./L1StandardERC20.sol";
+import {L1StandardERC20} from "./L1StandardERC20.sol";
 
 /**
  * @title L1StandardERC20Factory

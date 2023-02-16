@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { parseUnits } from 'ethers/lib/utils';
+import { defaultAbiCoder, parseUnits } from 'ethers/lib/utils';
 
 import { L1StandardERC20__factory, L1StandardERC20Factory__factory } from '../typechain';
 import { getDeployerSigner } from './common';
@@ -14,24 +14,43 @@ async function createToken(): Promise<void> {
   const tokenName = process.env.OASYS_FACTORY_TOKEN_NAME as string;
   const tokenSymbol = process.env.OASYS_FACTORY_TOKEN_SYMBOL as string;
 
-  console.log('creating token, calling token factory', factoryAddr);
+  console.log(
+    'params',
+    '\nPEGGED_TOKEN_BRIDGE',
+    pegbrV2Addr,
+    '\nOASYS_TOKEN_FACTORY',
+    factoryAddr,
+    '\nOASYS_FACTORY_TOKEN_NAME',
+    tokenName,
+    '\nOASYS_FACTORY_TOKEN_SYMBOL',
+    tokenSymbol
+  );
+
+  console.log('creating ERC20 token, calling token factory', factoryAddr);
   const factory = L1StandardERC20Factory__factory.connect(factoryAddr, deployerSigner);
   const tx = await factory.createStandardERC20(tokenName, tokenSymbol, {
     gasLimit: 5_000_000,
     maxFeePerGas: parseUnits('10', 'gwei'),
     maxPriorityFeePerGas: parseUnits('8', 'gwei')
   });
-  console.log('tx hash', tx.hash);
-  await tx.wait(2);
-
-  const tokenAddr = 'ef1c93a38ea284cdc7f2a0edca7c4ffde4d55cba';
+  console.log('tx hash', tx.hash, 'nonce', tx.nonce, 'waiting for 5 block confirmations...');
+  await tx.wait(5);
+  console.log('deployed, finding tx receipt for logs...');
+  const receipt = await factory.provider.getTransactionReceipt(tx.hash);
+  const log = receipt.logs.find((log) => log.address === factory.address);
+  if (!log || log.topics.length !== 3) {
+    console.error('token creation log not found');
+    process.exit(1);
+  }
+  const tokenAddr = defaultAbiCoder.decode(['address'], log.topics[2]).toString();
 
   console.log('deployed token address', tokenAddr);
-  console.log('adding minter role');
   const token = L1StandardERC20__factory.connect(tokenAddr, deployerSigner);
-  const setRoleTx = await token.grantRole(await token.MINTER_ROLE(), pegbrV2Addr, {
+  const minterRole = await token.MINTER_ROLE();
+  console.log('adding minter role', minterRole);
+  const setRoleTx = await token.grantRole(await minterRole, pegbrV2Addr, {
     gasLimit: 5_000_000,
-    nonce: 24,
+    nonce: tx.nonce + 1,
     maxFeePerGas: parseUnits('10', 'gwei'),
     maxPriorityFeePerGas: parseUnits('8', 'gwei')
   });

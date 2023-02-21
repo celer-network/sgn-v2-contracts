@@ -24,6 +24,10 @@ const zkSyncTestEndpoint = process.env.ZK_SYNC_TEST_ENDPOINT || DEFAULT_ENDPOINT
 const zkSyncTestPrivateKey = process.env.ZK_SYNC_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
+const ethMainEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
+
+const zkSyncEndpoint = process.env.ZK_SYNC_ENDPOINT || DEFAULT_ENDPOINT;
+const zkSyncPrivateKey = process.env.ZK_SYNC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -34,7 +38,14 @@ const config: HardhatUserConfig = {
     },
     zkSyncTest: {
       url: zkSyncTestEndpoint,
+      ethNetwork: goerliEndpoint,
       accounts: [`0x${zkSyncTestPrivateKey}`],
+      zksync: true
+    },
+    zkSync: {
+      url: zkSyncEndpoint,
+      ethNetwork: ethMainEndpoint,
+      accounts: [`0x${zkSyncPrivateKey}`],
       zksync: true
     }
   },
@@ -44,7 +55,7 @@ const config: HardhatUserConfig = {
     }
   },
   solidity: {
-    version: '0.8.16'
+    version: '0.8.17'
   },
   contractSizer: {
     alphaSort: true,
@@ -60,41 +71,15 @@ const config: HardhatUserConfig = {
     outDir: 'typechain',
     target: 'ethers-v5'
   },
-  etherscan: {
-    apiKey: {
-      goerli: process.env.ETHERSCAN_API_KEY,
-      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
-      bscTestnet: process.env.BSCSCAN_API_KEY,
-      arbitrumTestnet: process.env.ARBISCAN_API_KEY,
-      ftmTestnet: process.env.FTMSCAN_API_KEY,
-      polygonMumbai: process.env.POLYGONSCAN_API_KEY,
-
-      mainnet: process.env.ETHERSCAN_API_KEY,
-      avalanche: process.env.SNOWTRACE_API_KEY,
-      bsc: process.env.BSCSCAN_API_KEY,
-      arbitrumOne: process.env.ARBISCAN_API_KEY,
-      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
-      opera: process.env.FTMSCAN_API_KEY,
-      polygon: process.env.POLYGONSCAN_API_KEY,
-      aurora: process.env.AURORASCAN_API_KEY,
-      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
-      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY,
-      heco: process.env.HECOSCAN_API_KEY
-    }
-  },
   zksolc: {
-    version: '1.2.0',
+    version: '1.3.1',
     compilerSource: 'binary',
     settings: {
       experimental: {
         dockerImage: 'matterlabs/zksolc',
-        tag: 'v1.2.0'
+        tag: 'v1.3.1'
       }
     }
-  },
-  zkSyncDeploy: {
-    zkSyncNetwork: zkSyncTestEndpoint,
-    ethNetwork: goerliEndpoint
   }
 };
 

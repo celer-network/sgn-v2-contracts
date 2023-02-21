@@ -16,19 +16,19 @@ const deployFunc = async (hre: HardhatRuntimeEnvironment) => {
   const artifact = await deployer.loadArtifact('Bridge');
 
   // Estimate contract deployment fee
-  const deploymentFee = await deployer.estimateDeployFee(artifact, []);
+  // const deploymentFee = await deployer.estimateDeployFee(artifact, []);
 
-  // Deposit some funds to L2 in order to be able to perform L2 transactions.
-  const depositHandle = await deployer.zkWallet.deposit({
-    to: deployer.zkWallet.address,
-    token: utils.ETH_ADDRESS,
-    amount: deploymentFee.mul(2)
-  });
-  // Wait until the deposit is processed on zkSync
-  await depositHandle.wait();
+  // // Deposit some funds to L2 in order to be able to perform L2 transactions.
+  // const depositHandle = await deployer.zkWallet.deposit({
+  //   to: deployer.zkWallet.address,
+  //   token: utils.ETH_ADDRESS,
+  //   amount: deploymentFee.mul(2)
+  // });
+  // // Wait until the deposit is processed on zkSync
+  // await depositHandle.wait();
 
-  const parsedFee = ethers.utils.formatEther(deploymentFee.toString());
-  console.log(`The deployment is estimated to cost ${parsedFee} ETH`);
+  //const parsedFee = ethers.utils.formatEther(deploymentFee.toString());
+  //console.log(`The deployment is estimated to cost ${parsedFee} ETH`);
 
   // Deploy this contract. The returned object will be of a `Contract` type, similarly to ones in `ethers`.
   const bridgeContract = await deployer.deploy(artifact, []);

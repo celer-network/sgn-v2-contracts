@@ -1,4 +1,5 @@
 import '@matterlabs/hardhat-zksync-deploy';
+import "@matterlabs/hardhat-zksync-verify";
 import '@matterlabs/hardhat-zksync-solc';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
@@ -46,7 +47,8 @@ const config: HardhatUserConfig = {
       url: zkSyncEndpoint,
       ethNetwork: ethMainEndpoint,
       accounts: [`0x${zkSyncPrivateKey}`],
-      zksync: true
+      zksync: true,
+      verifyURL: 'https://zksync2-mainnet-explorer.zksync.io/contract_verification'
     }
   },
   namedAccounts: {

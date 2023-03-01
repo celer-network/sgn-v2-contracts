@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
+import '@oasisprotocol/sapphire-hardhat';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';
@@ -42,6 +43,9 @@ const celoAlfajoresTestPrivateKey = process.env.CELO_ALFAJORES_TEST_PRIVATE_KEY 
 
 const oasisEmeraldTestEndpoint = process.env.OASIS_EMERALD_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasisEmeraldTestPrivateKey = process.env.OASIS_EMERALD_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasisSapphireTestEndpoint = process.env.OASIS_SAPPHIRE_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisSapphireTestPrivateKey = process.env.OASIS_SAPPHIRE_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const moonbaseAlphaTestEndpoint = process.env.MOONBASE_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -127,6 +131,9 @@ const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const oasisEmeraldEndpoint = process.env.OASIS_EMERALD_ENDPOINT || DEFAULT_ENDPOINT;
 const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasisSapphireEndpoint = process.env.OASIS_SAPPHIRE_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisSapphirePrivateKey = process.env.OASIS_SAPPHIRE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
 const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -242,6 +249,10 @@ const config: HardhatUserConfig = {
       url: oasisEmeraldTestEndpoint,
       accounts: [`0x${oasisEmeraldTestPrivateKey}`]
     },
+    oasisSapphireTest: {
+      url: oasisSapphireTestEndpoint,
+      accounts: [`0x${oasisSapphireTestPrivateKey}`]
+    },
     moonbaseAlphaTest: {
       url: moonbaseAlphaTestEndpoint,
       accounts: [`0x${moonbaseAlphaTestPrivateKey}`]
@@ -355,6 +366,10 @@ const config: HardhatUserConfig = {
     oasisEmerald: {
       url: oasisEmeraldEndpoint,
       accounts: [`0x${oasisEmeraldPrivateKey}`]
+    },
+    oasisSapphire: {
+      url: oasisSapphireEndpoint,
+      accounts: [`0x${oasisSapphirePrivateKey}`]
     },
     metis: {
       url: metisEndpoint,

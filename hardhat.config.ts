@@ -89,6 +89,9 @@ const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIV
 const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const fvmTestEndpoint = process.env.FVM_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const fvmTestPrivateKey = process.env.FVM_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -305,6 +308,10 @@ const config: HardhatUserConfig = {
     oasysTest: {
       url: oasysTestEndpoint,
       accounts: [`0x${oasysTestPrivateKey}`]
+    },
+    fvmTest: {
+      url: fvmTestEndpoint,
+      accounts: [`0x${fvmTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

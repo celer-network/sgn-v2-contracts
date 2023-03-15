@@ -53,7 +53,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     ) external onlyOwner {
         require(_receiverAdapters.length == _powers.length, "mismatch length");
         require(_quorumThreshold <= THRESHOLD_DECIMAL, "invalid threshold");
-        for (uint256 i = 0; i < _receiverAdapters.length; i++) {
+        for (uint256 i; i < _receiverAdapters.length; ++i) {
             _updateReceiverAdapter(_receiverAdapters[i], _powers[i]);
         }
         quorumThreshold = _quorumThreshold;
@@ -83,7 +83,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
      */
     function updateReceiverAdapter(address[] calldata _receiverAdapters, uint32[] calldata _powers) external onlySelf {
         require(_receiverAdapters.length == _powers.length, "mismatch length");
-        for (uint256 i = 0; i < _receiverAdapters.length; i++) {
+        for (uint256 i; i < _receiverAdapters.length; ++i) {
             _updateReceiverAdapter(_receiverAdapters[i], _powers[i]);
         }
     }
@@ -135,7 +135,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
 
     function _computeMessagePower(MsgInfo storage _msgInfo) private view returns (uint64) {
         uint64 msgPower;
-        for (uint32 i = 0; i < receiverAdapters.length; i++) {
+        for (uint32 i; i < receiverAdapters.length; ++i) {
             address adapter = receiverAdapters[i];
             if (_msgInfo.from[adapter]) {
                 msgPower += receiverAdapterPowers[adapter];
@@ -166,7 +166,7 @@ contract MultiBridgeReceiver is IMultiBridgeReceiver, Ownable {
     function _removeReceiverAdapter(address _receiverAdapter) private {
         require(receiverAdapterPowers[_receiverAdapter] > 0, "not a receiver adapter");
         uint256 lastIndex = receiverAdapters.length - 1;
-        for (uint256 i = 0; i < receiverAdapters.length; i++) {
+        for (uint256 i; i < receiverAdapters.length; ++i) {
             if (receiverAdapters[i] == _receiverAdapter) {
                 if (i < lastIndex) {
                     receiverAdapters[i] = receiverAdapters[lastIndex];

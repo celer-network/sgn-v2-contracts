@@ -207,12 +207,15 @@ const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const spsEndpoint = process.env.SPS_ENDPOINT || DEFAULT_ENDPOINT;
 const spsPrivateKey = process.env.SPS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const fvmEndpoint = process.env.FVM_ENDPOINT || DEFAULT_ENDPOINT;
+const fvmPrivateKey = process.env.FVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     // Testnets
     hardhat: {},
-    localhost: { timeout: 600000 },
+    localhost: { timeout: 800000 },
     kovan: {
       url: kovanEndpoint,
       accounts: [`0x${kovanPrivateKey}`]
@@ -467,6 +470,10 @@ const config: HardhatUserConfig = {
     sps: {
       url: spsEndpoint,
       accounts: [`0x${spsPrivateKey}`]
+    },
+    fvm: {
+      url: fvmEndpoint,
+      accounts: [`0x${fvmPrivateKey}`]
     }
   },
   namedAccounts: {

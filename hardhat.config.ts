@@ -85,6 +85,9 @@ const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFA
 const cubeDevnetEndpoint = process.env.CUBE_DEVNET_ENDPOINT || DEFAULT_ENDPOINT;
 const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const scrollAlphaTestEndpoint = process.env.SCROLL_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const scrollAlphaTestPrivateKey = process.env.SCROLL_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -291,6 +294,10 @@ const config: HardhatUserConfig = {
     cubeDevnet: {
       url: cubeDevnetEndpoint,
       accounts: [`0x${cubeDevnetPrivateKey}`]
+    },
+    scrollAlphaTest: {
+      url: scrollAlphaTestEndpoint,
+      accounts: [`0x${scrollAlphaTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

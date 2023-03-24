@@ -45,7 +45,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const proxy = await deployments.get('MessageBus_Proxy');
   console.log('MessageBus_Proxy', proxy.address);
   const messageBus = await deployments.get('MessageBus_Implementation');
-  await hre.run('verify:verify', { address: messageBus.address, constructorArguments: constructorArgs });
+  // await hre.run('verify:verify', { address: messageBus.address, constructorArguments: constructorArgs });
   // Have to manually verify because hardhat-deploy compiles proxy with 0.8.10
   // const proxyArgs = [messageBus.address, proxyAdmin.address].concat(encodedInitData);
   // await hre.run('verify:verify', { address: proxy.address, constructorArguments: proxyArgs });

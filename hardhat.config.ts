@@ -481,7 +481,7 @@ const config: HardhatUserConfig = {
     canto: {
       url: cantoEndpoint,
       accounts: [`0x${cantoPrivateKey}`]
-    },
+    }
   },
   namedAccounts: {
     deployer: {

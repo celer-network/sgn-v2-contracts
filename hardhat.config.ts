@@ -210,6 +210,9 @@ const spsPrivateKey = process.env.SPS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const fvmEndpoint = process.env.FVM_ENDPOINT || DEFAULT_ENDPOINT;
 const fvmPrivateKey = process.env.FVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const cantoEndpoint = process.env.CANTO_ENDPOINT || DEFAULT_ENDPOINT;
+const cantoPrivateKey = process.env.CANTO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -474,7 +477,11 @@ const config: HardhatUserConfig = {
     fvm: {
       url: fvmEndpoint,
       accounts: [`0x${fvmPrivateKey}`]
-    }
+    },
+    canto: {
+      url: cantoEndpoint,
+      accounts: [`0x${cantoPrivateKey}`]
+    },
   },
   namedAccounts: {
     deployer: {

@@ -142,4 +142,9 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     function setWrap(address _weth) external onlyOwner {
         nativeWrap = _weth;
     }
+
+    // setNativeTransferGasUsed, native transfer will use this config.
+    function setNativeTransferGasUsed(uint256 _gasUsed) external onlyGovernor {
+        nativeTransferGasUsed = _gasUsed;
+    }
 }

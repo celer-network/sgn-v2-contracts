@@ -31,7 +31,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     address public nativeWrap;
 
     // when transfer native token after wrap, use this gas used config.
-    uint256 public nativeTransferGasUsed;
+    uint256 public nativeTokenTransferGas = 50000;
 
     // liquidity events
     event LiquidityAdded(
@@ -131,7 +131,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
         if (_token == nativeWrap) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(_amount);
-            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTransferGasUsed}("");
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
             require(sent, "failed to send native token");
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
@@ -144,7 +144,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     }
 
     // setNativeTransferGasUsed, native transfer will use this config.
-    function setNativeTransferGasUsed(uint256 _gasUsed) external onlyGovernor {
-        nativeTransferGasUsed = _gasUsed;
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyGovernor {
+        nativeTokenTransferGas = _gasUsed;
     }
 }

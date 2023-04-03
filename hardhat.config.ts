@@ -88,6 +88,9 @@ const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIV
 const scrollAlphaTestEndpoint = process.env.SCROLL_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const scrollAlphaTestPrivateKey = process.env.SCROLL_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const fncyTestEndpoint = process.env.FNCY_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const fncyTestPrivateKey = process.env.FNCY_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -298,6 +301,10 @@ const config: HardhatUserConfig = {
     scrollAlphaTest: {
       url: scrollAlphaTestEndpoint,
       accounts: [`0x${scrollAlphaTestPrivateKey}`]
+    },
+    fncyTest: {
+      url: fncyTestEndpoint,
+      accounts: [`0x${fncyTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

@@ -301,6 +301,18 @@ const config: HardhatUserConfig = {
       url: shibuyaTestnetEndpoint,
       accounts: [`0x${shibuyaTestnetPrivateKey}`]
     },
+    cubeDevnet: {
+      url: cubeDevnetEndpoint,
+      accounts: [`0x${cubeDevnetPrivateKey}`]
+    },
+    oasysTest: {
+      url: oasysTestEndpoint,
+      accounts: [`0x${oasysTestPrivateKey}`]
+    },
+    antiMatTest: {
+      url: antiMatTestnetEndpoint,
+      accounts: [`0x${antiMatTestnetPrivateKey}`]
+    },
     // Mainnets
     ethMainnet: {
       url: ethMainnetEndpoint,

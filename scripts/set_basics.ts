@@ -8,7 +8,7 @@ import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBr
 import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
 import { RFQ__factory } from '../typechain/factories/RFQ__factory';
 import { getDeployerSigner, getFeeOverrides } from './common';
-import {PeggedNativeTokenBridge__factory} from "../typechain";
+import { PeggedNativeTokenBridge__factory } from "../typechain";
 
 dotenv.config();
 

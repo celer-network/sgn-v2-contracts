@@ -499,25 +499,37 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      goerli: process.env.ETHERSCAN_API_KEY,
-      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY,
-      bscTestnet: process.env.BSCSCAN_API_KEY,
-      arbitrumTestnet: process.env.ARBISCAN_API_KEY,
-      ftmTestnet: process.env.FTMSCAN_API_KEY,
-      polygonMumbai: process.env.POLYGONSCAN_API_KEY,
-
-      mainnet: process.env.ETHERSCAN_API_KEY,
-      avalanche: process.env.SNOWTRACE_API_KEY,
-      bsc: process.env.BSCSCAN_API_KEY,
-      arbitrumOne: process.env.ARBISCAN_API_KEY,
-      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY,
-      opera: process.env.FTMSCAN_API_KEY,
-      polygon: process.env.POLYGONSCAN_API_KEY,
-      aurora: process.env.AURORASCAN_API_KEY,
-      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY,
-      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY,
-      heco: process.env.HECOSCAN_API_KEY
-    }
+      // Testnets
+      goerli: process.env.ETHERSCAN_API_KEY || '',
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY || '',
+      bscTestnet: process.env.BSCSCAN_API_KEY || '',
+      arbitrumTestnet: process.env.ARBISCAN_API_KEY || '',
+      ftmTestnet: process.env.FTMSCAN_API_KEY || '',
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY || '',
+      // Mainnets
+      mainnet: process.env.ETHERSCAN_API_KEY || '',
+      avalanche: process.env.SNOWTRACE_API_KEY || '',
+      bsc: process.env.BSCSCAN_API_KEY || '',
+      arbitrumOne: process.env.ARBISCAN_API_KEY || '',
+      optimisticEthereum: process.env.OPTIMISTIC_ETHERSCAN_API_KEY || '',
+      opera: process.env.FTMSCAN_API_KEY || '',
+      polygon: process.env.POLYGONSCAN_API_KEY || '',
+      aurora: process.env.AURORASCAN_API_KEY || '',
+      moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY || '',
+      moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY || '',
+      heco: process.env.HECOSCAN_API_KEY || '',
+      arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || ''
+    },
+    customChains: [
+      {
+        network: 'arbitrumNova',
+        chainId: 42170,
+        urls: {
+          apiURL: process.env.ARBITRUM_NOVA_ENDPOINT || '',
+          browserURL: process.env.ARBITRUM_NOVA_EXPLORER || ''
+        }
+      }
+    ]
   }
 };
 

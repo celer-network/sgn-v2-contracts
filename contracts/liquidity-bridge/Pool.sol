@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity 0.8.9;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -29,6 +29,9 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     // note we don't check whether it's zero address. when this isn't set, and request.token
     // is all 0 address, guarantee fail
     address public nativeWrap;
+
+    // when transfer native token after wrap, use this gas used config.
+    uint256 public nativeTokenTransferGas = 50000;
 
     // liquidity events
     event LiquidityAdded(
@@ -128,7 +131,7 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
         if (_token == nativeWrap) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(_amount);
-            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
             require(sent, "failed to send native token");
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
@@ -138,5 +141,10 @@ contract Pool is Signers, ReentrancyGuard, Pauser, VolumeControl, DelayedTransfe
     // set nativeWrap, for relay requests, if token == nativeWrap, will withdraw first then transfer native to receiver
     function setWrap(address _weth) external onlyOwner {
         nativeWrap = _weth;
+    }
+
+    // setNativeTransferGasUsed, native transfer will use this config.
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyGovernor {
+        nativeTokenTransferGas = _gasUsed;
     }
 }

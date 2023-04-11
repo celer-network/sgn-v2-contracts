@@ -5,6 +5,7 @@ import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
+import '@oasisprotocol/sapphire-hardhat';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';
@@ -43,6 +44,9 @@ const celoAlfajoresTestPrivateKey = process.env.CELO_ALFAJORES_TEST_PRIVATE_KEY 
 const oasisEmeraldTestEndpoint = process.env.OASIS_EMERALD_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasisEmeraldTestPrivateKey = process.env.OASIS_EMERALD_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const oasisSapphireTestEndpoint = process.env.OASIS_SAPPHIRE_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisSapphireTestPrivateKey = process.env.OASIS_SAPPHIRE_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const moonbaseAlphaTestEndpoint = process.env.MOONBASE_ALPHA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const moonbaseAlphaTestPrivateKey = process.env.MOONBASE_ALPHA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -78,6 +82,12 @@ const nervosTestnetPrivateKey = process.env.NERVOS_TESTNET_PRIVATE_KEY || DEFAUL
 
 const shibuyaTestnetEndpoint = process.env.SHIBUYA_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
 const shibuyaTestnetPrivateKey = process.env.SHIBUYA_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const cubeDevnetEndpoint = process.env.CUBE_DEVNET_ENDPOINT || DEFAULT_ENDPOINT;
+const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const antiMatTestnetEndpoint = process.env.ANTIMAT_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
 const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -124,6 +134,9 @@ const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const oasisEmeraldEndpoint = process.env.OASIS_EMERALD_ENDPOINT || DEFAULT_ENDPOINT;
 const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const oasisSapphireEndpoint = process.env.OASIS_SAPPHIRE_ENDPOINT || DEFAULT_ENDPOINT;
+const oasisSapphirePrivateKey = process.env.OASIS_SAPPHIRE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
 const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -191,6 +204,9 @@ const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFA
 const klaytnEndpoint = process.env.KLAYTN_ENDPOINT || DEFAULT_ENDPOINT;
 const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
+const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -232,6 +248,10 @@ const config: HardhatUserConfig = {
     oasisEmeraldTest: {
       url: oasisEmeraldTestEndpoint,
       accounts: [`0x${oasisEmeraldTestPrivateKey}`]
+    },
+    oasisSapphireTest: {
+      url: oasisSapphireTestEndpoint,
+      accounts: [`0x${oasisSapphireTestPrivateKey}`]
     },
     moonbaseAlphaTest: {
       url: moonbaseAlphaTestEndpoint,
@@ -280,10 +300,6 @@ const config: HardhatUserConfig = {
     shibuyaTestnet: {
       url: shibuyaTestnetEndpoint,
       accounts: [`0x${shibuyaTestnetPrivateKey}`]
-    },
-    antiMatTest: {
-      url: antiMatTestnetEndpoint,
-      accounts: [`0x${antiMatTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -342,6 +358,10 @@ const config: HardhatUserConfig = {
     oasisEmerald: {
       url: oasisEmeraldEndpoint,
       accounts: [`0x${oasisEmeraldPrivateKey}`]
+    },
+    oasisSapphire: {
+      url: oasisSapphireEndpoint,
+      accounts: [`0x${oasisSapphirePrivateKey}`]
     },
     metis: {
       url: metisEndpoint,
@@ -431,6 +451,10 @@ const config: HardhatUserConfig = {
       url: klaytnEndpoint,
       accounts: [`0x${klaytnPrivateKey}`],
       gasPrice: 250000000000
+    },
+    oasys: {
+      url: oasysEndpoint,
+      accounts: [`0x${oasysPrivateKey}`]
     }
   },
   namedAccounts: {
@@ -439,7 +463,7 @@ const config: HardhatUserConfig = {
     }
   },
   solidity: {
-    version: '0.8.9',
+    version: '0.8.17',
     settings: {
       optimizer: {
         enabled: true,

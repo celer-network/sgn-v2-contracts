@@ -216,6 +216,9 @@ const cantoPrivateKey = process.env.CANTO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const zkevmEndpoint = process.env.ZKEVM_ENDPOINT || DEFAULT_ENDPOINT;
 const zkevmPrivateKey = process.env.ZKEVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const antimatterB2Endpoint = process.env.AntimatterB2_ENDPOINT || DEFAULT_ENDPOINT;
+const antimatterB2PrivateKey = process.env.AntimatterB2_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -488,6 +491,10 @@ const config: HardhatUserConfig = {
     zkevm: {
       url: zkevmEndpoint,
       accounts: [`0x${zkevmPrivateKey}`]
+    },
+    antimatterB2: {
+      url: antimatterB2Endpoint,
+      accounts: [`0x${antimatterB2PrivateKey}`]
     }
   },
   namedAccounts: {

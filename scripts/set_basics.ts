@@ -8,6 +8,7 @@ import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBr
 import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
 import { RFQ__factory } from '../typechain/factories/RFQ__factory';
 import { getDeployerSigner, getFeeOverrides } from './common';
+import { PeggedNativeTokenBridge__factory } from "../typechain";
 
 dotenv.config();
 
@@ -92,6 +93,22 @@ async function setPeggedTokenBridgeBasics(): Promise<void> {
   if (epochLength) {
     await (await peggedTokenBridge.setEpochLength(epochLength, feeOverrides)).wait();
     console.log('setEpochLength', epochLength);
+  }
+}
+
+async function setPeggedNativeTokenBridgeBasics(): Promise<void> {
+  const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
+
+  const peggedTokenBridgeAddr = process.env.PEGGED_TOKEN_BRIDGE as string;
+  if (!peggedTokenBridgeAddr) {
+    return;
+  }
+  const peggedNativeTokenBridge = PeggedNativeTokenBridge__factory.connect(peggedTokenBridgeAddr, deployerSigner);
+  const nativeVault = process.env.PEGGED_TOKEN_BRIDGE_NATIVE_VAULT as string;
+  if (nativeVault) {
+    await (await peggedNativeTokenBridge.setNativeVault(nativeVault, feeOverrides)).wait();
+    console.log('setNativeVault', nativeVault);
   }
 }
 
@@ -232,6 +249,7 @@ async function setBasics(): Promise<void> {
   await setOriginalTokenVaultBasics();
   await setPeggedTokenBridgeBasics();
   await setMessageBusBasics();
+  await setPeggedNativeTokenBridgeBasics();
   await setRFQBasics();
 }
 

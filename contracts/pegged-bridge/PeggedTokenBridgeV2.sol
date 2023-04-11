@@ -147,7 +147,7 @@ contract PeggedTokenBridgeV2 is Pauser, VolumeControl, DelayedTransfer {
         uint64 _toChainId,
         address _toAccount,
         uint64 _nonce
-    ) private returns (bytes32) {
+    ) internal returns (bytes32) {
         require(_amount > minBurn[_token], "amount too small");
         require(maxBurn[_token] == 0 || _amount <= maxBurn[_token], "amount too large");
         supplies[_token] -= _amount;

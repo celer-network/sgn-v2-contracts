@@ -89,6 +89,9 @@ const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIV
 const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const antiMatTestnetEndpoint = process.env.ANTIMAT_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -305,6 +308,10 @@ const config: HardhatUserConfig = {
     oasysTest: {
       url: oasysTestEndpoint,
       accounts: [`0x${oasysTestPrivateKey}`]
+    },
+    antiMatTest: {
+      url: antiMatTestnetEndpoint,
+      accounts: [`0x${antiMatTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

@@ -89,6 +89,9 @@ const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIV
 const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const antiMatTestnetEndpoint = process.env.ANTIMAT_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -216,6 +219,9 @@ const cantoPrivateKey = process.env.CANTO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const zkevmEndpoint = process.env.ZKEVM_ENDPOINT || DEFAULT_ENDPOINT;
 const zkevmPrivateKey = process.env.ZKEVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const antimatterB2Endpoint = process.env.AntimatterB2_ENDPOINT || DEFAULT_ENDPOINT;
+const antimatterB2PrivateKey = process.env.AntimatterB2_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -317,6 +323,10 @@ const config: HardhatUserConfig = {
     oasysTest: {
       url: oasysTestEndpoint,
       accounts: [`0x${oasysTestPrivateKey}`]
+    },
+    antiMatTest: {
+      url: antiMatTestnetEndpoint,
+      accounts: [`0x${antiMatTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {
@@ -488,6 +498,10 @@ const config: HardhatUserConfig = {
     zkevm: {
       url: zkevmEndpoint,
       accounts: [`0x${zkevmPrivateKey}`]
+    },
+    antimatterB2: {
+      url: antimatterB2Endpoint,
+      accounts: [`0x${antimatterB2PrivateKey}`]
     }
   },
   namedAccounts: {

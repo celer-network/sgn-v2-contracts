@@ -55,6 +55,10 @@ async function setBridgeLimits(): Promise<void> {
   if (!bridgeAddr) {
     return;
   }
+  const tokensStr = process.env.BRIDGE_LIMIT_TOKENS;
+  if (!tokensStr) {
+    return;
+  }
   const bridge = Bridge__factory.connect(bridgeAddr, deployerSigner);
   const tokens = (process.env.BRIDGE_LIMIT_TOKENS as string).split(',');
   const decimals = (process.env.BRIDGE_LIMIT_DECIMALS as string).split(',');
@@ -109,6 +113,10 @@ async function setOriginalTokenVaultLimits(): Promise<void> {
   if (!originalTokenVaultAddr) {
     return;
   }
+  const tokensStr = process.env.ORIGINAL_TOKEN_VAULT_LIMIT_TOKENS;
+  if (!tokensStr) {
+    return;
+  }
   const originalTokenVault = OriginalTokenVault__factory.connect(originalTokenVaultAddr, deployerSigner);
   const tokens = (process.env.ORIGINAL_TOKEN_VAULT_LIMIT_TOKENS as string).split(',');
   const decimals = (process.env.ORIGINAL_TOKEN_VAULT_LIMIT_DECIMALS as string).split(',');
@@ -153,6 +161,10 @@ async function setPeggedTokenBridgeLimits(): Promise<void> {
 
   const peggedTokenBridgeAddr = process.env.PEGGED_TOKEN_BRIDGE as string;
   if (!peggedTokenBridgeAddr) {
+    return;
+  }
+  const tokensStr = process.env.PEGGED_TOKEN_BRIDGE_LIMIT_TOKENS;
+  if (!tokensStr) {
     return;
   }
   const peggedTokenBridge = PeggedTokenBridge__factory.connect(peggedTokenBridgeAddr, deployerSigner);

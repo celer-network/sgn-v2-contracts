@@ -3,6 +3,7 @@
 # Script to run solt and generate standard-json files for Etherscan verification.
 
 solFiles=(
+  circle-usdc/CircleBridgeProxy
   governed-owner/GovernedOwnerProxy
   governed-owner/SimpleGovernance
   integration-examples/ContractAsLP

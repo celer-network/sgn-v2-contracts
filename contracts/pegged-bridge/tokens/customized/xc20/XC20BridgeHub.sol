@@ -254,4 +254,8 @@ contract XC20BridgeHub is Ownable, IXC20BridgeHub, Pausable {
             newAmount = _amount;
         }
     }
+
+    // This account has to hold some amount of native currency in order to be eligible 
+    // to receive canonical x20 assets per Astar rule
+    receive() external payable {}
 }

@@ -71,4 +71,8 @@ contract XC20BridgeToken is ERC20, Ownable {
     function getOwner() external view returns (address) {
         return owner();
     }
+
+    // This account has to hold some amount of native currency in order to be eligible 
+    // to receive canonical x20 assets per Astar rule
+    receive() external payable {}
 }

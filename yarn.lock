@@ -497,38 +497,29 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@matterlabs/hardhat-zksync-deploy@0.6.1":
-  version "0.6.1"
-  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-deploy/-/hardhat-zksync-deploy-0.6.1.tgz#4a439cfd34bab33f59b8a36dda582c70a0e8f5fe"
-  integrity sha512-5uVcJGAc5cjWB1GjrUC/XAmF/03+QhoCaZiZA6HplgTJ9bzSWZ+Zzr+B18TFUD8+4fL8iBdstVlhw3C4j0/QLg==
+"@matterlabs/hardhat-zksync-deploy@0.6.3":
+  version "0.6.3"
+  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-deploy/-/hardhat-zksync-deploy-0.6.3.tgz#833b208373e7037bf43671054328d82511444e2a"
+  integrity sha512-FB+2xFL/80JJwlGna+aHA6dk4ONrMFqThTZATYVJUAKooA0Aw5qmpmM8B3qsNB4LLzHSO/EmVrHIcLaPv8hYwQ==
   dependencies:
     chalk "4.1.2"
 
-"@matterlabs/hardhat-zksync-solc@0.3.13":
-  version "0.3.13"
-  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-solc/-/hardhat-zksync-solc-0.3.13.tgz#ff3401b164ebfde6feb2a8fac8639cf39f9b4954"
-  integrity sha512-QuU3CfaY17SQbRxk7VvheJt+bBvWOSNaeo4hWedWXWdIa6d2Y8lQqf6QmYTFMqJg39Z+bx+uuVm2qzzLI4x0SQ==
+"@matterlabs/hardhat-zksync-solc@0.3.17":
+  version "0.3.17"
+  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-solc/-/hardhat-zksync-solc-0.3.17.tgz#72f199544dc89b268d7bfc06d022a311042752fd"
+  integrity sha512-aZgQ0yfXW5xPkfuEH1d44ncWV4T2LzKZd0VVPo4PL5cUrYs2/II1FaEDp5zsf3FxOR1xT3mBsjuSrtJkk4AL8Q==
   dependencies:
     "@nomiclabs/hardhat-docker" "^2.0.0"
     chalk "4.1.2"
     dockerode "^3.3.4"
 
-"@matterlabs/hardhat-zksync-solc@0.3.14":
-  version "0.3.14"
-  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-solc/-/hardhat-zksync-solc-0.3.14.tgz#0a32f01b4cd8631ecd8dfe0547e3ac49ab8290d5"
-  integrity sha512-iKuQ+vvnpv3K2lkFO41xpJcNWH0KHJ/5JbOboTlPZATVR7F3GJeHfJL+GG4wkxKXnxZczpxyQqC4rAfMKvRaDg==
+"@matterlabs/hardhat-zksync-verify@0.1.6":
+  version "0.1.6"
+  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-verify/-/hardhat-zksync-verify-0.1.6.tgz#c6f5cc4c414e60bbf8685c9eafdf3dd9ecdd2f10"
+  integrity sha512-Il/VzFXS7QQ2M19/hf3POfBYtNbTzZXTZWa8EYzTWViMdanVYKPSAy7ZMwfB1CVBqrPwZUgGEmvdkpkLPr5+pQ==
   dependencies:
-    "@nomiclabs/hardhat-docker" "^2.0.0"
-    chalk "4.1.2"
-    dockerode "^3.3.4"
-
-"@matterlabs/hardhat-zksync-verify@0.1.2-beta.1":
-  version "0.1.2-beta.1"
-  resolved "https://registry.npmmirror.com/@matterlabs/hardhat-zksync-verify/-/hardhat-zksync-verify-0.1.2-beta.1.tgz#537fec2d5c93f67251a82a5a0c9679fafe8c7aaa"
-  integrity sha512-92t+s8pViFOoUpaiHVFZJa9SFkMeP5R3364i1fRJZnmxFhQ3n6OXUfumJQbtT+zB12q8hF9LQOtaEy9WdwzR5A==
-  dependencies:
-    "@matterlabs/hardhat-zksync-solc" "0.3.13"
-    axios "^1.2.3"
+    "@matterlabs/hardhat-zksync-solc" "0.3.17"
+    axios "^1.3.6"
     chalk "4.1.2"
     dockerode "^3.3.4"
 
@@ -1788,10 +1779,10 @@ axios@^0.21.1:
   dependencies:
     follow-redirects "^1.14.0"
 
-axios@^1.2.3:
-  version "1.3.4"
-  resolved "https://registry.npmmirror.com/axios/-/axios-1.3.4.tgz#f5760cefd9cfb51fd2481acf88c05f67c4523024"
-  integrity sha512-toYm+Bsyl6VC5wSkfkbbNB6ROv7KY93PEBBL6xyDczaIHasAiv4wPqQ/c4RjoQzipxRD2W5g21cOqQulZ7rHwQ==
+axios@^1.3.6:
+  version "1.4.0"
+  resolved "https://registry.npmmirror.com/axios/-/axios-1.4.0.tgz#38a7bf1224cd308de271146038b551d725f0be1f"
+  integrity sha512-S4XCWMEmzvo64T9GfvQDOXgYRDJ/wsSZc7Jvdgx5u1sd0JwsuPLqb3SYmusag+edF6ziyMensPVqLTSc1PiSEA==
   dependencies:
     follow-redirects "^1.15.0"
     form-data "^4.0.0"

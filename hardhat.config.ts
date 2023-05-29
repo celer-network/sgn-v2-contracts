@@ -373,7 +373,7 @@ const config: HardhatUserConfig = {
     kava: getNetworkConfig(kavaEndpoint, kmsKeyId, kavaPrivateKey),
     fncy: getNetworkConfig(fncyEndpoint, kmsKeyId, fncyPrivateKey),
     nervosGodwoken: getNetworkConfig(nervosGodwokenEndpoint, kmsKeyId, nervosGodwokenPrivateKey),
-    klaytn: getNetworkConfig(klaytnEndpoint, kmsKeyId, klaytnPrivateKey),
+    klaytn: getNetworkConfig(klaytnEndpoint, kmsKeyId, klaytnPrivateKey, 250000000000),
     oasys: getNetworkConfig(oasysEndpoint, kmsKeyId, oasysPrivateKey),
   },
   namedAccounts: {

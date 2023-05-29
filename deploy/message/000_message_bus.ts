@@ -14,7 +14,7 @@ export default async function(hre: HardhatRuntimeEnvironment) {
 
   // Create deployer object and load the artifact of the contract we want to deploy.
   const deployer = new Deployer(hre, wallet);
-  const artifact = await deployer.loadArtifact('MintSwapCanonicalToken');
+  const artifact = await deployer.loadArtifact('MessageBus');
 
   // Estimate contract deployment fee
   // const deploymentFee = await deployer.estimateDeployFee(artifact, []);
@@ -33,9 +33,12 @@ export default async function(hre: HardhatRuntimeEnvironment) {
 
   // Deploy this contract. The returned object will be of a `Contract` type, similarly to ones in `ethers`.
   const args = [
-    process.env.MINT_SWAP_CANONICAL_TOKEN_NAME as string,
-    process.env.MINT_SWAP_CANONICAL_TOKEN_SYMBOL as string,
-    process.env.MINT_SWAP_CANONICAL_TOKEN_DECIMALS,
+    process.env.MESSAGE_BUS_SIGS_VERIFIER,
+    process.env.MESSAGE_BUS_LIQUIDITY_BRIDGE as string,
+    process.env.MESSAGE_BUS_PEG_BRIDGE as string,
+    process.env.MESSAGE_BUS_PEG_VAULT as string,
+    process.env.MESSAGE_BUS_PEG_BRIDGE_V2 as string,
+    process.env.MESSAGE_BUS_PEG_VAULT_V2 as string
   ];
   const contract = await deployer.deploy(artifact, args);
 
@@ -45,7 +48,7 @@ export default async function(hre: HardhatRuntimeEnvironment) {
 
   const verificationId = await hre.run("verify:verify", {
     address: contractAddress,
-    contract: "contracts/pegged-bridge/tokens/MintSwapCanonicalToken.sol:MintSwapCanonicalToken",
+    contract: "contracts/message/messagebus/MessageBus.sol:MessageBus",
     constructorArguments: args
   });
 

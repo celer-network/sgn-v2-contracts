@@ -6,7 +6,9 @@ import { Bridge__factory } from '../typechain/factories/Bridge__factory';
 import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';
 import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBridge__factory';
 import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
+import { RFQ__factory } from '../typechain/factories/RFQ__factory';
 import { getDeployerSigner, getFeeOverrides } from './common';
+import { PeggedNativeTokenBridge__factory } from "../typechain";
 
 dotenv.config();
 
@@ -94,6 +96,22 @@ async function setPeggedTokenBridgeBasics(): Promise<void> {
   }
 }
 
+async function setPeggedNativeTokenBridgeBasics(): Promise<void> {
+  const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
+
+  const peggedTokenBridgeAddr = process.env.PEGGED_TOKEN_BRIDGE as string;
+  if (!peggedTokenBridgeAddr) {
+    return;
+  }
+  const peggedNativeTokenBridge = PeggedNativeTokenBridge__factory.connect(peggedTokenBridgeAddr, deployerSigner);
+  const nativeVault = process.env.PEGGED_TOKEN_BRIDGE_NATIVE_VAULT as string;
+  if (nativeVault) {
+    await (await peggedNativeTokenBridge.setNativeVault(nativeVault, feeOverrides)).wait();
+    console.log('setNativeVault', nativeVault);
+  }
+}
+
 async function setOriginalTokenVaultBasics(): Promise<void> {
   const deployerSigner = await getDeployerSigner();
   const feeOverrides = await getFeeOverrides();
@@ -172,11 +190,67 @@ async function setMessageBusBasics(): Promise<void> {
   }
 }
 
+async function setRFQBasics(): Promise<void> {
+  const deployerSigner = await getDeployerSigner();
+  const feeOverrides = await getFeeOverrides();
+
+  const rfqAddr = process.env.RFQ_ADDR as string;
+  if (!rfqAddr) {
+    return;
+  }
+  const rfq = RFQ__factory.connect(rfqAddr, deployerSigner);
+  const pausers = (process.env.RFQ_PAUSERS as string).split(',');
+  if (pausers[0].length > 0) {
+    for (let i = 0; i < pausers.length; i++) {
+      const pauser = pausers[i];
+      await (await rfq.addPauser(pauser, feeOverrides)).wait();
+      console.log('addPauser', pauser);
+    }
+  }
+  const governors = (process.env.RFQ_GOVERNORS as string).split(',');
+  if (governors[0].length > 0) {
+    for (let i = 0; i < governors.length; i++) {
+      const governor = governors[i];
+      await (await rfq.addGovernor(governor, feeOverrides)).wait();
+      console.log('addGovernor', governor);
+    }
+  }
+  const remoteChains = (process.env.RFQ_REMOTE_CHAINS as string).split(',');
+  const remoteRFQs = (process.env.RFQ_REMOTE_RFQS as string).split(',');
+  if (remoteChains[0].length > 0 && remoteChains.length == remoteRFQs.length) {
+    await (await rfq.setRemoteRfqContracts(remoteChains, remoteRFQs, feeOverrides)).wait();
+    console.log('setRemoteRfqContracts', remoteChains, remoteRFQs);
+  }
+  const feeChains = (process.env.RFQ_FEE_CHAINS as string).split(',');
+  const feePercs = (process.env.RFQ_FEE_PERCS as string).split(',');
+  if (feeChains[0].length > 0 && feeChains.length == feePercs.length) {
+    await (await rfq.setFeePerc(feeChains, feePercs, feeOverrides)).wait();
+    console.log('setFeePerc', feeChains, feePercs);
+  }
+  const treasuryAddr = process.env.RFQ_TREASURE_ADDR as string;
+  if (treasuryAddr) {
+    await (await rfq.setTreasuryAddr(treasuryAddr, feeOverrides)).wait();
+    console.log('setTreasuryAddr', treasuryAddr);
+  }
+  const weth = process.env.RFQ_NATIVE_WRAP as string;
+  if (weth) {
+    await (await rfq.setNativeWrap(weth, feeOverrides)).wait();
+    console.log('setNativeWrap', weth);
+  }
+  const msgBus = process.env.RFQ_MSG_BUS as string;
+  if (msgBus) {
+    await (await rfq.setMessageBus(msgBus, feeOverrides)).wait();
+    console.log('setMessageBus', msgBus);
+  }
+}
+
 async function setBasics(): Promise<void> {
   await setBridgeBasics();
   await setOriginalTokenVaultBasics();
   await setPeggedTokenBridgeBasics();
   await setMessageBusBasics();
+  await setPeggedNativeTokenBridgeBasics();
+  await setRFQBasics();
 }
 
 setBasics();

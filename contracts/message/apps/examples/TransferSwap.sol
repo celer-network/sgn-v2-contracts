@@ -4,9 +4,7 @@ pragma solidity >=0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../../framework/MessageBusAddress.sol";
-import "../../framework/MessageSenderApp.sol";
-import "../../framework/MessageReceiverApp.sol";
+import "../../framework/MessageApp.sol";
 import "../../../interfaces/IWETH.sol";
 import "../../../interfaces/IUniswapV2.sol";
 
@@ -14,7 +12,7 @@ import "../../../interfaces/IUniswapV2.sol";
  * @title Demo application contract that facilitates swapping on a chain, transferring to another chain,
  * and swapping another time on the destination chain before sending the result tokens to a user
  */
-contract TransferSwap is MessageSenderApp, MessageReceiverApp {
+contract TransferSwap is MessageApp {
     using SafeERC20 for IERC20;
 
     modifier onlyEOA() {
@@ -72,8 +70,7 @@ contract TransferSwap is MessageSenderApp, MessageReceiverApp {
         address _messageBus,
         address _supportedDex,
         address _nativeWrap
-    ) {
-        messageBus = _messageBus;
+    ) MessageApp(_messageBus) {
         supportedDex[_supportedDex] = true;
         nativeWrap = _nativeWrap;
     }

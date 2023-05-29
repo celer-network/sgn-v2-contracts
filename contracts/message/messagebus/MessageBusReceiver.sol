@@ -10,6 +10,7 @@ import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../../interfaces/IPeggedTokenBridgeV2.sol";
 import "../../safeguard/Ownable.sol";
+import "../../libraries/Utils.sol";
 
 contract MessageBusReceiver is Ownable {
     mapping(bytes32 => MsgDataTypes.TxStatus) public executedMessages;
@@ -486,19 +487,24 @@ contract MessageBusReceiver is Ownable {
                 invalid()
             }
         }
-        emit CallReverted(getRevertMsg(_returnData));
+        string memory revertMsg = Utils.getRevertMsg(_returnData);
+        // revert the execution if the revert message has the ABORT prefix
+        checkAbortPrefix(revertMsg);
+        // otherwiase, emit revert message, return and mark the execution as failed (non-retryable)
+        emit CallReverted(revertMsg);
     }
 
-    // https://ethereum.stackexchange.com/a/83577
-    // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
-        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-        if (_returnData.length < 68) return "Transaction reverted silently";
-        assembly {
-            // Slice the sighash.
-            _returnData := add(_returnData, 0x04)
+    function checkAbortPrefix(string memory _revertMsg) private pure {
+        bytes memory prefixBytes = bytes(MsgDataTypes.ABORT_PREFIX);
+        bytes memory msgBytes = bytes(_revertMsg);
+        if (msgBytes.length >= prefixBytes.length) {
+            for (uint256 i = 0; i < prefixBytes.length; i++) {
+                if (msgBytes[i] != prefixBytes[i]) {
+                    return; // prefix not match, return
+                }
+            }
+            revert(_revertMsg); // prefix match, revert
         }
-        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 
     function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {

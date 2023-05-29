@@ -3,6 +3,7 @@
 # Script to run solt and generate standard-json files for Etherscan verification.
 
 solFiles=(
+  circle-usdc/CircleBridgeProxy
   governed-owner/GovernedOwnerProxy
   governed-owner/SimpleGovernance
   integration-examples/ContractAsLP
@@ -17,6 +18,8 @@ solFiles=(
   message/apps/MCNNFT
   message/apps/NFTBridge
   message/apps/MsgTest
+  message/apps/RFQ
+  message/apps/adapter/MessageReceiverAdapter
   message/messagebus/MessageBus
   miscs/Faucet
   miscs/MintableERC20
@@ -33,6 +36,8 @@ solFiles=(
   pegged-bridge/tokens/SwapBridgeToken
   pegged-bridge/tokens/customized/FraxBridgeToken
   pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner
+  pegged-bridge/customized/PeggedNativeTokenBridge
+  proxy/TransferAgent
   staking/Govern
   staking/SGN
   staking/Staking

@@ -52,7 +52,7 @@ library BridgeTransferLib {
     // ============== Internal library functions called by apps ==============
 
     /**
-     * @notice Send a cross-chain transfer either via liquidity pool-based bridge or in the form of pegged mint / burn.
+     * @notice Send a cross-chain transfer of ERC20 token either via liquidity pool-based bridge or in the form of pegged mint / burn.
      * @param _receiver The address of the receiver.
      * @param _token The address of the token.
      * @param _amount The amount of the transfer.
@@ -106,6 +106,58 @@ library BridgeTransferLib {
             IERC20(_token).safeApprove(_bridgeAddr, 0);
         } else {
             revert("bridge send type not supported");
+        }
+        return transferId;
+    }
+
+    /**
+     * @notice Send a cross-chain transfer of native token either via liquidity pool-based bridge or in the form of pegged mint / burn.
+     * @param _receiver The address of the receiver.
+     * @param _amount The amount of the transfer.
+     * @param _dstChainId The destination chain ID.
+     * @param _nonce A number input to guarantee uniqueness of transferId. Can be timestamp in practice.
+     * @param _maxSlippage The max slippage accepted, given as percentage in point (pip). Eg. 5000 means 0.5%.
+     *        Must be greater than minimalMaxSlippage. Receiver is guaranteed to receive at least
+     *        (100% - max slippage percentage) * amount or the transfer can be refunded.
+     *        Only applicable to the {BridgeSendType.Liquidity}.
+     * @param _bridgeSendType The type of the bridge used by this transfer. One of the {BridgeSendType} enum.
+     * @param _bridgeAddr The address of the bridge used.
+     */
+    function sendNativeTransfer(
+        address _receiver,
+        uint256 _amount,
+        uint64 _dstChainId,
+        uint64 _nonce,
+        uint32 _maxSlippage, // slippage * 1M, eg. 0.5% -> 5000
+        BridgeSendType _bridgeSendType,
+        address _bridgeAddr
+    ) internal returns (bytes32) {
+        require(
+            _bridgeSendType == BridgeSendType.Liquidity ||
+                _bridgeSendType == BridgeSendType.PegDeposit ||
+                _bridgeSendType == BridgeSendType.PegV2Deposit,
+            "Lib: invalid bridge send type"
+        );
+        address _token = INativeWrap(_bridgeAddr).nativeWrap();
+        bytes32 transferId;
+        if (_bridgeSendType == BridgeSendType.Liquidity) {
+            IBridge(_bridgeAddr).sendNative{value: msg.value}(_receiver, _amount, _dstChainId, _nonce, _maxSlippage);
+            transferId = keccak256(
+                abi.encodePacked(address(this), _receiver, _token, _amount, _dstChainId, _nonce, uint64(block.chainid))
+            );
+        } else if (_bridgeSendType == BridgeSendType.PegDeposit) {
+            IOriginalTokenVault(_bridgeAddr).depositNative{value: msg.value}(_amount, _dstChainId, _receiver, _nonce);
+            transferId = keccak256(
+                abi.encodePacked(address(this), _token, _amount, _dstChainId, _receiver, _nonce, uint64(block.chainid))
+            );
+        } else {
+            // _bridgeSendType == BridgeSendType.PegV2Deposit
+            transferId = IOriginalTokenVaultV2(_bridgeAddr).depositNative{value: msg.value}(
+                _amount,
+                _dstChainId,
+                _receiver,
+                _nonce
+            );
         }
         return transferId;
     }

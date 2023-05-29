@@ -5,25 +5,8 @@ pragma solidity >=0.8.0;
 import "../libraries/MsgDataTypes.sol";
 
 interface IMessageBus {
-    function liquidityBridge() external view returns (address);
-
-    function pegBridge() external view returns (address);
-
-    function pegBridgeV2() external view returns (address);
-
-    function pegVault() external view returns (address);
-
-    function pegVaultV2() external view returns (address);
-
     /**
-     * @notice Calculates the required fee for the message.
-     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
-     @ @return The required fee.
-     */
-    function calcFee(bytes calldata _message) external view returns (uint256);
-
-    /**
-     * @notice Sends a message to a contract on another chain.
+     * @notice Send a message to a contract on another chain.
      * Sender needs to make sure the uniqueness of the message Id, which is computed as
      * hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message).
      * If messages with the same Id are sent, only one of them will succeed at dst chain..
@@ -38,7 +21,7 @@ interface IMessageBus {
         bytes calldata _message
     ) external payable;
 
-    // receiver is non-evm chain address
+    // same as above, except that receiver is an non-evm chain address,
     function sendMessage(
         bytes calldata _receiver,
         uint256 _dstChainId,
@@ -46,7 +29,7 @@ interface IMessageBus {
     ) external payable;
 
     /**
-     * @notice Sends a message associated with a transfer to a contract on another chain.
+     * @notice Send a message associated with a token transfer to a contract on another chain.
      * If messages with the same srcTransferId are sent, only one of them will succeed at dst chain..
      * A fee is charged in the native token.
      * @param _receiver The address of the destination app contract.
@@ -65,21 +48,20 @@ interface IMessageBus {
     ) external payable;
 
     /**
-     * @notice Withdraws message fee in the form of native gas token.
-     * @param _account The address receiving the fee.
-     * @param _cumulativeFee The cumulative fee credited to the account. Tracked by SGN.
-     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A withdrawal must be
-     * signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.
+     * @notice Execute a message not associated with a transfer.
+     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
+     * +2/3 of the sigsVerifier's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
      */
-    function withdrawFee(
-        address _account,
-        uint256 _cumulativeFee,
+    function executeMessage(
+        bytes calldata _message,
+        MsgDataTypes.RouteInfo calldata _route,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external;
+    ) external payable;
 
     /**
      * @notice Execute a message with a successful transfer.
@@ -116,18 +98,36 @@ interface IMessageBus {
     ) external payable;
 
     /**
-     * @notice Execute a message not associated with a transfer.
-     * @param _message Arbitrary message bytes originated from and encoded by the source app contract
-     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by
-     * +2/3 of the sigsVerifier's current signing power to be delivered.
+     * @notice Withdraws message fee in the form of native gas token.
+     * @param _account The address receiving the fee.
+     * @param _cumulativeFee The cumulative fee credited to the account. Tracked by SGN.
+     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A withdrawal must be
+     * signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.
      * @param _signers The sorted list of signers.
      * @param _powers The signing powers of the signers.
      */
-    function executeMessage(
-        bytes calldata _message,
-        MsgDataTypes.RouteInfo calldata _route,
+    function withdrawFee(
+        address _account,
+        uint256 _cumulativeFee,
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) external payable;
+    ) external;
+
+    /**
+     * @notice Calculates the required fee for the message.
+     * @param _message Arbitrary message bytes to be decoded by the destination app contract.
+     @ @return The required fee.
+     */
+    function calcFee(bytes calldata _message) external view returns (uint256);
+
+    function liquidityBridge() external view returns (address);
+
+    function pegBridge() external view returns (address);
+
+    function pegBridgeV2() external view returns (address);
+
+    function pegVault() external view returns (address);
+
+    function pegVaultV2() external view returns (address);
 }

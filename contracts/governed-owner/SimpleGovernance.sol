@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
-pragma solidity ^0.8.17;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "../libraries/Utils.sol";
 
 // mainly used for governed-owner to do infrequent sgn/cbridge owner operations,
 // relatively prefer easy-to-use over gas-efficiency
@@ -183,7 +184,7 @@ contract SimpleGovernance {
 
         if (_type == ProposalType.ExternalDefault || _type == ProposalType.ExternalFastPass) {
             (bool success, bytes memory res) = _target.call(_data);
-            require(success, _getRevertMsg(res));
+            require(success, Utils.getRevertMsg(res));
         } else if (_type == ProposalType.InternalParamChange) {
             (ParamName name, uint256 value) = abi.decode((_data), (ParamName, uint256));
             params[name] = value;
@@ -327,17 +328,5 @@ contract SimpleGovernance {
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
         }
-    }
-
-    // https://ethereum.stackexchange.com/a/83577
-    // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function _getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
-        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-        if (_returnData.length < 68) return "Transaction reverted silently";
-        assembly {
-            // Slice the sighash.
-            _returnData := add(_returnData, 0x04)
-        }
-        return abi.decode(_returnData, (string)); // All that remains is the revert string
     }
 }

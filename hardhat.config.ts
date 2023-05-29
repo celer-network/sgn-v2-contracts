@@ -6,6 +6,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import '@oasisprotocol/sapphire-hardhat';
+import "@rumblefishdev/hardhat-kms-signer";
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig } from 'hardhat/types';
@@ -15,6 +16,8 @@ dotenv.config();
 const DEFAULT_ENDPOINT = 'http://localhost:8545';
 const DEFAULT_PRIVATE_KEY =
   process.env.DEFAULT_PRIVATE_KEY || 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+
+const kmsKeyId = process.env.KMS_KEY_ID;
 
 // Testnets
 const kovanEndpoint = process.env.KOVAN_ENDPOINT || DEFAULT_ENDPOINT;
@@ -94,121 +97,82 @@ const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFA
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
-const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const bscEndpoint = process.env.BSC_ENDPOINT || DEFAULT_ENDPOINT;
-const bscPrivateKey = process.env.BSC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const arbitrumEndpoint = process.env.ARBITRUM_ENDPOINT || DEFAULT_ENDPOINT;
-const arbitrumPrivateKey = process.env.ARBITRUM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const arbitrumNovaEndpoint = process.env.ARBITRUM_NOVA_ENDPOINT || DEFAULT_ENDPOINT;
-const arbitrumNovaPrivateKey = process.env.ARBITRUM_NOVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const polygonEndpoint = process.env.POLYGON_ENDPOINT || DEFAULT_ENDPOINT;
-const polygonPrivateKey = process.env.POLYGON_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const fantomEndpoint = process.env.FANTOM_ENDPOINT || DEFAULT_ENDPOINT;
-const fantomPrivateKey = process.env.FANTOM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const avalancheEndpoint = process.env.AVALANCHE_ENDPOINT || DEFAULT_ENDPOINT;
-const avalanchePrivateKey = process.env.AVALANCHE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const optimismEndpoint = process.env.OPTIMISM_ENDPOINT || DEFAULT_ENDPOINT;
-const optimismPrivateKey = process.env.OPTIMISM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const bobaEndpoint = process.env.BOBA_ENDPOINT || DEFAULT_ENDPOINT;
-const bobaPrivateKey = process.env.BOBA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const harmonyEndpoint = process.env.HARMONY_ENDPOINT || DEFAULT_ENDPOINT;
-const harmonyPrivateKey = process.env.HARMONY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const moonbeamEndpoint = process.env.MOONBEAM_ENDPOINT || DEFAULT_ENDPOINT;
-const moonbeamPrivateKey = process.env.MOONBEAM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const moonriverEndpoint = process.env.MOONRIVER_ENDPOINT || DEFAULT_ENDPOINT;
-const moonriverPrivateKey = process.env.MOONRIVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const celoEndpoint = process.env.CELO_ENDPOINT || DEFAULT_ENDPOINT;
-const celoPrivateKey = process.env.CELO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const oasisEmeraldEndpoint = process.env.OASIS_EMERALD_ENDPOINT || DEFAULT_ENDPOINT;
-const oasisEmeraldPrivateKey = process.env.OASIS_EMERALD_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const oasisSapphireEndpoint = process.env.OASIS_SAPPHIRE_ENDPOINT || DEFAULT_ENDPOINT;
-const oasisSapphirePrivateKey = process.env.OASIS_SAPPHIRE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const metisEndpoint = process.env.METIS_ENDPOINT || DEFAULT_ENDPOINT;
-const metisPrivateKey = process.env.METIS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const auroraEndpoint = process.env.AURORA_ENDPOINT || DEFAULT_ENDPOINT;
-const auroraPrivateKey = process.env.AURORA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const xdaiEndpoint = process.env.XDAI_ENDPOINT || DEFAULT_ENDPOINT;
-const xdaiPrivateKey = process.env.XDAI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const oecEndpoint = process.env.OEC_ENDPOINT || DEFAULT_ENDPOINT;
-const oecPrivateKey = process.env.OEC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const hecoEndpoint = process.env.HECO_ENDPOINT || DEFAULT_ENDPOINT;
-const hecoPrivateKey = process.env.HECO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const astarEndpoint = process.env.ASTAR_ENDPOINT || DEFAULT_ENDPOINT;
-const astarPrivateKey = process.env.ASTAR_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const shidenEndpoint = process.env.SHIDEN_ENDPOINT || DEFAULT_ENDPOINT;
-const shidenPrivateKey = process.env.SHIDEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const syscoinEndpoint = process.env.SYSCOIN_ENDPOINT || DEFAULT_ENDPOINT;
-const syscoinPrivateKey = process.env.SYSCOIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const milkomedaEndpoint = process.env.MILKOMEDA_ENDPOINT || DEFAULT_ENDPOINT;
-const milkomedaPrivateKey = process.env.MILKOMEDA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const evmosEndpoint = process.env.EVMOS_ENDPOINT || DEFAULT_ENDPOINT;
-const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const cloverEndpoint = process.env.CLOVER_ENDPOINT || DEFAULT_ENDPOINT;
-const cloverPrivateKey = process.env.CLOVER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const reiEndpoint = process.env.REI_ENDPOINT || DEFAULT_ENDPOINT;
-const reiPrivateKey = process.env.REI_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const confluxEndpoint = process.env.CONFLUX_ENDPOINT || DEFAULT_ENDPOINT;
-const confluxPrivateKey = process.env.CONFLUX_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const darwiniaCrabEndpoint = process.env.DARWINIA_CRAB_ENDPOINT || DEFAULT_ENDPOINT;
-const darwiniaCrabPrivateKey = process.env.DARWINIA_CRAB_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const platonEndpoint = process.env.PLATON_ENDPOINT || DEFAULT_ENDPOINT;
-const platonPrivateKey = process.env.PLATON_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const ontologyEndpoint = process.env.ONTOLOGY_ENDPOINT || DEFAULT_ENDPOINT;
-const ontologyPrivateKey = process.env.ONTOLOGY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const swimmerEndpoint = process.env.SWIMMER_ENDPOINT || DEFAULT_ENDPOINT;
-const swimmerPrivateKey = process.env.SWIMMER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const sxNetworkEndpoint = process.env.SX_NETWORK_ENDPOINT || DEFAULT_ENDPOINT;
-const sxNetworkPrivateKey = process.env.SX_NETWORK_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const apeEndpoint = process.env.APE_ENDPOINT || DEFAULT_ENDPOINT;
-const apePrivateKey = process.env.APE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const kavaEndpoint = process.env.KAVA_ENDPOINT || DEFAULT_ENDPOINT;
-const kavaPrivateKey = process.env.KAVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const fncyEndpoint = process.env.FNCY_ENDPOINT || DEFAULT_ENDPOINT;
-const fncyPrivateKey = process.env.FNCY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const nervosGodwokenEndpoint = process.env.NERVOS_GODWOKEN_ENDPOINT || DEFAULT_ENDPOINT;
-const nervosGodwokenPrivateKey = process.env.NERVOS_GODWOKEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const klaytnEndpoint = process.env.KLAYTN_ENDPOINT || DEFAULT_ENDPOINT;
-const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
-const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -316,164 +280,164 @@ const config: HardhatUserConfig = {
       url: antiMatTestnetEndpoint,
       accounts: [`0x${antiMatTestnetPrivateKey}`]
     },
-    // Mainnets
+    // Mainnets, note, use kms to deploy/run scripts on prod
     ethMainnet: {
       url: ethMainnetEndpoint,
-      accounts: [`0x${ethMainnetPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     bsc: {
       url: bscEndpoint,
-      accounts: [`0x${bscPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     arbitrum: {
       url: arbitrumEndpoint,
-      accounts: [`0x${arbitrumPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     arbitrumNova: {
       url: arbitrumNovaEndpoint,
-      accounts: [`0x${arbitrumNovaPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     polygon: {
       url: polygonEndpoint,
-      accounts: [`0x${polygonPrivateKey}`],
+      kmsKeyId: kmsKeyId,
       gasPrice: 50000000000
     },
     fantom: {
       url: fantomEndpoint,
-      accounts: [`0x${fantomPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     avalanche: {
       url: avalancheEndpoint,
-      accounts: [`0x${avalanchePrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     optimism: {
       url: optimismEndpoint,
-      accounts: [`0x${optimismPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     boba: {
       url: bobaEndpoint,
-      accounts: [`0x${bobaPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     harmony: {
       url: harmonyEndpoint,
-      accounts: [`0x${harmonyPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     moonbeam: {
       url: moonbeamEndpoint,
-      accounts: [`0x${moonbeamPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     moonriver: {
       url: moonriverEndpoint,
-      accounts: [`0x${moonriverPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     celo: {
       url: celoEndpoint,
-      accounts: [`0x${celoPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     oasisEmerald: {
       url: oasisEmeraldEndpoint,
-      accounts: [`0x${oasisEmeraldPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     oasisSapphire: {
       url: oasisSapphireEndpoint,
-      accounts: [`0x${oasisSapphirePrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     metis: {
       url: metisEndpoint,
-      accounts: [`0x${metisPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     aurora: {
       url: auroraEndpoint,
-      accounts: [`0x${auroraPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     xdai: {
       url: xdaiEndpoint,
-      accounts: [`0x${xdaiPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     oec: {
       url: oecEndpoint,
-      accounts: [`0x${oecPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     heco: {
       url: hecoEndpoint,
-      accounts: [`0x${hecoPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     astar: {
       url: astarEndpoint,
-      accounts: [`0x${astarPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     shiden: {
       url: shidenEndpoint,
-      accounts: [`0x${shidenPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     syscoin: {
       url: syscoinEndpoint,
-      accounts: [`0x${syscoinPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     milkomeda: {
       url: milkomedaEndpoint,
-      accounts: [`0x${milkomedaPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     evmos: {
       url: evmosEndpoint,
-      accounts: [`0x${evmosPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     clover: {
       url: cloverEndpoint,
-      accounts: [`0x${cloverPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     rei: {
       url: reiEndpoint,
-      accounts: [`0x${reiPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     conflux: {
       url: confluxEndpoint,
-      accounts: [`0x${confluxPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     darwiniaCrab: {
       url: darwiniaCrabEndpoint,
-      accounts: [`0x${darwiniaCrabPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     platon: {
       url: platonEndpoint,
-      accounts: [`0x${platonPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     ontology: {
       url: ontologyEndpoint,
-      accounts: [`0x${ontologyPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     swimmer: {
       url: swimmerEndpoint,
-      accounts: [`0x${swimmerPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     sxNetwork: {
       url: sxNetworkEndpoint,
-      accounts: [`0x${sxNetworkPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     ape: {
       url: apeEndpoint,
-      accounts: [`0x${apePrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     kava: {
       url: kavaEndpoint,
-      accounts: [`0x${kavaPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     fncy: {
       url: fncyEndpoint,
-      accounts: [`0x${fncyPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     nervosGodwoken: {
       url: nervosGodwokenEndpoint,
-      accounts: [`0x${nervosGodwokenPrivateKey}`]
+      kmsKeyId: kmsKeyId
     },
     klaytn: {
       url: klaytnEndpoint,
-      accounts: [`0x${klaytnPrivateKey}`],
+      kmsKeyId: kmsKeyId,
       gasPrice: 250000000000
     },
     oasys: {
       url: oasysEndpoint,
-      accounts: [`0x${oasysPrivateKey}`]
+      kmsKeyId: kmsKeyId
     }
   },
   namedAccounts: {

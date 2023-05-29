@@ -55,6 +55,8 @@
     "typescript": "^4.6.2"
   },
   "dependencies": {
+    "@rumblefishdev/hardhat-kms-signer": "1.1.2",
+    "aws-sdk": "2.1386.0",
     "dotenv": "^16.0.0"
   }
 }

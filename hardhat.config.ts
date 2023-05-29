@@ -6,15 +6,18 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import '@oasisprotocol/sapphire-hardhat';
+import "@rumblefishdev/hardhat-kms-signer";
 
 import * as dotenv from 'dotenv';
-import { HardhatUserConfig } from 'hardhat/types';
+import { HardhatUserConfig, NetworkUserConfig } from 'hardhat/types';
 
 dotenv.config();
 
 const DEFAULT_ENDPOINT = 'http://localhost:8545';
 const DEFAULT_PRIVATE_KEY =
   process.env.DEFAULT_PRIVATE_KEY || 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+
+const kmsKeyId = process.env.KMS_KEY_ID || "";
 
 // Testnets
 const kovanEndpoint = process.env.KOVAN_ENDPOINT || DEFAULT_ENDPOINT;
@@ -210,6 +213,22 @@ const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+// use kmsKeyId if it's not empty, otherwise use privateKey
+function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number) : NetworkUserConfig {
+    let network : NetworkUserConfig = !kmsKeyId ? {
+      url: url,
+      accounts: [`0x${privateKey}`]
+    } : {
+      url: url,
+      kmsKeyId: kmsKeyId
+    };
+    if (gasPrice) {
+      network.gasPrice = gasPrice;
+    }
+
+    return network;
+}
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -317,164 +336,45 @@ const config: HardhatUserConfig = {
       accounts: [`0x${antiMatTestnetPrivateKey}`]
     },
     // Mainnets
-    ethMainnet: {
-      url: ethMainnetEndpoint,
-      accounts: [`0x${ethMainnetPrivateKey}`]
-    },
-    bsc: {
-      url: bscEndpoint,
-      accounts: [`0x${bscPrivateKey}`]
-    },
-    arbitrum: {
-      url: arbitrumEndpoint,
-      accounts: [`0x${arbitrumPrivateKey}`]
-    },
-    arbitrumNova: {
-      url: arbitrumNovaEndpoint,
-      accounts: [`0x${arbitrumNovaPrivateKey}`]
-    },
-    polygon: {
-      url: polygonEndpoint,
-      accounts: [`0x${polygonPrivateKey}`],
-      gasPrice: 50000000000
-    },
-    fantom: {
-      url: fantomEndpoint,
-      accounts: [`0x${fantomPrivateKey}`]
-    },
-    avalanche: {
-      url: avalancheEndpoint,
-      accounts: [`0x${avalanchePrivateKey}`]
-    },
-    optimism: {
-      url: optimismEndpoint,
-      accounts: [`0x${optimismPrivateKey}`]
-    },
-    boba: {
-      url: bobaEndpoint,
-      accounts: [`0x${bobaPrivateKey}`]
-    },
-    harmony: {
-      url: harmonyEndpoint,
-      accounts: [`0x${harmonyPrivateKey}`]
-    },
-    moonbeam: {
-      url: moonbeamEndpoint,
-      accounts: [`0x${moonbeamPrivateKey}`]
-    },
-    moonriver: {
-      url: moonriverEndpoint,
-      accounts: [`0x${moonriverPrivateKey}`]
-    },
-    celo: {
-      url: celoEndpoint,
-      accounts: [`0x${celoPrivateKey}`]
-    },
-    oasisEmerald: {
-      url: oasisEmeraldEndpoint,
-      accounts: [`0x${oasisEmeraldPrivateKey}`]
-    },
-    oasisSapphire: {
-      url: oasisSapphireEndpoint,
-      accounts: [`0x${oasisSapphirePrivateKey}`]
-    },
-    metis: {
-      url: metisEndpoint,
-      accounts: [`0x${metisPrivateKey}`]
-    },
-    aurora: {
-      url: auroraEndpoint,
-      accounts: [`0x${auroraPrivateKey}`]
-    },
-    xdai: {
-      url: xdaiEndpoint,
-      accounts: [`0x${xdaiPrivateKey}`]
-    },
-    oec: {
-      url: oecEndpoint,
-      accounts: [`0x${oecPrivateKey}`]
-    },
-    heco: {
-      url: hecoEndpoint,
-      accounts: [`0x${hecoPrivateKey}`]
-    },
-    astar: {
-      url: astarEndpoint,
-      accounts: [`0x${astarPrivateKey}`]
-    },
-    shiden: {
-      url: shidenEndpoint,
-      accounts: [`0x${shidenPrivateKey}`]
-    },
-    syscoin: {
-      url: syscoinEndpoint,
-      accounts: [`0x${syscoinPrivateKey}`]
-    },
-    milkomeda: {
-      url: milkomedaEndpoint,
-      accounts: [`0x${milkomedaPrivateKey}`]
-    },
-    evmos: {
-      url: evmosEndpoint,
-      accounts: [`0x${evmosPrivateKey}`]
-    },
-    clover: {
-      url: cloverEndpoint,
-      accounts: [`0x${cloverPrivateKey}`]
-    },
-    rei: {
-      url: reiEndpoint,
-      accounts: [`0x${reiPrivateKey}`]
-    },
-    conflux: {
-      url: confluxEndpoint,
-      accounts: [`0x${confluxPrivateKey}`]
-    },
-    darwiniaCrab: {
-      url: darwiniaCrabEndpoint,
-      accounts: [`0x${darwiniaCrabPrivateKey}`]
-    },
-    platon: {
-      url: platonEndpoint,
-      accounts: [`0x${platonPrivateKey}`]
-    },
-    ontology: {
-      url: ontologyEndpoint,
-      accounts: [`0x${ontologyPrivateKey}`]
-    },
-    swimmer: {
-      url: swimmerEndpoint,
-      accounts: [`0x${swimmerPrivateKey}`]
-    },
-    sxNetwork: {
-      url: sxNetworkEndpoint,
-      accounts: [`0x${sxNetworkPrivateKey}`]
-    },
-    ape: {
-      url: apeEndpoint,
-      accounts: [`0x${apePrivateKey}`]
-    },
-    kava: {
-      url: kavaEndpoint,
-      accounts: [`0x${kavaPrivateKey}`]
-    },
-    fncy: {
-      url: fncyEndpoint,
-      accounts: [`0x${fncyPrivateKey}`]
-    },
-    nervosGodwoken: {
-      url: nervosGodwokenEndpoint,
-      accounts: [`0x${nervosGodwokenPrivateKey}`]
-    },
-    klaytn: {
-      url: klaytnEndpoint,
-      accounts: [`0x${klaytnPrivateKey}`],
-      gasPrice: 250000000000
-    },
-    oasys: {
-      url: oasysEndpoint,
-      accounts: [`0x${oasysPrivateKey}`]
-    }
+    ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),
+    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey),
+    arbitrum: getNetworkConfig(arbitrumEndpoint, kmsKeyId, arbitrumPrivateKey),
+    arbitrumNova: getNetworkConfig(arbitrumNovaEndpoint, kmsKeyId, arbitrumNovaPrivateKey),
+    polygon: getNetworkConfig(polygonEndpoint, kmsKeyId, polygonPrivateKey, 50000000000),
+    fantom: getNetworkConfig(fantomEndpoint, kmsKeyId, fantomPrivateKey),
+    avalanche: getNetworkConfig(avalancheEndpoint, kmsKeyId, avalanchePrivateKey),
+    optimism: getNetworkConfig(optimismEndpoint, kmsKeyId, optimismPrivateKey),
+    boba: getNetworkConfig(bobaEndpoint, kmsKeyId, bobaPrivateKey),
+    harmony: getNetworkConfig(harmonyEndpoint, kmsKeyId, harmonyPrivateKey),
+    moonbeam: getNetworkConfig(moonbeamEndpoint, kmsKeyId, moonbeamPrivateKey),
+    moonriver: getNetworkConfig(moonriverEndpoint, kmsKeyId, moonriverPrivateKey),
+    celo: getNetworkConfig(celoEndpoint, kmsKeyId, celoPrivateKey),
+    oasisEmerald: getNetworkConfig(oasisEmeraldEndpoint, kmsKeyId, oasisEmeraldPrivateKey),
+    oasisSapphire: getNetworkConfig(oasisSapphireEndpoint, kmsKeyId, oasisSapphirePrivateKey),
+    metis: getNetworkConfig(metisEndpoint, kmsKeyId, metisPrivateKey),
+    aurora: getNetworkConfig(auroraEndpoint, kmsKeyId, auroraPrivateKey),
+    xdai: getNetworkConfig(xdaiEndpoint, kmsKeyId, xdaiPrivateKey),
+    oec: getNetworkConfig(oecEndpoint, kmsKeyId, oecPrivateKey),
+    heco: getNetworkConfig(hecoEndpoint, kmsKeyId, hecoPrivateKey),
+    astar: getNetworkConfig(astarEndpoint, kmsKeyId, astarPrivateKey),
+    shiden: getNetworkConfig(shidenEndpoint, kmsKeyId, shidenPrivateKey),
+    syscoin: getNetworkConfig(syscoinEndpoint, kmsKeyId, syscoinPrivateKey),
+    milkomeda: getNetworkConfig(milkomedaEndpoint, kmsKeyId, milkomedaPrivateKey),
+    evmos: getNetworkConfig(evmosEndpoint, kmsKeyId, evmosPrivateKey),
+    clover: getNetworkConfig(cloverEndpoint, kmsKeyId, cloverPrivateKey),
+    rei: getNetworkConfig(reiEndpoint, kmsKeyId, reiPrivateKey),
+    conflux: getNetworkConfig(confluxEndpoint, kmsKeyId, confluxPrivateKey),
+    darwiniaCrab: getNetworkConfig(darwiniaCrabEndpoint, kmsKeyId, darwiniaCrabPrivateKey),
+    platon: getNetworkConfig(platonEndpoint, kmsKeyId, platonPrivateKey),
+    ontology: getNetworkConfig(ontologyEndpoint, kmsKeyId, ontologyPrivateKey),
+    swimmer: getNetworkConfig(swimmerEndpoint, kmsKeyId, swimmerPrivateKey),
+    sxNetwork: getNetworkConfig(sxNetworkEndpoint, kmsKeyId, sxNetworkPrivateKey),
+    ape: getNetworkConfig(apeEndpoint, kmsKeyId, apePrivateKey),
+    kava: getNetworkConfig(kavaEndpoint, kmsKeyId, kavaPrivateKey),
+    fncy: getNetworkConfig(fncyEndpoint, kmsKeyId, fncyPrivateKey),
+    nervosGodwoken: getNetworkConfig(nervosGodwokenEndpoint, kmsKeyId, nervosGodwokenPrivateKey),
+    klaytn: getNetworkConfig(klaytnEndpoint, kmsKeyId, klaytnPrivateKey, 250000000000),
+    oasys: getNetworkConfig(oasysEndpoint, kmsKeyId, oasysPrivateKey),
   },
   namedAccounts: {
     deployer: {

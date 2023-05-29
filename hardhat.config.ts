@@ -8,9 +8,10 @@ import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
+import "@rumblefishdev/hardhat-kms-signer";
 
 import * as dotenv from 'dotenv';
-import { HardhatUserConfig } from 'hardhat/types';
+import { HardhatUserConfig, NetworkUserConfig } from 'hardhat/types';
 
 dotenv.config();
 
@@ -30,6 +31,29 @@ const ethMainEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const zkSyncEndpoint = process.env.ZK_SYNC_ENDPOINT || DEFAULT_ENDPOINT;
 const zkSyncPrivateKey = process.env.ZK_SYNC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const kmsKeyId = process.env.KMS_KEY_ID || "";
+
+// use kmsKeyId if it's not empty, otherwise use privateKey
+function getNetworkConfig(url: string, ethNetwork: string, kmsKeyId: string, privateKey: string, verifyURL?: string) : NetworkUserConfig {
+  let network : NetworkUserConfig = !kmsKeyId ? {
+    url: url,
+    ethNetwork: ethNetwork,
+    accounts: [`0x${privateKey}`],
+    zksync: true
+  } : {
+    url: url,
+    ethNetwork: ethNetwork,
+    kmsKeyId: kmsKeyId,
+    zksync: true
+  };
+
+  if (verifyURL) {
+    network.verifyURL =  verifyURL;
+  } 
+
+  return network;
+}
+
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
@@ -37,19 +61,9 @@ const config: HardhatUserConfig = {
     hardhat: {
       zksync: true
     },
-    zkSyncTest: {
-      url: zkSyncTestEndpoint,
-      ethNetwork: goerliEndpoint,
-      accounts: [`0x${zkSyncTestPrivateKey}`],
-      zksync: true
-    },
-    zkSync: {
-      url: zkSyncEndpoint,
-      ethNetwork: ethMainEndpoint,
-      accounts: [`0x${zkSyncPrivateKey}`],
-      zksync: true,
-      verifyURL: 'https://zksync2-mainnet-explorer.zksync.io/contract_verification'
-    }
+    zkSyncTest: getNetworkConfig(zkSyncTestEndpoint, goerliEndpoint, kmsKeyId, zkSyncTestPrivateKey),
+    zkSync: getNetworkConfig(zkSyncEndpoint, ethMainEndpoint, kmsKeyId, zkSyncPrivateKey, 
+      'https://zksync2-mainnet-explorer.zksync.io/contract_verification')
   },
   namedAccounts: {
     deployer: {

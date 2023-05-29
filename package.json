@@ -58,6 +58,8 @@
     "zksync-web3": "^0.13.1"
   },
   "dependencies": {
+    "@rumblefishdev/hardhat-kms-signer": "1.1.2",
+    "aws-sdk": "2.1386.0",
     "dotenv": "^16.0.0"
   }
 }

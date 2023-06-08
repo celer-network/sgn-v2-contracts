@@ -92,6 +92,9 @@ const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVAT
 const antiMatTestnetEndpoint = process.env.ANTIMAT_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
 const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const filecoinCalibrationTestnetEndpoint = process.env.FILECOIN_CALIBRATION_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
+const filecoinCalibrationTestnetPrivateKey = process.env.FILECOIN_CALIBRATION_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -330,6 +333,10 @@ const config: HardhatUserConfig = {
     antiMatTest: {
       url: antiMatTestnetEndpoint,
       accounts: [`0x${antiMatTestnetPrivateKey}`]
+    },
+    filecoinCalibrationTest: {
+      url: filecoinCalibrationTestnetEndpoint,
+      accounts: [`0x${filecoinCalibrationTestnetPrivateKey}`]
     },
     // Mainnets
     ethMainnet: {

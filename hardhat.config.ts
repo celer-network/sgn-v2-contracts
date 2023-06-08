@@ -92,8 +92,8 @@ const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIV
 const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const antiMatterB2TestEndpoint = process.env.ANTIMATTER_B2_TEST_ENDPOINT || DEFAULT_ENDPOINT;
-const antiMatterB2TestPrivateKey = process.env.ANTIMATTER_B2_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const antimatterB2TestEndpoint = process.env.ANTIMATTER_B2_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const antimatterB2TestPrivateKey = process.env.ANTIMATTER_B2_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
@@ -216,8 +216,20 @@ const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const antiMatterB2Endpoint = process.env.ANTIMATTER_B2_ENDPOINT || DEFAULT_ENDPOINT;
-const antiMatterB2PrivateKey = process.env.ANTIMATTER_B2_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const spsEndpoint = process.env.SPS_ENDPOINT || DEFAULT_ENDPOINT;
+const spsPrivateKey = process.env.SPS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const fvmEndpoint = process.env.FVM_ENDPOINT || DEFAULT_ENDPOINT;
+const fvmPrivateKey = process.env.FVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const cantoEndpoint = process.env.CANTO_ENDPOINT || DEFAULT_ENDPOINT;
+const cantoPrivateKey = process.env.CANTO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const polygonZkevmEndpoint = process.env.POLYGON_ZKEVM_ENDPOINT || DEFAULT_ENDPOINT;
+const polygonZkevmPrivateKey = process.env.POLYGON_ZKEVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const antimatterB2Endpoint = process.env.ANTIMATTER_B2_ENDPOINT || DEFAULT_ENDPOINT;
+const antimatterB2PrivateKey = process.env.ANTIMATTER_B2_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
@@ -339,9 +351,9 @@ const config: HardhatUserConfig = {
       url: oasysTestEndpoint,
       accounts: [`0x${oasysTestPrivateKey}`]
     },
-    antiMatterB1Test: {
-      url: antiMatterB2TestEndpoint,
-      accounts: [`0x${antiMatterB2TestPrivateKey}`]
+    antimatterB2Test: {
+      url: antimatterB2TestEndpoint,
+      accounts: [`0x${antimatterB2TestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),
@@ -384,7 +396,11 @@ const config: HardhatUserConfig = {
     nervosGodwoken: getNetworkConfig(nervosGodwokenEndpoint, kmsKeyId, nervosGodwokenPrivateKey),
     klaytn: getNetworkConfig(klaytnEndpoint, kmsKeyId, klaytnPrivateKey, 250000000000),
     oasys: getNetworkConfig(oasysEndpoint, kmsKeyId, oasysPrivateKey),
-    antiMatterB2: getNetworkConfig(antiMatterB2Endpoint, kmsKeyId, antiMatterB2PrivateKey)
+    sps: getNetworkConfig(spsEndpoint, kmsKeyId, spsPrivateKey),
+    fvm: getNetworkConfig(fvmEndpoint, kmsKeyId, fvmPrivateKey),
+    canto: getNetworkConfig(cantoEndpoint, kmsKeyId, cantoPrivateKey),
+    polygonZkevm: getNetworkConfig(polygonZkevmEndpoint, kmsKeyId, polygonZkevmPrivateKey),
+    antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey)
   },
   namedAccounts: {
     deployer: {

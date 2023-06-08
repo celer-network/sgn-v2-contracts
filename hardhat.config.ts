@@ -6,7 +6,7 @@ import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import '@oasisprotocol/sapphire-hardhat';
-import "@rumblefishdev/hardhat-kms-signer";
+import '@rumblefishdev/hardhat-kms-signer';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig, NetworkUserConfig } from 'hardhat/types';
@@ -17,7 +17,7 @@ const DEFAULT_ENDPOINT = 'http://localhost:8545';
 const DEFAULT_PRIVATE_KEY =
   process.env.DEFAULT_PRIVATE_KEY || 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 
-const kmsKeyId = process.env.KMS_KEY_ID || "";
+const kmsKeyId = process.env.KMS_KEY_ID || '';
 
 // Testnets
 const kovanEndpoint = process.env.KOVAN_ENDPOINT || DEFAULT_ENDPOINT;
@@ -92,8 +92,8 @@ const cubeDevnetPrivateKey = process.env.CUBE_DEVNET_PRIVATE_KEY || DEFAULT_PRIV
 const oasysTestEndpoint = process.env.OASYS_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const antiMatTestnetEndpoint = process.env.ANTIMAT_TESTNET_ENDPOINT || DEFAULT_ENDPOINT;
-const antiMatTestnetPrivateKey = process.env.ANTIMAT_TESTNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const antiMatterB2TestEndpoint = process.env.ANTIMATTER_B2_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const antiMatterB2TestPrivateKey = process.env.ANTIMATTER_B2_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
@@ -102,8 +102,8 @@ const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIV
 const bscEndpoint = process.env.BSC_ENDPOINT || DEFAULT_ENDPOINT;
 const bscPrivateKey = process.env.BSC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const arbitrumEndpoint = process.env.ARBITRUM_ENDPOINT || DEFAULT_ENDPOINT;
-const arbitrumPrivateKey = process.env.ARBITRUM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const arbitrumOneEndpoint = process.env.ARBITRUM_ONE_ENDPOINT || DEFAULT_ENDPOINT;
+const arbitrumOnePrivateKey = process.env.ARBITRUM_ONE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const arbitrumNovaEndpoint = process.env.ARBITRUM_NOVA_ENDPOINT || DEFAULT_ENDPOINT;
 const arbitrumNovaPrivateKey = process.env.ARBITRUM_NOVA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -165,8 +165,11 @@ const shidenPrivateKey = process.env.SHIDEN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const syscoinEndpoint = process.env.SYSCOIN_ENDPOINT || DEFAULT_ENDPOINT;
 const syscoinPrivateKey = process.env.SYSCOIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const milkomedaEndpoint = process.env.MILKOMEDA_ENDPOINT || DEFAULT_ENDPOINT;
-const milkomedaPrivateKey = process.env.MILKOMEDA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const milkomedaC1Endpoint = process.env.MILKOMEDA_C1_ENDPOINT || DEFAULT_ENDPOINT;
+const milkomedaC1PrivateKey = process.env.MILKOMEDA_C1_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const milkomedaA1Endpoint = process.env.MILKOMEDA_A1_ENDPOINT || DEFAULT_ENDPOINT;
+const milkomedaA1PrivateKey = process.env.MILKOMEDA_A1_PRIVATE_KEY || DEFAULT_ENDPOINT;
 
 const evmosEndpoint = process.env.EVMOS_ENDPOINT || DEFAULT_ENDPOINT;
 const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -213,20 +216,25 @@ const klaytnPrivateKey = process.env.KLAYTN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const oasysEndpoint = process.env.OASYS_ENDPOINT || DEFAULT_ENDPOINT;
 const oasysPrivateKey = process.env.OASYS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-// use kmsKeyId if it's not empty, otherwise use privateKey
-function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number) : NetworkUserConfig {
-    let network : NetworkUserConfig = !kmsKeyId ? {
-      url: url,
-      accounts: [`0x${privateKey}`]
-    } : {
-      url: url,
-      kmsKeyId: kmsKeyId
-    };
-    if (gasPrice) {
-      network.gasPrice = gasPrice;
-    }
+const antiMatterB2Endpoint = process.env.ANTIMATTER_B2_ENDPOINT || DEFAULT_ENDPOINT;
+const antiMatterB2PrivateKey = process.env.ANTIMATTER_B2_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-    return network;
+// use kmsKeyId if it's not empty, otherwise use privateKey
+function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
+  const network: NetworkUserConfig = !kmsKeyId
+    ? {
+        url: url,
+        accounts: [`0x${privateKey}`]
+      }
+    : {
+        url: url,
+        kmsKeyId: kmsKeyId
+      };
+  if (gasPrice) {
+    network.gasPrice = gasPrice;
+  }
+
+  return network;
 }
 
 const config: HardhatUserConfig = {
@@ -331,14 +339,14 @@ const config: HardhatUserConfig = {
       url: oasysTestEndpoint,
       accounts: [`0x${oasysTestPrivateKey}`]
     },
-    antiMatTest: {
-      url: antiMatTestnetEndpoint,
-      accounts: [`0x${antiMatTestnetPrivateKey}`]
+    antiMatterB1Test: {
+      url: antiMatterB2TestEndpoint,
+      accounts: [`0x${antiMatterB2TestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),
     bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey),
-    arbitrum: getNetworkConfig(arbitrumEndpoint, kmsKeyId, arbitrumPrivateKey),
+    arbitrumOne: getNetworkConfig(arbitrumOneEndpoint, kmsKeyId, arbitrumOnePrivateKey),
     arbitrumNova: getNetworkConfig(arbitrumNovaEndpoint, kmsKeyId, arbitrumNovaPrivateKey),
     polygon: getNetworkConfig(polygonEndpoint, kmsKeyId, polygonPrivateKey, 50000000000),
     fantom: getNetworkConfig(fantomEndpoint, kmsKeyId, fantomPrivateKey),
@@ -359,7 +367,8 @@ const config: HardhatUserConfig = {
     astar: getNetworkConfig(astarEndpoint, kmsKeyId, astarPrivateKey),
     shiden: getNetworkConfig(shidenEndpoint, kmsKeyId, shidenPrivateKey),
     syscoin: getNetworkConfig(syscoinEndpoint, kmsKeyId, syscoinPrivateKey),
-    milkomeda: getNetworkConfig(milkomedaEndpoint, kmsKeyId, milkomedaPrivateKey),
+    milkomedaC1: getNetworkConfig(milkomedaC1Endpoint, kmsKeyId, milkomedaC1PrivateKey),
+    milkomedaA1: getNetworkConfig(milkomedaA1Endpoint, kmsKeyId, milkomedaA1PrivateKey),
     evmos: getNetworkConfig(evmosEndpoint, kmsKeyId, evmosPrivateKey),
     clover: getNetworkConfig(cloverEndpoint, kmsKeyId, cloverPrivateKey),
     rei: getNetworkConfig(reiEndpoint, kmsKeyId, reiPrivateKey),
@@ -375,6 +384,7 @@ const config: HardhatUserConfig = {
     nervosGodwoken: getNetworkConfig(nervosGodwokenEndpoint, kmsKeyId, nervosGodwokenPrivateKey),
     klaytn: getNetworkConfig(klaytnEndpoint, kmsKeyId, klaytnPrivateKey, 250000000000),
     oasys: getNetworkConfig(oasysEndpoint, kmsKeyId, oasysPrivateKey),
+    antiMatterB2: getNetworkConfig(antiMatterB2Endpoint, kmsKeyId, antiMatterB2PrivateKey)
   },
   namedAccounts: {
     deployer: {

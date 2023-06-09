@@ -169,7 +169,7 @@ const milkomedaC1Endpoint = process.env.MILKOMEDA_C1_ENDPOINT || DEFAULT_ENDPOIN
 const milkomedaC1PrivateKey = process.env.MILKOMEDA_C1_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const milkomedaA1Endpoint = process.env.MILKOMEDA_A1_ENDPOINT || DEFAULT_ENDPOINT;
-const milkomedaA1PrivateKey = process.env.MILKOMEDA_A1_PRIVATE_KEY || DEFAULT_ENDPOINT;
+const milkomedaA1PrivateKey = process.env.MILKOMEDA_A1_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const evmosEndpoint = process.env.EVMOS_ENDPOINT || DEFAULT_ENDPOINT;
 const evmosPrivateKey = process.env.EVMOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;

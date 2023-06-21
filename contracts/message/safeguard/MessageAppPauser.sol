@@ -15,7 +15,7 @@ abstract contract MessageAppPauser is Pauser {
      * can be retried later when the contract is unpaused.
      */
     modifier whenNotMsgPaused() {
-        require(!paused(), string.concat(MsgDataTypes.ABORT_PREFIX, "Pausable: paused"));
+        require(!paused(), MsgDataTypes.abortReason("Pausable: paused"));
         _;
     }
 }

@@ -5,6 +5,7 @@ pragma solidity >=0.8.9;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../framework/MessageApp.sol";
+import "../../../safeguard/Ownable.sol";
 import "../../../interfaces/IWETH.sol";
 import "../../../interfaces/IUniswapV2.sol";
 
@@ -12,7 +13,7 @@ import "../../../interfaces/IUniswapV2.sol";
  * @title Demo application contract that facilitates swapping on a chain, transferring to another chain,
  * and swapping another time on the destination chain before sending the result tokens to a user
  */
-contract TransferSwap is MessageApp {
+contract TransferSwap is MessageApp, Ownable {
     using SafeERC20 for IERC20;
 
     modifier onlyEOA() {
@@ -360,6 +361,10 @@ contract TransferSwap is MessageApp {
 
     function setNativeWrap(address _nativeWrap) external onlyOwner {
         nativeWrap = _nativeWrap;
+    }
+
+    function setMessageBus(address _messageBus) public onlyOwner {
+        messageBus = _messageBus;
     }
 
     // This is needed to receive ETH when calling `IWETH.withdraw`

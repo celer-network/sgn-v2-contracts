@@ -20,19 +20,24 @@ contract CircleBridgeProxy is FeeOperator, Governor, Pauser, ReentrancyGuard {
     mapping(uint64 => uint32) public feePercOverride;
     /// per dest chain id executor fee in this chain's USDC token
     mapping(uint64 => uint256) public dstTxFee;
-    
+
     // 0 is regarded as not registered. Set to a negative value if target domain is actually 0.
     mapping(uint64 => int32) public chidToDomain;
 
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event TxFeeUpdated(uint64[] chainIds, uint256[] fees);
     event ChidToDomainUpdated(uint64[] chainIds, int32[] domains);
-    event Deposited(address sender, bytes32 recipient, uint64 dstChid, uint256 amount, uint256 txFee, uint256 percFee, uint64 nonce);
+    event Deposited(
+        address sender,
+        bytes32 recipient,
+        uint64 dstChid,
+        uint256 amount,
+        uint256 txFee,
+        uint256 percFee,
+        uint64 nonce
+    );
 
-    constructor(
-        address _circleBridge,
-        address _feeCollector
-    ) FeeOperator(_feeCollector) {
+    constructor(address _circleBridge, address _feeCollector) FeeOperator(_feeCollector) {
         circleBridge = _circleBridge;
     }
 
@@ -43,12 +48,12 @@ contract CircleBridgeProxy is FeeOperator, Governor, Pauser, ReentrancyGuard {
         address _burnToken
     ) external nonReentrant whenNotPaused returns (uint64 _nonce) {
         int32 dstDomain = chidToDomain[_dstChid];
-        require (dstDomain != 0, "dst domain not registered");
+        require(dstDomain != 0, "dst domain not registered");
         if (dstDomain < 0) {
             dstDomain = 0; // a negative value indicates the target domain is 0 actually.
         }
         (uint256 fee, uint256 txFee, uint256 percFee) = totalFee(_amount, _dstChid);
-        require (_amount > fee, "fee not covered");
+        require(_amount > fee, "fee not covered");
 
         IERC20(_burnToken).safeTransferFrom(msg.sender, address(this), _amount);
         uint256 bridgeAmt = _amount - fee;
@@ -58,10 +63,15 @@ contract CircleBridgeProxy is FeeOperator, Governor, Pauser, ReentrancyGuard {
         emit Deposited(msg.sender, _mintRecipient, _dstChid, _amount, txFee, percFee, _nonce);
     }
 
-    function totalFee(
-        uint256 _amount,
-        uint64 _dstChid
-    ) public view returns (uint256 _fee, uint256 _txFee, uint256 _percFee) {
+    function totalFee(uint256 _amount, uint64 _dstChid)
+        public
+        view
+        returns (
+            uint256 _fee,
+            uint256 _txFee,
+            uint256 _percFee
+        )
+    {
         uint32 feePerc = feePercOverride[_dstChid];
         if (feePerc == 0) {
             feePerc = feePercGlobal;

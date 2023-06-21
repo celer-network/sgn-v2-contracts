@@ -9,6 +9,7 @@ import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../../interfaces/IPeggedTokenBridgeV2.sol";
+import "../../interfaces/IDelayedTransfer.sol";
 import "../../safeguard/Ownable.sol";
 import "../../libraries/Utils.sol";
 
@@ -415,6 +416,7 @@ contract MessageBusReceiver is Ownable {
                 require(IOriginalTokenVaultV2(bridgeAddr).records(transferId) == true, "withdraw record not exist");
             }
         }
+        require(IDelayedTransfer(bridgeAddr).delayedTransfers(transferId).timestamp == 0, "transfer delayed");
         return keccak256(abi.encodePacked(MsgDataTypes.MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
 

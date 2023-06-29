@@ -9,6 +9,7 @@ import "../../interfaces/IOriginalTokenVault.sol";
 import "../../interfaces/IOriginalTokenVaultV2.sol";
 import "../../interfaces/IPeggedTokenBridge.sol";
 import "../../interfaces/IPeggedTokenBridgeV2.sol";
+import "../../interfaces/IDelayedTransfer.sol";
 import "../../safeguard/Ownable.sol";
 import "../../libraries/Utils.sol";
 
@@ -341,7 +342,9 @@ contract MessageBusReceiver is Ownable {
     function verifyTransfer(MsgDataTypes.TransferInfo calldata _transfer) private view returns (bytes32) {
         bytes32 transferId;
         address bridgeAddr;
-        if (_transfer.t == MsgDataTypes.TransferType.LqRelay) {
+        MsgDataTypes.TransferType t = _transfer.t;
+        if (t == MsgDataTypes.TransferType.LqRelay) {
+            bridgeAddr = liquidityBridge;
             transferId = keccak256(
                 abi.encodePacked(
                     _transfer.sender,
@@ -353,9 +356,9 @@ contract MessageBusReceiver is Ownable {
                     _transfer.refId
                 )
             );
+            require(IBridge(bridgeAddr).transfers(transferId) == true, "relay not exist");
+        } else if (t == MsgDataTypes.TransferType.LqWithdraw) {
             bridgeAddr = liquidityBridge;
-            require(IBridge(bridgeAddr).transfers(transferId) == true, "bridge relay not exist");
-        } else if (_transfer.t == MsgDataTypes.TransferType.LqWithdraw) {
             transferId = keccak256(
                 abi.encodePacked(
                     uint64(block.chainid),
@@ -365,56 +368,38 @@ contract MessageBusReceiver is Ownable {
                     _transfer.amount
                 )
             );
-            bridgeAddr = liquidityBridge;
-            require(IBridge(bridgeAddr).withdraws(transferId) == true, "bridge withdraw not exist");
-        } else if (
-            _transfer.t == MsgDataTypes.TransferType.PegMint || _transfer.t == MsgDataTypes.TransferType.PegWithdraw
-        ) {
-            transferId = keccak256(
-                abi.encodePacked(
-                    _transfer.receiver,
-                    _transfer.token,
-                    _transfer.amount,
-                    _transfer.sender,
-                    _transfer.srcChainId,
-                    _transfer.refId
-                )
-            );
-            if (_transfer.t == MsgDataTypes.TransferType.PegMint) {
-                bridgeAddr = pegBridge;
-                require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "mint record not exist");
+            require(IBridge(bridgeAddr).withdraws(transferId) == true, "withdraw not exist");
+        } else {
+            if (t == MsgDataTypes.TransferType.PegMint || t == MsgDataTypes.TransferType.PegWithdraw) {
+                bridgeAddr = (t == MsgDataTypes.TransferType.PegMint) ? pegBridge : pegVault;
+                transferId = keccak256(
+                    abi.encodePacked(
+                        _transfer.receiver,
+                        _transfer.token,
+                        _transfer.amount,
+                        _transfer.sender,
+                        _transfer.srcChainId,
+                        _transfer.refId
+                    )
+                );
             } else {
-                // _transfer.t == MsgDataTypes.TransferType.PegWithdraw
-                bridgeAddr = pegVault;
-                require(IOriginalTokenVault(bridgeAddr).records(transferId) == true, "withdraw record not exist");
+                bridgeAddr = (t == MsgDataTypes.TransferType.PegV2Mint) ? pegBridgeV2 : pegVaultV2;
+                transferId = keccak256(
+                    abi.encodePacked(
+                        _transfer.receiver,
+                        _transfer.token,
+                        _transfer.amount,
+                        _transfer.sender,
+                        _transfer.srcChainId,
+                        _transfer.refId,
+                        bridgeAddr
+                    )
+                );
             }
-        } else if (
-            _transfer.t == MsgDataTypes.TransferType.PegV2Mint || _transfer.t == MsgDataTypes.TransferType.PegV2Withdraw
-        ) {
-            if (_transfer.t == MsgDataTypes.TransferType.PegV2Mint) {
-                bridgeAddr = pegBridgeV2;
-            } else {
-                // MsgDataTypes.TransferType.PegV2Withdraw
-                bridgeAddr = pegVaultV2;
-            }
-            transferId = keccak256(
-                abi.encodePacked(
-                    _transfer.receiver,
-                    _transfer.token,
-                    _transfer.amount,
-                    _transfer.sender,
-                    _transfer.srcChainId,
-                    _transfer.refId,
-                    bridgeAddr
-                )
-            );
-            if (_transfer.t == MsgDataTypes.TransferType.PegV2Mint) {
-                require(IPeggedTokenBridgeV2(bridgeAddr).records(transferId) == true, "mint record not exist");
-            } else {
-                // MsgDataTypes.TransferType.PegV2Withdraw
-                require(IOriginalTokenVaultV2(bridgeAddr).records(transferId) == true, "withdraw record not exist");
-            }
+            // function is same for peg, peg2, vault, vault2
+            require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, "record not exist");
         }
+        require(IDelayedTransfer(bridgeAddr).delayedTransfers(transferId).timestamp == 0, "transfer delayed");
         return keccak256(abi.encodePacked(MsgDataTypes.MsgType.MessageWithTransfer, bridgeAddr, transferId));
     }
 
@@ -520,88 +505,44 @@ contract MessageBusReceiver is Ownable {
     /**
      * @notice combine bridge transfer and msg execution calls into a single tx
      * @dev caller needs to get the required input params from SGN
-     * @param _transferParams params to call bridge transfer
-     * @param _msgParams params to execute message
+     * @param _tp params to call bridge transfer
+     * @param _mp params to execute message
      */
     function transferAndExecuteMsg(
-        MsgDataTypes.BridgeTransferParams calldata _transferParams,
-        MsgDataTypes.MsgWithTransferExecutionParams calldata _msgParams
+        MsgDataTypes.BridgeTransferParams calldata _tp,
+        MsgDataTypes.MsgWithTransferExecutionParams calldata _mp
     ) external {
-        _bridgeTransfer(_msgParams.transfer.t, _transferParams);
-        executeMessageWithTransfer(
-            _msgParams.message,
-            _msgParams.transfer,
-            _msgParams.sigs,
-            _msgParams.signers,
-            _msgParams.powers
-        );
+        _bridgeTransfer(_mp.transfer.t, _tp);
+        executeMessageWithTransfer(_mp.message, _mp.transfer, _mp.sigs, _mp.signers, _mp.powers);
     }
 
     /**
      * @notice combine bridge refund and msg execution calls into a single tx
      * @dev caller needs to get the required input params from SGN
-     * @param _transferParams params to call bridge transfer for refund
-     * @param _msgParams params to execute message for refund
+     * @param _tp params to call bridge transfer for refund
+     * @param _mp params to execute message for refund
      */
     function refundAndExecuteMsg(
-        MsgDataTypes.BridgeTransferParams calldata _transferParams,
-        MsgDataTypes.MsgWithTransferExecutionParams calldata _msgParams
+        MsgDataTypes.BridgeTransferParams calldata _tp,
+        MsgDataTypes.MsgWithTransferExecutionParams calldata _mp
     ) external {
-        _bridgeTransfer(_msgParams.transfer.t, _transferParams);
-        executeMessageWithTransferRefund(
-            _msgParams.message,
-            _msgParams.transfer,
-            _msgParams.sigs,
-            _msgParams.signers,
-            _msgParams.powers
-        );
+        _bridgeTransfer(_mp.transfer.t, _tp);
+        executeMessageWithTransferRefund(_mp.message, _mp.transfer, _mp.sigs, _mp.signers, _mp.powers);
     }
 
-    function _bridgeTransfer(MsgDataTypes.TransferType t, MsgDataTypes.BridgeTransferParams calldata _transferParams)
-        private
-    {
+    function _bridgeTransfer(MsgDataTypes.TransferType t, MsgDataTypes.BridgeTransferParams calldata _params) private {
         if (t == MsgDataTypes.TransferType.LqRelay) {
-            IBridge(liquidityBridge).relay(
-                _transferParams.request,
-                _transferParams.sigs,
-                _transferParams.signers,
-                _transferParams.powers
-            );
+            IBridge(liquidityBridge).relay(_params.request, _params.sigs, _params.signers, _params.powers);
         } else if (t == MsgDataTypes.TransferType.LqWithdraw) {
-            IBridge(liquidityBridge).withdraw(
-                _transferParams.request,
-                _transferParams.sigs,
-                _transferParams.signers,
-                _transferParams.powers
-            );
+            IBridge(liquidityBridge).withdraw(_params.request, _params.sigs, _params.signers, _params.powers);
         } else if (t == MsgDataTypes.TransferType.PegMint) {
-            IPeggedTokenBridge(pegBridge).mint(
-                _transferParams.request,
-                _transferParams.sigs,
-                _transferParams.signers,
-                _transferParams.powers
-            );
+            IPeggedTokenBridge(pegBridge).mint(_params.request, _params.sigs, _params.signers, _params.powers);
         } else if (t == MsgDataTypes.TransferType.PegV2Mint) {
-            IPeggedTokenBridgeV2(pegBridgeV2).mint(
-                _transferParams.request,
-                _transferParams.sigs,
-                _transferParams.signers,
-                _transferParams.powers
-            );
+            IPeggedTokenBridgeV2(pegBridgeV2).mint(_params.request, _params.sigs, _params.signers, _params.powers);
         } else if (t == MsgDataTypes.TransferType.PegWithdraw) {
-            IOriginalTokenVault(pegVault).withdraw(
-                _transferParams.request,
-                _transferParams.sigs,
-                _transferParams.signers,
-                _transferParams.powers
-            );
+            IOriginalTokenVault(pegVault).withdraw(_params.request, _params.sigs, _params.signers, _params.powers);
         } else if (t == MsgDataTypes.TransferType.PegV2Withdraw) {
-            IOriginalTokenVaultV2(pegVaultV2).withdraw(
-                _transferParams.request,
-                _transferParams.sigs,
-                _transferParams.signers,
-                _transferParams.powers
-            );
+            IOriginalTokenVaultV2(pegVaultV2).withdraw(_params.request, _params.sigs, _params.signers, _params.powers);
         }
     }
 

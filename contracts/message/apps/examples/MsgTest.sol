@@ -5,9 +5,10 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../../framework/MessageApp.sol";
+import "../../../safeguard/Ownable.sol";
 
 /** @title Application to test message with transfer refund flow */
-contract MsgTest is MessageApp {
+contract MsgTest is MessageApp, Ownable {
     using SafeERC20 for IERC20;
     uint64 nonce;
 
@@ -134,7 +135,7 @@ contract MsgTest is MessageApp {
             return ExecutionStatus.Retry;
         }
         // test execution revert
-        require(n != 100000000000004, string.concat(MsgDataTypes.ABORT_PREFIX, "invalid nonce"));
+        require(n != 100000000000004, _abortReason("invalid nonce"));
         emit MessageReceived(_sender, _srcChainId, n, message);
         return ExecutionStatus.Success;
     }

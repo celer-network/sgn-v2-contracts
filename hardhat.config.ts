@@ -95,6 +95,9 @@ const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVAT
 const antimatterB2TestEndpoint = process.env.ANTIMATTER_B2_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const antimatterB2TestPrivateKey = process.env.ANTIMATTER_B2_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const mantaTestEndpoint = process.env.MANTA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const mantaTestPrivateKey = process.env.MANTA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -354,6 +357,10 @@ const config: HardhatUserConfig = {
     antimatterB2Test: {
       url: antimatterB2TestEndpoint,
       accounts: [`0x${antimatterB2TestPrivateKey}`]
+    },
+    mantaTest: {
+      url: mantaTestEndpoint,
+      accounts: [`0x${mantaTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),

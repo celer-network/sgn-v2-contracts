@@ -44,10 +44,12 @@ abstract contract Guard is Ownable {
         emit GuardUpdated(msg.sender, _state);
     }
 
-    function addGuard(address _account, bool _incrementThreshold) external onlyOwner {
-        _addGuard(_account);
+    function addGuards(address[] calldata _accounts, bool _incrementThreshold) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _addGuard(_accounts[i]);
+        }
         if (_incrementThreshold) {
-            relaxThreshold++;
+            relaxThreshold += _accounts.length;
             _checkRelaxed();
         }
     }
@@ -59,16 +61,22 @@ abstract contract Guard is Ownable {
         emit GuardUpdated(_account, GuardState.Guarded);
     }
 
-    function removeGuard(address _account, bool _decrementThreshold) external onlyOwner {
+    function removeGuards(address[] calldata _accounts, bool _decrementThreshold) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _removeGuard(_accounts[i]);
+        }
+        if (_decrementThreshold) {
+            relaxThreshold -= _accounts.length;
+        }
+        _checkRelaxed();
+    }
+
+    function _removeGuard(address _account) private {
         GuardState state = guardStates[_account];
         require(state != GuardState.None, "account is not guard");
         if (state == GuardState.Relaxed) {
             relaxedGuards--;
         }
-        if (_decrementThreshold) {
-            relaxThreshold--;
-        }
-        _checkRelaxed();
         uint256 lastIndex = guards.length - 1;
         for (uint256 i = 0; i < guards.length; i++) {
             if (guards[i] == _account) {

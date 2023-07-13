@@ -244,8 +244,10 @@ contract GuardGovernor is Ownable {
         return governors[_account];
     }
 
-    function addGovernor(address _account) external onlyOwner {
-        _addGovernor(_account);
+    function addGovernors(address[] calldata _accounts) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _addGovernor(_accounts[i]);
+        }
     }
 
     function _addGovernor(address _account) internal {
@@ -255,8 +257,10 @@ contract GuardGovernor is Ownable {
         emit GovernorUpdated(_account, true);
     }
 
-    function removeGovernor(address _account) external onlyOwner {
-        _removeGovernor(_account);
+    function removeGovernors(address[] calldata _accounts) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _removeGovernor(_accounts[i]);
+        }
     }
 
     function _removeGovernor(address _account) private {

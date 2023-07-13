@@ -39,8 +39,10 @@ contract GuardedPauser is Guard {
         IPauser(_target).unpause();
     }
 
-    function addPauser(address _account, PauserRole _role) external onlyOwner {
-        _addPauser(_account, _role);
+    function addPausers(address[] calldata _accounts, PauserRole[] calldata _roles) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _addPauser(_accounts[i], _roles[i]);
+        }
     }
 
     function _addPauser(address _account, PauserRole _role) private {
@@ -51,17 +53,29 @@ contract GuardedPauser is Guard {
         emit PauserUpdated(_account, _role);
     }
 
-    function setPauser(address _account, PauserRole _role) external onlyOwner {
-        require(pausers[_account] != PauserRole.None, "account is not pauser");
-        require(_role == PauserRole.Full || _role == PauserRole.PauseOnly, "invalid role");
-        pausers[_account] = _role;
-        emit PauserUpdated(_account, _role);
+    function removePausers(address[] calldata _accounts) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _removePauser(_accounts[i]);
+        }
     }
 
-    function removePauser(address _account) external onlyOwner {
+    function _removePauser(address _account) private {
         require(pausers[_account] != PauserRole.None, "account is not pauser");
         pausers[_account] = PauserRole.None;
         pauserNum--;
         emit PauserUpdated(_account, PauserRole.None);
+    }
+
+    function setPausers(address[] calldata _accounts, PauserRole[] calldata _roles) external onlyOwner {
+        for (uint256 i = 0; i < _accounts.length; i++) {
+            _setPauser(_accounts[i], _roles[i]);
+        }
+    }
+
+    function _setPauser(address _account, PauserRole _role) private {
+        require(pausers[_account] != PauserRole.None, "account is not pauser");
+        require(_role == PauserRole.Full || _role == PauserRole.PauseOnly, "invalid role");
+        pausers[_account] = _role;
+        emit PauserUpdated(_account, _role);
     }
 }

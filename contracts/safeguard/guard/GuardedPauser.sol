@@ -10,6 +10,7 @@ interface IPauser {
     function unpause() external;
 }
 
+// GuardedPauser inherits Guard, meaning that it is both guard and pauser
 contract GuardedPauser is Guard {
     enum PauserRole {
         None,
@@ -17,7 +18,7 @@ contract GuardedPauser is Guard {
         PauseOnly
     }
 
-    uint64 pauserNum;
+    uint64 public numPausers;
     mapping(address => PauserRole) public pausers;
 
     event PauserUpdated(address account, PauserRole role);
@@ -49,7 +50,7 @@ contract GuardedPauser is Guard {
         require(pausers[_account] == PauserRole.None, "account is already pauser");
         require(_role == PauserRole.Full || _role == PauserRole.PauseOnly, "invalid role");
         pausers[_account] = _role;
-        pauserNum++;
+        numPausers++;
         emit PauserUpdated(_account, _role);
     }
 
@@ -62,7 +63,7 @@ contract GuardedPauser is Guard {
     function _removePauser(address _account) private {
         require(pausers[_account] != PauserRole.None, "account is not pauser");
         pausers[_account] = PauserRole.None;
-        pauserNum--;
+        numPausers--;
         emit PauserUpdated(_account, PauserRole.None);
     }
 

@@ -62,9 +62,10 @@ interface IGuard {
     function relaxed() external view returns (bool);
 }
 
-contract GuardGovernor is Ownable {
-    address guard;
-    uint64 governorNum;
+// GuardedGovernor does not inherits Guard. It needs to communicate with external Guard contract
+contract GuardedGovernor is Ownable {
+    address public guard;
+    uint64 public numGovernors;
     mapping(address => bool) public governors;
 
     event GovernorUpdated(address account, bool added);
@@ -253,7 +254,7 @@ contract GuardGovernor is Ownable {
     function _addGovernor(address _account) internal {
         require(!isGovernor(_account), "Account is already governor");
         governors[_account] = true;
-        governorNum++;
+        numGovernors++;
         emit GovernorUpdated(_account, true);
     }
 
@@ -266,7 +267,7 @@ contract GuardGovernor is Ownable {
     function _removeGovernor(address _account) private {
         require(isGovernor(_account), "Account is not governor");
         governors[_account] = false;
-        governorNum--;
+        numGovernors--;
         emit GovernorUpdated(_account, false);
     }
 

@@ -12,10 +12,10 @@ abstract contract Guard is Ownable {
     }
 
     bool public relaxed;
-    uint256 public relaxedGuards;
+    uint256 public numRelaxedGuards;
     uint256 public relaxThreshold;
     address[] public guards;
-    mapping(address => GuardState) public guardStates;
+    mapping(address => GuardState) public guardStates; // guard address -> guard state
 
     event GuardUpdated(address account, GuardState state);
     event RelaxStatusUpdated(bool relaxed);
@@ -34,13 +34,13 @@ abstract contract Guard is Ownable {
         require(current != _state, "same with current state");
         guardStates[msg.sender] = _state;
         if (_state == GuardState.Guarded) {
-            relaxedGuards--;
+            numRelaxedGuards--;
         } else if (_state == GuardState.Relaxed) {
-            relaxedGuards++;
+            numRelaxedGuards++;
         } else {
             revert("invalid update");
         }
-        _checkRelaxed();
+        _updateRelaxed();
         emit GuardUpdated(msg.sender, _state);
     }
 
@@ -49,8 +49,8 @@ abstract contract Guard is Ownable {
             _addGuard(_accounts[i]);
         }
         if (_incrementThreshold) {
-            relaxThreshold += _accounts.length;
-            _checkRelaxed();
+            _setRelaxThreshold(relaxThreshold + _accounts.length);
+            _updateRelaxed();
         }
     }
 
@@ -66,16 +66,16 @@ abstract contract Guard is Ownable {
             _removeGuard(_accounts[i]);
         }
         if (_decrementThreshold) {
-            relaxThreshold -= _accounts.length;
+            _setRelaxThreshold(relaxThreshold - _accounts.length);
         }
-        _checkRelaxed();
+        _updateRelaxed();
     }
 
     function _removeGuard(address _account) private {
         GuardState state = guardStates[_account];
         require(state != GuardState.None, "account is not guard");
         if (state == GuardState.Relaxed) {
-            relaxedGuards--;
+            numRelaxedGuards--;
         }
         uint256 lastIndex = guards.length - 1;
         for (uint256 i = 0; i < guards.length; i++) {
@@ -101,15 +101,15 @@ abstract contract Guard is Ownable {
         emit RelaxThresholdUpdated(_threshold, guards.length);
     }
 
-    function _checkRelaxed() private {
-        bool _relaxed = (relaxedGuards >= relaxThreshold) ? true : false;
+    function _updateRelaxed() private {
+        bool _relaxed = (numRelaxedGuards >= relaxThreshold) ? true : false;
         if (relaxed != _relaxed) {
             relaxed = _relaxed;
             emit RelaxStatusUpdated(relaxed);
         }
     }
 
-    function guardNum() public view returns (uint256) {
+    function numGuards() public view returns (uint256) {
         return guards.length;
     }
 }

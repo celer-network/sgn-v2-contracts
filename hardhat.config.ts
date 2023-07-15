@@ -231,6 +231,9 @@ const polygonZkevmPrivateKey = process.env.POLYGON_ZKEVM_PRIVATE_KEY || DEFAULT_
 const antimatterB2Endpoint = process.env.ANTIMATTER_B2_ENDPOINT || DEFAULT_ENDPOINT;
 const antimatterB2PrivateKey = process.env.ANTIMATTER_B2_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const lineaEndpoint = process.env.LINEA_ENDPOINT || DEFAULT_ENDPOINT;
+const lineaPrivateKey = process.env.LINEA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -400,7 +403,8 @@ const config: HardhatUserConfig = {
     fvm: getNetworkConfig(fvmEndpoint, kmsKeyId, fvmPrivateKey),
     canto: getNetworkConfig(cantoEndpoint, kmsKeyId, cantoPrivateKey),
     polygonZkevm: getNetworkConfig(polygonZkevmEndpoint, kmsKeyId, polygonZkevmPrivateKey),
-    antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey)
+    antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey),
+    linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey)
   },
   namedAccounts: {
     deployer: {
@@ -451,7 +455,8 @@ const config: HardhatUserConfig = {
       moonriver: process.env.MOONRIVER_MOONSCAN_API_KEY || '',
       moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY || '',
       heco: process.env.HECOSCAN_API_KEY || '',
-      arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || ''
+      arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
+      linea: process.env.LINEA_API_KEY || ''
     },
     customChains: [
       {
@@ -460,6 +465,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: process.env.ARBITRUM_NOVA_ENDPOINT || '',
           browserURL: process.env.ARBITRUM_NOVA_EXPLORER || ''
+        }
+      },
+      {
+        network: 'linea',
+        chainId: 59144,
+        urls: {
+          apiURL: process.env.LINEA_API_ENDPOINT || '',
+          browserURL: process.env.LINEA_EXPLORER || ''
         }
       }
     ]

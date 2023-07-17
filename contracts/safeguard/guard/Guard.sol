@@ -94,15 +94,17 @@ abstract contract Guard is Ownable {
 
     function setRelaxThreshold(uint256 _threshold) external onlyOwner {
         _setRelaxThreshold(_threshold);
+        _updateRelaxed();
     }
 
     function _setRelaxThreshold(uint256 _threshold) private {
+        require(_threshold <= guards.length, "invalid threshold");
         relaxThreshold = _threshold;
         emit RelaxThresholdUpdated(_threshold, guards.length);
     }
 
     function _updateRelaxed() private {
-        bool _relaxed = (numRelaxedGuards >= relaxThreshold) ? true : false;
+        bool _relaxed = numRelaxedGuards >= relaxThreshold;
         if (relaxed != _relaxed) {
             relaxed = _relaxed;
             emit RelaxStatusUpdated(relaxed);

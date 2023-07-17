@@ -234,6 +234,9 @@ const antimatterB2PrivateKey = process.env.ANTIMATTER_B2_PRIVATE_KEY || DEFAULT_
 const lineaEndpoint = process.env.LINEA_ENDPOINT || DEFAULT_ENDPOINT;
 const lineaPrivateKey = process.env.LINEA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const baseMainnetEndpoint = process.env.BASE_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
+const baseMainnetPrivateKey = process.env.BASE_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -404,7 +407,8 @@ const config: HardhatUserConfig = {
     canto: getNetworkConfig(cantoEndpoint, kmsKeyId, cantoPrivateKey),
     polygonZkevm: getNetworkConfig(polygonZkevmEndpoint, kmsKeyId, polygonZkevmPrivateKey),
     antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey),
-    linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey)
+    linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey),
+    baseMainnet: getNetworkConfig(baseMainnetEndpoint, kmsKeyId, baseMainnetPrivateKey, 1000000000)
   },
   namedAccounts: {
     deployer: {

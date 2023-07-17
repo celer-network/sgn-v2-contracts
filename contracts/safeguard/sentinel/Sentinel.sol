@@ -16,7 +16,8 @@ contract Sentinel is GuardedPauser, GuardedGovernor {
         _initGovernors(_governors);
     }
 
-    // this is only to be called by Proxy via delegateCall as initOwner will require _owner is 0,
+    // This is to support upgradable deployment.
+    // Only to be called by Proxy via delegateCall as initOwner will require _owner is 0,
     // so calling init on this contract directly will guarantee to fail
     function init(
         address[] memory _guards,

@@ -21,7 +21,9 @@ abstract contract Guard is Ownable {
     event RelaxStatusUpdated(bool relaxed);
     event RelaxThresholdUpdated(uint256 threshold, uint256 total);
 
-    constructor(address[] memory _guards) {
+    // to support upgradable depolyments
+    function _initGuards(address[] memory _guards) internal {
+        require(guards.length == 0, "guards already initiated");
         for (uint256 i = 0; i < _guards.length; i++) {
             _addGuard(_guards[i]);
         }

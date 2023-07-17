@@ -10,8 +10,7 @@ interface IPauser {
     function unpause() external;
 }
 
-// GuardedPauser inherits Guard, meaning that it is both guard and pauser
-contract GuardedPauser is Guard {
+abstract contract GuardedPauser is Guard {
     enum PauserRole {
         None,
         Full,
@@ -23,7 +22,8 @@ contract GuardedPauser is Guard {
 
     event PauserUpdated(address account, PauserRole role);
 
-    constructor(address[] memory _guards, address[] memory _pausers) Guard(_guards) {
+    function _initPausers(address[] memory _pausers) internal {
+        require(numPausers == 0, "pausers already initiated");
         for (uint256 i = 0; i < _pausers.length; i++) {
             _addPauser(_pausers[i], PauserRole.Full);
         }

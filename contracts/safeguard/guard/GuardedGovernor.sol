@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "../Ownable.sol";
+import "./Guard.sol";
 
 interface IBridge {
     // delayed transfer
@@ -58,21 +58,15 @@ interface IBridge {
     function maxBurn(address _token) external view returns (uint256);
 }
 
-interface IGuard {
-    function relaxed() external view returns (bool);
-}
-
-// GuardedGovernor does not inherits Guard. It needs to communicate with external Guard contract
-contract GuardedGovernor is Ownable {
-    address public guard;
+abstract contract GuardedGovernor is Guard {
     uint64 public numGovernors;
     mapping(address => bool) public governors;
 
     event GovernorUpdated(address account, bool added);
     event GuardUpdated(address guard);
 
-    constructor(address _guard, address[] memory _governors) {
-        guard = _guard;
+    function _initGovernors(address[] memory _governors) internal {
+        require(numGovernors == 0, "governors already initiated");
         for (uint256 i = 0; i < _governors.length; i++) {
             _addGovernor(_governors[i]);
         }
@@ -86,7 +80,7 @@ contract GuardedGovernor is Ownable {
     // delayed transfer
 
     function setDelayPeriod(address _target, uint256 _period) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             uint256 current = IBridge(_target).delayPeriod();
             require(_period > current, "not in relax mode, can only increase period");
         }
@@ -98,7 +92,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _thresholds
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).delayThresholds(_tokens[i]);
                 require(_thresholds[i] > current, "not in relax mode, can only increase threshold");
@@ -110,7 +104,7 @@ contract GuardedGovernor is Ownable {
     // volume control
 
     function setEpochLength(address _target, uint256 _length) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             uint256 current = IBridge(_target).epochLength();
             require(_length > current, "not in relax mode, can only increase length");
         }
@@ -122,7 +116,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _caps
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).epochVolumeCaps(_tokens[i]);
                 require(_caps[i] < current, "not in relax mode, can only reduce cap");
@@ -138,7 +132,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).minAdd(_tokens[i]);
                 require(_amounts[i] > current, "not in relax mode, can only increase minAdd");
@@ -152,7 +146,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).minSend(_tokens[i]);
                 require(_amounts[i] > current, "not in relax mode, can only increase minSend");
@@ -166,7 +160,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).maxSend(_tokens[i]);
                 require(_amounts[i] < current, "not in relax mode, can only reduce maxSend");
@@ -190,7 +184,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).minDeposit(_tokens[i]);
                 require(_amounts[i] > current, "not in relax mode, can only increase minDeposit");
@@ -204,7 +198,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).maxDeposit(_tokens[i]);
                 require(_amounts[i] < current, "not in relax mode, can only reduce maxDeposit");
@@ -218,7 +212,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).minBurn(_tokens[i]);
                 require(_amounts[i] > current, "not in relax mode, can only increase minBurn");
@@ -232,7 +226,7 @@ contract GuardedGovernor is Ownable {
         address[] calldata _tokens,
         uint256[] calldata _amounts
     ) external onlyGovernor {
-        if (!relaxed()) {
+        if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).maxBurn(_tokens[i]);
                 require(_amounts[i] < current, "not in relax mode, can only reduce maxBurn");
@@ -273,14 +267,5 @@ contract GuardedGovernor is Ownable {
 
     function renounceGovernor() external {
         _removeGovernor(msg.sender);
-    }
-
-    function setGuard(address _guard) external onlyOwner {
-        guard = _guard;
-        emit GuardUpdated(_guard);
-    }
-
-    function relaxed() public view returns (bool) {
-        return IGuard(guard).relaxed();
     }
 }

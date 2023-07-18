@@ -63,7 +63,6 @@ abstract contract GuardedGovernor is Guard {
     mapping(address => bool) public governors;
 
     event GovernorUpdated(address account, bool added);
-    event GuardUpdated(address guard);
 
     function _initGovernors(address[] memory _governors) internal {
         require(numGovernors == 0, "governors already initiated");

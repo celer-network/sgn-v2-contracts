@@ -234,13 +234,13 @@ describe('Bridge Tests', function () {
       .to.emit(bridge, 'DelayedTransferAdded')
       .withArgs(dstXferId);
 
-    await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('transfer still locked');
+    await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('delayed transfer still locked');
     await ethers.provider.send('evm_increaseTime', [100]);
     await ethers.provider.send('evm_mine', []);
     await expect(bridge.executeDelayedTransfer(dstXferId))
       .to.emit(bridge, 'DelayedTransferExecuted')
       .withArgs(dstXferId, receiver.address, token.address, largeAmount);
-    await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('transfer not exist');
+    await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('delayed transfer not exist');
   });
 
   it('should pass risk control tests', async function () {

@@ -2,12 +2,14 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 
-import { PeggedNativeTokenBridge__factory } from '../typechain';
-import { Bridge__factory } from '../typechain/factories/Bridge__factory';
-import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
-import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';
-import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBridge__factory';
-import { RFQ__factory } from '../typechain/factories/RFQ__factory';
+import {
+  Bridge__factory,
+  MessageBus__factory,
+  OriginalTokenVault__factory,
+  PeggedNativeTokenBridge__factory,
+  PeggedTokenBridge__factory,
+  RFQ__factory
+} from '../typechain';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
 dotenv.config();
@@ -236,11 +238,6 @@ async function setRFQBasics(): Promise<void> {
   if (weth) {
     await (await rfq.setNativeWrap(weth, feeOverrides)).wait();
     console.log('setNativeWrap', weth);
-  }
-  const msgBus = process.env.RFQ_MSG_BUS as string;
-  if (msgBus) {
-    await (await rfq.setMessageBus(msgBus, feeOverrides)).wait();
-    console.log('setMessageBus', msgBus);
   }
 }
 

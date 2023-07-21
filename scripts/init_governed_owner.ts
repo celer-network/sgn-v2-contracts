@@ -2,7 +2,7 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 
-import { GovernedOwnerProxy__factory } from '../typechain/factories/GovernedOwnerProxy__factory';
+import { GovernedOwnerProxy__factory } from '../typechain';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
 dotenv.config();

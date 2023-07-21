@@ -2,7 +2,7 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 
-import { Bridge__factory } from '../typechain/factories/Bridge__factory';
+import { Bridge__factory } from '../typechain';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
 dotenv.config();

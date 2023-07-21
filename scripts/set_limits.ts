@@ -5,9 +5,7 @@ import { BigNumber } from 'ethers';
 
 import { parseUnits } from '@ethersproject/units';
 
-import { Bridge__factory } from '../typechain/factories/Bridge__factory';
-import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';
-import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBridge__factory';
+import { Bridge__factory, OriginalTokenVault__factory, PeggedTokenBridge__factory } from '../typechain';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
 import type { ContractTransaction, Overrides } from '@ethersproject/contracts';
@@ -29,7 +27,7 @@ async function setLimitIfSpecified(
   method: (
     _tokens: string[],
     _amounts: BigNumberish[],
-    overrides?: Overrides & { from?: string | Promise<string> }
+    overrides?: Overrides & { from?: string }
   ) => Promise<ContractTransaction>,
   feeOverrides: Overrides
 ): Promise<void> {

@@ -2,7 +2,7 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 
-import { Ownable__factory } from '../typechain/factories/Ownable__factory';
+import { Ownable__factory } from '../typechain';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
 dotenv.config();

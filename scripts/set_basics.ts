@@ -2,13 +2,13 @@ import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
 
+import { PeggedNativeTokenBridge__factory } from '../typechain';
 import { Bridge__factory } from '../typechain/factories/Bridge__factory';
+import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
 import { OriginalTokenVault__factory } from '../typechain/factories/OriginalTokenVault__factory';
 import { PeggedTokenBridge__factory } from '../typechain/factories/PeggedTokenBridge__factory';
-import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
 import { RFQ__factory } from '../typechain/factories/RFQ__factory';
 import { getDeployerSigner, getFeeOverrides } from './common';
-import { PeggedNativeTokenBridge__factory } from "../typechain";
 
 dotenv.config();
 

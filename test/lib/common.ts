@@ -1,4 +1,4 @@
-import { Fixture } from 'ethereum-waffle/dist/esm';
+import { Fixture } from 'ethereum-waffle';
 import { ethers, waffle } from 'hardhat';
 
 import { parseUnits } from '@ethersproject/units';
@@ -7,6 +7,7 @@ import { Wallet } from '@ethersproject/wallet';
 import {
   Bridge,
   Bridge__factory,
+  DummySwap,
   DummySwap__factory,
   FarmingRewards,
   FarmingRewards__factory,
@@ -39,7 +40,6 @@ import {
   WETH,
   WETH__factory
 } from '../../typechain';
-import { DummySwap } from '../../typechain/DummySwap';
 import * as consts from './constants';
 
 // Workaround for https://github.com/nomiclabs/hardhat/issues/849

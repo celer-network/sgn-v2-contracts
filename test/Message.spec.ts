@@ -6,10 +6,10 @@ import { keccak256, pack } from '@ethersproject/solidity';
 import { parseUnits } from '@ethersproject/units';
 import { Wallet } from '@ethersproject/wallet';
 
-import { Bridge, TestERC20, MessageBus, MsgTest } from '../typechain';
+import { Bridge, MessageBus, MsgTest, TestERC20 } from '../typechain';
 import { deployMessageContracts, loadFixture } from './lib/common';
-import { calculateSignatures, hex2Bytes, getRelayRequest } from './lib/proto';
 import * as consts from './lib/constants';
+import { calculateSignatures, getRelayRequest, hex2Bytes } from './lib/proto';
 
 type RouteInfoStruct = {
   sender: string;
@@ -24,6 +24,108 @@ type RouteInfo2Struct = {
   srcChainId: number;
   srcTxHash: string;
 };
+
+async function computeMessageIdAndSigs(
+  chainId: number,
+  msgbus: string,
+  route: RouteInfoStruct,
+  message: string,
+  signers: Wallet[]
+) {
+  const messageId = keccak256(
+    ['uint8', 'address', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
+    [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
+  );
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message']);
+  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  return { messageId, sigs };
+}
+
+async function computeMessage2IdAndSigs(
+  chainId: number,
+  msgbus: string,
+  route: RouteInfo2Struct,
+  message: string,
+  signers: Wallet[]
+) {
+  const messageId = keccak256(
+    ['uint8', 'bytes', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
+    [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
+  );
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message2']);
+  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  return { messageId, sigs };
+}
+
+async function getMessageWithTransferRequest(
+  chainId: number,
+  msgbus: string,
+  bridge: string,
+  sender: string,
+  receiver: string,
+  token: string,
+  amount: BigNumber,
+  srcChainId: number,
+  refId: string,
+  srcTxHash: string,
+  message: string,
+  signer: Wallet,
+  power: BigNumber
+) {
+  const relayReq = await getRelayRequest(
+    sender,
+    receiver,
+    token,
+    amount,
+    srcChainId,
+    chainId,
+    refId, // fake src transfer Id
+    [signer],
+    bridge
+  );
+  const bridgeTransferParams = {
+    request: relayReq.relayBytes,
+    sigs: relayReq.sigs,
+    signers: [signer.address],
+    powers: [power]
+  };
+
+  const xferId = keccak256(
+    ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
+    [sender, receiver, token, amount, srcChainId, chainId, refId]
+  );
+  const messageId = keccak256(['uint8', 'address', 'bytes32'], [consts.TYPE_MSG_XFER, bridge, xferId]);
+  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'MessageWithTransfer']);
+  const signedData = pack(['bytes32', 'bytes32', 'bytes', 'bytes32'], [domain, messageId, message, srcTxHash]);
+  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures([signer], hex2Bytes(signedDataHash));
+
+  const transferInfo = {
+    t: consts.XFER_TYPE_LQ_RELAY,
+    sender: sender,
+    receiver: receiver,
+    token: token,
+    amount: amount,
+    wdseq: 0,
+    srcChainId: srcChainId,
+    refId: refId,
+    srcTxHash: srcTxHash
+  };
+
+  const executionParams = {
+    message: message,
+    transfer: transferInfo,
+    sigs: sigs,
+    signers: [signer.address],
+    powers: [power]
+  };
+
+  return { bridgeTransferParams, executionParams, messageId };
+}
 
 describe('Message Tests', function () {
   async function fixture([admin]: Wallet[]) {
@@ -153,7 +255,7 @@ describe('Message Tests', function () {
     const amount = parseUnits('1');
     const srcChainId = 5;
     const message = ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [admin.address, hash]);
-    let res = await getMessageWithTransferRequest(
+    const res = await getMessageWithTransferRequest(
       chainId,
       msgbus.address,
       bridge.address,
@@ -185,105 +287,3 @@ describe('Message Tests', function () {
     ).to.be.revertedWith('transfer already executed');
   });
 });
-
-async function computeMessageIdAndSigs(
-  chainId: number,
-  msgbus: string,
-  route: RouteInfoStruct,
-  message: string,
-  signers: Wallet[]
-) {
-  const messageId = keccak256(
-    ['uint8', 'address', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
-    [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
-  );
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message']);
-  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
-  return { messageId, sigs };
-}
-
-async function computeMessage2IdAndSigs(
-  chainId: number,
-  msgbus: string,
-  route: RouteInfo2Struct,
-  message: string,
-  signers: Wallet[]
-) {
-  const messageId = keccak256(
-    ['uint8', 'bytes', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
-    [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
-  );
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message2']);
-  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
-  return { messageId, sigs };
-}
-
-async function getMessageWithTransferRequest(
-  chainId: number,
-  msgbus: string,
-  bridge: string,
-  sender: string,
-  receiver: string,
-  token: string,
-  amount: BigNumber,
-  srcChainId: number,
-  refId: string,
-  srcTxHash: string,
-  message: string,
-  signer: Wallet,
-  power: BigNumber
-) {
-  const relayReq = await getRelayRequest(
-    sender,
-    receiver,
-    token,
-    amount,
-    srcChainId,
-    chainId,
-    refId, // fake src transfer Id
-    [signer],
-    bridge
-  );
-  const bridgeTransferParams = {
-    request: relayReq.relayBytes,
-    sigs: relayReq.sigs,
-    signers: [signer.address],
-    powers: [power]
-  };
-
-  const xferId = keccak256(
-    ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
-    [sender, receiver, token, amount, srcChainId, chainId, refId]
-  );
-  const messageId = keccak256(['uint8', 'address', 'bytes32'], [consts.TYPE_MSG_XFER, bridge, xferId]);
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'MessageWithTransfer']);
-  const signedData = pack(['bytes32', 'bytes32', 'bytes', 'bytes32'], [domain, messageId, message, srcTxHash]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures([signer], hex2Bytes(signedDataHash));
-
-  const transferInfo = {
-    t: consts.XFER_TYPE_LQ_RELAY,
-    sender: sender,
-    receiver: receiver,
-    token: token,
-    amount: amount,
-    wdseq: 0,
-    srcChainId: srcChainId,
-    refId: refId,
-    srcTxHash: srcTxHash
-  };
-
-  const executionParams = {
-    message: message,
-    transfer: transferInfo,
-    sigs: sigs,
-    signers: [signer.address],
-    powers: [power]
-  };
-
-  return { bridgeTransferParams, executionParams, messageId };
-}

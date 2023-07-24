@@ -3,7 +3,7 @@ import 'hardhat-deploy';
 import * as dotenv from 'dotenv';
 import { deployments } from 'hardhat';
 
-import { MessageBus__factory } from '../typechain/factories/MessageBus__factory';
+import { MessageBus__factory } from '../typechain';
 import { getDeployerSigner } from './common';
 
 dotenv.config();

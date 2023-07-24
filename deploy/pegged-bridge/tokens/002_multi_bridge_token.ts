@@ -8,7 +8,6 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-
   const args = [
     process.env.MULTI_BRIDGE_TOKEN_NAME,
     process.env.MULTI_BRIDGE_TOKEN_SYMBOL,

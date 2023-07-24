@@ -236,18 +236,20 @@ const lineaPrivateKey = process.env.LINEA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const baseMainnetEndpoint = process.env.BASE_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const baseMainnetPrivateKey = process.env.BASE_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const telosEndpoint = process.env.TELOS_ENDPOINT || DEFAULT_ENDPOINT;
+const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
     ? {
-        url: url,
-        accounts: [`0x${privateKey}`]
-      }
+      url: url,
+      accounts: [`0x${privateKey}`]
+    }
     : {
-        url: url,
-        kmsKeyId: kmsKeyId
-      };
+      url: url,
+      kmsKeyId: kmsKeyId
+    };
   if (gasPrice) {
     network.gasPrice = gasPrice;
   }
@@ -408,7 +410,8 @@ const config: HardhatUserConfig = {
     polygonZkevm: getNetworkConfig(polygonZkevmEndpoint, kmsKeyId, polygonZkevmPrivateKey),
     antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey),
     linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey),
-    baseMainnet: getNetworkConfig(baseMainnetEndpoint, kmsKeyId, baseMainnetPrivateKey, 1000000000)
+    baseMainnet: getNetworkConfig(baseMainnetEndpoint, kmsKeyId, baseMainnetPrivateKey, 1000000000),
+    telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey)
   },
   namedAccounts: {
     deployer: {

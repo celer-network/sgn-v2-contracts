@@ -34,10 +34,37 @@ abstract contract GuardedPauser is Guard {
         IPauser(_target).pause();
     }
 
+    function pause(address[] calldata _targets) public {
+        require(pausers[msg.sender] != PauserRole.None, "invalid caller");
+        require(_targets.length > 0, "empty target list");
+        bool success;
+        for (uint256 i = 0; i < _targets.length; i++) {
+            (bool ok, ) = address(_targets[i]).call(abi.encodeWithSelector(IPauser.pause.selector));
+            if (ok) {
+                success = true;
+            }
+        }
+        require(success, "pause failed for all targets");
+    }
+
     function unpause(address _target) public {
         require(pausers[msg.sender] == PauserRole.Full, "invalid caller");
         require(relaxed, "not in relaxed mode");
         IPauser(_target).unpause();
+    }
+
+    function unpause(address[] calldata _targets) public {
+        require(pausers[msg.sender] == PauserRole.Full, "invalid caller");
+        require(relaxed, "not in relaxed mode");
+        require(_targets.length > 0, "empty target list");
+        bool success;
+        for (uint256 i = 0; i < _targets.length; i++) {
+            (bool ok, ) = address(_targets[i]).call(abi.encodeWithSelector(IPauser.unpause.selector));
+            if (ok) {
+                success = true;
+            }
+        }
+        require(success, "unpause failed for all targets");
     }
 
     function addPausers(address[] calldata _accounts, PauserRole[] calldata _roles) external onlyOwner {

@@ -3,6 +3,7 @@
 pragma solidity 0.8.17;
 
 import "./Guard.sol";
+import "../../libraries/Utils.sol";
 
 interface IPauser {
     function pause() external;
@@ -21,6 +22,7 @@ abstract contract GuardedPauser is Guard {
     mapping(address => PauserRole) public pausers;
 
     event PauserUpdated(address account, PauserRole role);
+    event Failed(address target, string reason);
 
     function _initPausers(address[] memory _pausers) internal {
         require(numPausers == 0, "pausers already initiated");
@@ -37,14 +39,16 @@ abstract contract GuardedPauser is Guard {
     function pause(address[] calldata _targets) public {
         require(pausers[msg.sender] != PauserRole.None, "invalid caller");
         require(_targets.length > 0, "empty target list");
-        bool success;
+        bool hasSuccess;
         for (uint256 i = 0; i < _targets.length; i++) {
-            (bool ok, ) = address(_targets[i]).call(abi.encodeWithSelector(IPauser.pause.selector));
+            (bool ok, bytes memory res) = address(_targets[i]).call(abi.encodeWithSelector(IPauser.pause.selector));
             if (ok) {
-                success = true;
+                hasSuccess = true;
+            } else {
+                emit Failed(_targets[i], Utils.getRevertMsg(res));
             }
         }
-        require(success, "pause failed for all targets");
+        require(hasSuccess, "pause failed for all targets");
     }
 
     function unpause(address _target) public {
@@ -57,14 +61,16 @@ abstract contract GuardedPauser is Guard {
         require(pausers[msg.sender] == PauserRole.Full, "invalid caller");
         require(relaxed, "not in relaxed mode");
         require(_targets.length > 0, "empty target list");
-        bool success;
+        bool hasSuccess;
         for (uint256 i = 0; i < _targets.length; i++) {
-            (bool ok, ) = address(_targets[i]).call(abi.encodeWithSelector(IPauser.unpause.selector));
+            (bool ok, bytes memory res) = address(_targets[i]).call(abi.encodeWithSelector(IPauser.unpause.selector));
             if (ok) {
-                success = true;
+                hasSuccess = true;
+            } else {
+                emit Failed(_targets[i], Utils.getRevertMsg(res));
             }
         }
-        require(success, "unpause failed for all targets");
+        require(hasSuccess, "unpause failed for all targets");
     }
 
     function addPausers(address[] calldata _accounts, PauserRole[] calldata _roles) external onlyOwner {

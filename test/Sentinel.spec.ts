@@ -31,6 +31,7 @@ describe('Sentinel Tests', function () {
     await sentinel.addGovernors([governor.address]);
     await bridge.addPauser(sentinel.address);
     await pegBridge.addPauser(sentinel.address);
+    await bridge.addGovernor(sentinel.address);
   });
 
   it('should pass guard tests', async function () {
@@ -106,5 +107,22 @@ describe('Sentinel Tests', function () {
       .to.emit(pegBridge, 'Unpaused')
       .to.emit(sentinel, 'Failed')
       .withArgs(bridge.address, 'Pausable: not paused');
+  });
+
+  it('should pass governor tests', async function () {
+    await expect(sentinel.connect(governor).setDelayPeriod(bridge.address, 10))
+      .to.emit(bridge, 'DelayPeriodUpdated')
+      .withArgs(10);
+
+    await expect(sentinel.connect(governor).setDelayPeriod(bridge.address, 5)).to.be.revertedWith(
+      'not in relax mode, can only increase period'
+    );
+
+    await sentinel.connect(guards[0]).relax();
+    await sentinel.connect(guards[1]).relax();
+
+    await expect(sentinel.connect(governor).setDelayPeriod(bridge.address, 5))
+      .to.emit(bridge, 'DelayPeriodUpdated')
+      .withArgs(5);
   });
 });

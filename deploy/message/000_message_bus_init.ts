@@ -3,7 +3,7 @@ import { AbiCoder } from 'ethers/lib/utils';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
-import { MessageBus__factory } from '../../typechain/factories/MessageBus__factory';
+import { MessageBus__factory } from '../../typechain';
 
 dotenv.config();
 

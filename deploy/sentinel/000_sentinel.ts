@@ -15,7 +15,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const args: [string[], string[], string[]] = [
     (process.env.SENTINEL_GUARDS as string).split(','),
     (process.env.SENTINEL_PAUSERS as string).split(','),
-    (process.env.SENTINEL_GOVERNORS as string).split(','),
+    (process.env.SENTINEL_GOVERNORS as string).split(',')
   ];
   await deploy('', {
     from: deployer,
@@ -23,14 +23,14 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: args,
     proxy: {
       proxyContract: 'OptimizedTransparentProxy',
-       viaAdminContract: process.env.PROXY_ADMIN,
+      viaAdminContract: { name: 'DefaultProxyAdmin', artifact: 'DefaultProxyAdmin' }, // TODO: Check
       execute: {
         init: {
           methodName: 'init',
-          args:args,
+          args: args
         }
       }
-  }
+    }
   });
   const sentinelInterface = Sentinel__factory.createInterface();
   const encodedInitData = sentinelInterface.encodeFunctionData('init', args);
@@ -40,9 +40,9 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const proxy = await deployments.get('Sentinel_Proxy');
   console.log('Sentinel_Proxy', proxy.address);
   const sentinel = await deployments.get('Sentinel_Implementation');
-  await hre.run('verify:verify', { address: sentinel.address, constructorArguments: args});
+  await hre.run('verify:verify', { address: sentinel.address, constructorArguments: args });
   // Have to manually verify because hardhat-deploy compiles proxy with 0.8.10
-  // const proxyArgs = [messageBus.address, proxyAdmin.address].concat(encodedInitData);
+  // const proxyArgs = [sentinel.address, proxyAdmin.address].concat(encodedInitData);
   // await hre.run('verify:verify', { address: proxy.address, constructorArguments: proxyArgs });
   console.log(
     'Encoded proxy constructor args',

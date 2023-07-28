@@ -26,7 +26,7 @@ describe('Sentinel Tests', function () {
     guards = [accounts[0], accounts[1]];
     pausers = [accounts[2], accounts[3]];
     governor = accounts[4];
-    await sentinel.addGuards([guards[0].address, guards[1].address], true);
+    await sentinel.addGuards([guards[0].address, guards[1].address], 2);
     await sentinel.addPausers([pausers[0].address, pausers[1].address], [1, 2]);
     await sentinel.addGovernors([governor.address]);
     await bridge.addPauser(sentinel.address);
@@ -34,7 +34,7 @@ describe('Sentinel Tests', function () {
   });
 
   it('should pass guard tests', async function () {
-    await expect(sentinel.addGuards([pausers[0].address], false))
+    await expect(sentinel.addGuards([pausers[0].address], 0))
       .to.emit(sentinel, 'GuardUpdated')
       .withArgs(pausers[0].address, 1);
 
@@ -42,12 +42,10 @@ describe('Sentinel Tests', function () {
     expect(await sentinel.relaxThreshold()).to.equal(2);
     expect(await sentinel.numRelaxedGuards()).to.equal(0);
 
-    await sentinel.connect(guards[0]).updateGuardState(2);
-    await expect(sentinel.connect(guards[1]).updateGuardState(2))
-      .to.emit(sentinel, 'RelaxStatusUpdated')
-      .withArgs(true);
+    await sentinel.connect(guards[0]).relax();
+    await expect(sentinel.connect(guards[1]).relax()).to.emit(sentinel, 'RelaxStatusUpdated').withArgs(true);
 
-    await expect(sentinel.addGuards([pausers[1].address], true))
+    await expect(sentinel.addGuards([pausers[1].address], 1))
       .to.emit(sentinel, 'RelaxStatusUpdated')
       .withArgs(false);
 
@@ -55,18 +53,21 @@ describe('Sentinel Tests', function () {
     expect(await sentinel.relaxThreshold()).to.equal(3);
     expect(await sentinel.numRelaxedGuards()).to.equal(2);
 
-    await expect(sentinel.removeGuards([guards[0].address, pausers[0].address], true))
+    await expect(sentinel.removeGuards([guards[0].address, pausers[0].address], 1))
       .to.emit(sentinel, 'GuardUpdated')
       .withArgs(guards[0].address, 0)
       .to.emit(sentinel, 'GuardUpdated')
-      .withArgs(pausers[0].address, 0)
-      .to.emit(sentinel, 'RelaxStatusUpdated')
-      .withArgs(true);
+      .withArgs(pausers[0].address, 0);
     expect(await sentinel.numGuards()).to.equal(2);
-    expect(await sentinel.relaxThreshold()).to.equal(1);
+    expect(await sentinel.relaxThreshold()).to.equal(2);
     expect(await sentinel.numRelaxedGuards()).to.equal(1);
 
-    //await sentinel.removeGuards([guards[1].address, pausers[1].address], true)
+    await expect(sentinel.removeGuards([pausers[1].address], 1))
+      .to.emit(sentinel, 'RelaxStatusUpdated')
+      .withArgs(true);
+    expect(await sentinel.numGuards()).to.equal(1);
+    expect(await sentinel.relaxThreshold()).to.equal(1);
+    expect(await sentinel.numRelaxedGuards()).to.equal(1);
   });
 
   it('should pass pauser tests', async function () {
@@ -86,12 +87,12 @@ describe('Sentinel Tests', function () {
       sentinel.connect(pausers[0]).functions['unpause(address[])']([bridge.address, pegBridge.address])
     ).to.be.revertedWith('not in relaxed mode');
 
-    await sentinel.connect(guards[0]).updateGuardState(2);
+    await sentinel.connect(guards[0]).relax();
     await expect(sentinel.connect(pausers[0]).functions['unpause(address)'](bridge.address)).to.be.revertedWith(
       'not in relaxed mode'
     );
 
-    await sentinel.connect(guards[1]).updateGuardState(2);
+    await sentinel.connect(guards[1]).relax();
 
     await expect(sentinel.connect(pausers[1]).functions['unpause(address)'](bridge.address)).to.be.revertedWith(
       'invalid caller'

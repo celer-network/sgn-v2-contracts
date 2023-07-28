@@ -13,7 +13,7 @@ export async function getFeeOverrides(): Promise<Overrides> {
   const network = await ethers.provider.getNetwork();
   if (network.chainId == 59144) {
     // for linea
-    return { maxFeePerGas: 5000000000, maxPriorityFeePerGas: 4900000000};
+    return { maxFeePerGas: 5000000000, maxPriorityFeePerGas: 4900000000 };
   }
   if (feeData.maxFeePerGas) {
     return { maxFeePerGas: feeData.maxFeePerGas, maxPriorityFeePerGas: feeData.maxPriorityFeePerGas || 0 };

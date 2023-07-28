@@ -7,7 +7,7 @@ import { getDeployerSigner, getFeeOverrides } from '../common';
 
 dotenv.config();
 
-async function updateGuardState(): Promise<void> {
+async function relax(): Promise<void> {
   const deployerSigner = await getDeployerSigner();
   const feeOverrides = await getFeeOverrides();
 
@@ -16,9 +16,7 @@ async function updateGuardState(): Promise<void> {
     return;
   }
   const sentinel = Sentinel__factory.connect(sentinelAddr, deployerSigner);
-  const guardState = process.env.SENTINEL_GUARD_STATE as string;
-   await (await sentinel.updateGuardState(guardState, feeOverrides)).wait();
-
+  await (await sentinel.relax(feeOverrides)).wait();
 }
 
-updateGuardState();
+relax();

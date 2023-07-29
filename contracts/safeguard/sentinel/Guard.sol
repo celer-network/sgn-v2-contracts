@@ -52,11 +52,11 @@ abstract contract Guard is Ownable {
         address[] calldata _remove,
         uint256 _newRelaxThreshold
     ) external onlyOwner {
-        for (uint256 i = 0; i < _add.length; i++) {
-            _addGuard(_add[i]);
-        }
         for (uint256 i = 0; i < _remove.length; i++) {
             _removeGuard(_remove[i]);
+        }
+        for (uint256 i = 0; i < _add.length; i++) {
+            _addGuard(_add[i]);
         }
         _setRelaxThreshold(_newRelaxThreshold);
     }

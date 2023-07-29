@@ -47,15 +47,18 @@ abstract contract Guard is Ownable {
         emit GuardUpdated(msg.sender, GuardState.Relaxed);
     }
 
-    function addGuards(address[] calldata _accounts, uint256 _thresholdIncrement) external onlyOwner {
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            _addGuard(_accounts[i]);
+    function updateGuards(
+        address[] calldata _add,
+        address[] calldata _remove,
+        uint256 _newRelaxThreshold
+    ) external onlyOwner {
+        for (uint256 i = 0; i < _add.length; i++) {
+            _addGuard(_add[i]);
         }
-        if (_thresholdIncrement > 0) {
-            require(_thresholdIncrement <= _accounts.length, "invalid threshold increment");
-            _setRelaxThreshold(relaxThreshold + _thresholdIncrement);
-            _updateRelaxed();
+        for (uint256 i = 0; i < _remove.length; i++) {
+            _removeGuard(_remove[i]);
         }
+        _setRelaxThreshold(_newRelaxThreshold);
     }
 
     function _addGuard(address _account) private {
@@ -63,19 +66,6 @@ abstract contract Guard is Ownable {
         guards.push(_account);
         guardStates[_account] = GuardState.Guarded;
         emit GuardUpdated(_account, GuardState.Guarded);
-    }
-
-    function removeGuards(address[] calldata _accounts, uint256 _thresholdDecrement) external onlyOwner {
-        for (uint256 i = 0; i < _accounts.length; i++) {
-            _removeGuard(_accounts[i]);
-        }
-        if (_thresholdDecrement > 0) {
-            require(_thresholdDecrement <= _accounts.length, "invalid threshold decrement");
-            _setRelaxThreshold(relaxThreshold - _thresholdDecrement);
-        } else if (relaxThreshold > guards.length) {
-            _setRelaxThreshold(guards.length);
-        }
-        _updateRelaxed();
     }
 
     function _removeGuard(address _account) private {
@@ -101,12 +91,12 @@ abstract contract Guard is Ownable {
 
     function setRelaxThreshold(uint256 _threshold) external onlyOwner {
         _setRelaxThreshold(_threshold);
-        _updateRelaxed();
     }
 
     function _setRelaxThreshold(uint256 _threshold) private {
         require(_threshold <= guards.length, "invalid threshold");
         relaxThreshold = _threshold;
+        _updateRelaxed();
         emit RelaxThresholdUpdated(_threshold, guards.length);
     }
 

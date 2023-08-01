@@ -21,6 +21,8 @@ import {
   MsgTest__factory,
   PeggedTokenBridge,
   PeggedTokenBridge__factory,
+  Sentinel,
+  Sentinel__factory,
   SGN,
   SGN__factory,
   SimpleGovernance,
@@ -192,6 +194,13 @@ export async function deployGovernedOwner(admin: Wallet, initVoterNum: number): 
   await proxy.initGov(gov.address);
 
   return { gov, proxy };
+}
+
+export async function deploySentinel(admin: Wallet): Promise<Sentinel> {
+  const factory = (await ethers.getContractFactory('Sentinel')) as Sentinel__factory;
+  const sentinel = await factory.connect(admin).deploy([], [], []);
+  await sentinel.deployed();
+  return sentinel
 }
 
 interface SwapInfo {

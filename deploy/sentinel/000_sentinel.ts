@@ -17,13 +17,14 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     (process.env.SENTINEL_PAUSERS as string).split(','),
     (process.env.SENTINEL_GOVERNORS as string).split(',')
   ];
-  await deploy('', {
+  await deploy('Sentinel', {
     from: deployer,
     log: true,
     args: args,
     proxy: {
       proxyContract: 'OptimizedTransparentProxy',
-      viaAdminContract: { name: 'DefaultProxyAdmin', artifact: 'DefaultProxyAdmin' }, // TODO: Check
+      viaAdminContract: { name: 'DefaultProxyAdmin', artifact: 'DefaultProxyAdmin' }, // TODO: Check,
+      // viaAdminContract: 'DefaultProxyAdmin',
       execute: {
         init: {
           methodName: 'init',

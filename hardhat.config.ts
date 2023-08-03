@@ -243,13 +243,13 @@ const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
     ? {
-      url: url,
-      accounts: [`0x${privateKey}`]
-    }
+        url: url,
+        accounts: [`0x${privateKey}`]
+      }
     : {
-      url: url,
-      kmsKeyId: kmsKeyId
-    };
+        url: url,
+        kmsKeyId: kmsKeyId
+      };
   if (gasPrice) {
     network.gasPrice = gasPrice;
   }

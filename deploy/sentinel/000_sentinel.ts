@@ -23,7 +23,7 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: args,
     proxy: {
       proxyContract: 'OptimizedTransparentProxy',
-      viaAdminContract: { name: 'DefaultProxyAdmin', artifact: 'DefaultProxyAdmin' }, // TODO: Check,
+      viaAdminContract: { name: 'DefaultProxyAdmin', artifact: 'DefaultProxyAdmin' }, // TODO: Check
       // viaAdminContract: 'DefaultProxyAdmin',
       execute: {
         init: {

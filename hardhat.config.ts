@@ -486,4 +486,11 @@ const config: HardhatUserConfig = {
   }
 };
 
+if (config.networks?.polygon) {
+  config.networks.polygon.minMaxPriorityFeePerGas = 30000000000;
+}
+if (config.networks?.fantom) {
+  config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
+}
+
 export default config;

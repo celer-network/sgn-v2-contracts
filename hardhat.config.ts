@@ -7,6 +7,8 @@ import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import '@oasisprotocol/sapphire-hardhat';
 import '@rumblefishdev/hardhat-kms-signer';
+import '@matterlabs/hardhat-zksync-solc';
+import '@matterlabs/hardhat-zksync-verify';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig, NetworkUserConfig } from 'hardhat/types';
@@ -240,6 +242,9 @@ const basePrivateKey = process.env.BASE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const telosEndpoint = process.env.TELOS_ENDPOINT || DEFAULT_ENDPOINT;
 const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
+const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -257,6 +262,10 @@ function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gas
 
   return network;
 }
+
+const zksyncEraNetwork = getNetworkConfig(zksyncEraEndpoint, kmsKeyId, zksyncEraPrivateKey);
+zksyncEraNetwork.zksync = true;
+zksyncEraNetwork.verifyURL = 'https://zksync2-mainnet-explorer.zksync.io/contract_verification';
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -412,7 +421,8 @@ const config: HardhatUserConfig = {
     antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey),
     linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey),
     base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
-    telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey)
+    telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
+    zksyncEra: zksyncEraNetwork
   },
   namedAccounts: {
     deployer: {
@@ -493,6 +503,23 @@ const config: HardhatUserConfig = {
         }
       }
     ]
+  },
+  zksolc: {
+    version: 'latest', // optional.
+    settings: {
+      compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
+      libraries: {}, // optional. References to non-inlinable libraries
+      isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
+      forceEvmla: false, // optional. Falls back to EVM legacy assembly if there is a bug with Yul
+      optimizer: {
+        enabled: true, // optional. True by default
+        mode: '3' // optional. 3 by default, z to optimize bytecode size
+      },
+      experimental: {
+        dockerImage: '', // deprecated
+        tag: '' // deprecated
+      }
+    }
   }
 };
 

@@ -1,0 +1,157 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0xa3d5Bd599B2fC8e845a227CA1032ff303b0af443",
+    "txHash": "0x31a2a168c11b33838da12a946e8c19818a74014d021592123a88a8845db09cba"
+  },
+  "proxies": [
+    {
+      "address": "0xb6c45FD59Bb0f156F219980C7d320F298F73360e",
+      "txHash": "0x038f4fd9c02731b932c99acb6e5f9ef1903fc531d82f0602d20df20d53cb7b0d",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "74e6bdc4869f5bfeacf02653a68a1fd9fbb238d69a90330f8f3807e2fa8249c5": {
+      "address": "0x3bBa2D6735f7FEBb3Ee1f54b319f9e2946BEee94",
+      "txHash": "0x1926dfac2b66fd29c7a3e82c0c56b571c48d806f09844ee9b898dd10be0b4cb0",
+      "layout": {
+        "solcVersion": "0.8.17",
+        "storage": [
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "Ownable",
+            "src": "contracts/safeguard/Ownable.sol:21"
+          },
+          {
+            "label": "relaxed",
+            "offset": 20,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Guard",
+            "src": "contracts/safeguard/sentinel/Guard.sol:14"
+          },
+          {
+            "label": "numRelaxedGuards",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "Guard",
+            "src": "contracts/safeguard/sentinel/Guard.sol:15"
+          },
+          {
+            "label": "relaxThreshold",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_uint256",
+            "contract": "Guard",
+            "src": "contracts/safeguard/sentinel/Guard.sol:16"
+          },
+          {
+            "label": "guards",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "Guard",
+            "src": "contracts/safeguard/sentinel/Guard.sol:17"
+          },
+          {
+            "label": "guardStates",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_address,t_enum(GuardState)142)",
+            "contract": "Guard",
+            "src": "contracts/safeguard/sentinel/Guard.sol:18"
+          },
+          {
+            "label": "numPausers",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_uint64",
+            "contract": "GuardedPauser",
+            "src": "contracts/safeguard/sentinel/GuardedPauser.sol:21"
+          },
+          {
+            "label": "pausers",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_enum(PauserRole)1564)",
+            "contract": "GuardedPauser",
+            "src": "contracts/safeguard/sentinel/GuardedPauser.sol:22"
+          },
+          {
+            "label": "numGovernors",
+            "offset": 0,
+            "slot": "7",
+            "type": "t_uint64",
+            "contract": "GuardedGovernor",
+            "src": "contracts/safeguard/sentinel/GuardedGovernor.sol:62"
+          },
+          {
+            "label": "governors",
+            "offset": 0,
+            "slot": "8",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "GuardedGovernor",
+            "src": "contracts/safeguard/sentinel/GuardedGovernor.sol:63"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]",
+            "numberOfBytes": "32"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_enum(GuardState)142": {
+            "label": "enum Guard.GuardState",
+            "members": [
+              "None",
+              "Guarded",
+              "Relaxed"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_enum(PauserRole)1564": {
+            "label": "enum GuardedPauser.PauserRole",
+            "members": [
+              "None",
+              "Full",
+              "PauseOnly"
+            ],
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_enum(GuardState)142)": {
+            "label": "mapping(address => enum Guard.GuardState)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_enum(PauserRole)1564)": {
+            "label": "mapping(address => enum GuardedPauser.PauserRole)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          }
+        }
+      }
+    }
+  }
+}

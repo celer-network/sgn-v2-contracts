@@ -7,11 +7,14 @@ import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import '@oasisprotocol/sapphire-hardhat';
 import '@rumblefishdev/hardhat-kms-signer';
+import '@matterlabs/hardhat-zksync-deploy';
 import '@matterlabs/hardhat-zksync-solc';
+// Imports the verify plugin before the upgradable plugin
 import '@matterlabs/hardhat-zksync-verify';
+import '@matterlabs/hardhat-zksync-upgradable';
 
 import * as dotenv from 'dotenv';
-import { HardhatUserConfig, NetworkUserConfig } from 'hardhat/types';
+import { HardhatUserConfig, HttpNetworkUserConfig, NetworkUserConfig } from 'hardhat/types';
 
 dotenv.config();
 
@@ -265,6 +268,7 @@ function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gas
 
 const zksyncEraNetwork = getNetworkConfig(zksyncEraEndpoint, kmsKeyId, zksyncEraPrivateKey);
 zksyncEraNetwork.zksync = true;
+(zksyncEraNetwork as HttpNetworkUserConfig).ethNetwork = 'ethMainnet';
 zksyncEraNetwork.verifyURL = 'https://zksync2-mainnet-explorer.zksync.io/contract_verification';
 
 const config: HardhatUserConfig = {
@@ -275,7 +279,8 @@ const config: HardhatUserConfig = {
     localhost: { timeout: 600000 },
     kovan: {
       url: kovanEndpoint,
-      accounts: [`0x${kovanPrivateKey}`]
+      accounts: [`0x${kovanPrivateKey}`],
+      ethNetwork: ''
     },
     ropsten: {
       url: ropstenEndpoint,

@@ -1,5 +1,5 @@
 import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-etherscan';
+import '@nomicfoundation/hardhat-verify';
 import '@nomiclabs/hardhat-waffle';
 import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
@@ -7,9 +7,14 @@ import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import '@oasisprotocol/sapphire-hardhat';
 import '@rumblefishdev/hardhat-kms-signer';
+import '@matterlabs/hardhat-zksync-deploy';
+import '@matterlabs/hardhat-zksync-solc';
+// Imports the verify plugin before the upgradable plugin
+import '@matterlabs/hardhat-zksync-verify';
+import '@matterlabs/hardhat-zksync-upgradable';
 
 import * as dotenv from 'dotenv';
-import { HardhatUserConfig, NetworkUserConfig } from 'hardhat/types';
+import { HardhatUserConfig, HttpNetworkUserConfig, NetworkUserConfig } from 'hardhat/types';
 
 dotenv.config();
 
@@ -234,28 +239,37 @@ const antimatterB2PrivateKey = process.env.ANTIMATTER_B2_PRIVATE_KEY || DEFAULT_
 const lineaEndpoint = process.env.LINEA_ENDPOINT || DEFAULT_ENDPOINT;
 const lineaPrivateKey = process.env.LINEA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const baseMainnetEndpoint = process.env.BASE_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
-const baseMainnetPrivateKey = process.env.BASE_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const baseEndpoint = process.env.BASE_ENDPOINT || DEFAULT_ENDPOINT;
+const basePrivateKey = process.env.BASE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const telosEndpoint = process.env.TELOS_ENDPOINT || DEFAULT_ENDPOINT;
 const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
+const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
     ? {
-      url: url,
-      accounts: [`0x${privateKey}`]
-    }
+        url: url,
+        accounts: [`0x${privateKey}`]
+      }
     : {
-      url: url,
-      kmsKeyId: kmsKeyId
-    };
+        url: url,
+        kmsKeyId: kmsKeyId
+      };
   if (gasPrice) {
     network.gasPrice = gasPrice;
   }
 
   return network;
 }
+
+const zksyncEraNetwork = getNetworkConfig(zksyncEraEndpoint, kmsKeyId, zksyncEraPrivateKey);
+zksyncEraNetwork.zksync = true;
+(zksyncEraNetwork as HttpNetworkUserConfig).ethNetwork = 'ethMainnet';
+zksyncEraNetwork.verifyURL = 'https://zksync2-mainnet-explorer.zksync.io/contract_verification';
 
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
@@ -265,7 +279,8 @@ const config: HardhatUserConfig = {
     localhost: { timeout: 600000 },
     kovan: {
       url: kovanEndpoint,
-      accounts: [`0x${kovanPrivateKey}`]
+      accounts: [`0x${kovanPrivateKey}`],
+      ethNetwork: ''
     },
     ropsten: {
       url: ropstenEndpoint,
@@ -410,8 +425,9 @@ const config: HardhatUserConfig = {
     polygonZkevm: getNetworkConfig(polygonZkevmEndpoint, kmsKeyId, polygonZkevmPrivateKey),
     antimatterB2: getNetworkConfig(antimatterB2Endpoint, kmsKeyId, antimatterB2PrivateKey),
     linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey),
-    baseMainnet: getNetworkConfig(baseMainnetEndpoint, kmsKeyId, baseMainnetPrivateKey, 1000000000),
-    telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey)
+    base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
+    telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
+    zksyncEra: zksyncEraNetwork
   },
   namedAccounts: {
     deployer: {
@@ -463,7 +479,8 @@ const config: HardhatUserConfig = {
       moonbeam: process.env.MOONBEAM_MOONSCAN_API_KEY || '',
       heco: process.env.HECOSCAN_API_KEY || '',
       arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
-      linea: process.env.LINEA_API_KEY || ''
+      linea: process.env.LINEA_API_KEY || '',
+      base: process.env.BASE_API_KEY || ''
     },
     customChains: [
       {
@@ -481,8 +498,33 @@ const config: HardhatUserConfig = {
           apiURL: process.env.LINEA_API_ENDPOINT || '',
           browserURL: process.env.LINEA_EXPLORER || ''
         }
+      },
+      {
+        network: 'base',
+        chainId: 8453,
+        urls: {
+          apiURL: process.env.BASE_API_ENDPOINT || '',
+          browserURL: process.env.BASE_EXPLORER || ''
+        }
       }
     ]
+  },
+  zksolc: {
+    version: 'latest', // optional.
+    settings: {
+      compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
+      libraries: {}, // optional. References to non-inlinable libraries
+      isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
+      forceEvmla: false, // optional. Falls back to EVM legacy assembly if there is a bug with Yul
+      optimizer: {
+        enabled: true, // optional. True by default
+        mode: '3' // optional. 3 by default, z to optimize bytecode size
+      },
+      experimental: {
+        dockerImage: '', // deprecated
+        tag: '' // deprecated
+      }
+    }
   }
 };
 

@@ -1,7 +1,9 @@
 artifacts/
+artifacts-zk/
 bin/
 build/
 cache/
+cache-zk/
 deployments/hardhat/
 genfiles/
 failing_metadata/

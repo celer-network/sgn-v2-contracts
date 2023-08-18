@@ -95,6 +95,9 @@ const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVAT
 const antimatterB2TestEndpoint = process.env.ANTIMATTER_B2_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const antimatterB2TestPrivateKey = process.env.ANTIMATTER_B2_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const scrollSepoliaTestEndpoint = process.env.SCROLL_SEPOLIA_TEST_ENDPOINT || DEFAULT_ENDPOINT;
+const scrollSepoliaTestPrivateKey = process.env.SCROLL_SEPOLIA_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -362,6 +365,10 @@ const config: HardhatUserConfig = {
     antimatterB2Test: {
       url: antimatterB2TestEndpoint,
       accounts: [`0x${antimatterB2TestPrivateKey}`]
+    },
+    scrollSepoliaTest: {
+      url: scrollSepoliaTestEndpoint,
+      accounts: [`0x${scrollSepoliaTestPrivateKey}`]
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),

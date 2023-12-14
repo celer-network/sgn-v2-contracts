@@ -380,7 +380,7 @@ const config: HardhatUserConfig = {
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),
-    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey),
+    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey, 5000000000),
     arbitrumOne: getNetworkConfig(arbitrumOneEndpoint, kmsKeyId, arbitrumOnePrivateKey),
     arbitrumNova: getNetworkConfig(arbitrumNovaEndpoint, kmsKeyId, arbitrumNovaPrivateKey),
     polygon: getNetworkConfig(polygonEndpoint, kmsKeyId, polygonPrivateKey, 50000000000),
@@ -512,7 +512,7 @@ const config: HardhatUserConfig = {
   zksolc: {
     version: 'latest', // optional.
     settings: {
-      compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
+      //compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
       libraries: {}, // optional. References to non-inlinable libraries
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
       forceEvmla: false, // optional. Falls back to EVM legacy assembly if there is a bug with Yul
@@ -527,5 +527,16 @@ const config: HardhatUserConfig = {
     }
   }
 };
+
+if (config.networks?.polygon) {
+  config.networks.polygon.minMaxPriorityFeePerGas = 30000000000;
+}
+if (config.networks?.fantom) {
+  config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
+}
+if (config.networks?.bsc) {
+  config.networks.bsc.minMaxPriorityFeePerGas = 3000000000;
+  config.networks.bsc.minMaxFeePerGas = 3000000000;
+}
 
 export default config;

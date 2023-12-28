@@ -245,6 +245,9 @@ const basePrivateKey = process.env.BASE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const telosEndpoint = process.env.TELOS_ENDPOINT || DEFAULT_ENDPOINT;
 const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const scrollEndpoint = process.env.SCROLL_ENDPOINT || DEFAULT_ENDPOINT;
+const scrollPrivateKey = process.env.SCROLL_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
 const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -427,6 +430,7 @@ const config: HardhatUserConfig = {
     linea: getNetworkConfig(lineaEndpoint, kmsKeyId, lineaPrivateKey),
     base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
     telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
+    scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
     zksyncEra: zksyncEraNetwork
   },
   namedAccounts: {

@@ -251,6 +251,9 @@ const scrollPrivateKey = process.env.SCROLL_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
 const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const mantaEndpoint = process.env.MANTA_ENDPOINT || DEFAULT_ENDPOINT;
+const mantaPrivateKey = process.env.MANTA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -431,6 +434,7 @@ const config: HardhatUserConfig = {
     base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
     telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
     scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
+    manta: getNetworkConfig(mantaEndpoint, kmsKeyId, scrollPrivateKey),
     zksyncEra: zksyncEraNetwork
   },
   namedAccounts: {

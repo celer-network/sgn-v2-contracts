@@ -13,6 +13,11 @@ Fee has 2 parts:
 - percentage fee: collected in bridge contract, may vary for different source chain due to business reason
 
 ## Contract
+### Overview
+Similar to NFT bridge, one bridge contract handles both vault and peg. This is mainly due to we have to save bridge addresses on other chains, one unified contract simplifies logic and saves storage cost.
+- we can support deposit and burn calls of existing cBridge, with only difference is that the call is `payable` as user must pay Celer IM msg bus for message fee in source chain gas token.
+
+### Key configurations
 ```solidity
 /// MsgTokenBridge address on other chains, key is chain id
 mapping(uint64 => address) public bridgeAddr;

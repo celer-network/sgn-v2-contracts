@@ -15,7 +15,7 @@ Fee has 2 parts:
 ## Contract
 ### Overview
 Similar to NFT bridge, one bridge contract handles both vault and peg. This is mainly due to we have to save bridge addresses on other chains, one unified contract simplifies logic and saves storage cost.
-- we can support deposit and burn calls of existing cBridge, with only difference is that the call is `payable` as user must pay Celer IM msg bus for message fee in source chain gas token.
+- since contract knows if token is vault or peg, we only need one function for user like `sendTo`, but if frontend prefers compatibility with existing cBridge pegbridge ABIs, we can support deposit and burn by simple wrapper, note the only difference from cBridge is that these calls are `payable` as user must pay Celer IM msg bus for message fee in source chain gas token.
 
 ### Key configurations
 ```solidity
@@ -41,4 +41,10 @@ struct tokenCfg {
 - Note: delay transfer and volume control parameters are set in their own contracts
 
 ## Refund
-TBD
+Cases emit token to user may fail:
+- Can’t mint(role revoked, cap reached etc). retryable
+- Amount less than baseFee due to incorrect minSend on source chain. retryable
+- transfer failed due to receiver address is restricted by token contract. non-retryable
+- vault chain has no enough locked token, this could happen when 2 vault chains exist for same token. retryable but no guarantee
+
+Decision is to require manual trigger for refund on dest chain of failed transfer. A refund message will be sent to source chain where user locked/burn tokens.

@@ -1,9 +1,9 @@
 # ERC20 Bridge using Celer IM
 ## Scope
-- For one token like USDC, some chains are officially supported so bridge will use deposit/withdraw (we call these vaults as tokens are locked in contract), others are mint/burn (called peg)
+- For one token like USDC, some chains are officially supported so bridge will use erc20 transfer (we call these vaults as tokens are locked in contract), others are mint/burn (called peg)
 - If peg chain is later promoted to official (ie. becomes a vault chain), corresponding locked amount on vault chains must be burned to avoid duplicated supply (required by Circle)
 - This bridge is only intended to work between vault and peg, or between peg and peg. For transfers between vault chains, use cBridge
-- **ERC20 contract decimal MUST be the same amont all chains** (we could add decimal into crosschain message with added cost and complexity)
+- **ERC20 contract decimal MUST be the same among all chains** (we could add decimal into crosschain message with added cost and complexity)
 
 ## Fee
 To ensure mint amount equals locked, fee is set and collected on dest chain. For example, user locks 100 on source chain, bridge will mint 100 on dest chain, and send 100-fee amount to receiver.

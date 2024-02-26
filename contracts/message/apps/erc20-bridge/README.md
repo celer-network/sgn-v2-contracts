@@ -41,10 +41,23 @@ struct tokenCfg {
 - Note: delay transfer and volume control parameters are set in their own contracts
 
 ## Refund
-Cases emit token to user may fail:
+Cases sending token to user may fail:
 - Can’t mint(role revoked, cap reached etc). retryable
 - Amount less than baseFee due to incorrect minSend on source chain. retryable
 - transfer failed due to receiver address is restricted by token contract. non-retryable
 - vault chain has no enough locked token, this could happen when 2 vault chains exist for same token. retryable but no guarantee
 
-Decision is to require manual trigger for refund on dest chain of failed transfer. A refund message will be sent to source chain where user locked/burn tokens.
+Decision is to require manual trigger for refund on dest chain of failed transfer. A refund message will be sent to source chain where user initially locked/burn tokens. Refund message will include same fields to compute deposit id, so contract can verify deposit did happen and after refund user by erc20 transfer or mint, mark refund[id] to true to avoid duplicated refund.
+
+```solidity
+enum MsgType {
+    NULL, // skip 0 to ensure decoded msg is valid
+    SEND,
+    REFUND
+}
+
+struct TokenBridgeMsg {
+    MsgType mtype;
+    // fields for send/refund
+}
+```

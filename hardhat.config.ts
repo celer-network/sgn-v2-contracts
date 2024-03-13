@@ -251,6 +251,9 @@ const scrollPrivateKey = process.env.SCROLL_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
 const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const blastEndpoint = process.env.BLAST_ENDPOINT || DEFAULT_ENDPOINT;
+const blastPrivateKey = process.env.BLAST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -431,7 +434,8 @@ const config: HardhatUserConfig = {
     base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
     telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
     scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
-    zksyncEra: zksyncEraNetwork
+    zksyncEra: zksyncEraNetwork,
+    blast: getNetworkConfig(blastEndpoint, kmsKeyId, blastPrivateKey)
   },
   namedAccounts: {
     deployer: {
@@ -484,7 +488,8 @@ const config: HardhatUserConfig = {
       heco: process.env.HECOSCAN_API_KEY || '',
       arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
       linea: process.env.LINEA_API_KEY || '',
-      base: process.env.BASE_API_KEY || ''
+      base: process.env.BASE_API_KEY || '',
+      blast: process.env.BLASTSCAN_API_KEY || ''
     },
     customChains: [
       {
@@ -509,6 +514,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: process.env.BASE_API_ENDPOINT || '',
           browserURL: process.env.BASE_EXPLORER || ''
+        }
+      },
+      {
+        network: 'blast',
+        chainId: 81457,
+        urls: {
+          apiURL: process.env.BLASTSCAN_API_ENDPOINT || '',
+          browserURL: process.env.BLAST_EXPLORER || ''
         }
       }
     ]

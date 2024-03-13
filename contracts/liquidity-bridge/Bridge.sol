@@ -7,6 +7,11 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../libraries/PbBridge.sol";
 import "./Pool.sol";
 
+interface IBlastPoints {
+    function configurePointsOperator(address operator) external;
+    function configurePointsOperatorOnBehalf(address contractAddress, address operator) external;
+}
+
 /**
  * @title The liquidity-pool based bridge.
  */
@@ -43,6 +48,10 @@ contract Bridge is Pool {
 
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000
     uint32 public minimalMaxSlippage;
+
+    constructor(address _blastPointsAddress, address _pointsOperator) {
+        IBlastPoints(_blastPointsAddress).configurePointsOperator(_pointsOperator);
+    }
 
     /**
      * @notice Send a cross-chain transfer via the liquidity pool-based bridge.

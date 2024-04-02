@@ -24,5 +24,5 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   await hre.run('verify:verify', { address: testToken.address, constructorArguments: args });
 };
 
-deployFunc.tags = ['Test' + (process.env.TEST_TOKEN_SYMBOL || 'Token')];
+deployFunc.tags = ['MintableERC20'];
 export default deployFunc;

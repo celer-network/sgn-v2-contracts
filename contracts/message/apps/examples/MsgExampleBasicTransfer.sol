@@ -13,7 +13,7 @@ contract MsgExampleBasicTransfer is MessageApp {
     event MessageWithTransferReceived(address sender, address token, uint256 amount, uint64 srcChainId, bytes note);
     event MessageWithTransferRefunded(address sender, address token, uint256 amount, bytes note);
 
-    // acccount, token -> balance
+    // account, token -> balance
     mapping(address => mapping(address => uint256)) public balances;
 
     constructor(address _messageBus) MessageApp(_messageBus) {}

@@ -42,7 +42,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         SrcRefundedNative, // refunded native token to refundTo/sender
         DstRefundInitiated, // refund initiated
         DstTransferred, // transferred ERC20 token to receiver
-        DstTransferredNative // transferred native token to reciever
+        DstTransferredNative // transferred native token to receiver
     }
 
     enum MessageType {

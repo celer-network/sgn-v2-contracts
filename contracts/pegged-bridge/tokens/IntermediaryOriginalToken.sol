@@ -18,6 +18,11 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
 
     event BridgeUpdated(address bridge, bool enable);
 
+    modifier onlyBridge() {
+        require(bridges[msg.sender], "caller is not bridge");
+        _;
+    }
+
     constructor(
         string memory name_,
         string memory symbol_,
@@ -30,25 +35,20 @@ contract IntermediaryOriginalToken is ERC20, Ownable {
         canonical = canonical_;
     }
 
-    function transfer(address _to, uint256 _amount) public virtual override returns (bool) {
-        bool success = super.transfer(_to, _amount);
-        if (bridges[msg.sender]) {
-            _burn(_to, _amount);
-            IERC20(canonical).safeTransfer(_to, _amount);
-        }
-        return success;
+    function transfer(address _to, uint256 _amount) public virtual override onlyBridge returns (bool) {
+        _burn(msg.sender, _amount);
+        IERC20(canonical).safeTransfer(_to, _amount);
+        return true;
     }
 
     function transferFrom(
         address _from,
         address _to,
         uint256 _amount
-    ) public virtual override returns (bool) {
-        if (bridges[msg.sender]) {
-            _mint(_from, _amount);
-            IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
-        }
-        return super.transferFrom(_from, _to, _amount);
+    ) public virtual override onlyBridge returns (bool) {
+        _mint(_to, _amount);
+        IERC20(canonical).safeTransferFrom(_from, address(this), _amount);
+        return true;
     }
 
     function updateBridge(address _bridge, bool _enable) external onlyOwner {

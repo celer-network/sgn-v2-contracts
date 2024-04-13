@@ -245,6 +245,9 @@ const basePrivateKey = process.env.BASE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const telosEndpoint = process.env.TELOS_ENDPOINT || DEFAULT_ENDPOINT;
 const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const scrollEndpoint = process.env.SCROLL_ENDPOINT || DEFAULT_ENDPOINT;
+const scrollPrivateKey = process.env.SCROLL_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
 const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -383,7 +386,7 @@ const config: HardhatUserConfig = {
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),
-    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey),
+    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey, 5000000000),
     arbitrumOne: getNetworkConfig(arbitrumOneEndpoint, kmsKeyId, arbitrumOnePrivateKey),
     arbitrumNova: getNetworkConfig(arbitrumNovaEndpoint, kmsKeyId, arbitrumNovaPrivateKey),
     polygon: getNetworkConfig(polygonEndpoint, kmsKeyId, polygonPrivateKey, 50000000000),
@@ -431,10 +434,8 @@ const config: HardhatUserConfig = {
     base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
     telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
     zksyncEra: zksyncEraNetwork,
-    manta: {
-      url: mantaPacificMainnetEndpoint,
-      accounts: [`0x${mantaPacificMainnetPrivateKey}`]
-    },
+    scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
+    manta: getNetworkConfig(mantaPacificMainnetEndpoint, kmsKeyId, mantaPacificMainnetPrivateKey)
   },
   namedAccounts: {
     deployer: {
@@ -519,7 +520,7 @@ const config: HardhatUserConfig = {
   zksolc: {
     version: 'latest', // optional.
     settings: {
-      compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
+      //compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
       libraries: {}, // optional. References to non-inlinable libraries
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
       forceEvmla: false, // optional. Falls back to EVM legacy assembly if there is a bug with Yul
@@ -534,12 +535,5 @@ const config: HardhatUserConfig = {
     }
   }
 };
-
-if (config.networks?.polygon) {
-  config.networks.polygon.minMaxPriorityFeePerGas = 30000000000;
-}
-if (config.networks?.fantom) {
-  config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
-}
 
 export default config;

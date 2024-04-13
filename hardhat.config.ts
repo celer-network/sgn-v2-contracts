@@ -488,7 +488,8 @@ const config: HardhatUserConfig = {
       heco: process.env.HECOSCAN_API_KEY || '',
       arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
       linea: process.env.LINEA_API_KEY || '',
-      base: process.env.BASE_API_KEY || ''
+      base: process.env.BASE_API_KEY || '',
+      scroll: process.env.SCROLLSCAN_API_KEY || ''
     },
     customChains: [
       {
@@ -513,6 +514,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: process.env.BASE_API_ENDPOINT || '',
           browserURL: process.env.BASE_EXPLORER || ''
+        }
+      },
+      {
+        network: 'scroll',
+        chainId: 534352,
+        urls: {
+          apiURL: process.env.SCROLLSCAN_API_ENDPOINT || '',
+          browserURL: process.env.SCROLL_EXPLORER || ''
         }
       }
     ]

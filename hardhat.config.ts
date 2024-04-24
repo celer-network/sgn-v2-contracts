@@ -1,17 +1,17 @@
-import '@nomiclabs/hardhat-ethers';
+import '@matterlabs/hardhat-zksync-deploy';
+import '@matterlabs/hardhat-zksync-solc';
 import '@nomicfoundation/hardhat-verify';
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
+import '@oasisprotocol/sapphire-hardhat';
+import '@rumblefishdev/hardhat-kms-signer';
 import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
-import '@oasisprotocol/sapphire-hardhat';
-import '@rumblefishdev/hardhat-kms-signer';
-import '@matterlabs/hardhat-zksync-deploy';
-import '@matterlabs/hardhat-zksync-solc';
 // Imports the verify plugin before the upgradable plugin
-import '@matterlabs/hardhat-zksync-verify';
 import '@matterlabs/hardhat-zksync-upgradable';
+import '@matterlabs/hardhat-zksync-verify';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig, HttpNetworkUserConfig, NetworkUserConfig } from 'hardhat/types';
@@ -254,6 +254,9 @@ const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVAT
 const mantaPacificMainnetEndpoint = process.env.MANTA_PACIFIC_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const mantaPacificMainnetPrivateKey = process.env.MANTA_PACIFIC_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const xlayerEndpoint = process.env.XLAYER_ENDPOINT || DEFAULT_ENDPOINT;
+const xlayerPrivateKey = process.env.XLAYER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -435,7 +438,8 @@ const config: HardhatUserConfig = {
     telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
     zksyncEra: zksyncEraNetwork,
     scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
-    manta: getNetworkConfig(mantaPacificMainnetEndpoint, kmsKeyId, mantaPacificMainnetPrivateKey)
+    manta: getNetworkConfig(mantaPacificMainnetEndpoint, kmsKeyId, mantaPacificMainnetPrivateKey),
+    xlayer: getNetworkConfig(xlayerEndpoint, kmsKeyId, xlayerPrivateKey)
   },
   namedAccounts: {
     deployer: {

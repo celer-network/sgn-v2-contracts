@@ -257,6 +257,9 @@ const mantaPacificMainnetPrivateKey = process.env.MANTA_PACIFIC_MAINNET_PRIVATE_
 const xlayerEndpoint = process.env.XLAYER_ENDPOINT || DEFAULT_ENDPOINT;
 const xlayerPrivateKey = process.env.XLAYER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const xterioEndpoint = process.env.XTERIO_ENDPOINT || DEFAULT_ENDPOINT;
+const xterioPrivateKey = process.env.XTERIO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -439,7 +442,8 @@ const config: HardhatUserConfig = {
     zksyncEra: zksyncEraNetwork,
     scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
     manta: getNetworkConfig(mantaPacificMainnetEndpoint, kmsKeyId, mantaPacificMainnetPrivateKey),
-    xlayer: getNetworkConfig(xlayerEndpoint, kmsKeyId, xlayerPrivateKey)
+    xlayer: getNetworkConfig(xlayerEndpoint, kmsKeyId, xlayerPrivateKey),
+    xterio: getNetworkConfig(xterioEndpoint, kmsKeyId, xterioPrivateKey)
   },
   namedAccounts: {
     deployer: {

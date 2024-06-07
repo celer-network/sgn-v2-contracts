@@ -1,17 +1,17 @@
-import '@nomiclabs/hardhat-ethers';
+import '@matterlabs/hardhat-zksync-deploy';
+import '@matterlabs/hardhat-zksync-solc';
 import '@nomicfoundation/hardhat-verify';
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
+import '@oasisprotocol/sapphire-hardhat';
+import '@rumblefishdev/hardhat-kms-signer';
 import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
-import '@oasisprotocol/sapphire-hardhat';
-import '@rumblefishdev/hardhat-kms-signer';
-import '@matterlabs/hardhat-zksync-deploy';
-import '@matterlabs/hardhat-zksync-solc';
 // Imports the verify plugin before the upgradable plugin
-import '@matterlabs/hardhat-zksync-verify';
 import '@matterlabs/hardhat-zksync-upgradable';
+import '@matterlabs/hardhat-zksync-verify';
 
 import * as dotenv from 'dotenv';
 import { HardhatUserConfig, HttpNetworkUserConfig, NetworkUserConfig } from 'hardhat/types';
@@ -245,6 +245,9 @@ const basePrivateKey = process.env.BASE_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const telosEndpoint = process.env.TELOS_ENDPOINT || DEFAULT_ENDPOINT;
 const telosPrivateKey = process.env.TELOS_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const scrollEndpoint = process.env.SCROLL_ENDPOINT || DEFAULT_ENDPOINT;
+const scrollPrivateKey = process.env.SCROLL_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
 const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -252,7 +255,13 @@ const mantaPacificMainnetEndpoint = process.env.MANTA_PACIFIC_MAINNET_ENDPOINT |
 const mantaPacificMainnetPrivateKey = process.env.MANTA_PACIFIC_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const gravityAlphaMainnetEndpoint = process.env.GRAVITY_ALPHA_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
-const gravityAlphaMainnetPrivateKey = process.env.GRAVITY_ALPHA_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const gravityAlphaMainnetPrivateKey = process.env.GRAVITY_ALPHA_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KE
+
+const xlayerEndpoint = process.env.XLAYER_ENDPOINT || DEFAULT_ENDPOINT;
+const xlayerPrivateKey = process.env.XLAYER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const xterioEndpoint = process.env.XTERIO_ENDPOINT || DEFAULT_ENDPOINT;
+const xterioPrivateKey = process.env.XTERIO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
@@ -386,7 +395,7 @@ const config: HardhatUserConfig = {
     },
     // Mainnets
     ethMainnet: getNetworkConfig(ethMainnetEndpoint, kmsKeyId, ethMainnetPrivateKey),
-    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey),
+    bsc: getNetworkConfig(bscEndpoint, kmsKeyId, bscPrivateKey, 5000000000),
     arbitrumOne: getNetworkConfig(arbitrumOneEndpoint, kmsKeyId, arbitrumOnePrivateKey),
     arbitrumNova: getNetworkConfig(arbitrumNovaEndpoint, kmsKeyId, arbitrumNovaPrivateKey),
     polygon: getNetworkConfig(polygonEndpoint, kmsKeyId, polygonPrivateKey, 50000000000),
@@ -434,14 +443,14 @@ const config: HardhatUserConfig = {
     base: getNetworkConfig(baseEndpoint, kmsKeyId, basePrivateKey),
     telos: getNetworkConfig(telosEndpoint, kmsKeyId, telosPrivateKey),
     zksyncEra: zksyncEraNetwork,
-    manta: {
-      url: mantaPacificMainnetEndpoint,
-      accounts: [`0x${mantaPacificMainnetPrivateKey}`]
-    },
+    scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
+    manta: getNetworkConfig(mantaPacificMainnetEndpoint, kmsKeyId, mantaPacificMainnetPrivateKey),
+    xlayer: getNetworkConfig(xlayerEndpoint, kmsKeyId, xlayerPrivateKey),
+    xterio: getNetworkConfig(xterioEndpoint, kmsKeyId, xterioPrivateKey),
     gravityAlphaMainnet: {
       url: gravityAlphaMainnetEndpoint,
       accounts: [`0x${gravityAlphaMainnetPrivateKey}`]
-    },
+    }
   },
   namedAccounts: {
     deployer: {
@@ -494,7 +503,8 @@ const config: HardhatUserConfig = {
       heco: process.env.HECOSCAN_API_KEY || '',
       arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
       linea: process.env.LINEA_API_KEY || '',
-      base: process.env.BASE_API_KEY || ''
+      base: process.env.BASE_API_KEY || '',
+      scroll: process.env.SCROLLSCAN_API_KEY || ''
     },
     customChains: [
       {
@@ -520,13 +530,21 @@ const config: HardhatUserConfig = {
           apiURL: process.env.BASE_API_ENDPOINT || '',
           browserURL: process.env.BASE_EXPLORER || ''
         }
+      },
+      {
+        network: 'scroll',
+        chainId: 534352,
+        urls: {
+          apiURL: process.env.SCROLLSCAN_API_ENDPOINT || '',
+          browserURL: process.env.SCROLL_EXPLORER || ''
+        }
       }
     ]
   },
   zksolc: {
     version: 'latest', // optional.
     settings: {
-      compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
+      //compilerPath: 'zksolc', // optional. Ignored for compilerSource "docker". Can be used if compiler is located in a specific folder
       libraries: {}, // optional. References to non-inlinable libraries
       isSystem: false, // optional.  Enables Yul instructions available only for zkSync system contracts and libraries
       forceEvmla: false, // optional. Falls back to EVM legacy assembly if there is a bug with Yul
@@ -541,12 +559,5 @@ const config: HardhatUserConfig = {
     }
   }
 };
-
-if (config.networks?.polygon) {
-  config.networks.polygon.minMaxPriorityFeePerGas = 30000000000;
-}
-if (config.networks?.fantom) {
-  config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
-}
 
 export default config;

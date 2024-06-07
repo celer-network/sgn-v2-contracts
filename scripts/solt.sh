@@ -35,6 +35,7 @@ solFiles=(
   pegged-bridge/tokens/SingleBridgeToken
   pegged-bridge/tokens/SwapBridgeToken
   pegged-bridge/tokens/customized/FraxBridgeToken
+  pegged-bridge/tokens/customized/CircleBridgeToken
   pegged-bridge/tokens/owners/RestrictedMultiBridgeTokenOwner
   pegged-bridge/customized/PeggedNativeTokenBridge
   proxy/TransferAgent

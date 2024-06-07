@@ -251,6 +251,9 @@ const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVAT
 const mantaPacificMainnetEndpoint = process.env.MANTA_PACIFIC_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const mantaPacificMainnetPrivateKey = process.env.MANTA_PACIFIC_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const gravityAlphaMainnetEndpoint = process.env.GRAVITY_ALPHA_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
+const gravityAlphaMainnetPrivateKey = process.env.GRAVITY_ALPHA_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -434,6 +437,10 @@ const config: HardhatUserConfig = {
     manta: {
       url: mantaPacificMainnetEndpoint,
       accounts: [`0x${mantaPacificMainnetPrivateKey}`]
+    },
+    gravityAlphaMainnet: {
+      url: gravityAlphaMainnetEndpoint,
+      accounts: [`0x${gravityAlphaMainnetPrivateKey}`]
     },
   },
   namedAccounts: {

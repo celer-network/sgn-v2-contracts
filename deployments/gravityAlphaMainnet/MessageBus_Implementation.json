@@ -1,0 +1,1649 @@
+{
+  "address": "0x265B25e22bcd7f10a5bD6E6410F10537Cc7567e8",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "contract ISigsVerifier",
+          "name": "_sigsVerifier",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_liquidityBridge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegBridge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegVault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegBridgeV2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegVaultV2",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "CallReverted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "enum MsgDataTypes.MsgType",
+          "name": "msgType",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "msgId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum MsgDataTypes.TxStatus",
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "srcChainId",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "srcTxHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "Executed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "feeBase",
+          "type": "uint256"
+        }
+      ],
+      "name": "FeeBaseUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "feePerByte",
+          "type": "uint256"
+        }
+      ],
+      "name": "FeePerByteUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "FeeWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "liquidityBridge",
+          "type": "address"
+        }
+      ],
+      "name": "LiquidityBridgeUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "dstChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "message",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "Message",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "receiver",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "dstChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "message",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "Message2",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "dstChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "bridge",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "srcTransferId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "message",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "MessageWithTransfer",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "enum MsgDataTypes.MsgType",
+          "name": "msgType",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "msgId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "srcChainId",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "srcTxHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "NeedRetry",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pegBridge",
+          "type": "address"
+        }
+      ],
+      "name": "PegBridgeUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pegBridgeV2",
+          "type": "address"
+        }
+      ],
+      "name": "PegBridgeV2Updated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pegVault",
+          "type": "address"
+        }
+      ],
+      "name": "PegVaultUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pegVaultV2",
+          "type": "address"
+        }
+      ],
+      "name": "PegVaultV2Updated",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        }
+      ],
+      "name": "calcFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint64",
+              "name": "srcChainId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "srcTxHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.RouteInfo",
+          "name": "_route",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_sigs",
+          "type": "bytes[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_signers",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_powers",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "executeMessage",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "sender",
+              "type": "bytes"
+            },
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint64",
+              "name": "srcChainId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "srcTxHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.RouteInfo2",
+          "name": "_route",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_sigs",
+          "type": "bytes[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_signers",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_powers",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "executeMessage",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "enum MsgDataTypes.TransferType",
+              "name": "t",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "wdseq",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "srcChainId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "refId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "srcTxHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.TransferInfo",
+          "name": "_transfer",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_sigs",
+          "type": "bytes[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_signers",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_powers",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "executeMessageWithTransfer",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "components": [
+            {
+              "internalType": "enum MsgDataTypes.TransferType",
+              "name": "t",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "wdseq",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "srcChainId",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "refId",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "srcTxHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.TransferInfo",
+          "name": "_transfer",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_sigs",
+          "type": "bytes[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_signers",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_powers",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "executeMessageWithTransferRefund",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "executedMessages",
+      "outputs": [
+        {
+          "internalType": "enum MsgDataTypes.TxStatus",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feeBase",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "feePerByte",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_liquidityBridge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegBridge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegVault",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegBridgeV2",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_pegVaultV2",
+          "type": "address"
+        }
+      ],
+      "name": "init",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "liquidityBridge",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nativeTokenTransferGas",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pegBridge",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pegBridgeV2",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pegVault",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pegVaultV2",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "preExecuteMessageGasUsage",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "request",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "sigs",
+              "type": "bytes[]"
+            },
+            {
+              "internalType": "address[]",
+              "name": "signers",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "powers",
+              "type": "uint256[]"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.BridgeTransferParams",
+          "name": "_tp",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "message",
+              "type": "bytes"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum MsgDataTypes.TransferType",
+                  "name": "t",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "sender",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "receiver",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "wdseq",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "srcChainId",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "refId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "srcTxHash",
+                  "type": "bytes32"
+                }
+              ],
+              "internalType": "struct MsgDataTypes.TransferInfo",
+              "name": "transfer",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "sigs",
+              "type": "bytes[]"
+            },
+            {
+              "internalType": "address[]",
+              "name": "signers",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "powers",
+              "type": "uint256[]"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.MsgWithTransferExecutionParams",
+          "name": "_mp",
+          "type": "tuple"
+        }
+      ],
+      "name": "refundAndExecuteMsg",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_receiver",
+          "type": "bytes"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        }
+      ],
+      "name": "sendMessage",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_receiver",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        }
+      ],
+      "name": "sendMessage",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_receiver",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_srcBridge",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_srcTransferId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        }
+      ],
+      "name": "sendMessageWithTransfer",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "setFeeBase",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_fee",
+          "type": "uint256"
+        }
+      ],
+      "name": "setFeePerByte",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr",
+          "type": "address"
+        }
+      ],
+      "name": "setLiquidityBridge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_gasUsed",
+          "type": "uint256"
+        }
+      ],
+      "name": "setNativeTokenTransferGas",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr",
+          "type": "address"
+        }
+      ],
+      "name": "setPegBridge",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr",
+          "type": "address"
+        }
+      ],
+      "name": "setPegBridgeV2",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr",
+          "type": "address"
+        }
+      ],
+      "name": "setPegVault",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_addr",
+          "type": "address"
+        }
+      ],
+      "name": "setPegVaultV2",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_usage",
+          "type": "uint256"
+        }
+      ],
+      "name": "setPreExecuteMessageGasUsage",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "sigsVerifier",
+      "outputs": [
+        {
+          "internalType": "contract ISigsVerifier",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "request",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "sigs",
+              "type": "bytes[]"
+            },
+            {
+              "internalType": "address[]",
+              "name": "signers",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "powers",
+              "type": "uint256[]"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.BridgeTransferParams",
+          "name": "_tp",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes",
+              "name": "message",
+              "type": "bytes"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "enum MsgDataTypes.TransferType",
+                  "name": "t",
+                  "type": "uint8"
+                },
+                {
+                  "internalType": "address",
+                  "name": "sender",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "receiver",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "wdseq",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "uint64",
+                  "name": "srcChainId",
+                  "type": "uint64"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "refId",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "srcTxHash",
+                  "type": "bytes32"
+                }
+              ],
+              "internalType": "struct MsgDataTypes.TransferInfo",
+              "name": "transfer",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes[]",
+              "name": "sigs",
+              "type": "bytes[]"
+            },
+            {
+              "internalType": "address[]",
+              "name": "signers",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "powers",
+              "type": "uint256[]"
+            }
+          ],
+          "internalType": "struct MsgDataTypes.MsgWithTransferExecutionParams",
+          "name": "_mp",
+          "type": "tuple"
+        }
+      ],
+      "name": "transferAndExecuteMsg",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_account",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_cumulativeFee",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "_sigs",
+          "type": "bytes[]"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_signers",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "_powers",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "withdrawFee",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawnFees",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x7948b7a69886f2a0cb2736ca76a5659f42e4cb0ae9f541014e5e38f446c8f5db",
+  "receipt": {
+    "to": null,
+    "from": "0x58b529F9084D7eAA598EB3477Fe36064C5B7bbC1",
+    "contractAddress": "0x265B25e22bcd7f10a5bD6E6410F10537Cc7567e8",
+    "transactionIndex": 1,
+    "gasUsed": "3797855",
+    "logsBloom": "0x00000000000000000000000000000080000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000802000020000000000000000000800000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000400000000000000000000040000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x73bdd18a690d2fb67776637d571a516f92a51344fbb5422289ec1593b00a0441",
+    "transactionHash": "0x7948b7a69886f2a0cb2736ca76a5659f42e4cb0ae9f541014e5e38f446c8f5db",
+    "logs": [
+      {
+        "transactionIndex": 1,
+        "blockNumber": 178,
+        "transactionHash": "0x7948b7a69886f2a0cb2736ca76a5659f42e4cb0ae9f541014e5e38f446c8f5db",
+        "address": "0x265B25e22bcd7f10a5bD6E6410F10537Cc7567e8",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x00000000000000000000000058b529f9084d7eaa598eb3477fe36064c5b7bbc1"
+        ],
+        "data": "0x",
+        "logIndex": 0,
+        "blockHash": "0x73bdd18a690d2fb67776637d571a516f92a51344fbb5422289ec1593b00a0441"
+      }
+    ],
+    "blockNumber": 178,
+    "cumulativeGasUsed": "3797855",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x9B36f165baB9ebe611d491180418d8De4b8f3a1f",
+    "0x9B36f165baB9ebe611d491180418d8De4b8f3a1f",
+    "0x0000000000000000000000000000000000000000",
+    "0x0000000000000000000000000000000000000000",
+    "0x7d43AABC515C356145049227CeE54B608342c0ad",
+    "0xf5C6825015280CdfD0b56903F9F8B5A2233476F5"
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "798a9d865ad9862056bf2fca840df9c8",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"contract ISigsVerifier\",\"name\":\"_sigsVerifier\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_liquidityBridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegBridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegVault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegBridgeV2\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegVaultV2\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"CallReverted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"enum MsgDataTypes.MsgType\",\"name\":\"msgType\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"msgId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"enum MsgDataTypes.TxStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"name\":\"Executed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"feeBase\",\"type\":\"uint256\"}],\"name\":\"FeeBaseUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"feePerByte\",\"type\":\"uint256\"}],\"name\":\"FeePerByteUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"FeeWithdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"liquidityBridge\",\"type\":\"address\"}],\"name\":\"LiquidityBridgeUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"dstChainId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"Message\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"receiver\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"dstChainId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"Message2\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"dstChainId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"bridge\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"srcTransferId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"}],\"name\":\"MessageWithTransfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"enum MsgDataTypes.MsgType\",\"name\":\"msgType\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"msgId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"name\":\"NeedRetry\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pegBridge\",\"type\":\"address\"}],\"name\":\"PegBridgeUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pegBridgeV2\",\"type\":\"address\"}],\"name\":\"PegBridgeV2Updated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pegVault\",\"type\":\"address\"}],\"name\":\"PegVaultUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"pegVaultV2\",\"type\":\"address\"}],\"name\":\"PegVaultV2Updated\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"calcFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"internalType\":\"struct MsgDataTypes.RouteInfo\",\"name\":\"_route\",\"type\":\"tuple\"},{\"internalType\":\"bytes[]\",\"name\":\"_sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"_signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_powers\",\"type\":\"uint256[]\"}],\"name\":\"executeMessage\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"sender\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"internalType\":\"struct MsgDataTypes.RouteInfo2\",\"name\":\"_route\",\"type\":\"tuple\"},{\"internalType\":\"bytes[]\",\"name\":\"_sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"_signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_powers\",\"type\":\"uint256[]\"}],\"name\":\"executeMessage\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"enum MsgDataTypes.TransferType\",\"name\":\"t\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"wdseq\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"internalType\":\"struct MsgDataTypes.TransferInfo\",\"name\":\"_transfer\",\"type\":\"tuple\"},{\"internalType\":\"bytes[]\",\"name\":\"_sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"_signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_powers\",\"type\":\"uint256[]\"}],\"name\":\"executeMessageWithTransfer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"enum MsgDataTypes.TransferType\",\"name\":\"t\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"wdseq\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"internalType\":\"struct MsgDataTypes.TransferInfo\",\"name\":\"_transfer\",\"type\":\"tuple\"},{\"internalType\":\"bytes[]\",\"name\":\"_sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"_signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_powers\",\"type\":\"uint256[]\"}],\"name\":\"executeMessageWithTransferRefund\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"executedMessages\",\"outputs\":[{\"internalType\":\"enum MsgDataTypes.TxStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feeBase\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"feePerByte\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_liquidityBridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegBridge\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegVault\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegBridgeV2\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_pegVaultV2\",\"type\":\"address\"}],\"name\":\"init\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"liquidityBridge\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nativeTokenTransferGas\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pegBridge\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pegBridgeV2\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pegVault\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pegVaultV2\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"preExecuteMessageGasUsage\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes\",\"name\":\"request\",\"type\":\"bytes\"},{\"internalType\":\"bytes[]\",\"name\":\"sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"powers\",\"type\":\"uint256[]\"}],\"internalType\":\"struct MsgDataTypes.BridgeTransferParams\",\"name\":\"_tp\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"enum MsgDataTypes.TransferType\",\"name\":\"t\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"wdseq\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"internalType\":\"struct MsgDataTypes.TransferInfo\",\"name\":\"transfer\",\"type\":\"tuple\"},{\"internalType\":\"bytes[]\",\"name\":\"sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"powers\",\"type\":\"uint256[]\"}],\"internalType\":\"struct MsgDataTypes.MsgWithTransferExecutionParams\",\"name\":\"_mp\",\"type\":\"tuple\"}],\"name\":\"refundAndExecuteMsg\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_receiver\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"sendMessage\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"sendMessage\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_srcBridge\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_srcTransferId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"sendMessageWithTransfer\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_fee\",\"type\":\"uint256\"}],\"name\":\"setFeeBase\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_fee\",\"type\":\"uint256\"}],\"name\":\"setFeePerByte\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setLiquidityBridge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_gasUsed\",\"type\":\"uint256\"}],\"name\":\"setNativeTokenTransferGas\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setPegBridge\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setPegBridgeV2\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setPegVault\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_addr\",\"type\":\"address\"}],\"name\":\"setPegVaultV2\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_usage\",\"type\":\"uint256\"}],\"name\":\"setPreExecuteMessageGasUsage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"sigsVerifier\",\"outputs\":[{\"internalType\":\"contract ISigsVerifier\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"bytes\",\"name\":\"request\",\"type\":\"bytes\"},{\"internalType\":\"bytes[]\",\"name\":\"sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"powers\",\"type\":\"uint256[]\"}],\"internalType\":\"struct MsgDataTypes.BridgeTransferParams\",\"name\":\"_tp\",\"type\":\"tuple\"},{\"components\":[{\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"components\":[{\"internalType\":\"enum MsgDataTypes.TransferType\",\"name\":\"t\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"receiver\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"wdseq\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"internalType\":\"bytes32\",\"name\":\"refId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"srcTxHash\",\"type\":\"bytes32\"}],\"internalType\":\"struct MsgDataTypes.TransferInfo\",\"name\":\"transfer\",\"type\":\"tuple\"},{\"internalType\":\"bytes[]\",\"name\":\"sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"powers\",\"type\":\"uint256[]\"}],\"internalType\":\"struct MsgDataTypes.MsgWithTransferExecutionParams\",\"name\":\"_mp\",\"type\":\"tuple\"}],\"name\":\"transferAndExecuteMsg\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_cumulativeFee\",\"type\":\"uint256\"},{\"internalType\":\"bytes[]\",\"name\":\"_sigs\",\"type\":\"bytes[]\"},{\"internalType\":\"address[]\",\"name\":\"_signers\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"_powers\",\"type\":\"uint256[]\"}],\"name\":\"withdrawFee\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"withdrawnFees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"calcFee(bytes)\":{\"params\":{\"_message\":\"Arbitrary message bytes to be decoded by the destination app contract. @return The required fee.\"}},\"executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])\":{\"params\":{\"_message\":\"Arbitrary message bytes originated from and encoded by the source app contract\",\"_powers\":\"The signing powers of the signers.\",\"_route\":\"The info about the sender and the receiver.\",\"_signers\":\"The sorted list of signers.\",\"_sigs\":\"The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.\"}},\"executeMessageWithTransfer(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])\":{\"params\":{\"_message\":\"Arbitrary message bytes originated from and encoded by the source app contract\",\"_powers\":\"The signing powers of the signers.\",\"_signers\":\"The sorted list of signers.\",\"_sigs\":\"The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.\",\"_transfer\":\"The transfer info.\"}},\"executeMessageWithTransferRefund(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])\":{\"params\":{\"_message\":\"Arbitrary message bytes originated from and encoded by the source app contract\",\"_powers\":\"The signing powers of the signers.\",\"_signers\":\"The sorted list of signers.\",\"_sigs\":\"The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.\",\"_transfer\":\"The transfer info.\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"refundAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))\":{\"details\":\"caller needs to get the required input params from SGN\",\"params\":{\"_mp\":\"params to execute message for refund\",\"_tp\":\"params to call bridge transfer for refund\"}},\"sendMessage(address,uint256,bytes)\":{\"params\":{\"_dstChainId\":\"The destination chain ID.\",\"_message\":\"Arbitrary message bytes to be decoded by the destination app contract.\",\"_receiver\":\"The address of the destination app contract.\"}},\"sendMessageWithTransfer(address,uint256,address,bytes32,bytes)\":{\"params\":{\"_dstChainId\":\"The destination chain ID.\",\"_message\":\"Arbitrary message bytes to be decoded by the destination app contract.\",\"_receiver\":\"The address of the destination app contract.\",\"_srcBridge\":\"The bridge contract to send the transfer with.\",\"_srcTransferId\":\"The transfer ID.\"}},\"transferAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))\":{\"details\":\"caller needs to get the required input params from SGN\",\"params\":{\"_mp\":\"params to execute message\",\"_tp\":\"params to call bridge transfer\"}},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"},\"withdrawFee(address,uint256,bytes[],address[],uint256[])\":{\"params\":{\"_account\":\"The address receiving the fee.\",\"_cumulativeFee\":\"The cumulative fee credited to the account. Tracked by SGN.\",\"_powers\":\"The signing powers of the signers.\",\"_signers\":\"The sorted list of signers.\",\"_sigs\":\"The list of signatures sorted by signing addresses in ascending order. A withdrawal must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"calcFee(bytes)\":{\"notice\":\"Calculates the required fee for the message.\"},\"executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])\":{\"notice\":\"Execute a message not associated with a transfer.\"},\"executeMessageWithTransfer(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])\":{\"notice\":\"Execute a message with a successful transfer.\"},\"executeMessageWithTransferRefund(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])\":{\"notice\":\"Execute a message with a refunded transfer.\"},\"refundAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))\":{\"notice\":\"combine bridge refund and msg execution calls into a single tx\"},\"sendMessage(address,uint256,bytes)\":{\"notice\":\"Sends a message to a contract on another chain. Sender needs to make sure the uniqueness of the message Id, which is computed as hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message). If messages with the same Id are sent, only one of them will succeed at dst chain. A fee is charged in the native gas token.\"},\"sendMessageWithTransfer(address,uint256,address,bytes32,bytes)\":{\"notice\":\"Sends a message associated with a transfer to a contract on another chain. If messages with the same srcTransferId are sent, only one of them will succeed. A fee is charged in the native token.\"},\"transferAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))\":{\"notice\":\"combine bridge transfer and msg execution calls into a single tx\"},\"withdrawFee(address,uint256,bytes[],address[],uint256[])\":{\"notice\":\"Withdraws message fee in the form of native gas token.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/message/messagebus/MessageBus.sol\":\"MessageBus\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":800},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IBridge.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface IBridge {\\n    function send(\\n        address _receiver,\\n        address _token,\\n        uint256 _amount,\\n        uint64 _dstChainId,\\n        uint64 _nonce,\\n        uint32 _maxSlippage\\n    ) external;\\n\\n    function sendNative(\\n        address _receiver,\\n        uint256 _amount,\\n        uint64 _dstChainId,\\n        uint64 _nonce,\\n        uint32 _maxSlippage\\n    ) external payable;\\n\\n    function relay(\\n        bytes calldata _relayRequest,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external;\\n\\n    function transfers(bytes32 transferId) external view returns (bool);\\n\\n    function withdraws(bytes32 withdrawId) external view returns (bool);\\n\\n    function withdraw(\\n        bytes calldata _wdmsg,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external;\\n\\n    /**\\n     * @notice Verifies that a message is signed by a quorum among the signers.\\n     * @param _msg signed message\\n     * @param _sigs list of signatures sorted by signer addresses in ascending order\\n     * @param _signers sorted list of current signers\\n     * @param _powers powers of current signers\\n     */\\n    function verifySigs(\\n        bytes memory _msg,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external view;\\n}\\n\",\"keccak256\":\"0x4346cb21c9e841e59418826942364ff505e363b29887daeeff303cf31474fbf4\",\"license\":\"GPL-3.0-only\"},\"contracts/interfaces/IDelayedTransfer.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.9;\\n\\ninterface IDelayedTransfer {\\n    struct delayedTransfer {\\n        address receiver;\\n        address token;\\n        uint256 amount;\\n        uint256 timestamp;\\n    }\\n\\n    function delayedTransfers(bytes32 transferId) external view returns (delayedTransfer memory);\\n}\\n\",\"keccak256\":\"0x88b9a576cef05892de1f9453a0d54f6ba91dd6b59249d91d4b4bb2923b440353\",\"license\":\"GPL-3.0-only\"},\"contracts/interfaces/IOriginalTokenVault.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface IOriginalTokenVault {\\n    /**\\n     * @notice Lock original tokens to trigger mint at a remote chain's PeggedTokenBridge\\n     * @param _token local token address\\n     * @param _amount locked token amount\\n     * @param _mintChainId destination chainId to mint tokens\\n     * @param _mintAccount destination account to receive minted tokens\\n     * @param _nonce user input to guarantee unique depositId\\n     */\\n    function deposit(\\n        address _token,\\n        uint256 _amount,\\n        uint64 _mintChainId,\\n        address _mintAccount,\\n        uint64 _nonce\\n    ) external;\\n\\n    /**\\n     * @notice Lock native token as original token to trigger mint at a remote chain's PeggedTokenBridge\\n     * @param _amount locked token amount\\n     * @param _mintChainId destination chainId to mint tokens\\n     * @param _mintAccount destination account to receive minted tokens\\n     * @param _nonce user input to guarantee unique depositId\\n     */\\n    function depositNative(\\n        uint256 _amount,\\n        uint64 _mintChainId,\\n        address _mintAccount,\\n        uint64 _nonce\\n    ) external payable;\\n\\n    /**\\n     * @notice Withdraw locked original tokens triggered by a burn at a remote chain's PeggedTokenBridge.\\n     * @param _request The serialized Withdraw protobuf.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the bridge's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function withdraw(\\n        bytes calldata _request,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external;\\n\\n    function records(bytes32 recordId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0xa8a542d10c8a00966d3600baf8c83f012c276b9b71f3bbb79aad2d39969e5ac0\",\"license\":\"GPL-3.0-only\"},\"contracts/interfaces/IOriginalTokenVaultV2.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface IOriginalTokenVaultV2 {\\n    /**\\n     * @notice Lock original tokens to trigger mint at a remote chain's PeggedTokenBridge\\n     * @param _token local token address\\n     * @param _amount locked token amount\\n     * @param _mintChainId destination chainId to mint tokens\\n     * @param _mintAccount destination account to receive minted tokens\\n     * @param _nonce user input to guarantee unique depositId\\n     */\\n    function deposit(\\n        address _token,\\n        uint256 _amount,\\n        uint64 _mintChainId,\\n        address _mintAccount,\\n        uint64 _nonce\\n    ) external returns (bytes32);\\n\\n    /**\\n     * @notice Lock native token as original token to trigger mint at a remote chain's PeggedTokenBridge\\n     * @param _amount locked token amount\\n     * @param _mintChainId destination chainId to mint tokens\\n     * @param _mintAccount destination account to receive minted tokens\\n     * @param _nonce user input to guarantee unique depositId\\n     */\\n    function depositNative(\\n        uint256 _amount,\\n        uint64 _mintChainId,\\n        address _mintAccount,\\n        uint64 _nonce\\n    ) external payable returns (bytes32);\\n\\n    /**\\n     * @notice Withdraw locked original tokens triggered by a burn at a remote chain's PeggedTokenBridge.\\n     * @param _request The serialized Withdraw protobuf.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the bridge's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function withdraw(\\n        bytes calldata _request,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external returns (bytes32);\\n\\n    function records(bytes32 recordId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0x4fb1c1505ba3e30dcd6800b9c130affa17853f793c696bcef2472e03f9d0f8b4\",\"license\":\"GPL-3.0-only\"},\"contracts/interfaces/IPeggedTokenBridge.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface IPeggedTokenBridge {\\n    /**\\n     * @notice Burn tokens to trigger withdrawal at a remote chain's OriginalTokenVault\\n     * @param _token local token address\\n     * @param _amount locked token amount\\n     * @param _withdrawAccount account who withdraw original tokens on the remote chain\\n     * @param _nonce user input to guarantee unique depositId\\n     */\\n    function burn(\\n        address _token,\\n        uint256 _amount,\\n        address _withdrawAccount,\\n        uint64 _nonce\\n    ) external;\\n\\n    /**\\n     * @notice Mint tokens triggered by deposit at a remote chain's OriginalTokenVault.\\n     * @param _request The serialized Mint protobuf.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the sigsVerifier's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function mint(\\n        bytes calldata _request,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external;\\n\\n    function records(bytes32 recordId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0x5adc3e5f1c8767c9f4580b499b16aba25f41934a2f945e9f0227b28d4b0405ae\",\"license\":\"GPL-3.0-only\"},\"contracts/interfaces/IPeggedTokenBridgeV2.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface IPeggedTokenBridgeV2 {\\n    /**\\n     * @notice Burn pegged tokens to trigger a cross-chain withdrawal of the original tokens at a remote chain's\\n     * OriginalTokenVault, or mint at another remote chain\\n     * @param _token The pegged token address.\\n     * @param _amount The amount to burn.\\n     * @param _toChainId If zero, withdraw from original vault; otherwise, the remote chain to mint tokens.\\n     * @param _toAccount The account to receive tokens on the remote chain\\n     * @param _nonce A number to guarantee unique depositId. Can be timestamp in practice.\\n     */\\n    function burn(\\n        address _token,\\n        uint256 _amount,\\n        uint64 _toChainId,\\n        address _toAccount,\\n        uint64 _nonce\\n    ) external returns (bytes32);\\n\\n    // same with `burn` above, use openzeppelin ERC20Burnable interface\\n    function burnFrom(\\n        address _token,\\n        uint256 _amount,\\n        uint64 _toChainId,\\n        address _toAccount,\\n        uint64 _nonce\\n    ) external returns (bytes32);\\n\\n    /**\\n     * @notice Mint tokens triggered by deposit at a remote chain's OriginalTokenVault.\\n     * @param _request The serialized Mint protobuf.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the sigsVerifier's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function mint(\\n        bytes calldata _request,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external returns (bytes32);\\n\\n    function records(bytes32 recordId) external view returns (bool);\\n}\\n\",\"keccak256\":\"0xea5828630c131a1c7017360d4c1729c71bdeb5eaf366a30c9637c82795cea9d5\",\"license\":\"GPL-3.0-only\"},\"contracts/interfaces/ISigsVerifier.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface ISigsVerifier {\\n    /**\\n     * @notice Verifies that a message is signed by a quorum among the signers.\\n     * @param _msg signed message\\n     * @param _sigs list of signatures sorted by signer addresses in ascending order\\n     * @param _signers sorted list of current signers\\n     * @param _powers powers of current signers\\n     */\\n    function verifySigs(\\n        bytes memory _msg,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external view;\\n}\\n\",\"keccak256\":\"0x0d0b090d078a5f50ea7b751331614785e536fc09bcff28bfe08a60613ebca1ae\",\"license\":\"GPL-3.0-only\"},\"contracts/libraries/Utils.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\nlibrary Utils {\\n    // https://ethereum.stackexchange.com/a/83577\\n    // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol\\n    function getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {\\n        // If the _res length is less than 68, then the transaction failed silently (without a revert message)\\n        if (_returnData.length < 68) return \\\"Transaction reverted silently\\\";\\n        assembly {\\n            // Slice the sighash.\\n            _returnData := add(_returnData, 0x04)\\n        }\\n        return abi.decode(_returnData, (string)); // All that remains is the revert string\\n    }\\n}\\n\",\"keccak256\":\"0xd1fc4a9d923bd02e4bd6b245fafb2864b2b3b875a8f401acedd29721f26f6ed7\",\"license\":\"GPL-3.0-only\"},\"contracts/message/interfaces/IMessageReceiverApp.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\ninterface IMessageReceiverApp {\\n    enum ExecutionStatus {\\n        Fail, // execution failed, finalized\\n        Success, // execution succeeded, finalized\\n        Retry // execution rejected, can retry later\\n    }\\n\\n    /**\\n     * @notice Called by MessageBus to execute a message\\n     * @param _sender The address of the source app contract\\n     * @param _srcChainId The source chain ID where the transfer is originated from\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessage(\\n        address _sender,\\n        uint64 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external payable returns (ExecutionStatus);\\n\\n    // same as above, except that sender is an non-evm chain address,\\n    // otherwise same as above.\\n    function executeMessage(\\n        bytes calldata _sender,\\n        uint64 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external payable returns (ExecutionStatus);\\n\\n    /**\\n     * @notice Called by MessageBus to execute a message with an associated token transfer.\\n     * The contract is guaranteed to have received the right amount of tokens before this function is called.\\n     * @param _sender The address of the source app contract\\n     * @param _token The address of the token that comes out of the bridge\\n     * @param _amount The amount of tokens received at this contract through the cross-chain bridge.\\n     * @param _srcChainId The source chain ID where the transfer is originated from\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessageWithTransfer(\\n        address _sender,\\n        address _token,\\n        uint256 _amount,\\n        uint64 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external payable returns (ExecutionStatus);\\n\\n    /**\\n     * @notice Only called by MessageBus if\\n     *         1. executeMessageWithTransfer reverts, or\\n     *         2. executeMessageWithTransfer returns ExecutionStatus.Fail\\n     * The contract is guaranteed to have received the right amount of tokens before this function is called.\\n     * @param _sender The address of the source app contract\\n     * @param _token The address of the token that comes out of the bridge\\n     * @param _amount The amount of tokens received at this contract through the cross-chain bridge.\\n     * @param _srcChainId The source chain ID where the transfer is originated from\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessageWithTransferFallback(\\n        address _sender,\\n        address _token,\\n        uint256 _amount,\\n        uint64 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external payable returns (ExecutionStatus);\\n\\n    /**\\n     * @notice Called by MessageBus to process refund of the original transfer from this contract.\\n     * The contract is guaranteed to have received the refund before this function is called.\\n     * @param _token The token address of the original transfer\\n     * @param _amount The amount of the original transfer\\n     * @param _message The same message associated with the original transfer\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessageWithTransferRefund(\\n        address _token,\\n        uint256 _amount,\\n        bytes calldata _message,\\n        address _executor\\n    ) external payable returns (ExecutionStatus);\\n}\\n\",\"keccak256\":\"0x11f3d44aa2212ae89f4a6078c62248681deb0daa1592a482943e0f466d532498\",\"license\":\"GPL-3.0-only\"},\"contracts/message/libraries/MsgDataTypes.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.0;\\n\\nlibrary MsgDataTypes {\\n    string constant ABORT_PREFIX = \\\"MSG::ABORT:\\\";\\n\\n    // Add abort prefix in the reason string for require or revert.\\n    // This will abort (revert) the message execution without markig it as failed state,\\n    // making it possible to retry later.\\n    function abortReason(string memory reason) internal pure returns (string memory) {\\n        return string.concat(MsgDataTypes.ABORT_PREFIX, reason);\\n    }\\n\\n    // bridge operation type at the sender side (src chain)\\n    enum BridgeSendType {\\n        Null,\\n        Liquidity,\\n        PegDeposit,\\n        PegBurn,\\n        PegV2Deposit,\\n        PegV2Burn,\\n        PegV2BurnFrom\\n    }\\n\\n    // bridge operation type at the receiver side (dst chain)\\n    enum TransferType {\\n        Null,\\n        LqRelay, // relay through liquidity bridge\\n        LqWithdraw, // withdraw from liquidity bridge\\n        PegMint, // mint through pegged token bridge\\n        PegWithdraw, // withdraw from original token vault\\n        PegV2Mint, // mint through pegged token bridge v2\\n        PegV2Withdraw // withdraw from original token vault v2\\n    }\\n\\n    enum MsgType {\\n        MessageWithTransfer,\\n        MessageOnly\\n    }\\n\\n    enum TxStatus {\\n        Null,\\n        Success,\\n        Fail,\\n        Fallback,\\n        Pending // transient state within a transaction\\n    }\\n\\n    struct TransferInfo {\\n        TransferType t;\\n        address sender;\\n        address receiver;\\n        address token;\\n        uint256 amount;\\n        uint64 wdseq; // only needed for LqWithdraw (refund)\\n        uint64 srcChainId;\\n        bytes32 refId;\\n        bytes32 srcTxHash; // src chain msg tx hash\\n    }\\n\\n    struct RouteInfo {\\n        address sender;\\n        address receiver;\\n        uint64 srcChainId;\\n        bytes32 srcTxHash; // src chain msg tx hash\\n    }\\n\\n    // used for msg from non-evm chains with longer-bytes address\\n    struct RouteInfo2 {\\n        bytes sender;\\n        address receiver;\\n        uint64 srcChainId;\\n        bytes32 srcTxHash;\\n    }\\n\\n    // combination of RouteInfo and RouteInfo2 for easier processing\\n    struct Route {\\n        address sender; // from RouteInfo\\n        bytes senderBytes; // from RouteInfo2\\n        address receiver;\\n        uint64 srcChainId;\\n        bytes32 srcTxHash;\\n    }\\n\\n    struct MsgWithTransferExecutionParams {\\n        bytes message;\\n        TransferInfo transfer;\\n        bytes[] sigs;\\n        address[] signers;\\n        uint256[] powers;\\n    }\\n\\n    struct BridgeTransferParams {\\n        bytes request;\\n        bytes[] sigs;\\n        address[] signers;\\n        uint256[] powers;\\n    }\\n}\\n\",\"keccak256\":\"0xf8f8dff65e1c6edf4f16a1edd72b1fdf0930b3272a6bba0e21244881724bb033\",\"license\":\"GPL-3.0-only\"},\"contracts/message/messagebus/MessageBus.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity 0.8.17;\\n\\nimport \\\"./MessageBusSender.sol\\\";\\nimport \\\"./MessageBusReceiver.sol\\\";\\n\\ncontract MessageBus is MessageBusSender, MessageBusReceiver {\\n    constructor(\\n        ISigsVerifier _sigsVerifier,\\n        address _liquidityBridge,\\n        address _pegBridge,\\n        address _pegVault,\\n        address _pegBridgeV2,\\n        address _pegVaultV2\\n    )\\n    MessageBusSender(_sigsVerifier)\\n    MessageBusReceiver(_liquidityBridge, _pegBridge, _pegVault, _pegBridgeV2, _pegVaultV2)\\n    {}\\n\\n    // this is only to be called by Proxy via delegateCall as initOwner will require _owner is 0.\\n    // so calling init on this contract directly will guarantee to fail\\n    function init(\\n        address _liquidityBridge,\\n        address _pegBridge,\\n        address _pegVault,\\n        address _pegBridgeV2,\\n        address _pegVaultV2\\n    ) external {\\n        // MUST manually call ownable init and must only call once\\n        initOwner();\\n        // we don't need sender init as _sigsVerifier is immutable so already in the deployed code\\n        initReceiver(_liquidityBridge, _pegBridge, _pegVault, _pegBridgeV2, _pegVaultV2);\\n    }\\n}\",\"keccak256\":\"0x8afca57f272724b263c7f5475dabd261ec3894e4a6c4d608abdd52a7d683562f\",\"license\":\"GPL-3.0-only\"},\"contracts/message/messagebus/MessageBusReceiver.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity >=0.8.9;\\n\\nimport \\\"../libraries/MsgDataTypes.sol\\\";\\nimport \\\"../interfaces/IMessageReceiverApp.sol\\\";\\nimport \\\"../../interfaces/IBridge.sol\\\";\\nimport \\\"../../interfaces/IOriginalTokenVault.sol\\\";\\nimport \\\"../../interfaces/IOriginalTokenVaultV2.sol\\\";\\nimport \\\"../../interfaces/IPeggedTokenBridge.sol\\\";\\nimport \\\"../../interfaces/IPeggedTokenBridgeV2.sol\\\";\\nimport \\\"../../interfaces/IDelayedTransfer.sol\\\";\\nimport \\\"../../safeguard/Ownable.sol\\\";\\nimport \\\"../../libraries/Utils.sol\\\";\\n\\ncontract MessageBusReceiver is Ownable {\\n    mapping(bytes32 => MsgDataTypes.TxStatus) public executedMessages;\\n\\n    address public liquidityBridge; // liquidity bridge address\\n    address public pegBridge; // peg bridge address\\n    address public pegVault; // peg original vault address\\n    address public pegBridgeV2; // peg bridge address\\n    address public pegVaultV2; // peg original vault address\\n\\n    // minimum amount of gas needed by this contract before it tries to\\n    // deliver a message to the target contract.\\n    uint256 public preExecuteMessageGasUsage;\\n\\n    event Executed(\\n        MsgDataTypes.MsgType msgType,\\n        bytes32 msgId,\\n        MsgDataTypes.TxStatus status,\\n        address indexed receiver,\\n        uint64 srcChainId,\\n        bytes32 srcTxHash\\n    );\\n    event NeedRetry(MsgDataTypes.MsgType msgType, bytes32 msgId, uint64 srcChainId, bytes32 srcTxHash);\\n    event CallReverted(string reason); // help debug\\n\\n    event LiquidityBridgeUpdated(address liquidityBridge);\\n    event PegBridgeUpdated(address pegBridge);\\n    event PegVaultUpdated(address pegVault);\\n    event PegBridgeV2Updated(address pegBridgeV2);\\n    event PegVaultV2Updated(address pegVaultV2);\\n\\n    constructor(\\n        address _liquidityBridge,\\n        address _pegBridge,\\n        address _pegVault,\\n        address _pegBridgeV2,\\n        address _pegVaultV2\\n    ) {\\n        liquidityBridge = _liquidityBridge;\\n        pegBridge = _pegBridge;\\n        pegVault = _pegVault;\\n        pegBridgeV2 = _pegBridgeV2;\\n        pegVaultV2 = _pegVaultV2;\\n    }\\n\\n    function initReceiver(\\n        address _liquidityBridge,\\n        address _pegBridge,\\n        address _pegVault,\\n        address _pegBridgeV2,\\n        address _pegVaultV2\\n    ) internal {\\n        require(liquidityBridge == address(0), \\\"liquidityBridge already set\\\");\\n        liquidityBridge = _liquidityBridge;\\n        pegBridge = _pegBridge;\\n        pegVault = _pegVault;\\n        pegBridgeV2 = _pegBridgeV2;\\n        pegVaultV2 = _pegVaultV2;\\n    }\\n\\n    // ============== functions called by executor ==============\\n\\n    /**\\n     * @notice Execute a message with a successful transfer.\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _transfer The transfer info.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the sigsVerifier's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function executeMessageWithTransfer(\\n        bytes calldata _message,\\n        MsgDataTypes.TransferInfo calldata _transfer,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) public payable {\\n        // For message with token transfer, message Id is computed through transfer info\\n        // in order to guarantee that each transfer can only be used once.\\n        bytes32 messageId = verifyTransfer(_transfer);\\n        require(executedMessages[messageId] == MsgDataTypes.TxStatus.Null, \\\"transfer already executed\\\");\\n        executedMessages[messageId] = MsgDataTypes.TxStatus.Pending;\\n\\n        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), \\\"MessageWithTransfer\\\"));\\n        IBridge(liquidityBridge).verifySigs(\\n            abi.encodePacked(domain, messageId, _message, _transfer.srcTxHash),\\n            _sigs,\\n            _signers,\\n            _powers\\n        );\\n        MsgDataTypes.TxStatus status;\\n        (IMessageReceiverApp.ExecutionStatus est, uint256 valueLeft) = executeMessageWithTransfer(_transfer, _message);\\n        if (est == IMessageReceiverApp.ExecutionStatus.Success) {\\n            status = MsgDataTypes.TxStatus.Success;\\n        } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {\\n            executedMessages[messageId] = MsgDataTypes.TxStatus.Null;\\n            emit NeedRetry(\\n                MsgDataTypes.MsgType.MessageWithTransfer,\\n                messageId,\\n                _transfer.srcChainId,\\n                _transfer.srcTxHash\\n            );\\n            return;\\n        } else {\\n            est = executeMessageWithTransferFallback(_transfer, _message, valueLeft);\\n            if (est == IMessageReceiverApp.ExecutionStatus.Success) {\\n                status = MsgDataTypes.TxStatus.Fallback;\\n            } else {\\n                status = MsgDataTypes.TxStatus.Fail;\\n            }\\n        }\\n        executedMessages[messageId] = status;\\n        emitMessageWithTransferExecutedEvent(messageId, status, _transfer);\\n    }\\n\\n    /**\\n     * @notice Execute a message with a refunded transfer.\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _transfer The transfer info.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the sigsVerifier's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function executeMessageWithTransferRefund(\\n        bytes calldata _message, // the same message associated with the original transfer\\n        MsgDataTypes.TransferInfo calldata _transfer,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) public payable {\\n        // similar to executeMessageWithTransfer\\n        bytes32 messageId = verifyTransfer(_transfer);\\n        require(executedMessages[messageId] == MsgDataTypes.TxStatus.Null, \\\"transfer already executed\\\");\\n        executedMessages[messageId] = MsgDataTypes.TxStatus.Pending;\\n\\n        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), \\\"MessageWithTransferRefund\\\"));\\n        IBridge(liquidityBridge).verifySigs(\\n            abi.encodePacked(domain, messageId, _message, _transfer.srcTxHash),\\n            _sigs,\\n            _signers,\\n            _powers\\n        );\\n        MsgDataTypes.TxStatus status;\\n        IMessageReceiverApp.ExecutionStatus est = executeMessageWithTransferRefund(_transfer, _message);\\n        if (est == IMessageReceiverApp.ExecutionStatus.Success) {\\n            status = MsgDataTypes.TxStatus.Success;\\n        } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {\\n            executedMessages[messageId] = MsgDataTypes.TxStatus.Null;\\n            emit NeedRetry(\\n                MsgDataTypes.MsgType.MessageWithTransfer,\\n                messageId,\\n                _transfer.srcChainId,\\n                _transfer.srcTxHash\\n            );\\n            return;\\n        } else {\\n            status = MsgDataTypes.TxStatus.Fail;\\n        }\\n        executedMessages[messageId] = status;\\n        emitMessageWithTransferExecutedEvent(messageId, status, _transfer);\\n    }\\n\\n    /**\\n     * @notice Execute a message not associated with a transfer.\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _route The info about the sender and the receiver.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by\\n     * +2/3 of the sigsVerifier's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function executeMessage(\\n        bytes calldata _message,\\n        MsgDataTypes.RouteInfo calldata _route,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external payable {\\n        MsgDataTypes.Route memory route = getRouteInfo(_route);\\n        executeMessage(_message, route, _sigs, _signers, _powers, \\\"Message\\\");\\n    }\\n\\n    // execute message from non-evm chain with bytes for sender address,\\n    // otherwise same as above.\\n    function executeMessage(\\n        bytes calldata _message,\\n        MsgDataTypes.RouteInfo2 calldata _route,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external payable {\\n        MsgDataTypes.Route memory route = getRouteInfo(_route);\\n        executeMessage(_message, route, _sigs, _signers, _powers, \\\"Message2\\\");\\n    }\\n\\n    function executeMessage(\\n        bytes calldata _message,\\n        MsgDataTypes.Route memory _route,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers,\\n        string memory domainName\\n    ) private {\\n        // For message without associated token transfer, message Id is computed through message info,\\n        // in order to guarantee that each message can only be applied once\\n        bytes32 messageId = computeMessageOnlyId(_route, _message);\\n        require(executedMessages[messageId] == MsgDataTypes.TxStatus.Null, \\\"message already executed\\\");\\n        executedMessages[messageId] = MsgDataTypes.TxStatus.Pending;\\n\\n        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), domainName));\\n        IBridge(liquidityBridge).verifySigs(abi.encodePacked(domain, messageId), _sigs, _signers, _powers);\\n        MsgDataTypes.TxStatus status;\\n        IMessageReceiverApp.ExecutionStatus est = executeMessage(_route, _message);\\n        if (est == IMessageReceiverApp.ExecutionStatus.Success) {\\n            status = MsgDataTypes.TxStatus.Success;\\n        } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {\\n            executedMessages[messageId] = MsgDataTypes.TxStatus.Null;\\n            emit NeedRetry(MsgDataTypes.MsgType.MessageOnly, messageId, _route.srcChainId, _route.srcTxHash);\\n            return;\\n        } else {\\n            status = MsgDataTypes.TxStatus.Fail;\\n        }\\n        executedMessages[messageId] = status;\\n        emitMessageOnlyExecutedEvent(messageId, status, _route);\\n    }\\n\\n    // ================= utils (to avoid stack too deep) =================\\n\\n    function emitMessageWithTransferExecutedEvent(\\n        bytes32 _messageId,\\n        MsgDataTypes.TxStatus _status,\\n        MsgDataTypes.TransferInfo calldata _transfer\\n    ) private {\\n        emit Executed(\\n            MsgDataTypes.MsgType.MessageWithTransfer,\\n            _messageId,\\n            _status,\\n            _transfer.receiver,\\n            _transfer.srcChainId,\\n            _transfer.srcTxHash\\n        );\\n    }\\n\\n    function emitMessageOnlyExecutedEvent(\\n        bytes32 _messageId,\\n        MsgDataTypes.TxStatus _status,\\n        MsgDataTypes.Route memory _route\\n    ) private {\\n        emit Executed(\\n            MsgDataTypes.MsgType.MessageOnly,\\n            _messageId,\\n            _status,\\n            _route.receiver,\\n            _route.srcChainId,\\n            _route.srcTxHash\\n        );\\n    }\\n\\n    function executeMessageWithTransfer(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)\\n    private\\n    returns (IMessageReceiverApp.ExecutionStatus status, uint256 valueLeft)\\n    {\\n        uint256 gasLeftBeforeExecution = gasleft();\\n        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(\\n            abi.encodeWithSelector(\\n                IMessageReceiverApp.executeMessageWithTransfer.selector,\\n                _transfer.sender,\\n                _transfer.token,\\n                _transfer.amount,\\n                _transfer.srcChainId,\\n                _message,\\n                msg.sender\\n            )\\n        );\\n        if (ok) {\\n            return (abi.decode((res), (IMessageReceiverApp.ExecutionStatus)), 0);\\n        }\\n        handleExecutionRevert(gasLeftBeforeExecution, res);\\n        return (IMessageReceiverApp.ExecutionStatus.Fail, msg.value);\\n    }\\n\\n    function executeMessageWithTransferFallback(\\n        MsgDataTypes.TransferInfo calldata _transfer,\\n        bytes calldata _message,\\n        uint256 _value\\n    ) private returns (IMessageReceiverApp.ExecutionStatus) {\\n        uint256 gasLeftBeforeExecution = gasleft();\\n        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: _value}(\\n            abi.encodeWithSelector(\\n                IMessageReceiverApp.executeMessageWithTransferFallback.selector,\\n                _transfer.sender,\\n                _transfer.token,\\n                _transfer.amount,\\n                _transfer.srcChainId,\\n                _message,\\n                msg.sender\\n            )\\n        );\\n        if (ok) {\\n            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));\\n        }\\n        handleExecutionRevert(gasLeftBeforeExecution, res);\\n        return IMessageReceiverApp.ExecutionStatus.Fail;\\n    }\\n\\n    function executeMessageWithTransferRefund(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)\\n    private\\n    returns (IMessageReceiverApp.ExecutionStatus)\\n    {\\n        uint256 gasLeftBeforeExecution = gasleft();\\n        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(\\n            abi.encodeWithSelector(\\n                IMessageReceiverApp.executeMessageWithTransferRefund.selector,\\n                _transfer.token,\\n                _transfer.amount,\\n                _message,\\n                msg.sender\\n            )\\n        );\\n        if (ok) {\\n            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));\\n        }\\n        handleExecutionRevert(gasLeftBeforeExecution, res);\\n        return IMessageReceiverApp.ExecutionStatus.Fail;\\n    }\\n\\n    function verifyTransfer(MsgDataTypes.TransferInfo calldata _transfer) private view returns (bytes32) {\\n        bytes32 transferId;\\n        address bridgeAddr;\\n        MsgDataTypes.TransferType t = _transfer.t;\\n        if (t == MsgDataTypes.TransferType.LqRelay) {\\n            bridgeAddr = liquidityBridge;\\n            transferId = keccak256(\\n                abi.encodePacked(\\n                    _transfer.sender,\\n                    _transfer.receiver,\\n                    _transfer.token,\\n                    _transfer.amount,\\n                    _transfer.srcChainId,\\n                    uint64(block.chainid),\\n                    _transfer.refId\\n                )\\n            );\\n            require(IBridge(bridgeAddr).transfers(transferId) == true, \\\"relay not exist\\\");\\n        } else if (t == MsgDataTypes.TransferType.LqWithdraw) {\\n            bridgeAddr = liquidityBridge;\\n            transferId = keccak256(\\n                abi.encodePacked(\\n                    uint64(block.chainid),\\n                    _transfer.wdseq,\\n                    _transfer.receiver,\\n                    _transfer.token,\\n                    _transfer.amount\\n                )\\n            );\\n            require(IBridge(bridgeAddr).withdraws(transferId) == true, \\\"withdraw not exist\\\");\\n        } else {\\n            if (t == MsgDataTypes.TransferType.PegMint || t == MsgDataTypes.TransferType.PegWithdraw) {\\n                bridgeAddr = (t == MsgDataTypes.TransferType.PegMint) ? pegBridge : pegVault;\\n                transferId = keccak256(\\n                    abi.encodePacked(\\n                        _transfer.receiver,\\n                        _transfer.token,\\n                        _transfer.amount,\\n                        _transfer.sender,\\n                        _transfer.srcChainId,\\n                        _transfer.refId\\n                    )\\n                );\\n            } else {\\n                bridgeAddr = (t == MsgDataTypes.TransferType.PegV2Mint) ? pegBridgeV2 : pegVaultV2;\\n                transferId = keccak256(\\n                    abi.encodePacked(\\n                        _transfer.receiver,\\n                        _transfer.token,\\n                        _transfer.amount,\\n                        _transfer.sender,\\n                        _transfer.srcChainId,\\n                        _transfer.refId,\\n                        bridgeAddr\\n                    )\\n                );\\n            }\\n            // function is same for peg, peg2, vault, vault2\\n            require(IPeggedTokenBridge(bridgeAddr).records(transferId) == true, \\\"record not exist\\\");\\n        }\\n        require(IDelayedTransfer(bridgeAddr).delayedTransfers(transferId).timestamp == 0, \\\"transfer delayed\\\");\\n        return keccak256(abi.encodePacked(MsgDataTypes.MsgType.MessageWithTransfer, bridgeAddr, transferId));\\n    }\\n\\n    function computeMessageOnlyId(MsgDataTypes.Route memory _route, bytes calldata _message)\\n    private\\n    view\\n    returns (bytes32)\\n    {\\n        bytes memory sender = _route.senderBytes;\\n        if (sender.length == 0) {\\n            sender = abi.encodePacked(_route.sender);\\n        }\\n        return\\n        keccak256(\\n            abi.encodePacked(\\n                MsgDataTypes.MsgType.MessageOnly,\\n                sender,\\n                _route.receiver,\\n                _route.srcChainId,\\n                _route.srcTxHash,\\n                uint64(block.chainid),\\n                _message\\n            )\\n        );\\n    }\\n\\n    function executeMessage(MsgDataTypes.Route memory _route, bytes calldata _message)\\n    private\\n    returns (IMessageReceiverApp.ExecutionStatus)\\n    {\\n        uint256 gasLeftBeforeExecution = gasleft();\\n        bool ok;\\n        bytes memory res;\\n        if (_route.senderBytes.length == 0) {\\n            (ok, res) = address(_route.receiver).call{value: msg.value}(\\n                abi.encodeWithSelector(\\n                    bytes4(keccak256(bytes(\\\"executeMessage(address,uint64,bytes,address)\\\"))),\\n                    _route.sender,\\n                    _route.srcChainId,\\n                    _message,\\n                    msg.sender\\n                )\\n            );\\n        } else {\\n            (ok, res) = address(_route.receiver).call{value: msg.value}(\\n                abi.encodeWithSelector(\\n                    bytes4(keccak256(bytes(\\\"executeMessage(bytes,uint64,bytes,address)\\\"))),\\n                    _route.senderBytes,\\n                    _route.srcChainId,\\n                    _message,\\n                    msg.sender\\n                )\\n            );\\n        }\\n        if (ok) {\\n            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));\\n        }\\n        handleExecutionRevert(gasLeftBeforeExecution, res);\\n        return IMessageReceiverApp.ExecutionStatus.Fail;\\n    }\\n\\n    function handleExecutionRevert(uint256 _gasLeftBeforeExecution, bytes memory _returnData) private {\\n        uint256 gasLeftAfterExecution = gasleft();\\n        uint256 maxTargetGasLimit = block.gaslimit - preExecuteMessageGasUsage;\\n        if (_gasLeftBeforeExecution < maxTargetGasLimit && gasLeftAfterExecution <= _gasLeftBeforeExecution / 64) {\\n            // if this happens, the executor must have not provided sufficient gas limit,\\n            // then the tx should revert instead of recording a non-retryable failure status\\n            // https://github.com/wolflo/evm-opcodes/blob/main/gas.md#aa-f-gas-to-send-with-call-operations\\n            assembly {\\n                invalid()\\n            }\\n        }\\n        string memory revertMsg = Utils.getRevertMsg(_returnData);\\n        // revert the execution if the revert message has the ABORT prefix\\n        checkAbortPrefix(revertMsg);\\n        // otherwiase, emit revert message, return and mark the execution as failed (non-retryable)\\n        emit CallReverted(revertMsg);\\n    }\\n\\n    function checkAbortPrefix(string memory _revertMsg) private pure {\\n        bytes memory prefixBytes = bytes(MsgDataTypes.ABORT_PREFIX);\\n        bytes memory msgBytes = bytes(_revertMsg);\\n        if (msgBytes.length >= prefixBytes.length) {\\n            for (uint256 i = 0; i < prefixBytes.length; i++) {\\n                if (msgBytes[i] != prefixBytes[i]) {\\n                    return; // prefix not match, return\\n                }\\n            }\\n            revert(_revertMsg); // prefix match, revert\\n        }\\n    }\\n\\n    function getRouteInfo(MsgDataTypes.RouteInfo calldata _route) private pure returns (MsgDataTypes.Route memory) {\\n        return MsgDataTypes.Route(_route.sender, \\\"\\\", _route.receiver, _route.srcChainId, _route.srcTxHash);\\n    }\\n\\n    function getRouteInfo(MsgDataTypes.RouteInfo2 calldata _route) private pure returns (MsgDataTypes.Route memory) {\\n        return MsgDataTypes.Route(address(0), _route.sender, _route.receiver, _route.srcChainId, _route.srcTxHash);\\n    }\\n\\n    // ================= helper functions =====================\\n\\n    /**\\n     * @notice combine bridge transfer and msg execution calls into a single tx\\n     * @dev caller needs to get the required input params from SGN\\n     * @param _tp params to call bridge transfer\\n     * @param _mp params to execute message\\n     */\\n    function transferAndExecuteMsg(\\n        MsgDataTypes.BridgeTransferParams calldata _tp,\\n        MsgDataTypes.MsgWithTransferExecutionParams calldata _mp\\n    ) external {\\n        _bridgeTransfer(_mp.transfer.t, _tp);\\n        executeMessageWithTransfer(_mp.message, _mp.transfer, _mp.sigs, _mp.signers, _mp.powers);\\n    }\\n\\n    /**\\n     * @notice combine bridge refund and msg execution calls into a single tx\\n     * @dev caller needs to get the required input params from SGN\\n     * @param _tp params to call bridge transfer for refund\\n     * @param _mp params to execute message for refund\\n     */\\n    function refundAndExecuteMsg(\\n        MsgDataTypes.BridgeTransferParams calldata _tp,\\n        MsgDataTypes.MsgWithTransferExecutionParams calldata _mp\\n    ) external {\\n        _bridgeTransfer(_mp.transfer.t, _tp);\\n        executeMessageWithTransferRefund(_mp.message, _mp.transfer, _mp.sigs, _mp.signers, _mp.powers);\\n    }\\n\\n    function _bridgeTransfer(MsgDataTypes.TransferType t, MsgDataTypes.BridgeTransferParams calldata _params) private {\\n        if (t == MsgDataTypes.TransferType.LqRelay) {\\n            IBridge(liquidityBridge).relay(_params.request, _params.sigs, _params.signers, _params.powers);\\n        } else if (t == MsgDataTypes.TransferType.LqWithdraw) {\\n            IBridge(liquidityBridge).withdraw(_params.request, _params.sigs, _params.signers, _params.powers);\\n        } else if (t == MsgDataTypes.TransferType.PegMint) {\\n            IPeggedTokenBridge(pegBridge).mint(_params.request, _params.sigs, _params.signers, _params.powers);\\n        } else if (t == MsgDataTypes.TransferType.PegV2Mint) {\\n            IPeggedTokenBridgeV2(pegBridgeV2).mint(_params.request, _params.sigs, _params.signers, _params.powers);\\n        } else if (t == MsgDataTypes.TransferType.PegWithdraw) {\\n            IOriginalTokenVault(pegVault).withdraw(_params.request, _params.sigs, _params.signers, _params.powers);\\n        } else if (t == MsgDataTypes.TransferType.PegV2Withdraw) {\\n            IOriginalTokenVaultV2(pegVaultV2).withdraw(_params.request, _params.sigs, _params.signers, _params.powers);\\n        }\\n    }\\n\\n    // ================= contract config =================\\n\\n    function setLiquidityBridge(address _addr) public onlyOwner {\\n        require(_addr != address(0), \\\"invalid address\\\");\\n        liquidityBridge = _addr;\\n        emit LiquidityBridgeUpdated(liquidityBridge);\\n    }\\n\\n    function setPegBridge(address _addr) public onlyOwner {\\n        require(_addr != address(0), \\\"invalid address\\\");\\n        pegBridge = _addr;\\n        emit PegBridgeUpdated(pegBridge);\\n    }\\n\\n    function setPegVault(address _addr) public onlyOwner {\\n        require(_addr != address(0), \\\"invalid address\\\");\\n        pegVault = _addr;\\n        emit PegVaultUpdated(pegVault);\\n    }\\n\\n    function setPegBridgeV2(address _addr) public onlyOwner {\\n        require(_addr != address(0), \\\"invalid address\\\");\\n        pegBridgeV2 = _addr;\\n        emit PegBridgeV2Updated(pegBridgeV2);\\n    }\\n\\n    function setPegVaultV2(address _addr) public onlyOwner {\\n        require(_addr != address(0), \\\"invalid address\\\");\\n        pegVaultV2 = _addr;\\n        emit PegVaultV2Updated(pegVaultV2);\\n    }\\n\\n    function setPreExecuteMessageGasUsage(uint256 _usage) public onlyOwner {\\n        preExecuteMessageGasUsage = _usage;\\n    }\\n}\",\"keccak256\":\"0x653f90d5dad8cf94eb1e7da6eb6780f309283c471d415c1f719e0a93afdbd2bb\",\"license\":\"GPL-3.0-only\"},\"contracts/message/messagebus/MessageBusSender.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity 0.8.17;\\n\\nimport \\\"../../safeguard/Ownable.sol\\\";\\nimport \\\"../../interfaces/ISigsVerifier.sol\\\";\\n\\ncontract MessageBusSender is Ownable {\\n    ISigsVerifier public immutable sigsVerifier;\\n\\n    uint256 public feeBase;\\n    uint256 public feePerByte;\\n    mapping(address => uint256) public withdrawnFees;\\n    uint256 public nativeTokenTransferGas = 50000;\\n\\n    event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message, uint256 fee);\\n    // message to non-evm chain with >20 bytes addr\\n    event Message2(address indexed sender, bytes receiver, uint256 dstChainId, bytes message, uint256 fee);\\n\\n    event MessageWithTransfer(\\n        address indexed sender,\\n        address receiver,\\n        uint256 dstChainId,\\n        address bridge,\\n        bytes32 srcTransferId,\\n        bytes message,\\n        uint256 fee\\n    );\\n\\n    event FeeWithdrawn(address receiver, uint256 amount);\\n\\n    event FeeBaseUpdated(uint256 feeBase);\\n    event FeePerByteUpdated(uint256 feePerByte);\\n\\n    constructor(ISigsVerifier _sigsVerifier) {\\n        sigsVerifier = _sigsVerifier;\\n    }\\n\\n    /**\\n     * @notice Sends a message to a contract on another chain.\\n     * Sender needs to make sure the uniqueness of the message Id, which is computed as\\n     * hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message).\\n     * If messages with the same Id are sent, only one of them will succeed at dst chain.\\n     * A fee is charged in the native gas token.\\n     * @param _receiver The address of the destination app contract.\\n     * @param _dstChainId The destination chain ID.\\n     * @param _message Arbitrary message bytes to be decoded by the destination app contract.\\n     */\\n    function sendMessage(\\n        address _receiver,\\n        uint256 _dstChainId,\\n        bytes calldata _message\\n    ) external payable {\\n        _sendMessage(_dstChainId, _message);\\n        emit Message(msg.sender, _receiver, _dstChainId, _message, msg.value);\\n    }\\n\\n    // Send message to non-evm chain with bytes for receiver address,\\n    // otherwise same as above.\\n    function sendMessage(\\n        bytes calldata _receiver,\\n        uint256 _dstChainId,\\n        bytes calldata _message\\n    ) external payable {\\n        _sendMessage(_dstChainId, _message);\\n        emit Message2(msg.sender, _receiver, _dstChainId, _message, msg.value);\\n    }\\n\\n    function _sendMessage(uint256 _dstChainId, bytes calldata _message) private {\\n        require(_dstChainId != block.chainid, \\\"Invalid chainId\\\");\\n        uint256 minFee = calcFee(_message);\\n        require(msg.value >= minFee, \\\"Insufficient fee\\\");\\n    }\\n\\n    /**\\n     * @notice Sends a message associated with a transfer to a contract on another chain.\\n     * If messages with the same srcTransferId are sent, only one of them will succeed.\\n     * A fee is charged in the native token.\\n     * @param _receiver The address of the destination app contract.\\n     * @param _dstChainId The destination chain ID.\\n     * @param _srcBridge The bridge contract to send the transfer with.\\n     * @param _srcTransferId The transfer ID.\\n     * @param _dstChainId The destination chain ID.\\n     * @param _message Arbitrary message bytes to be decoded by the destination app contract.\\n     */\\n    function sendMessageWithTransfer(\\n        address _receiver,\\n        uint256 _dstChainId,\\n        address _srcBridge,\\n        bytes32 _srcTransferId,\\n        bytes calldata _message\\n    ) external payable {\\n        require(_dstChainId != block.chainid, \\\"Invalid chainId\\\");\\n        uint256 minFee = calcFee(_message);\\n        require(msg.value >= minFee, \\\"Insufficient fee\\\");\\n        // SGN needs to verify\\n        // 1. msg.sender matches sender of the src transfer\\n        // 2. dstChainId matches dstChainId of the src transfer\\n        // 3. bridge is either liquidity bridge, peg src vault, or peg dst bridge\\n        emit MessageWithTransfer(msg.sender, _receiver, _dstChainId, _srcBridge, _srcTransferId, _message, msg.value);\\n    }\\n\\n    /**\\n     * @notice Withdraws message fee in the form of native gas token.\\n     * @param _account The address receiving the fee.\\n     * @param _cumulativeFee The cumulative fee credited to the account. Tracked by SGN.\\n     * @param _sigs The list of signatures sorted by signing addresses in ascending order. A withdrawal must be\\n     * signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.\\n     * @param _signers The sorted list of signers.\\n     * @param _powers The signing powers of the signers.\\n     */\\n    function withdrawFee(\\n        address _account,\\n        uint256 _cumulativeFee,\\n        bytes[] calldata _sigs,\\n        address[] calldata _signers,\\n        uint256[] calldata _powers\\n    ) external {\\n        bytes32 domain = keccak256(abi.encodePacked(block.chainid, address(this), \\\"withdrawFee\\\"));\\n        sigsVerifier.verifySigs(abi.encodePacked(domain, _account, _cumulativeFee), _sigs, _signers, _powers);\\n        uint256 amount = _cumulativeFee - withdrawnFees[_account];\\n        require(amount > 0, \\\"No new amount to withdraw\\\");\\n        withdrawnFees[_account] = _cumulativeFee;\\n        (bool sent, ) = _account.call{value: amount, gas: nativeTokenTransferGas}(\\\"\\\");\\n        require(sent, \\\"failed to withdraw fee\\\");\\n        emit FeeWithdrawn(_account, amount);\\n    }\\n\\n    /**\\n     * @notice Calculates the required fee for the message.\\n     * @param _message Arbitrary message bytes to be decoded by the destination app contract.\\n     @ @return The required fee.\\n     */\\n    function calcFee(bytes calldata _message) public view returns (uint256) {\\n        return feeBase + _message.length * feePerByte;\\n    }\\n\\n    // -------------------- Admin --------------------\\n\\n    function setFeePerByte(uint256 _fee) external onlyOwner {\\n        feePerByte = _fee;\\n        emit FeePerByteUpdated(feePerByte);\\n    }\\n\\n    function setFeeBase(uint256 _fee) external onlyOwner {\\n        feeBase = _fee;\\n        emit FeeBaseUpdated(feeBase);\\n    }\\n\\n    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyOwner {\\n        nativeTokenTransferGas = _gasUsed;\\n    }\\n}\",\"keccak256\":\"0x772526bb0945a8562eb4e27d90968a0e2564d74779c2a66ddb8a13cbf2cc2e49\",\"license\":\"GPL-3.0-only\"},\"contracts/safeguard/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0-only\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n *\\n * This adds a normal func that setOwner if _owner is address(0). So we can't allow\\n * renounceOwnership. So we can support Proxy based upgradable contract\\n */\\nabstract contract Ownable {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor() {\\n        _setOwner(msg.sender);\\n    }\\n\\n    /**\\n     * @dev Only to be called by inherit contracts, in their init func called by Proxy\\n     * we require _owner == address(0), which is only possible when it's a delegateCall\\n     * because constructor sets _owner in contract state.\\n     */\\n    function initOwner() internal {\\n        require(_owner == address(0), \\\"owner already set\\\");\\n        _setOwner(msg.sender);\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == msg.sender, \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        _setOwner(newOwner);\\n    }\\n\\n    function _setOwner(address newOwner) private {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0x2a92103195b8dce0f34fdf9bf7f94ddf38bf8edf0c0fd4be21323c47016687e9\",\"license\":\"GPL-3.0-only\"}},\"version\":1}",
+  "bytecode": "0x60a060405261c3506004553480156200001757600080fd5b506040516200435b3803806200435b8339810160408190526200003a9162000123565b84848484848a6200004b33620000ba565b6001600160a01b03908116608052600680546001600160a01b03199081169783169790971790556007805487169582169590951790945560088054861693851693909317909255600980548516918416919091179055600a8054909316911617905550620001b7945050505050565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b6001600160a01b03811681146200012057600080fd5b50565b60008060008060008060c087890312156200013d57600080fd5b86516200014a816200010a565b60208801519096506200015d816200010a565b604088015190955062000170816200010a565b606088015190945062000183816200010a565b608088015190935062000196816200010a565b60a0880151909250620001a9816200010a565b809150509295509295509295565b608051614181620001da6000396000818161053701526108af01526141816000f3fe6080604052600436106102345760003560e01c806382efd50211610138578063cd2abd66116100b0578063dfa2dbaf1161007f578063f2fde38b11610064578063f2fde38b14610629578063f60bbe2a14610649578063f83b0fb91461065f57600080fd5b8063dfa2dbaf146105e9578063e2c1ed251461060957600080fd5b8063cd2abd6614610559578063cefe0df514610596578063d8257d17146105b6578063db2c20c8146105d657600080fd5b80639b05a77511610107578063b517b550116100ec578063b517b550146104ef578063c66a9c5a14610505578063ccf2683b1461052557600080fd5b80639b05a775146104bc5780639f3ce55a146104dc57600080fd5b806382efd502146104485780638da5cb5b1461046857806395b12c271461048657806395e911a8146104a657600080fd5b8063468a2d04116101cb5780635b3e5f501161019a5780637b80ab201161017f5780637b80ab20146103ea5780637d7a101d146103fd57806382980dc41461041057600080fd5b80635b3e5f501461039d578063723d0a9d146103ca57600080fd5b8063468a2d04146103215780635335dca214610334578063584e45e114610367578063588be02b1461037d57600080fd5b80633f395aff116102075780633f395aff146102bb57806340d0d026146102ce5780634289fbb3146102ee5780634586f3311461030157600080fd5b806303cbfe661461023957806306c28bd61461025b5780632ff4c4111461027b578063359ef75b1461029b575b600080fd5b34801561024557600080fd5b506102596102543660046130f0565b61067f565b005b34801561026757600080fd5b5061025961027636600461310d565b610778565b34801561028757600080fd5b50610259610296366004613172565b610804565b3480156102a757600080fd5b506102596102b6366004613228565b610a9f565b6102596102c93660046132db565b610abb565b3480156102da57600080fd5b506102596102e93660046133e4565b610da7565b6102596102fc366004613450565b610dff565b34801561030d57600080fd5b5061025961031c36600461310d565b610ee7565b61025961032f3660046134cc565b610f43565b34801561034057600080fd5b5061035461034f366004613591565b610fa3565b6040519081526020015b60405180910390f35b34801561037357600080fd5b50610354600b5481565b34801561038957600080fd5b506102596103983660046130f0565b610fc9565b3480156103a957600080fd5b506103546103b83660046130f0565b60036020526000908152604090205481565b3480156103d657600080fd5b506102596103e53660046133e4565b6110b6565b6102596103f83660046132db565b611104565b61025961040b3660046135d3565b6113b8565b34801561041c57600080fd5b50600654610430906001600160a01b031681565b6040516001600160a01b03909116815260200161035e565b34801561045457600080fd5b506102596104633660046130f0565b611415565b34801561047457600080fd5b506000546001600160a01b0316610430565b34801561049257600080fd5b50600954610430906001600160a01b031681565b3480156104b257600080fd5b5061035460015481565b3480156104c857600080fd5b506102596104d73660046130f0565b611502565b6102596104ea36600461364d565b6115ef565b3480156104fb57600080fd5b5061035460045481565b34801561051157600080fd5b50600a54610430906001600160a01b031681565b34801561053157600080fd5b506104307f000000000000000000000000000000000000000000000000000000000000000081565b34801561056557600080fd5b5061058961057436600461310d565b60056020526000908152604090205460ff1681565b60405161035e91906136d3565b3480156105a257600080fd5b506102596105b136600461310d565b611649565b3480156105c257600080fd5b50600854610430906001600160a01b031681565b6102596105e43660046136e1565b6116a5565b3480156105f557600080fd5b50600754610430906001600160a01b031681565b34801561061557600080fd5b5061025961062436600461310d565b6116f9565b34801561063557600080fd5b506102596106443660046130f0565b611785565b34801561065557600080fd5b5061035460025481565b34801561066b57600080fd5b5061025961067a3660046130f0565b611864565b336106926000546001600160a01b031690565b6001600160a01b0316146106db5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064015b60405180910390fd5b6001600160a01b0381166107235760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600780546001600160a01b0319166001600160a01b0383169081179091556040519081527fd60e9ceb4f54f1bfb1741a4b35fc9d806d7ed48200b523203b92248ea38fa17d906020015b60405180910390a150565b3361078b6000546001600160a01b031690565b6001600160a01b0316146107cf5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b60018190556040518181527f892dfdc99ecd3bb4f2f2cb118dca02f0bd16640ff156d3c6459d4282e336a5f29060200161076d565b6000463060405160200161085592919091825260601b6001600160601b03191660208201527f77697468647261774665650000000000000000000000000000000000000000006034820152603f0190565b60408051808303601f19018152828252805160209182012090830181905260608c901b6001600160601b0319168383015260548084018c9052825180850390910181526074840192839052633416de1160e11b90925292507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169163682dbc22916108f6918b908b908b908b908b908b90607801613947565b60006040518083038186803b15801561090e57600080fd5b505afa158015610922573d6000803e3d6000fd5b505050506001600160a01b038916600090815260036020526040812054610949908a6139bb565b90506000811161099b5760405162461bcd60e51b815260206004820152601960248201527f4e6f206e657720616d6f756e7420746f2077697468647261770000000000000060448201526064016106d2565b6001600160a01b038a166000818152600360205260408082208c90556004549051919291849084818181858888f193505050503d80600081146109fa576040519150601f19603f3d011682016040523d82523d6000602084013e6109ff565b606091505b5050905080610a505760405162461bcd60e51b815260206004820152601660248201527f6661696c656420746f207769746864726177206665650000000000000000000060448201526064016106d2565b604080516001600160a01b038d168152602081018490527f78473f3f373f7673597f4f0fa5873cb4d375fea6d4339ad6b56dbd411513cb3f910160405180910390a15050505050505050505050565b610aa7611951565b610ab485858585856119b5565b5050505050565b6000610ac688611a6d565b90506000808281526005602052604090205460ff166004811115610aec57610aec6136a9565b14610b395760405162461bcd60e51b815260206004820152601960248201527f7472616e7366657220616c72656164792065786563757465640000000000000060448201526064016106d2565b6000818152600560209081526040808320805460ff19166004179055805146928101929092526001600160601b03193060601b16908201527f4d657373616765576974685472616e73666572000000000000000000000000006054820152606701604051602081830303815290604052805190602001209050600660009054906101000a90046001600160a01b03166001600160a01b031663682dbc2282848e8e8e6101000135604051602001610bf49594939291906139ce565b6040516020818303038152906040528a8a8a8a8a8a6040518863ffffffff1660e01b8152600401610c2b9796959493929190613947565b60006040518083038186803b158015610c4357600080fd5b505afa158015610c57573d6000803e3d6000fd5b505050506000806000610c6b8c8f8f612168565b90925090506001826002811115610c8457610c846136a9565b03610c925760019250610d5b565b6002826002811115610ca657610ca66136a9565b03610d26576000858152600560205260408120805460ff191660018302179055507fe49c2c954d381d1448cf824743aeff9da7a1d82078a7c9e5817269cc359bd26c6000868e60c0016020810190610cfe91906139f0565b8f6101000135604051610d149493929190613a2a565b60405180910390a15050505050610d9c565b610d328c8f8f846122b0565b91506001826002811115610d4857610d486136a9565b03610d565760039250610d5b565b600292505b6000858152600560205260409020805484919060ff19166001836004811115610d8657610d866136a9565b0217905550610d9685848e6123ef565b50505050505b505050505050505050565b610dc0610dba6040830160208401613a5d565b83612461565b610dfb610dcd8280613a7e565b60208401610ddf610140860186613ac5565b610ded610160880188613ac5565b6103f86101808a018a613ac5565b5050565b468503610e405760405162461bcd60e51b815260206004820152600f60248201526e125b9d985b1a590818da185a5b9259608a1b60448201526064016106d2565b6000610e4c8383610fa3565b905080341015610e915760405162461bcd60e51b815260206004820152601060248201526f496e73756666696369656e742066656560801b60448201526064016106d2565b336001600160a01b03167f172762498a59a3bc4fed3f2b63f94f17ea0193cffdc304fe7d3eaf4d342d2f6688888888888834604051610ed69796959493929190613b0f565b60405180910390a250505050505050565b33610efa6000546001600160a01b031690565b6001600160a01b031614610f3e5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b600b55565b6000610f4e886126ab565b9050610f978a8a838a8a8a8a8a8a6040518060400160405280600781526020017f4d65737361676500000000000000000000000000000000000000000000000000815250612762565b50505050505050505050565b600254600090610fb39083613b5c565b600154610fc09190613b73565b90505b92915050565b33610fdc6000546001600160a01b031690565b6001600160a01b0316146110205760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166110685760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600680546001600160a01b0319166001600160a01b0383169081179091556040519081527fbf9977180dc6e6cff25598c8e59150cecd7f8e448e092633d38ab7ee223ae0589060200161076d565b6110c9610dba6040830160208401613a5d565b610dfb6110d68280613a7e565b602084016110e8610140860186613ac5565b6110f6610160880188613ac5565b6102c96101808a018a613ac5565b600061110f88611a6d565b90506000808281526005602052604090205460ff166004811115611135576111356136a9565b146111825760405162461bcd60e51b815260206004820152601960248201527f7472616e7366657220616c72656164792065786563757465640000000000000060448201526064016106d2565b6000818152600560209081526040808320805460ff19166004179055805146928101929092526001600160601b03193060601b16908201527f4d657373616765576974685472616e73666572526566756e64000000000000006054820152606d01604051602081830303815290604052805190602001209050600660009054906101000a90046001600160a01b03166001600160a01b031663682dbc2282848e8e8e610100013560405160200161123d9594939291906139ce565b6040516020818303038152906040528a8a8a8a8a8a6040518863ffffffff1660e01b81526004016112749796959493929190613947565b60006040518083038186803b15801561128c57600080fd5b505afa1580156112a0573d6000803e3d6000fd5b505050506000806112b28b8e8e61299d565b905060018160028111156112c8576112c86136a9565b036112d6576001915061136e565b60028160028111156112ea576112ea6136a9565b03611369576000848152600560205260408120805460ff191660018302179055507fe49c2c954d381d1448cf824743aeff9da7a1d82078a7c9e5817269cc359bd26c6000858d60c001602081019061134291906139f0565b8e61010001356040516113589493929190613a2a565b60405180910390a150505050610d9c565b600291505b6000848152600560205260409020805483919060ff19166001836004811115611399576113996136a9565b02179055506113a984838d6123ef565b50505050505050505050505050565b6113c3838383612ab6565b336001600160a01b03167fe66fbe37d84ca73c589f782ac278844918ea6c56a4917f58707f715588080df286868686863460405161140696959493929190613b86565b60405180910390a25050505050565b336114286000546001600160a01b031690565b6001600160a01b03161461146c5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166114b45760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600980546001600160a01b0319166001600160a01b0383169081179091556040519081527ffb337a6c76476534518d5816caeb86263972470fedccfd047a35eb1825eaa9e89060200161076d565b336115156000546001600160a01b031690565b6001600160a01b0316146115595760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166115a15760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600880546001600160a01b0319166001600160a01b0383169081179091556040519081527fa9db0c32d9c6c2f75f3b95047a9e67cc1c010eab792a4e6ca777ce918ad94aad9060200161076d565b6115fa838383612ab6565b336001600160a01b03167fce3972bfffe49d317e1d128047a97a3d86b25c94f6f04409f988ef854d25e0e4858585853460405161163b959493929190613bc7565b60405180910390a250505050565b3361165c6000546001600160a01b031690565b6001600160a01b0316146116a05760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b600455565b60006116b088612b4e565b9050610f978a8a838a8a8a8a8a8a6040518060400160405280600881526020017f4d65737361676532000000000000000000000000000000000000000000000000815250612762565b3361170c6000546001600160a01b031690565b6001600160a01b0316146117505760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b60028190556040518181527f210d4d5d2d36d571207dac98e383e2441c684684c885fb2d7c54f8d24422074c9060200161076d565b336117986000546001600160a01b031690565b6001600160a01b0316146117dc5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166118585760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f646472657373000000000000000000000000000000000000000000000000000060648201526084016106d2565b61186181612be4565b50565b336118776000546001600160a01b031690565b6001600160a01b0316146118bb5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166119035760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600a80546001600160a01b0319166001600160a01b0383169081179091556040519081527f918a691a2a82482a10e11f43d7b627b2ba220dd08f251cb61933c42560f6fcb59060200161076d565b6000546001600160a01b0316156119aa5760405162461bcd60e51b815260206004820152601160248201527f6f776e657220616c72656164792073657400000000000000000000000000000060448201526064016106d2565b6119b333612be4565b565b6006546001600160a01b031615611a0e5760405162461bcd60e51b815260206004820152601b60248201527f6c697175696469747942726964676520616c726561647920736574000000000060448201526064016106d2565b600680546001600160a01b03199081166001600160a01b03978816179091556007805482169587169590951790945560088054851693861693909317909255600980548416918516919091179055600a80549092169216919091179055565b6000808080611a7f6020860186613a5d565b90506001816006811115611a9557611a956136a9565b03611c28576006546001600160a01b03169150611ab860408601602087016130f0565b611ac860608701604088016130f0565b611ad860808801606089016130f0565b6080880135611aed60e08a0160c08b016139f0565b6040516001600160601b0319606096871b8116602083015294861b851660348201529290941b9092166048820152605c8101919091526001600160c01b031960c092831b8116607c8301524690921b909116608482015260e0860135608c82015260ac0160408051808303601f19018152908290528051602090910120633c64f04b60e01b82526004820181905293506001600160a01b03831690633c64f04b90602401602060405180830381865afa158015611bae573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611bd29190613c02565b1515600114611c235760405162461bcd60e51b815260206004820152600f60248201527f72656c6179206e6f74206578697374000000000000000000000000000000000060448201526064016106d2565b612078565b6002816006811115611c3c57611c3c6136a9565b03611da1576006546001600160a01b0316915046611c6060c0870160a088016139f0565b611c7060608801604089016130f0565b611c806080890160608a016130f0565b6040516001600160c01b031960c095861b811660208301529390941b90921660288401526001600160601b0319606091821b8116603085015291901b1660448201526080860135605882015260780160408051808303601f19018152908290528051602090910120631c13568560e31b82526004820181905293506001600160a01b0383169063e09ab42890602401602060405180830381865afa158015611d2c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611d509190613c02565b1515600114611c235760405162461bcd60e51b815260206004820152601260248201527f7769746864726177206e6f74206578697374000000000000000000000000000060448201526064016106d2565b6003816006811115611db557611db56136a9565b1480611dd257506004816006811115611dd057611dd06136a9565b145b15611ec9576003816006811115611deb57611deb6136a9565b14611e01576008546001600160a01b0316611e0e565b6007546001600160a01b03165b9150611e2060608601604087016130f0565b611e3060808701606088016130f0565b6080870135611e456040890160208a016130f0565b611e5560e08a0160c08b016139f0565b604051606095861b6001600160601b0319908116602083015294861b851660348201526048810193909352931b909116606882015260c09190911b6001600160c01b031916607c82015260e0860135608482015260a401604051602081830303815290604052805190602001209250611fbe565b6005816006811115611edd57611edd6136a9565b14611ef357600a546001600160a01b0316611f00565b6009546001600160a01b03165b9150611f1260608601604087016130f0565b611f2260808701606088016130f0565b6080870135611f376040890160208a016130f0565b611f4760e08a0160c08b016139f0565b604051606095861b6001600160601b0319908116602083015294861b85166034820152604881019390935290841b8316606883015260c01b6001600160c01b031916607c82015260e088013560848201529184901b1660a482015260b8016040516020818303038152906040528051906020012092505b6040516301e6472560e01b8152600481018490526001600160a01b038316906301e6472590602401602060405180830381865afa158015612003573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906120279190613c02565b15156001146120785760405162461bcd60e51b815260206004820152601060248201527f7265636f7264206e6f742065786973740000000000000000000000000000000060448201526064016106d2565b60405163adc0d57f60e01b8152600481018490526001600160a01b0383169063adc0d57f90602401608060405180830381865afa1580156120bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906120e19190613c3a565b60600151156121325760405162461bcd60e51b815260206004820152601060248201527f7472616e736665722064656c617965640000000000000000000000000000000060448201526064016106d2565b6000828460405160200161214893929190613cc6565b604051602081830303815290604052805190602001209350505050919050565b60008060005a90506000806121836060890160408a016130f0565b6001600160a01b031634631f34afff60e21b6121a560408c0160208d016130f0565b6121b560808d0160608e016130f0565b8c608001358d60c00160208101906121cd91906139f0565b8d8d336040516024016121e69796959493929190613cf2565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b03199094169390931790925290516122249190613d4b565b60006040518083038185875af1925050503d8060008114612261576040519150601f19603f3d011682016040523d82523d6000602084013e612266565b606091505b5091509150811561229357808060200190518101906122859190613d67565b6000945094505050506122a8565b61229d8382612c34565b600034945094505050505b935093915050565b6000805a90506000806122c96060890160408a016130f0565b6001600160a01b031685632d5bd7e360e11b6122eb60408c0160208d016130f0565b6122fb60808d0160608e016130f0565b8c608001358d60c001602081019061231391906139f0565b8d8d3360405160240161232c9796959493929190613cf2565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b031990941693909317909252905161236a9190613d4b565b60006040518083038185875af1925050503d80600081146123a7576040519150601f19603f3d011682016040523d82523d6000602084013e6123ac565b606091505b509150915081156123d557808060200190518101906123cb9190613d67565b93505050506123e7565b6123df8382612c34565b600093505050505b949350505050565b6123ff60608201604083016130f0565b6001600160a01b03167fa635eb05143f74743822bbd96428928de4c8ee8cc578299749be9425c17bb34d6000858561243d60e0870160c088016139f0565b866101000135604051612454959493929190613d88565b60405180910390a2505050565b6001826006811115612475576124756136a9565b03612515576006546001600160a01b031663cdd1b25d6124958380613a7e565b6124a26020860186613ac5565b6124af6040880188613ac5565b6124bc60608a018a613ac5565b6040518963ffffffff1660e01b81526004016124df989796959493929190613dc6565b600060405180830381600087803b1580156124f957600080fd5b505af115801561250d573d6000803e3d6000fd5b505050505050565b6002826006811115612529576125296136a9565b03612549576006546001600160a01b031663a21a92806124958380613a7e565b600382600681111561255d5761255d6136a9565b0361257d576007546001600160a01b031663f87343026124958380613a7e565b6005826006811115612591576125916136a9565b03612643576009546001600160a01b031663f87343026125b18380613a7e565b6125be6020860186613ac5565b6125cb6040880188613ac5565b6125d860608a018a613ac5565b6040518963ffffffff1660e01b81526004016125fb989796959493929190613dc6565b6020604051808303816000875af115801561261a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061263e9190613e26565b505050565b6004826006811115612657576126576136a9565b03612677576008546001600160a01b031663a21a92806124958380613a7e565b600682600681111561268b5761268b6136a9565b03610dfb57600a546001600160a01b031663a21a92806125b18380613a7e565b6040805160a081018252600080825260606020830181905292820181905291810182905260808101919091526040805160a08101909152806126f060208501856130f0565b6001600160a01b0316815260200160405180602001604052806000815250815260200183602001602081019061272691906130f0565b6001600160a01b0316815260200161274460608501604086016139f0565b67ffffffffffffffff16815260200183606001358152509050919050565b600061276f898c8c612cbf565b90506000808281526005602052604090205460ff166004811115612795576127956136a9565b146127e25760405162461bcd60e51b815260206004820152601860248201527f6d65737361676520616c7265616479206578656375746564000000000000000060448201526064016106d2565b6000818152600560209081526040808320805460ff191660041790555161280f9146913091879101613e3f565b60408051601f1981840301815282825280516020918201206006549184018190528383018690528251808503840181526060850193849052633416de1160e11b90935293506001600160a01b03169163682dbc229161287c918d908d908d908d908d908d90606401613947565b60006040518083038186803b15801561289457600080fd5b505afa1580156128a8573d6000803e3d6000fd5b505050506000806128ba8c8f8f612d53565b905060018160028111156128d0576128d06136a9565b036128de5760019150612962565b60028160028111156128f2576128f26136a9565b0361295d5760008481526005602052604090819020805460ff1916905560608d015160808e015191517fe49c2c954d381d1448cf824743aeff9da7a1d82078a7c9e5817269cc359bd26c9261294c92600192899290613a2a565b60405180910390a150505050610f97565b600291505b6000848152600560205260409020805483919060ff1916600183600481111561298d5761298d6136a9565b0217905550610d9684838e612f34565b6000805a90506000806129b660608801604089016130f0565b6001600160a01b0316346305e5a4c160e11b6129d860808b0160608c016130f0565b8a608001358a8a336040516024016129f4959493929190613e7e565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b0319909416939093179092529051612a329190613d4b565b60006040518083038185875af1925050503d8060008114612a6f576040519150601f19603f3d011682016040523d82523d6000602084013e612a74565b606091505b50915091508115612a9d5780806020019051810190612a939190613d67565b9350505050612aaf565b612aa78382612c34565b600093505050505b9392505050565b468303612af75760405162461bcd60e51b815260206004820152600f60248201526e125b9d985b1a590818da185a5b9259608a1b60448201526064016106d2565b6000612b038383610fa3565b905080341015612b485760405162461bcd60e51b815260206004820152601060248201526f496e73756666696369656e742066656560801b60448201526064016106d2565b50505050565b6040805160a081018252600080825260606020830181905292820181905291810182905260808101919091526040805160a081019091526000815260208101612b978480613a7e565b8080601f01602080910402602001604051908101604052809392919081815260200183838082843760009201919091525050509082525060209081019061272690604086019086016130f0565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b60005a90506000600b5445612c4991906139bb565b90508084108015612c645750612c60604085613ebd565b8211155b15612c6b57fe5b6000612c7684612f82565b9050612c8181612fe1565b7fffdd6142bbb721f3400e3908b04b86f60649b2e4d191e3f4c50c32c3e6471d2f81604051612cb09190613edf565b60405180910390a15050505050565b60208301518051600091908203612d07578451604051612cf5919060200160609190911b6001600160601b031916815260140190565b60405160208183030381529060405290505b600181866040015187606001518860800151468989604051602001612d33989796959493929190613ef2565b604051602081830303815290604052805190602001209150509392505050565b6000805a905060006060866020015151600003612e435786604001516001600160a01b0316346040518060600160405280602c8152602001614120602c91398051602090910120895160608b0151604051612db89291908c908c903390602401613f73565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b0319909416939093179092529051612df69190613d4b565b60006040518083038185875af1925050503d8060008114612e33576040519150601f19603f3d011682016040523d82523d6000602084013e612e38565b606091505b509092509050612f1a565b86604001516001600160a01b0316346040518060600160405280602a81526020016140d6602a91398051906020012089602001518a606001518a8a33604051602401612e93959493929190613fa7565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b0319909416939093179092529051612ed19190613d4b565b60006040518083038185875af1925050503d8060008114612f0e576040519150601f19603f3d011682016040523d82523d6000602084013e612f13565b606091505b5090925090505b8115612a9d5780806020019051810190612a939190613d67565b80604001516001600160a01b03167fa635eb05143f74743822bbd96428928de4c8ee8cc578299749be9425c17bb34d6001858585606001518660800151604051612454959493929190613d88565b6060604482511015612fc757505060408051808201909152601d81527f5472616e73616374696f6e2072657665727465642073696c656e746c79000000602082015290565b60048201915081806020019051810190610fc39190613ff9565b60408051808201909152600b8082527f4d53473a3a41424f52543a0000000000000000000000000000000000000000006020830152825183911161263e5760005b82518110156130c05782818151811061303d5761303d6140a6565b602001015160f81c60f81b7effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191682828151811061307c5761307c6140a6565b01602001517fff0000000000000000000000000000000000000000000000000000000000000016146130ae5750505050565b806130b8816140bc565b915050613022565b508260405162461bcd60e51b81526004016106d29190613edf565b6001600160a01b038116811461186157600080fd5b60006020828403121561310257600080fd5b8135612aaf816130db565b60006020828403121561311f57600080fd5b5035919050565b60008083601f84011261313857600080fd5b50813567ffffffffffffffff81111561315057600080fd5b6020830191508360208260051b850101111561316b57600080fd5b9250929050565b60008060008060008060008060a0898b03121561318e57600080fd5b8835613199816130db565b975060208901359650604089013567ffffffffffffffff808211156131bd57600080fd5b6131c98c838d01613126565b909850965060608b01359150808211156131e257600080fd5b6131ee8c838d01613126565b909650945060808b013591508082111561320757600080fd5b506132148b828c01613126565b999c989b5096995094979396929594505050565b600080600080600060a0868803121561324057600080fd5b853561324b816130db565b9450602086013561325b816130db565b9350604086013561326b816130db565b9250606086013561327b816130db565b9150608086013561328b816130db565b809150509295509295909350565b60008083601f8401126132ab57600080fd5b50813567ffffffffffffffff8111156132c357600080fd5b60208301915083602082850101111561316b57600080fd5b6000806000806000806000806000898b036101a08112156132fb57600080fd5b8a3567ffffffffffffffff8082111561331357600080fd5b61331f8e838f01613299565b909c509a508a9150610120601f198401121561333a57600080fd5b60208d0199506101408d013592508083111561335557600080fd5b6133618e848f01613126565b90995097506101608d013592508891508083111561337e57600080fd5b61338a8e848f01613126565b90975095506101808d01359250869150808311156133a757600080fd5b50506133b58c828d01613126565b915080935050809150509295985092959850929598565b6000608082840312156133de57600080fd5b50919050565b600080604083850312156133f757600080fd5b823567ffffffffffffffff8082111561340f57600080fd5b61341b868387016133cc565b9350602085013591508082111561343157600080fd5b5083016101a0818603121561344557600080fd5b809150509250929050565b60008060008060008060a0878903121561346957600080fd5b8635613474816130db565b955060208701359450604087013561348b816130db565b935060608701359250608087013567ffffffffffffffff8111156134ae57600080fd5b6134ba89828a01613299565b979a9699509497509295939492505050565b60008060008060008060008060006101008a8c0312156134eb57600080fd5b893567ffffffffffffffff8082111561350357600080fd5b61350f8d838e01613299565b909b5099508991506135248d60208e016133cc565b985060a08c013591508082111561353a57600080fd5b6135468d838e01613126565b909850965060c08c013591508082111561355f57600080fd5b61356b8d838e01613126565b909650945060e08c013591508082111561358457600080fd5b506133b58c828d01613126565b600080602083850312156135a457600080fd5b823567ffffffffffffffff8111156135bb57600080fd5b6135c785828601613299565b90969095509350505050565b6000806000806000606086880312156135eb57600080fd5b853567ffffffffffffffff8082111561360357600080fd5b61360f89838a01613299565b909750955060208801359450604088013591508082111561362f57600080fd5b5061363c88828901613299565b969995985093965092949392505050565b6000806000806060858703121561366357600080fd5b843561366e816130db565b935060208501359250604085013567ffffffffffffffff81111561369157600080fd5b61369d87828801613299565b95989497509550505050565b634e487b7160e01b600052602160045260246000fd5b600581106136cf576136cf6136a9565b9052565b60208101610fc382846136bf565b600080600080600080600080600060a08a8c0312156136ff57600080fd5b893567ffffffffffffffff8082111561371757600080fd5b6137238d838e01613299565b909b50995060208c013591508082111561373c57600080fd5b6137488d838e016133cc565b985060408c013591508082111561375e57600080fd5b61376a8d838e01613126565b909850965060608c013591508082111561378357600080fd5b61378f8d838e01613126565b909650945060808c013591508082111561358457600080fd5b60005b838110156137c35781810151838201526020016137ab565b50506000910152565b600081518084526137e48160208601602086016137a8565b601f01601f19169290920160200192915050565b81835281816020850137506000828201602090810191909152601f909101601f19169091010190565b81835260006020808501808196508560051b810191508460005b878110156138a65782840389528135601e1988360301811261385c57600080fd5b8701858101903567ffffffffffffffff81111561387857600080fd5b80360382131561388757600080fd5b6138928682846137f8565b9a87019a955050509084019060010161383b565b5091979650505050505050565b8183526000602080850194508260005b858110156138f15781356138d6816130db565b6001600160a01b0316875295820195908201906001016138c3565b509495945050505050565b81835260007f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff83111561392e57600080fd5b8260051b80836020870137939093016020019392505050565b60808152600061395a608083018a6137cc565b828103602084015261396d81898b613821565b905082810360408401526139828187896138b3565b905082810360608401526139978185876138fc565b9a9950505050505050505050565b634e487b7160e01b600052601160045260246000fd5b81810381811115610fc357610fc36139a5565b8581528460208201528284604083013760409201918201526060019392505050565b600060208284031215613a0257600080fd5b813567ffffffffffffffff81168114612aaf57600080fd5b600281106136cf576136cf6136a9565b60808101613a388287613a1a565b84602083015267ffffffffffffffff8416604083015282606083015295945050505050565b600060208284031215613a6f57600080fd5b813560078110612aaf57600080fd5b6000808335601e19843603018112613a9557600080fd5b83018035915067ffffffffffffffff821115613ab057600080fd5b60200191503681900382131561316b57600080fd5b6000808335601e19843603018112613adc57600080fd5b83018035915067ffffffffffffffff821115613af757600080fd5b6020019150600581901b360382131561316b57600080fd5b60006001600160a01b03808a16835288602084015280881660408401525085606083015260c06080830152613b4860c0830185876137f8565b90508260a083015298975050505050505050565b8082028115828204841417610fc357610fc36139a5565b80820180821115610fc357610fc36139a5565b608081526000613b9a60808301888a6137f8565b8660208401528281036040840152613bb38186886137f8565b915050826060830152979650505050505050565b6001600160a01b0386168152846020820152608060408201526000613bf06080830185876137f8565b90508260608301529695505050505050565b600060208284031215613c1457600080fd5b81518015158114612aaf57600080fd5b634e487b7160e01b600052604160045260246000fd5b600060808284031215613c4c57600080fd5b6040516080810181811067ffffffffffffffff82111715613c6f57613c6f613c24565b6040528251613c7d816130db565b81526020830151613c8d816130db565b6020820152604083810151908201526060928301519281019290925250919050565b60028110613cbf57613cbf6136a9565b60f81b9052565b613cd08185613caf565b60609290921b6001600160601b03191660018301526015820152603501919050565b60006001600160a01b03808a168352808916602084015287604084015267ffffffffffffffff8716606084015260c06080840152613d3460c0840186886137f8565b915080841660a08401525098975050505050505050565b60008251613d5d8184602087016137a8565b9190910192915050565b600060208284031215613d7957600080fd5b815160038110612aaf57600080fd5b60a08101613d968288613a1a565b856020830152613da960408301866136bf565b67ffffffffffffffff939093166060820152608001529392505050565b608081526000613dda608083018a8c6137f8565b8281036020840152613ded81898b613821565b90508281036040840152613e028187896138b3565b90508281036060840152613e178185876138fc565b9b9a5050505050505050505050565b600060208284031215613e3857600080fd5b5051919050565b8381526bffffffffffffffffffffffff198360601b16602082015260008251613e6f8160348501602087016137a8565b91909101603401949350505050565b60006001600160a01b03808816835286602084015260806040840152613ea86080840186886137f8565b91508084166060840152509695505050505050565b600082613eda57634e487b7160e01b600052601260045260246000fd5b500490565b602081526000610fc060208301846137cc565b613efc818a613caf565b60008851613f11816001850160208d016137a8565b80830190506bffffffffffffffffffffffff198960601b1660018201526001600160c01b0319808960c01b16601583015287601d830152808760c01b16603d830152508385604583013760009301604501928352509098975050505050505050565b60006001600160a01b03808816835267ffffffffffffffff8716602084015260806040840152613ea86080840186886137f8565b608081526000613fba60808301886137cc565b67ffffffffffffffff871660208401528281036040840152613fdd8186886137f8565b9150506001600160a01b03831660608301529695505050505050565b60006020828403121561400b57600080fd5b815167ffffffffffffffff8082111561402357600080fd5b818401915084601f83011261403757600080fd5b81518181111561404957614049613c24565b604051601f8201601f19908116603f0116810190838211818310171561407157614071613c24565b8160405282815287602084870101111561408a57600080fd5b61409b8360208301602088016137a8565b979650505050505050565b634e487b7160e01b600052603260045260246000fd5b6000600182016140ce576140ce6139a5565b506001019056fe657865637574654d6573736167652862797465732c75696e7436342c62797465732c61646472657373294f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572657865637574654d65737361676528616464726573732c75696e7436342c62797465732c6164647265737329a264697066735822122021cfe216efd304771480154f3a3117d3b2fbcdc370f66f891325e07a9925e9bd64736f6c63430008110033",
+  "deployedBytecode": "0x6080604052600436106102345760003560e01c806382efd50211610138578063cd2abd66116100b0578063dfa2dbaf1161007f578063f2fde38b11610064578063f2fde38b14610629578063f60bbe2a14610649578063f83b0fb91461065f57600080fd5b8063dfa2dbaf146105e9578063e2c1ed251461060957600080fd5b8063cd2abd6614610559578063cefe0df514610596578063d8257d17146105b6578063db2c20c8146105d657600080fd5b80639b05a77511610107578063b517b550116100ec578063b517b550146104ef578063c66a9c5a14610505578063ccf2683b1461052557600080fd5b80639b05a775146104bc5780639f3ce55a146104dc57600080fd5b806382efd502146104485780638da5cb5b1461046857806395b12c271461048657806395e911a8146104a657600080fd5b8063468a2d04116101cb5780635b3e5f501161019a5780637b80ab201161017f5780637b80ab20146103ea5780637d7a101d146103fd57806382980dc41461041057600080fd5b80635b3e5f501461039d578063723d0a9d146103ca57600080fd5b8063468a2d04146103215780635335dca214610334578063584e45e114610367578063588be02b1461037d57600080fd5b80633f395aff116102075780633f395aff146102bb57806340d0d026146102ce5780634289fbb3146102ee5780634586f3311461030157600080fd5b806303cbfe661461023957806306c28bd61461025b5780632ff4c4111461027b578063359ef75b1461029b575b600080fd5b34801561024557600080fd5b506102596102543660046130f0565b61067f565b005b34801561026757600080fd5b5061025961027636600461310d565b610778565b34801561028757600080fd5b50610259610296366004613172565b610804565b3480156102a757600080fd5b506102596102b6366004613228565b610a9f565b6102596102c93660046132db565b610abb565b3480156102da57600080fd5b506102596102e93660046133e4565b610da7565b6102596102fc366004613450565b610dff565b34801561030d57600080fd5b5061025961031c36600461310d565b610ee7565b61025961032f3660046134cc565b610f43565b34801561034057600080fd5b5061035461034f366004613591565b610fa3565b6040519081526020015b60405180910390f35b34801561037357600080fd5b50610354600b5481565b34801561038957600080fd5b506102596103983660046130f0565b610fc9565b3480156103a957600080fd5b506103546103b83660046130f0565b60036020526000908152604090205481565b3480156103d657600080fd5b506102596103e53660046133e4565b6110b6565b6102596103f83660046132db565b611104565b61025961040b3660046135d3565b6113b8565b34801561041c57600080fd5b50600654610430906001600160a01b031681565b6040516001600160a01b03909116815260200161035e565b34801561045457600080fd5b506102596104633660046130f0565b611415565b34801561047457600080fd5b506000546001600160a01b0316610430565b34801561049257600080fd5b50600954610430906001600160a01b031681565b3480156104b257600080fd5b5061035460015481565b3480156104c857600080fd5b506102596104d73660046130f0565b611502565b6102596104ea36600461364d565b6115ef565b3480156104fb57600080fd5b5061035460045481565b34801561051157600080fd5b50600a54610430906001600160a01b031681565b34801561053157600080fd5b506104307f000000000000000000000000000000000000000000000000000000000000000081565b34801561056557600080fd5b5061058961057436600461310d565b60056020526000908152604090205460ff1681565b60405161035e91906136d3565b3480156105a257600080fd5b506102596105b136600461310d565b611649565b3480156105c257600080fd5b50600854610430906001600160a01b031681565b6102596105e43660046136e1565b6116a5565b3480156105f557600080fd5b50600754610430906001600160a01b031681565b34801561061557600080fd5b5061025961062436600461310d565b6116f9565b34801561063557600080fd5b506102596106443660046130f0565b611785565b34801561065557600080fd5b5061035460025481565b34801561066b57600080fd5b5061025961067a3660046130f0565b611864565b336106926000546001600160a01b031690565b6001600160a01b0316146106db5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064015b60405180910390fd5b6001600160a01b0381166107235760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600780546001600160a01b0319166001600160a01b0383169081179091556040519081527fd60e9ceb4f54f1bfb1741a4b35fc9d806d7ed48200b523203b92248ea38fa17d906020015b60405180910390a150565b3361078b6000546001600160a01b031690565b6001600160a01b0316146107cf5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b60018190556040518181527f892dfdc99ecd3bb4f2f2cb118dca02f0bd16640ff156d3c6459d4282e336a5f29060200161076d565b6000463060405160200161085592919091825260601b6001600160601b03191660208201527f77697468647261774665650000000000000000000000000000000000000000006034820152603f0190565b60408051808303601f19018152828252805160209182012090830181905260608c901b6001600160601b0319168383015260548084018c9052825180850390910181526074840192839052633416de1160e11b90925292507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b03169163682dbc22916108f6918b908b908b908b908b908b90607801613947565b60006040518083038186803b15801561090e57600080fd5b505afa158015610922573d6000803e3d6000fd5b505050506001600160a01b038916600090815260036020526040812054610949908a6139bb565b90506000811161099b5760405162461bcd60e51b815260206004820152601960248201527f4e6f206e657720616d6f756e7420746f2077697468647261770000000000000060448201526064016106d2565b6001600160a01b038a166000818152600360205260408082208c90556004549051919291849084818181858888f193505050503d80600081146109fa576040519150601f19603f3d011682016040523d82523d6000602084013e6109ff565b606091505b5050905080610a505760405162461bcd60e51b815260206004820152601660248201527f6661696c656420746f207769746864726177206665650000000000000000000060448201526064016106d2565b604080516001600160a01b038d168152602081018490527f78473f3f373f7673597f4f0fa5873cb4d375fea6d4339ad6b56dbd411513cb3f910160405180910390a15050505050505050505050565b610aa7611951565b610ab485858585856119b5565b5050505050565b6000610ac688611a6d565b90506000808281526005602052604090205460ff166004811115610aec57610aec6136a9565b14610b395760405162461bcd60e51b815260206004820152601960248201527f7472616e7366657220616c72656164792065786563757465640000000000000060448201526064016106d2565b6000818152600560209081526040808320805460ff19166004179055805146928101929092526001600160601b03193060601b16908201527f4d657373616765576974685472616e73666572000000000000000000000000006054820152606701604051602081830303815290604052805190602001209050600660009054906101000a90046001600160a01b03166001600160a01b031663682dbc2282848e8e8e6101000135604051602001610bf49594939291906139ce565b6040516020818303038152906040528a8a8a8a8a8a6040518863ffffffff1660e01b8152600401610c2b9796959493929190613947565b60006040518083038186803b158015610c4357600080fd5b505afa158015610c57573d6000803e3d6000fd5b505050506000806000610c6b8c8f8f612168565b90925090506001826002811115610c8457610c846136a9565b03610c925760019250610d5b565b6002826002811115610ca657610ca66136a9565b03610d26576000858152600560205260408120805460ff191660018302179055507fe49c2c954d381d1448cf824743aeff9da7a1d82078a7c9e5817269cc359bd26c6000868e60c0016020810190610cfe91906139f0565b8f6101000135604051610d149493929190613a2a565b60405180910390a15050505050610d9c565b610d328c8f8f846122b0565b91506001826002811115610d4857610d486136a9565b03610d565760039250610d5b565b600292505b6000858152600560205260409020805484919060ff19166001836004811115610d8657610d866136a9565b0217905550610d9685848e6123ef565b50505050505b505050505050505050565b610dc0610dba6040830160208401613a5d565b83612461565b610dfb610dcd8280613a7e565b60208401610ddf610140860186613ac5565b610ded610160880188613ac5565b6103f86101808a018a613ac5565b5050565b468503610e405760405162461bcd60e51b815260206004820152600f60248201526e125b9d985b1a590818da185a5b9259608a1b60448201526064016106d2565b6000610e4c8383610fa3565b905080341015610e915760405162461bcd60e51b815260206004820152601060248201526f496e73756666696369656e742066656560801b60448201526064016106d2565b336001600160a01b03167f172762498a59a3bc4fed3f2b63f94f17ea0193cffdc304fe7d3eaf4d342d2f6688888888888834604051610ed69796959493929190613b0f565b60405180910390a250505050505050565b33610efa6000546001600160a01b031690565b6001600160a01b031614610f3e5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b600b55565b6000610f4e886126ab565b9050610f978a8a838a8a8a8a8a8a6040518060400160405280600781526020017f4d65737361676500000000000000000000000000000000000000000000000000815250612762565b50505050505050505050565b600254600090610fb39083613b5c565b600154610fc09190613b73565b90505b92915050565b33610fdc6000546001600160a01b031690565b6001600160a01b0316146110205760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166110685760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600680546001600160a01b0319166001600160a01b0383169081179091556040519081527fbf9977180dc6e6cff25598c8e59150cecd7f8e448e092633d38ab7ee223ae0589060200161076d565b6110c9610dba6040830160208401613a5d565b610dfb6110d68280613a7e565b602084016110e8610140860186613ac5565b6110f6610160880188613ac5565b6102c96101808a018a613ac5565b600061110f88611a6d565b90506000808281526005602052604090205460ff166004811115611135576111356136a9565b146111825760405162461bcd60e51b815260206004820152601960248201527f7472616e7366657220616c72656164792065786563757465640000000000000060448201526064016106d2565b6000818152600560209081526040808320805460ff19166004179055805146928101929092526001600160601b03193060601b16908201527f4d657373616765576974685472616e73666572526566756e64000000000000006054820152606d01604051602081830303815290604052805190602001209050600660009054906101000a90046001600160a01b03166001600160a01b031663682dbc2282848e8e8e610100013560405160200161123d9594939291906139ce565b6040516020818303038152906040528a8a8a8a8a8a6040518863ffffffff1660e01b81526004016112749796959493929190613947565b60006040518083038186803b15801561128c57600080fd5b505afa1580156112a0573d6000803e3d6000fd5b505050506000806112b28b8e8e61299d565b905060018160028111156112c8576112c86136a9565b036112d6576001915061136e565b60028160028111156112ea576112ea6136a9565b03611369576000848152600560205260408120805460ff191660018302179055507fe49c2c954d381d1448cf824743aeff9da7a1d82078a7c9e5817269cc359bd26c6000858d60c001602081019061134291906139f0565b8e61010001356040516113589493929190613a2a565b60405180910390a150505050610d9c565b600291505b6000848152600560205260409020805483919060ff19166001836004811115611399576113996136a9565b02179055506113a984838d6123ef565b50505050505050505050505050565b6113c3838383612ab6565b336001600160a01b03167fe66fbe37d84ca73c589f782ac278844918ea6c56a4917f58707f715588080df286868686863460405161140696959493929190613b86565b60405180910390a25050505050565b336114286000546001600160a01b031690565b6001600160a01b03161461146c5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166114b45760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600980546001600160a01b0319166001600160a01b0383169081179091556040519081527ffb337a6c76476534518d5816caeb86263972470fedccfd047a35eb1825eaa9e89060200161076d565b336115156000546001600160a01b031690565b6001600160a01b0316146115595760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166115a15760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600880546001600160a01b0319166001600160a01b0383169081179091556040519081527fa9db0c32d9c6c2f75f3b95047a9e67cc1c010eab792a4e6ca777ce918ad94aad9060200161076d565b6115fa838383612ab6565b336001600160a01b03167fce3972bfffe49d317e1d128047a97a3d86b25c94f6f04409f988ef854d25e0e4858585853460405161163b959493929190613bc7565b60405180910390a250505050565b3361165c6000546001600160a01b031690565b6001600160a01b0316146116a05760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b600455565b60006116b088612b4e565b9050610f978a8a838a8a8a8a8a8a6040518060400160405280600881526020017f4d65737361676532000000000000000000000000000000000000000000000000815250612762565b3361170c6000546001600160a01b031690565b6001600160a01b0316146117505760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b60028190556040518181527f210d4d5d2d36d571207dac98e383e2441c684684c885fb2d7c54f8d24422074c9060200161076d565b336117986000546001600160a01b031690565b6001600160a01b0316146117dc5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166118585760405162461bcd60e51b815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f646472657373000000000000000000000000000000000000000000000000000060648201526084016106d2565b61186181612be4565b50565b336118776000546001600160a01b031690565b6001600160a01b0316146118bb5760405162461bcd60e51b8152602060048201819052602482015260008051602061410083398151915260448201526064016106d2565b6001600160a01b0381166119035760405162461bcd60e51b815260206004820152600f60248201526e696e76616c6964206164647265737360881b60448201526064016106d2565b600a80546001600160a01b0319166001600160a01b0383169081179091556040519081527f918a691a2a82482a10e11f43d7b627b2ba220dd08f251cb61933c42560f6fcb59060200161076d565b6000546001600160a01b0316156119aa5760405162461bcd60e51b815260206004820152601160248201527f6f776e657220616c72656164792073657400000000000000000000000000000060448201526064016106d2565b6119b333612be4565b565b6006546001600160a01b031615611a0e5760405162461bcd60e51b815260206004820152601b60248201527f6c697175696469747942726964676520616c726561647920736574000000000060448201526064016106d2565b600680546001600160a01b03199081166001600160a01b03978816179091556007805482169587169590951790945560088054851693861693909317909255600980548416918516919091179055600a80549092169216919091179055565b6000808080611a7f6020860186613a5d565b90506001816006811115611a9557611a956136a9565b03611c28576006546001600160a01b03169150611ab860408601602087016130f0565b611ac860608701604088016130f0565b611ad860808801606089016130f0565b6080880135611aed60e08a0160c08b016139f0565b6040516001600160601b0319606096871b8116602083015294861b851660348201529290941b9092166048820152605c8101919091526001600160c01b031960c092831b8116607c8301524690921b909116608482015260e0860135608c82015260ac0160408051808303601f19018152908290528051602090910120633c64f04b60e01b82526004820181905293506001600160a01b03831690633c64f04b90602401602060405180830381865afa158015611bae573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611bd29190613c02565b1515600114611c235760405162461bcd60e51b815260206004820152600f60248201527f72656c6179206e6f74206578697374000000000000000000000000000000000060448201526064016106d2565b612078565b6002816006811115611c3c57611c3c6136a9565b03611da1576006546001600160a01b0316915046611c6060c0870160a088016139f0565b611c7060608801604089016130f0565b611c806080890160608a016130f0565b6040516001600160c01b031960c095861b811660208301529390941b90921660288401526001600160601b0319606091821b8116603085015291901b1660448201526080860135605882015260780160408051808303601f19018152908290528051602090910120631c13568560e31b82526004820181905293506001600160a01b0383169063e09ab42890602401602060405180830381865afa158015611d2c573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611d509190613c02565b1515600114611c235760405162461bcd60e51b815260206004820152601260248201527f7769746864726177206e6f74206578697374000000000000000000000000000060448201526064016106d2565b6003816006811115611db557611db56136a9565b1480611dd257506004816006811115611dd057611dd06136a9565b145b15611ec9576003816006811115611deb57611deb6136a9565b14611e01576008546001600160a01b0316611e0e565b6007546001600160a01b03165b9150611e2060608601604087016130f0565b611e3060808701606088016130f0565b6080870135611e456040890160208a016130f0565b611e5560e08a0160c08b016139f0565b604051606095861b6001600160601b0319908116602083015294861b851660348201526048810193909352931b909116606882015260c09190911b6001600160c01b031916607c82015260e0860135608482015260a401604051602081830303815290604052805190602001209250611fbe565b6005816006811115611edd57611edd6136a9565b14611ef357600a546001600160a01b0316611f00565b6009546001600160a01b03165b9150611f1260608601604087016130f0565b611f2260808701606088016130f0565b6080870135611f376040890160208a016130f0565b611f4760e08a0160c08b016139f0565b604051606095861b6001600160601b0319908116602083015294861b85166034820152604881019390935290841b8316606883015260c01b6001600160c01b031916607c82015260e088013560848201529184901b1660a482015260b8016040516020818303038152906040528051906020012092505b6040516301e6472560e01b8152600481018490526001600160a01b038316906301e6472590602401602060405180830381865afa158015612003573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906120279190613c02565b15156001146120785760405162461bcd60e51b815260206004820152601060248201527f7265636f7264206e6f742065786973740000000000000000000000000000000060448201526064016106d2565b60405163adc0d57f60e01b8152600481018490526001600160a01b0383169063adc0d57f90602401608060405180830381865afa1580156120bd573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906120e19190613c3a565b60600151156121325760405162461bcd60e51b815260206004820152601060248201527f7472616e736665722064656c617965640000000000000000000000000000000060448201526064016106d2565b6000828460405160200161214893929190613cc6565b604051602081830303815290604052805190602001209350505050919050565b60008060005a90506000806121836060890160408a016130f0565b6001600160a01b031634631f34afff60e21b6121a560408c0160208d016130f0565b6121b560808d0160608e016130f0565b8c608001358d60c00160208101906121cd91906139f0565b8d8d336040516024016121e69796959493929190613cf2565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b03199094169390931790925290516122249190613d4b565b60006040518083038185875af1925050503d8060008114612261576040519150601f19603f3d011682016040523d82523d6000602084013e612266565b606091505b5091509150811561229357808060200190518101906122859190613d67565b6000945094505050506122a8565b61229d8382612c34565b600034945094505050505b935093915050565b6000805a90506000806122c96060890160408a016130f0565b6001600160a01b031685632d5bd7e360e11b6122eb60408c0160208d016130f0565b6122fb60808d0160608e016130f0565b8c608001358d60c001602081019061231391906139f0565b8d8d3360405160240161232c9796959493929190613cf2565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b031990941693909317909252905161236a9190613d4b565b60006040518083038185875af1925050503d80600081146123a7576040519150601f19603f3d011682016040523d82523d6000602084013e6123ac565b606091505b509150915081156123d557808060200190518101906123cb9190613d67565b93505050506123e7565b6123df8382612c34565b600093505050505b949350505050565b6123ff60608201604083016130f0565b6001600160a01b03167fa635eb05143f74743822bbd96428928de4c8ee8cc578299749be9425c17bb34d6000858561243d60e0870160c088016139f0565b866101000135604051612454959493929190613d88565b60405180910390a2505050565b6001826006811115612475576124756136a9565b03612515576006546001600160a01b031663cdd1b25d6124958380613a7e565b6124a26020860186613ac5565b6124af6040880188613ac5565b6124bc60608a018a613ac5565b6040518963ffffffff1660e01b81526004016124df989796959493929190613dc6565b600060405180830381600087803b1580156124f957600080fd5b505af115801561250d573d6000803e3d6000fd5b505050505050565b6002826006811115612529576125296136a9565b03612549576006546001600160a01b031663a21a92806124958380613a7e565b600382600681111561255d5761255d6136a9565b0361257d576007546001600160a01b031663f87343026124958380613a7e565b6005826006811115612591576125916136a9565b03612643576009546001600160a01b031663f87343026125b18380613a7e565b6125be6020860186613ac5565b6125cb6040880188613ac5565b6125d860608a018a613ac5565b6040518963ffffffff1660e01b81526004016125fb989796959493929190613dc6565b6020604051808303816000875af115801561261a573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061263e9190613e26565b505050565b6004826006811115612657576126576136a9565b03612677576008546001600160a01b031663a21a92806124958380613a7e565b600682600681111561268b5761268b6136a9565b03610dfb57600a546001600160a01b031663a21a92806125b18380613a7e565b6040805160a081018252600080825260606020830181905292820181905291810182905260808101919091526040805160a08101909152806126f060208501856130f0565b6001600160a01b0316815260200160405180602001604052806000815250815260200183602001602081019061272691906130f0565b6001600160a01b0316815260200161274460608501604086016139f0565b67ffffffffffffffff16815260200183606001358152509050919050565b600061276f898c8c612cbf565b90506000808281526005602052604090205460ff166004811115612795576127956136a9565b146127e25760405162461bcd60e51b815260206004820152601860248201527f6d65737361676520616c7265616479206578656375746564000000000000000060448201526064016106d2565b6000818152600560209081526040808320805460ff191660041790555161280f9146913091879101613e3f565b60408051601f1981840301815282825280516020918201206006549184018190528383018690528251808503840181526060850193849052633416de1160e11b90935293506001600160a01b03169163682dbc229161287c918d908d908d908d908d908d90606401613947565b60006040518083038186803b15801561289457600080fd5b505afa1580156128a8573d6000803e3d6000fd5b505050506000806128ba8c8f8f612d53565b905060018160028111156128d0576128d06136a9565b036128de5760019150612962565b60028160028111156128f2576128f26136a9565b0361295d5760008481526005602052604090819020805460ff1916905560608d015160808e015191517fe49c2c954d381d1448cf824743aeff9da7a1d82078a7c9e5817269cc359bd26c9261294c92600192899290613a2a565b60405180910390a150505050610f97565b600291505b6000848152600560205260409020805483919060ff1916600183600481111561298d5761298d6136a9565b0217905550610d9684838e612f34565b6000805a90506000806129b660608801604089016130f0565b6001600160a01b0316346305e5a4c160e11b6129d860808b0160608c016130f0565b8a608001358a8a336040516024016129f4959493929190613e7e565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b0319909416939093179092529051612a329190613d4b565b60006040518083038185875af1925050503d8060008114612a6f576040519150601f19603f3d011682016040523d82523d6000602084013e612a74565b606091505b50915091508115612a9d5780806020019051810190612a939190613d67565b9350505050612aaf565b612aa78382612c34565b600093505050505b9392505050565b468303612af75760405162461bcd60e51b815260206004820152600f60248201526e125b9d985b1a590818da185a5b9259608a1b60448201526064016106d2565b6000612b038383610fa3565b905080341015612b485760405162461bcd60e51b815260206004820152601060248201526f496e73756666696369656e742066656560801b60448201526064016106d2565b50505050565b6040805160a081018252600080825260606020830181905292820181905291810182905260808101919091526040805160a081019091526000815260208101612b978480613a7e565b8080601f01602080910402602001604051908101604052809392919081815260200183838082843760009201919091525050509082525060209081019061272690604086019086016130f0565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b60005a90506000600b5445612c4991906139bb565b90508084108015612c645750612c60604085613ebd565b8211155b15612c6b57fe5b6000612c7684612f82565b9050612c8181612fe1565b7fffdd6142bbb721f3400e3908b04b86f60649b2e4d191e3f4c50c32c3e6471d2f81604051612cb09190613edf565b60405180910390a15050505050565b60208301518051600091908203612d07578451604051612cf5919060200160609190911b6001600160601b031916815260140190565b60405160208183030381529060405290505b600181866040015187606001518860800151468989604051602001612d33989796959493929190613ef2565b604051602081830303815290604052805190602001209150509392505050565b6000805a905060006060866020015151600003612e435786604001516001600160a01b0316346040518060600160405280602c8152602001614120602c91398051602090910120895160608b0151604051612db89291908c908c903390602401613f73565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b0319909416939093179092529051612df69190613d4b565b60006040518083038185875af1925050503d8060008114612e33576040519150601f19603f3d011682016040523d82523d6000602084013e612e38565b606091505b509092509050612f1a565b86604001516001600160a01b0316346040518060600160405280602a81526020016140d6602a91398051906020012089602001518a606001518a8a33604051602401612e93959493929190613fa7565b60408051601f198184030181529181526020820180516001600160e01b03166001600160e01b0319909416939093179092529051612ed19190613d4b565b60006040518083038185875af1925050503d8060008114612f0e576040519150601f19603f3d011682016040523d82523d6000602084013e612f13565b606091505b5090925090505b8115612a9d5780806020019051810190612a939190613d67565b80604001516001600160a01b03167fa635eb05143f74743822bbd96428928de4c8ee8cc578299749be9425c17bb34d6001858585606001518660800151604051612454959493929190613d88565b6060604482511015612fc757505060408051808201909152601d81527f5472616e73616374696f6e2072657665727465642073696c656e746c79000000602082015290565b60048201915081806020019051810190610fc39190613ff9565b60408051808201909152600b8082527f4d53473a3a41424f52543a0000000000000000000000000000000000000000006020830152825183911161263e5760005b82518110156130c05782818151811061303d5761303d6140a6565b602001015160f81c60f81b7effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff191682828151811061307c5761307c6140a6565b01602001517fff0000000000000000000000000000000000000000000000000000000000000016146130ae5750505050565b806130b8816140bc565b915050613022565b508260405162461bcd60e51b81526004016106d29190613edf565b6001600160a01b038116811461186157600080fd5b60006020828403121561310257600080fd5b8135612aaf816130db565b60006020828403121561311f57600080fd5b5035919050565b60008083601f84011261313857600080fd5b50813567ffffffffffffffff81111561315057600080fd5b6020830191508360208260051b850101111561316b57600080fd5b9250929050565b60008060008060008060008060a0898b03121561318e57600080fd5b8835613199816130db565b975060208901359650604089013567ffffffffffffffff808211156131bd57600080fd5b6131c98c838d01613126565b909850965060608b01359150808211156131e257600080fd5b6131ee8c838d01613126565b909650945060808b013591508082111561320757600080fd5b506132148b828c01613126565b999c989b5096995094979396929594505050565b600080600080600060a0868803121561324057600080fd5b853561324b816130db565b9450602086013561325b816130db565b9350604086013561326b816130db565b9250606086013561327b816130db565b9150608086013561328b816130db565b809150509295509295909350565b60008083601f8401126132ab57600080fd5b50813567ffffffffffffffff8111156132c357600080fd5b60208301915083602082850101111561316b57600080fd5b6000806000806000806000806000898b036101a08112156132fb57600080fd5b8a3567ffffffffffffffff8082111561331357600080fd5b61331f8e838f01613299565b909c509a508a9150610120601f198401121561333a57600080fd5b60208d0199506101408d013592508083111561335557600080fd5b6133618e848f01613126565b90995097506101608d013592508891508083111561337e57600080fd5b61338a8e848f01613126565b90975095506101808d01359250869150808311156133a757600080fd5b50506133b58c828d01613126565b915080935050809150509295985092959850929598565b6000608082840312156133de57600080fd5b50919050565b600080604083850312156133f757600080fd5b823567ffffffffffffffff8082111561340f57600080fd5b61341b868387016133cc565b9350602085013591508082111561343157600080fd5b5083016101a0818603121561344557600080fd5b809150509250929050565b60008060008060008060a0878903121561346957600080fd5b8635613474816130db565b955060208701359450604087013561348b816130db565b935060608701359250608087013567ffffffffffffffff8111156134ae57600080fd5b6134ba89828a01613299565b979a9699509497509295939492505050565b60008060008060008060008060006101008a8c0312156134eb57600080fd5b893567ffffffffffffffff8082111561350357600080fd5b61350f8d838e01613299565b909b5099508991506135248d60208e016133cc565b985060a08c013591508082111561353a57600080fd5b6135468d838e01613126565b909850965060c08c013591508082111561355f57600080fd5b61356b8d838e01613126565b909650945060e08c013591508082111561358457600080fd5b506133b58c828d01613126565b600080602083850312156135a457600080fd5b823567ffffffffffffffff8111156135bb57600080fd5b6135c785828601613299565b90969095509350505050565b6000806000806000606086880312156135eb57600080fd5b853567ffffffffffffffff8082111561360357600080fd5b61360f89838a01613299565b909750955060208801359450604088013591508082111561362f57600080fd5b5061363c88828901613299565b969995985093965092949392505050565b6000806000806060858703121561366357600080fd5b843561366e816130db565b935060208501359250604085013567ffffffffffffffff81111561369157600080fd5b61369d87828801613299565b95989497509550505050565b634e487b7160e01b600052602160045260246000fd5b600581106136cf576136cf6136a9565b9052565b60208101610fc382846136bf565b600080600080600080600080600060a08a8c0312156136ff57600080fd5b893567ffffffffffffffff8082111561371757600080fd5b6137238d838e01613299565b909b50995060208c013591508082111561373c57600080fd5b6137488d838e016133cc565b985060408c013591508082111561375e57600080fd5b61376a8d838e01613126565b909850965060608c013591508082111561378357600080fd5b61378f8d838e01613126565b909650945060808c013591508082111561358457600080fd5b60005b838110156137c35781810151838201526020016137ab565b50506000910152565b600081518084526137e48160208601602086016137a8565b601f01601f19169290920160200192915050565b81835281816020850137506000828201602090810191909152601f909101601f19169091010190565b81835260006020808501808196508560051b810191508460005b878110156138a65782840389528135601e1988360301811261385c57600080fd5b8701858101903567ffffffffffffffff81111561387857600080fd5b80360382131561388757600080fd5b6138928682846137f8565b9a87019a955050509084019060010161383b565b5091979650505050505050565b8183526000602080850194508260005b858110156138f15781356138d6816130db565b6001600160a01b0316875295820195908201906001016138c3565b509495945050505050565b81835260007f07ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff83111561392e57600080fd5b8260051b80836020870137939093016020019392505050565b60808152600061395a608083018a6137cc565b828103602084015261396d81898b613821565b905082810360408401526139828187896138b3565b905082810360608401526139978185876138fc565b9a9950505050505050505050565b634e487b7160e01b600052601160045260246000fd5b81810381811115610fc357610fc36139a5565b8581528460208201528284604083013760409201918201526060019392505050565b600060208284031215613a0257600080fd5b813567ffffffffffffffff81168114612aaf57600080fd5b600281106136cf576136cf6136a9565b60808101613a388287613a1a565b84602083015267ffffffffffffffff8416604083015282606083015295945050505050565b600060208284031215613a6f57600080fd5b813560078110612aaf57600080fd5b6000808335601e19843603018112613a9557600080fd5b83018035915067ffffffffffffffff821115613ab057600080fd5b60200191503681900382131561316b57600080fd5b6000808335601e19843603018112613adc57600080fd5b83018035915067ffffffffffffffff821115613af757600080fd5b6020019150600581901b360382131561316b57600080fd5b60006001600160a01b03808a16835288602084015280881660408401525085606083015260c06080830152613b4860c0830185876137f8565b90508260a083015298975050505050505050565b8082028115828204841417610fc357610fc36139a5565b80820180821115610fc357610fc36139a5565b608081526000613b9a60808301888a6137f8565b8660208401528281036040840152613bb38186886137f8565b915050826060830152979650505050505050565b6001600160a01b0386168152846020820152608060408201526000613bf06080830185876137f8565b90508260608301529695505050505050565b600060208284031215613c1457600080fd5b81518015158114612aaf57600080fd5b634e487b7160e01b600052604160045260246000fd5b600060808284031215613c4c57600080fd5b6040516080810181811067ffffffffffffffff82111715613c6f57613c6f613c24565b6040528251613c7d816130db565b81526020830151613c8d816130db565b6020820152604083810151908201526060928301519281019290925250919050565b60028110613cbf57613cbf6136a9565b60f81b9052565b613cd08185613caf565b60609290921b6001600160601b03191660018301526015820152603501919050565b60006001600160a01b03808a168352808916602084015287604084015267ffffffffffffffff8716606084015260c06080840152613d3460c0840186886137f8565b915080841660a08401525098975050505050505050565b60008251613d5d8184602087016137a8565b9190910192915050565b600060208284031215613d7957600080fd5b815160038110612aaf57600080fd5b60a08101613d968288613a1a565b856020830152613da960408301866136bf565b67ffffffffffffffff939093166060820152608001529392505050565b608081526000613dda608083018a8c6137f8565b8281036020840152613ded81898b613821565b90508281036040840152613e028187896138b3565b90508281036060840152613e178185876138fc565b9b9a5050505050505050505050565b600060208284031215613e3857600080fd5b5051919050565b8381526bffffffffffffffffffffffff198360601b16602082015260008251613e6f8160348501602087016137a8565b91909101603401949350505050565b60006001600160a01b03808816835286602084015260806040840152613ea86080840186886137f8565b91508084166060840152509695505050505050565b600082613eda57634e487b7160e01b600052601260045260246000fd5b500490565b602081526000610fc060208301846137cc565b613efc818a613caf565b60008851613f11816001850160208d016137a8565b80830190506bffffffffffffffffffffffff198960601b1660018201526001600160c01b0319808960c01b16601583015287601d830152808760c01b16603d830152508385604583013760009301604501928352509098975050505050505050565b60006001600160a01b03808816835267ffffffffffffffff8716602084015260806040840152613ea86080840186886137f8565b608081526000613fba60808301886137cc565b67ffffffffffffffff871660208401528281036040840152613fdd8186886137f8565b9150506001600160a01b03831660608301529695505050505050565b60006020828403121561400b57600080fd5b815167ffffffffffffffff8082111561402357600080fd5b818401915084601f83011261403757600080fd5b81518181111561404957614049613c24565b604051601f8201601f19908116603f0116810190838211818310171561407157614071613c24565b8160405282815287602084870101111561408a57600080fd5b61409b8360208301602088016137a8565b979650505050505050565b634e487b7160e01b600052603260045260246000fd5b6000600182016140ce576140ce6139a5565b506001019056fe657865637574654d6573736167652862797465732c75696e7436342c62797465732c61646472657373294f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572657865637574654d65737361676528616464726573732c75696e7436342c62797465732c6164647265737329a264697066735822122021cfe216efd304771480154f3a3117d3b2fbcdc370f66f891325e07a9925e9bd64736f6c63430008110033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "calcFee(bytes)": {
+        "params": {
+          "_message": "Arbitrary message bytes to be decoded by the destination app contract. @return The required fee."
+        }
+      },
+      "executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])": {
+        "params": {
+          "_message": "Arbitrary message bytes originated from and encoded by the source app contract",
+          "_powers": "The signing powers of the signers.",
+          "_route": "The info about the sender and the receiver.",
+          "_signers": "The sorted list of signers.",
+          "_sigs": "The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered."
+        }
+      },
+      "executeMessageWithTransfer(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])": {
+        "params": {
+          "_message": "Arbitrary message bytes originated from and encoded by the source app contract",
+          "_powers": "The signing powers of the signers.",
+          "_signers": "The sorted list of signers.",
+          "_sigs": "The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.",
+          "_transfer": "The transfer info."
+        }
+      },
+      "executeMessageWithTransferRefund(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])": {
+        "params": {
+          "_message": "Arbitrary message bytes originated from and encoded by the source app contract",
+          "_powers": "The signing powers of the signers.",
+          "_signers": "The sorted list of signers.",
+          "_sigs": "The list of signatures sorted by signing addresses in ascending order. A relay must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered.",
+          "_transfer": "The transfer info."
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "refundAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))": {
+        "details": "caller needs to get the required input params from SGN",
+        "params": {
+          "_mp": "params to execute message for refund",
+          "_tp": "params to call bridge transfer for refund"
+        }
+      },
+      "sendMessage(address,uint256,bytes)": {
+        "params": {
+          "_dstChainId": "The destination chain ID.",
+          "_message": "Arbitrary message bytes to be decoded by the destination app contract.",
+          "_receiver": "The address of the destination app contract."
+        }
+      },
+      "sendMessageWithTransfer(address,uint256,address,bytes32,bytes)": {
+        "params": {
+          "_dstChainId": "The destination chain ID.",
+          "_message": "Arbitrary message bytes to be decoded by the destination app contract.",
+          "_receiver": "The address of the destination app contract.",
+          "_srcBridge": "The bridge contract to send the transfer with.",
+          "_srcTransferId": "The transfer ID."
+        }
+      },
+      "transferAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))": {
+        "details": "caller needs to get the required input params from SGN",
+        "params": {
+          "_mp": "params to execute message",
+          "_tp": "params to call bridge transfer"
+        }
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      },
+      "withdrawFee(address,uint256,bytes[],address[],uint256[])": {
+        "params": {
+          "_account": "The address receiving the fee.",
+          "_cumulativeFee": "The cumulative fee credited to the account. Tracked by SGN.",
+          "_powers": "The signing powers of the signers.",
+          "_signers": "The sorted list of signers.",
+          "_sigs": "The list of signatures sorted by signing addresses in ascending order. A withdrawal must be signed-off by +2/3 of the sigsVerifier's current signing power to be delivered."
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "calcFee(bytes)": {
+        "notice": "Calculates the required fee for the message."
+      },
+      "executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])": {
+        "notice": "Execute a message not associated with a transfer."
+      },
+      "executeMessageWithTransfer(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])": {
+        "notice": "Execute a message with a successful transfer."
+      },
+      "executeMessageWithTransferRefund(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[])": {
+        "notice": "Execute a message with a refunded transfer."
+      },
+      "refundAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))": {
+        "notice": "combine bridge refund and msg execution calls into a single tx"
+      },
+      "sendMessage(address,uint256,bytes)": {
+        "notice": "Sends a message to a contract on another chain. Sender needs to make sure the uniqueness of the message Id, which is computed as hash(type.MessageOnly, sender, receiver, srcChainId, srcTxHash, dstChainId, message). If messages with the same Id are sent, only one of them will succeed at dst chain. A fee is charged in the native gas token."
+      },
+      "sendMessageWithTransfer(address,uint256,address,bytes32,bytes)": {
+        "notice": "Sends a message associated with a transfer to a contract on another chain. If messages with the same srcTransferId are sent, only one of them will succeed. A fee is charged in the native token."
+      },
+      "transferAndExecuteMsg((bytes,bytes[],address[],uint256[]),(bytes,(uint8,address,address,address,uint256,uint64,uint64,bytes32,bytes32),bytes[],address[],uint256[]))": {
+        "notice": "combine bridge transfer and msg execution calls into a single tx"
+      },
+      "withdrawFee(address,uint256,bytes[],address[],uint256[])": {
+        "notice": "Withdraws message fee in the form of native gas token."
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 10366,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 9697,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "feeBase",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 9699,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "feePerByte",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 9703,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "withdrawnFees",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 9706,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "nativeTokenTransferGas",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 7835,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "executedMessages",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_mapping(t_bytes32,t_enum(TxStatus)7678)"
+      },
+      {
+        "astId": 7837,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "liquidityBridge",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_address"
+      },
+      {
+        "astId": 7839,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "pegBridge",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_address"
+      },
+      {
+        "astId": 7841,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "pegVault",
+        "offset": 0,
+        "slot": "8",
+        "type": "t_address"
+      },
+      {
+        "astId": 7843,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "pegBridgeV2",
+        "offset": 0,
+        "slot": "9",
+        "type": "t_address"
+      },
+      {
+        "astId": 7845,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "pegVaultV2",
+        "offset": 0,
+        "slot": "10",
+        "type": "t_address"
+      },
+      {
+        "astId": 7847,
+        "contract": "contracts/message/messagebus/MessageBus.sol:MessageBus",
+        "label": "preExecuteMessageGasUsage",
+        "offset": 0,
+        "slot": "11",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_enum(TxStatus)7678": {
+        "encoding": "inplace",
+        "label": "enum MsgDataTypes.TxStatus",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_mapping(t_bytes32,t_enum(TxStatus)7678)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => enum MsgDataTypes.TxStatus)",
+        "numberOfBytes": "32",
+        "value": "t_enum(TxStatus)7678"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

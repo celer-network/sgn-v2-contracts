@@ -254,14 +254,20 @@ const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVAT
 const mantaPacificMainnetEndpoint = process.env.MANTA_PACIFIC_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const mantaPacificMainnetPrivateKey = process.env.MANTA_PACIFIC_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const gravityAlphaMainnetEndpoint = process.env.GRAVITY_ALPHA_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
-const gravityAlphaMainnetPrivateKey = process.env.GRAVITY_ALPHA_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KE
-
 const xlayerEndpoint = process.env.XLAYER_ENDPOINT || DEFAULT_ENDPOINT;
 const xlayerPrivateKey = process.env.XLAYER_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 const xterioEndpoint = process.env.XTERIO_ENDPOINT || DEFAULT_ENDPOINT;
 const xterioPrivateKey = process.env.XTERIO_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const opbnbEndpoint = process.env.OPBNB_ENDPOINT || DEFAULT_ENDPOINT;
+const opbnbPrivateKey = process.env.OPBNB_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const blastEndpoint = process.env.BLAST_ENDPOINT || DEFAULT_ENDPOINT;
+const blastPrivateKey = process.env.BLAST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
+const gravityAlphaMainnetEndpoint = process.env.GRAVITY_ALPHA_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
+const gravityAlphaMainnetPrivateKey = process.env.GRAVITY_ALPHA_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
@@ -446,11 +452,9 @@ const config: HardhatUserConfig = {
     scroll: getNetworkConfig(scrollEndpoint, kmsKeyId, scrollPrivateKey),
     manta: getNetworkConfig(mantaPacificMainnetEndpoint, kmsKeyId, mantaPacificMainnetPrivateKey),
     xlayer: getNetworkConfig(xlayerEndpoint, kmsKeyId, xlayerPrivateKey),
-    xterio: getNetworkConfig(xterioEndpoint, kmsKeyId, xterioPrivateKey),
-    gravityAlphaMainnet: {
-      url: gravityAlphaMainnetEndpoint,
-      accounts: [`0x${gravityAlphaMainnetPrivateKey}`]
-    }
+    xterio: getNetworkConfig(xterioEndpoint, kmsKeyId, xterioPrivateKey), opbnb: getNetworkConfig(opbnbEndpoint, kmsKeyId, opbnbPrivateKey),
+    blast: getNetworkConfig(blastEndpoint, kmsKeyId, blastPrivateKey),
+    gravityAlphaMainnet: getNetworkConfig(gravityAlphaMainnetEndpoint, kmsKeyId, gravityAlphaMainnetPrivateKey),
   },
   namedAccounts: {
     deployer: {
@@ -559,5 +563,13 @@ const config: HardhatUserConfig = {
     }
   }
 };
+
+if (config.networks?.blast) {
+  config.networks.blast.minMaxPriorityFeePerGas = 3000000;
+}
+
+if (config.networks?.fantom) {
+  config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
+}
 
 export default config;

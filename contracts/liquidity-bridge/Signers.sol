@@ -18,7 +18,7 @@ contract Signers is Ownable, ISigsVerifier {
     // reset can be called by the owner address for emergency recovery
     uint256 public resetTime;
     uint256 public noticePeriod; // advance notice period as seconds for reset
-    uint256 constant MAX_INT = 2**256 - 1;
+    uint256 constant MAX_INT = 2 ** 256 - 1;
 
     event SignersUpdated(address[] _signers, uint256[] _powers);
 

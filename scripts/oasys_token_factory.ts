@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { defaultAbiCoder, parseUnits } from 'ethers/lib/utils';
+import { AbiCoder, parseUnits } from 'ethers';
 
 import { L1StandardERC20__factory, L1StandardERC20Factory__factory } from '../typechain';
 import { getDeployerSigner } from './common';
@@ -7,6 +7,8 @@ import { getDeployerSigner } from './common';
 dotenv.config();
 
 async function createToken(): Promise<void> {
+  const abiCoder = AbiCoder.defaultAbiCoder();
+
   const deployerSigner = await getDeployerSigner();
 
   const pegbrV2Addr = process.env.PEGGED_TOKEN_BRIDGE as string;
@@ -36,19 +38,19 @@ async function createToken(): Promise<void> {
   console.log('tx hash', tx.hash, 'nonce', tx.nonce, 'waiting for 5 block confirmations...');
   await tx.wait(5);
   console.log('deployed, finding tx receipt for logs...');
-  const receipt = await factory.provider.getTransactionReceipt(tx.hash);
-  const log = receipt.logs.find((log) => log.address === factory.address);
+  const receipt = (await deployerSigner.provider.getTransactionReceipt(tx.hash))!;
+  const log = receipt.logs.find((log) => log.address === factoryAddr);
   if (!log || log.topics.length !== 3) {
     console.error('token creation log not found');
     process.exit(1);
   }
-  const tokenAddr = defaultAbiCoder.decode(['address'], log.topics[2]).toString();
+  const tokenAddr = abiCoder.decode(['address'], log.topics[2]).toString();
 
   console.log('deployed token address', tokenAddr);
   const token = L1StandardERC20__factory.connect(tokenAddr, deployerSigner);
   const minterRole = await token.MINTER_ROLE();
   console.log('adding minter role', minterRole);
-  const setRoleTx = await token.grantRole(await minterRole, pegbrV2Addr, {
+  const setRoleTx = await token.grantRole(minterRole, pegbrV2Addr, {
     gasLimit: 5_000_000,
     nonce: tx.nonce + 1,
     maxFeePerGas: parseUnits('10', 'gwei'),

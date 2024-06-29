@@ -1,18 +1,16 @@
-import '@nomiclabs/hardhat-ethers';
+import '@nomicfoundation/hardhat-ethers';
 
+import { parseUnits, solidityPackedKeccak256, toNumber, Wallet } from 'ethers';
 import fs from 'fs';
+import { ethers } from 'hardhat';
 import path from 'path';
 
-import { ethers } from 'hardhat';
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
-import { keccak256 } from '@ethersproject/solidity';
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
-
-import { Bridge, TestERC20 } from '../typechain';
-import { deployBridgeContracts, getAccounts, loadFixture } from '../test/lib/common';
+import { deployBridgeContracts, getAccounts } from '../test/lib/common';
 import { getRelayRequest } from '../test/lib/proto';
-import { BigNumber } from '@ethersproject/bignumber';
+import { Bridge, TestERC20 } from '../typechain';
 
 const GAS_USAGE_DIR = 'reports/gas_usage/';
 const GAS_USAGE_LOG = path.join(GAS_USAGE_DIR, 'relay.txt');
@@ -24,14 +22,15 @@ describe('Relay Gas Benchmark', function () {
   fs.rmSync(GAS_USAGE_LOG, { force: true });
   fs.appendFileSync(GAS_USAGE_LOG, '<validatorNum, quorumSigNum, gasCost> for cbr testErc20 relay tx\n\n');
 
-  async function fixture([admin]: Wallet[]) {
+  async function fixture() {
+    const [admin] = await ethers.getSigners();
     const { bridge, token } = await deployBridgeContracts(admin);
     return { admin, bridge, token };
   }
 
   let bridge: Bridge;
   let token: TestERC20;
-  let admin: Wallet;
+  let admin: HardhatEthersSigner;
   let accounts: Wallet[];
 
   beforeEach(async () => {
@@ -40,10 +39,10 @@ describe('Relay Gas Benchmark', function () {
     token = res.token;
     admin = res.admin;
     accounts = await getAccounts(admin, [token], 21);
-    await token.transfer(bridge.address, parseUnits('1000000'));
-    await bridge.setEpochVolumeCaps([token.address], [parseUnits('100')]);
+    await token.transfer(bridge.getAddress(), parseUnits('1000000'));
+    await bridge.setEpochVolumeCaps([token.getAddress()], [parseUnits('100')]);
     await bridge.setEpochLength(5);
-    await bridge.setDelayThresholds([token.address], [parseUnits('100')])
+    await bridge.setDelayThresholds([token.getAddress()], [parseUnits('100')]);
   });
 
   it('benchmark relay gas cost for bridge', async function () {
@@ -62,10 +61,10 @@ describe('Relay Gas Benchmark', function () {
     accounts: Wallet[],
     signerNum: number,
     quorumSigNum: number
-  ): Promise<{ signers: Wallet[]; addrs: string[]; powers: BigNumber[] }> {
+  ): Promise<{ signers: Wallet[]; addrs: string[]; powers: bigint[] }> {
     const signers: Wallet[] = [];
     const addrs: string[] = [];
-    const powers: BigNumber[] = [];
+    const powers: bigint[] = [];
     for (let i = 0; i < signerNum; i++) {
       signers.push(accounts[i]);
       addrs.push(accounts[i].address);
@@ -85,9 +84,9 @@ describe('Relay Gas Benchmark', function () {
     for (let i = 3; i <= maxQuorumSigNum; i += 2) {
       const gasUsed = await doBenchmarkRelay(signerNum, i);
       if (i == 3) {
-        firstCost = gasUsed.toNumber();
+        firstCost = toNumber(gasUsed);
       }
-      lastCost = gasUsed.toNumber();
+      lastCost = toNumber(gasUsed);
     }
     const perSigCost = Math.ceil((lastCost - firstCost) / (maxQuorumSigNum - 3));
     return perSigCost;
@@ -100,9 +99,9 @@ describe('Relay Gas Benchmark', function () {
     for (let i = minSignerNum; i <= maxSignerNum; i++) {
       const gasUsed = await doBenchmarkRelay(i, quorumSigNum);
       if (i == minSignerNum) {
-        firstCost = gasUsed.toNumber();
+        firstCost = toNumber(gasUsed);
       }
-      lastCost = gasUsed.toNumber();
+      lastCost = toNumber(gasUsed);
     }
     const perSignerCost = Math.ceil((lastCost - firstCost) / (maxSignerNum - minSignerNum));
     return perSignerCost;
@@ -119,20 +118,20 @@ describe('Relay Gas Benchmark', function () {
     const sender = accounts[0];
     const receiver = accounts[1];
     const amount = parseUnits('1');
-    const chainId = (await ethers.provider.getNetwork()).chainId;
-    const srcXferId = keccak256(['uint64'], [Date.now()]); // fake src xfer id
+    const chainId = toNumber((await ethers.provider.getNetwork()).chainId);
+    const srcXferId = solidityPackedKeccak256(['uint64'], [Date.now()]); // fake src xfer id
     const { relayBytes, sigs } = await getRelayRequest(
       sender.address,
       receiver.address,
-      token.address,
+      await token.getAddress(),
       amount,
       chainId,
       chainId,
       srcXferId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
-    const gasUsed = (await (await bridge.relay(relayBytes, sigs, addrs, powers)).wait()).gasUsed;
+    const gasUsed = (await (await bridge.relay(relayBytes, sigs, addrs, powers)).wait())!.gasUsed;
     fs.appendFileSync(GAS_USAGE_LOG, signerNum.toString() + '\t' + quorumSigNum.toString() + '\t' + gasUsed + '\n');
     return gasUsed;
   }

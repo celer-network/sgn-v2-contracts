@@ -1,21 +1,17 @@
 import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
-import { BigNumber } from 'ethers';
-
-import { parseUnits } from '@ethersproject/units';
+import { parseUnits } from 'ethers';
 
 import { Bridge__factory, OriginalTokenVault__factory, PeggedTokenBridge__factory } from '../typechain';
+import { TypedContractMethod } from '../typechain/common';
 import { getDeployerSigner, getFeeOverrides } from './common';
 
-import type { ContractTransaction, Overrides } from '@ethersproject/contracts';
-import type { BigNumberish } from '@ethersproject/bignumber';
+import type { AddressLike, BigNumberish, Overrides } from 'ethers';
 
 dotenv.config();
 
-function getParseUnitsCallback(
-  unitNames: BigNumberish[]
-): (value: string, index: number, array: string[]) => BigNumber {
+function getParseUnitsCallback(unitNames: string[]): (value: string, index: number, array: string[]) => bigint {
   return (s, i) => parseUnits(s, unitNames[i]);
 }
 
@@ -24,11 +20,7 @@ async function setLimitIfSpecified(
   tokens: string[],
   decimals: string[],
   methodName: string,
-  method: (
-    _tokens: string[],
-    _amounts: BigNumberish[],
-    overrides?: Overrides & { from?: string }
-  ) => Promise<ContractTransaction>,
+  method: TypedContractMethod<[_tokens: AddressLike[], _amounts: BigNumberish[]], [void], 'nonpayable'>,
   feeOverrides: Overrides
 ): Promise<void> {
   if (limitEnv) {

@@ -1,32 +1,34 @@
 import { expect } from 'chai';
+import { getBytes, parseUnits, solidityPacked, solidityPackedKeccak256, toNumber, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { BigNumber } from '@ethersproject/bignumber';
-import { keccak256, pack } from '@ethersproject/solidity';
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
+import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
-import { Bridge, TestERC20, PeggedTokenBridge, SingleBridgeToken } from '../typechain';
-import { deployBridgeContracts, getAccounts, getAddrs, getBlockTime, loadFixture } from './lib/common';
-import { calculateSignatures, getMintRequest, getRelayRequest, getWithdrawRequest, hex2Bytes } from './lib/proto';
+import { Bridge, PeggedTokenBridge, SingleBridgeToken, TestERC20 } from '../typechain';
+import { deployBridgeContracts, getAccounts, getAddrs, getBlockTime } from './lib/common';
+import { calculateSignatures, getMintRequest, getRelayRequest, getWithdrawRequest } from './lib/proto';
 
 async function getUpdateSignersSigs(
   triggerTime: number,
   newSignerAddrs: string[],
-  newPowers: BigNumber[],
+  newPowers: bigint[],
   currSigners: Wallet[],
   chainId: number,
   contractAddress: string
 ) {
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'UpdateSigners']);
-  const data = pack(['bytes32', 'uint256', 'address[]', 'uint256[]'], [domain, triggerTime, newSignerAddrs, newPowers]);
-  const hash = keccak256(['bytes'], [data]);
-  const sigs = await calculateSignatures(currSigners, hex2Bytes(hash));
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'UpdateSigners']);
+  const data = solidityPacked(
+    ['bytes32', 'uint256', 'address[]', 'uint256[]'],
+    [domain, triggerTime, newSignerAddrs, newPowers]
+  );
+  const hash = solidityPackedKeccak256(['bytes'], [data]);
+  const sigs = await calculateSignatures(currSigners, getBytes(hash));
   return sigs;
 }
 
 describe('Bridge Tests', function () {
-  async function fixture([admin]: Wallet[]) {
+  async function fixture() {
+    const [admin] = await ethers.getSigners();
     const { bridge, token, pegBridge, pegToken } = await deployBridgeContracts(admin);
     return { admin, bridge, token, pegBridge, pegToken };
   }
@@ -45,7 +47,7 @@ describe('Bridge Tests', function () {
     pegBridge = res.pegBridge;
     pegToken = res.pegToken;
     accounts = await getAccounts(res.admin, [token], 4);
-    chainId = (await ethers.provider.getNetwork()).chainId;
+    chainId = toNumber((await ethers.provider.getNetwork()).chainId);
   });
 
   it('should update signers correctly', async function () {
@@ -62,7 +64,7 @@ describe('Bridge Tests', function () {
       newPowers,
       [accounts[0]],
       chainId,
-      bridge.address
+      await bridge.getAddress()
     );
     await expect(
       bridge.updateSigners(triggerTime, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
@@ -76,7 +78,7 @@ describe('Bridge Tests', function () {
       newPowers,
       [accounts[0]],
       chainId,
-      bridge.address
+      await bridge.getAddress()
     );
     await expect(
       bridge.updateSigners(triggerTime, getAddrs(newSigners), newPowers, sigs, [accounts[0].address], [parseUnits('1')])
@@ -128,7 +130,7 @@ describe('Bridge Tests', function () {
       newPowers,
       curSigners,
       chainId,
-      bridge.address
+      await bridge.getAddress()
     );
 
     await expect(
@@ -168,7 +170,7 @@ describe('Bridge Tests', function () {
   });
 
   it('should send and relay successfully', async function () {
-    await bridge.setDelayThresholds([token.address], [parseUnits('5')]);
+    await bridge.setDelayThresholds([await token.getAddress()], [parseUnits('5')]);
     await bridge.setDelayPeriod(10);
     const signers = [accounts[0], accounts[1], accounts[2]];
     const powers = [parseUnits('10'), parseUnits('10'), parseUnits('10')];
@@ -182,55 +184,66 @@ describe('Bridge Tests', function () {
     const nonce = 0;
     const slippage = 1000;
 
-    const srcXferId = keccak256(
+    const srcXferId = solidityPackedKeccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'uint64'],
-      [sender.address, receiver.address, token.address, amount, chainId, nonce, chainId]
+      [sender.address, receiver.address, await token.getAddress(), amount, chainId, nonce, chainId]
     );
 
-    await token.connect(sender).approve(bridge.address, parseUnits('100'));
-    await bridge.connect(sender).addLiquidity(token.address, parseUnits('50'));
-    await expect(bridge.connect(sender).send(receiver.address, token.address, amount, chainId, nonce, slippage))
+    await token.connect(sender).approve(await bridge.getAddress(), parseUnits('100'));
+    await bridge.connect(sender).addLiquidity(await token.getAddress(), parseUnits('50'));
+    await expect(
+      bridge.connect(sender).send(receiver.address, await token.getAddress(), amount, chainId, nonce, slippage)
+    )
       .to.emit(bridge, 'Send')
-      .withArgs(srcXferId, sender.address, receiver.address, token.address, amount, chainId, nonce, slippage);
+      .withArgs(
+        srcXferId,
+        sender.address,
+        receiver.address,
+        await token.getAddress(),
+        amount,
+        chainId,
+        nonce,
+        slippage
+      );
 
     let req = await getRelayRequest(
       sender.address,
       receiver.address,
-      token.address,
+      await token.getAddress(),
       amount,
       chainId,
       chainId,
       srcXferId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
-    let dstXferId = keccak256(
+    let dstXferId = solidityPackedKeccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
-      [sender.address, receiver.address, token.address, amount, chainId, chainId, srcXferId]
+      [sender.address, receiver.address, await token.getAddress(), amount, chainId, chainId, srcXferId]
     );
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
-      .withArgs(dstXferId, sender.address, receiver.address, token.address, amount, chainId, srcXferId);
+      .withArgs(dstXferId, sender.address, receiver.address, await token.getAddress(), amount, chainId, srcXferId);
 
     const largeAmount = parseUnits('10');
     req = await getRelayRequest(
       sender.address,
       receiver.address,
-      token.address,
+      await token.getAddress(),
       largeAmount,
       chainId,
       chainId,
       srcXferId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
-    dstXferId = keccak256(
+    dstXferId = solidityPackedKeccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
-      [sender.address, receiver.address, token.address, largeAmount, chainId, chainId, srcXferId]
+      [sender.address, receiver.address, await token.getAddress(), largeAmount, chainId, chainId, srcXferId]
     );
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
-      .withArgs(dstXferId, sender.address, receiver.address, token.address, largeAmount, chainId, srcXferId)
+      .withArgs(dstXferId, sender.address, receiver.address, await token.getAddress(), largeAmount, chainId, srcXferId)
       .to.emit(bridge, 'DelayedTransferAdded')
       .withArgs(dstXferId);
 
@@ -239,7 +252,7 @@ describe('Bridge Tests', function () {
     await ethers.provider.send('evm_mine', []);
     await expect(bridge.executeDelayedTransfer(dstXferId))
       .to.emit(bridge, 'DelayedTransferExecuted')
-      .withArgs(dstXferId, receiver.address, token.address, largeAmount);
+      .withArgs(dstXferId, receiver.address, await token.getAddress(), largeAmount);
     await expect(bridge.executeDelayedTransfer(dstXferId)).to.be.revertedWith('delayed transfer not exist');
   });
 
@@ -252,41 +265,41 @@ describe('Bridge Tests', function () {
 
     const epochLength = 20;
     await bridge.setEpochLength(epochLength);
-    await bridge.setEpochVolumeCaps([token.address], [parseUnits('5')]);
-    await bridge.setMaxSend([token.address], [parseUnits('5')]);
+    await bridge.setEpochVolumeCaps([await token.getAddress()], [parseUnits('5')]);
+    await bridge.setMaxSend([await token.getAddress()], [parseUnits('5')]);
 
     const sender = accounts[0];
     const receiver = accounts[1];
 
-    await token.connect(sender).approve(bridge.address, parseUnits('100'));
+    await token.connect(sender).approve(await bridge.getAddress(), parseUnits('100'));
     await expect(
-      bridge.connect(sender).send(receiver.address, token.address, parseUnits('10'), chainId, 0, 10000)
+      bridge.connect(sender).send(receiver.address, await token.getAddress(), parseUnits('10'), chainId, 0, 10000)
     ).to.be.revertedWith('amount too large');
 
-    await bridge.setMinAdd([token.address], [parseUnits('10')]);
-    await expect(bridge.connect(sender).addLiquidity(token.address, parseUnits('50')))
+    await bridge.setMinAdd([await token.getAddress()], [parseUnits('10')]);
+    await expect(bridge.connect(sender).addLiquidity(await token.getAddress(), parseUnits('50')))
       .to.emit(bridge, 'LiquidityAdded')
-      .withArgs(1, sender.address, token.address, parseUnits('50'));
-    await expect(bridge.connect(sender).addLiquidity(token.address, parseUnits('5'))).to.be.revertedWith(
+      .withArgs(1, sender.address, await token.getAddress(), parseUnits('50'));
+    await expect(bridge.connect(sender).addLiquidity(await token.getAddress(), parseUnits('5'))).to.be.revertedWith(
       'amount too small'
     );
 
-    const srcXferId = keccak256(['string'], ['srcId']);
-    let dstXferId = keccak256(
+    const srcXferId = solidityPackedKeccak256(['string'], ['srcId']);
+    let dstXferId = solidityPackedKeccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
-      [sender.address, receiver.address, token.address, parseUnits('2'), chainId, chainId, srcXferId]
+      [sender.address, receiver.address, await token.getAddress(), parseUnits('2'), chainId, chainId, srcXferId]
     );
 
     let req = await getRelayRequest(
       sender.address,
       receiver.address,
-      token.address,
+      await token.getAddress(),
       parseUnits('2'),
       chainId,
       chainId,
       srcXferId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
 
     let blockTime = await getBlockTime();
@@ -295,22 +308,30 @@ describe('Bridge Tests', function () {
     await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
-      .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('2'), chainId, srcXferId);
+      .withArgs(
+        dstXferId,
+        sender.address,
+        receiver.address,
+        await token.getAddress(),
+        parseUnits('2'),
+        chainId,
+        srcXferId
+      );
 
     req = await getRelayRequest(
       sender.address,
       receiver.address,
-      token.address,
+      await token.getAddress(),
       parseUnits('4'),
       chainId,
       chainId,
       srcXferId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
-    dstXferId = keccak256(
+    dstXferId = solidityPackedKeccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
-      [sender.address, receiver.address, token.address, parseUnits('4'), chainId, chainId, srcXferId]
+      [sender.address, receiver.address, await token.getAddress(), parseUnits('4'), chainId, chainId, srcXferId]
     );
 
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers)).to.be.revertedWith(
@@ -322,22 +343,30 @@ describe('Bridge Tests', function () {
     await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
-      .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('4'), chainId, srcXferId);
+      .withArgs(
+        dstXferId,
+        sender.address,
+        receiver.address,
+        await token.getAddress(),
+        parseUnits('4'),
+        chainId,
+        srcXferId
+      );
 
     req = await getRelayRequest(
       sender.address,
       receiver.address,
-      token.address,
+      await token.getAddress(),
       parseUnits('3'),
       chainId,
       chainId,
       srcXferId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
-    dstXferId = keccak256(
+    dstXferId = solidityPackedKeccak256(
       ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
-      [sender.address, receiver.address, token.address, parseUnits('3'), chainId, chainId, srcXferId]
+      [sender.address, receiver.address, await token.getAddress(), parseUnits('3'), chainId, chainId, srcXferId]
     );
     for (let i = 0; i < 3; i++) {
       await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers)).to.be.revertedWith(
@@ -351,7 +380,15 @@ describe('Bridge Tests', function () {
     await ethers.provider.send('evm_mine', []);
     await expect(bridge.relay(req.relayBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'Relay')
-      .withArgs(dstXferId, sender.address, receiver.address, token.address, parseUnits('3'), chainId, srcXferId);
+      .withArgs(
+        dstXferId,
+        sender.address,
+        receiver.address,
+        await token.getAddress(),
+        parseUnits('3'),
+        chainId,
+        srcXferId
+      );
   });
 
   it('should withdraw liquidity correctly', async function () {
@@ -362,29 +399,29 @@ describe('Bridge Tests', function () {
       .withArgs(getAddrs(signers), powers);
 
     const account = accounts[0];
-    await token.connect(account).approve(bridge.address, parseUnits('100'));
-    await bridge.connect(account).addLiquidity(token.address, parseUnits('50'));
+    await token.connect(account).approve(await bridge.getAddress(), parseUnits('100'));
+    await bridge.connect(account).addLiquidity(await token.getAddress(), parseUnits('50'));
 
-    const refId = keccak256(['string'], ['random']);
+    const refId = solidityPackedKeccak256(['string'], ['random']);
     const seqnum = 1;
     const amount = parseUnits('10');
     const req = await getWithdrawRequest(
       chainId,
       seqnum,
       account.address,
-      token.address,
+      await token.getAddress(),
       amount,
       refId,
       signers,
-      bridge.address
+      await bridge.getAddress()
     );
-    const wdId = keccak256(
+    const wdId = solidityPackedKeccak256(
       ['uint64', 'uint64', 'address', 'address', 'uint256'],
-      [chainId, seqnum, account.address, token.address, amount]
+      [chainId, seqnum, account.address, await token.getAddress(), amount]
     );
     await expect(bridge.withdraw(req.withdrawBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(bridge, 'WithdrawDone')
-      .withArgs(wdId, seqnum, account.address, token.address, amount, refId);
+      .withArgs(wdId, seqnum, account.address, await token.getAddress(), amount, refId);
   });
 
   it('should mint successfully', async function () {
@@ -397,9 +434,9 @@ describe('Bridge Tests', function () {
     const account = accounts[0];
     const amount = parseUnits('10');
     const refChainId = 101;
-    const refId = keccak256(['string'], ['random']);
+    const refId = solidityPackedKeccak256(['string'], ['random']);
     const req = await getMintRequest(
-      pegToken.address,
+      await pegToken.getAddress(),
       account.address,
       amount,
       account.address,
@@ -407,16 +444,16 @@ describe('Bridge Tests', function () {
       refId,
       signers,
       chainId,
-      pegBridge.address
+      await pegBridge.getAddress()
     );
 
-    const mintId = keccak256(
+    const mintId = solidityPackedKeccak256(
       ['address', 'address', 'uint256', 'address', 'uint64', 'bytes32'],
-      [account.address, pegToken.address, amount, account.address, refChainId, refId]
+      [account.address, await pegToken.getAddress(), amount, account.address, refChainId, refId]
     );
 
     await expect(pegBridge.mint(req.mintBytes, req.sigs, getAddrs(signers), powers))
       .to.emit(pegBridge, 'Mint')
-      .withArgs(mintId, pegToken.address, account.address, amount, refChainId, refId, account.address);
+      .withArgs(mintId, await pegToken.getAddress(), account.address, amount, refChainId, refId, account.address);
   });
 });

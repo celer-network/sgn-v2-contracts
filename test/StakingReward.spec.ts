@@ -1,21 +1,22 @@
 import { expect } from 'chai';
+import { AbiCoder, parseUnits, toNumber, Wallet, ZeroAddress } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
+import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
 import { Staking, StakingReward, TestERC20 } from '../typechain';
-import { deployContracts, getAccounts, loadFixture } from './lib/common';
+import { deployContracts, getAccounts } from './lib/common';
 import * as consts from './lib/constants';
 import { getStakingRewardRequest } from './lib/proto';
 
 describe('StakingReward Tests', function () {
-  async function fixture([admin]: Wallet[]) {
+  async function fixture() {
+    const [admin] = await ethers.getSigners();
     const { staking, stakingReward, celr } = await deployContracts(admin);
     return { admin, staking, stakingReward, celr };
   }
 
-  const abiCoder = ethers.utils.defaultAbiCoder;
+  const abiCoder = AbiCoder.defaultAbiCoder();
 
   let staking: Staking;
   let reward: StakingReward;
@@ -33,8 +34,8 @@ describe('StakingReward Tests', function () {
     validators = [accounts[0], accounts[1], accounts[2], accounts[3]];
     signers = [accounts[0], accounts[1], accounts[4], accounts[5]];
     for (let i = 0; i < 4; i++) {
-      await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
-      await celr.connect(validators[i]).approve(reward.address, parseUnits('100'));
+      await celr.connect(validators[i]).approve(staking.getAddress(), parseUnits('100'));
+      await celr.connect(validators[i]).approve(reward.getAddress(), parseUnits('100'));
       await staking
         .connect(validators[i])
         .initializeValidator(signers[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
@@ -42,7 +43,7 @@ describe('StakingReward Tests', function () {
       await staking.connect(validators[i]).bondValidator();
     }
     await reward.connect(validators[0]).contributeToRewardPool(100);
-    chainId = (await ethers.provider.getNetwork()).chainId;
+    chainId = toNumber((await ethers.provider.getNetwork()).chainId);
   });
 
   it('should fail to contribute to reward pool when paused', async function () {
@@ -61,7 +62,7 @@ describe('StakingReward Tests', function () {
     const data = abiCoder.encode(['uint256'], [newRate]);
     await expect(staking.connect(validators[0]).updateCommissionRate(newRate))
       .to.emit(staking, 'ValidatorNotice')
-      .withArgs(validators[0].address, 'commission', data, consts.ZERO_ADDR);
+      .withArgs(validators[0].address, 'commission', data, ZeroAddress);
   });
 
   it('should fail to claim reward when paused', async function () {
@@ -71,7 +72,7 @@ describe('StakingReward Tests', function () {
       parseUnits('100', 'wei'),
       signers,
       chainId,
-      reward.address
+      await reward.getAddress()
     );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Pausable: paused');
   });
@@ -82,13 +83,19 @@ describe('StakingReward Tests', function () {
       parseUnits('40', 'wei'),
       signers,
       chainId,
-      reward.address
+      await reward.getAddress()
     );
     await expect(reward.claimReward(r.rewardBytes, r.sigs))
       .to.emit(reward, 'StakingRewardClaimed')
       .withArgs(validators[0].address, 40);
 
-    r = await getStakingRewardRequest(validators[0].address, parseUnits('90', 'wei'), signers, chainId, reward.address);
+    r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('90', 'wei'),
+      signers,
+      chainId,
+      await reward.getAddress()
+    );
     await expect(reward.claimReward(r.rewardBytes, r.sigs))
       .to.emit(reward, 'StakingRewardClaimed')
       .withArgs(validators[0].address, 50);
@@ -100,7 +107,7 @@ describe('StakingReward Tests', function () {
       parseUnits('101', 'wei'),
       signers,
       chainId,
-      reward.address
+      await reward.getAddress()
     );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith(
       'ERC20: transfer amount exceeds balance'
@@ -108,7 +115,13 @@ describe('StakingReward Tests', function () {
   });
 
   it('should fail to claim reward if there is no new reward', async function () {
-    const r = await getStakingRewardRequest(validators[0].address, parseUnits('0'), signers, chainId, reward.address);
+    const r = await getStakingRewardRequest(
+      validators[0].address,
+      parseUnits('0'),
+      signers,
+      chainId,
+      await reward.getAddress()
+    );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('No new reward');
   });
 
@@ -118,7 +131,7 @@ describe('StakingReward Tests', function () {
       parseUnits('10', 'wei'),
       [signers[0], signers[1]],
       chainId,
-      reward.address
+      await reward.getAddress()
     );
     await expect(reward.claimReward(r.rewardBytes, r.sigs)).to.be.revertedWith('Quorum not reached');
   });
@@ -129,7 +142,7 @@ describe('StakingReward Tests', function () {
       parseUnits('10', 'wei'),
       signers,
       chainId,
-      reward.address
+      await reward.getAddress()
     );
     await expect(reward.claimReward(r.rewardBytes, [r.sigs[0], r.sigs[2], r.sigs[1], r.sigs[3]])).to.be.revertedWith(
       'Signers not in ascending order'

@@ -1,15 +1,17 @@
 import { expect } from 'chai';
+import { parseUnits, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
+import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
 import { Govern, Staking, TestERC20 } from '../typechain';
-import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
+import { advanceBlockNumber, deployContracts, getAccounts } from './lib/common';
 import * as consts from './lib/constants';
 
 describe('Governance Tests', function () {
-  async function fixture([admin]: Wallet[]) {
+  async function fixture() {
+    const [admin] = await ethers.getSigners();
     const { staking, govern, celr } = await deployContracts(admin);
     return { admin, staking, govern, celr };
   }
@@ -17,7 +19,7 @@ describe('Governance Tests', function () {
   let staking: Staking;
   let govern: Govern;
   let celr: TestERC20;
-  let admin: Wallet;
+  let admin: HardhatEthersSigner;
   let validators: Wallet[];
 
   beforeEach(async () => {
@@ -26,19 +28,21 @@ describe('Governance Tests', function () {
     govern = res.govern;
     celr = res.celr;
     admin = res.admin;
-    await staking.setGovContract(govern.address);
+    const stakingAddress = await staking.getAddress();
+    const governAddress = await govern.getAddress();
+    await staking.setGovContract(governAddress);
     validators = await getAccounts(res.admin, [celr], 4);
     for (let i = 0; i < 4; i++) {
-      await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
-      await celr.connect(validators[i]).approve(govern.address, parseUnits('100'));
+      await celr.connect(validators[i]).approve(stakingAddress, parseUnits('100'));
+      await celr.connect(validators[i]).approve(governAddress, parseUnits('100'));
       await staking
         .connect(validators[i])
         .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
       await staking.connect(validators[i]).delegate(validators[i].address, parseUnits('6'));
       await staking.connect(validators[i]).bondValidator();
     }
-    await celr.approve(staking.address, parseUnits('100'));
-    await celr.approve(govern.address, parseUnits('100'));
+    await celr.approve(stakingAddress, parseUnits('100'));
+    await celr.approve(governAddress, parseUnits('100'));
   });
 
   it('should createParamProposal successfully', async function () {

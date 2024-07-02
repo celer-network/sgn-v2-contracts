@@ -1,9 +1,16 @@
 import { expect } from 'chai';
+import {
+  AbstractSigner,
+  BigNumberish,
+  getBytes,
+  solidityPacked,
+  solidityPackedKeccak256,
+  toBeArray,
+  Wallet
+} from 'ethers';
 import protobuf from 'protobufjs';
 
-import { BigNumber } from '@ethersproject/bignumber';
-import { keccak256, pack } from '@ethersproject/solidity';
-import { Wallet } from '@ethersproject/wallet';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 protobuf.common('google/protobuf/descriptor.proto', {});
 
@@ -44,53 +51,34 @@ async function getProtos(): Promise<Proto> {
   };
 }
 
-export function hex2Bytes(hexString: string): number[] {
-  let hex = hexString;
-  const result = [];
-  if (hex.substr(0, 2) === '0x') {
-    hex = hex.slice(2);
-  }
-  if (hex.length % 2 === 1) {
-    hex = '0' + hex;
-  }
-  for (let i = 0; i < hex.length; i += 2) {
-    result.push(parseInt(hex.substr(i, 2), 16));
-  }
-  return result;
-}
-
-export function uint2Bytes(x: BigNumber): number[] {
-  return hex2Bytes(x.toHexString());
-}
-
-export async function calculateSignatures(signers: Wallet[], hash: number[]): Promise<number[][]> {
+export async function calculateSignatures(signers: AbstractSigner[], hash: Uint8Array): Promise<string[]> {
   const sigs = [];
   for (let i = 0; i < signers.length; i++) {
     const sig = await signers[i].signMessage(hash);
-    sigs.push(hex2Bytes(sig));
+    sigs.push(sig);
   }
   return sigs;
 }
 
 export async function getStakingRewardRequest(
   recipient: string,
-  cumulativeRewardAmount: BigNumber,
+  cumulativeRewardAmount: BigNumberish,
   signers: Wallet[],
   chainId: number,
   contractAddress: string
-): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
+): Promise<{ rewardBytes: Uint8Array; sigs: string[] }> {
   const { StakingReward } = await getProtos();
   const reward = {
-    recipient: hex2Bytes(recipient),
-    cumulativeRewardAmount: uint2Bytes(cumulativeRewardAmount)
+    recipient: getBytes(recipient),
+    cumulativeRewardAmount: toBeArray(cumulativeRewardAmount)
   };
   const rewardProto = StakingReward.create(reward);
   const rewardBytes = StakingReward.encode(rewardProto).finish();
 
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'StakingReward']);
-  const signedData = pack(['bytes32', 'bytes'], [domain, rewardBytes]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'StakingReward']);
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, rewardBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
 
   return { rewardBytes, sigs };
 }
@@ -98,36 +86,39 @@ export async function getStakingRewardRequest(
 export async function getFarmingRewardsRequest(
   recipient: string,
   tokenAddresses: string[],
-  cumulativeRewardAmounts: BigNumber[],
+  cumulativeRewardAmounts: BigNumberish[],
   signers: Wallet[],
   chainId: number,
   contractAddress: string
-): Promise<{ rewardBytes: Uint8Array; sigs: number[][] }> {
+): Promise<{ rewardBytes: Uint8Array; sigs: string[] }> {
   const { FarmingRewards } = await getProtos();
   const reward = {
-    recipient: hex2Bytes(recipient),
-    tokenAddresses: tokenAddresses.map(hex2Bytes),
-    cumulativeRewardAmounts: cumulativeRewardAmounts.map(uint2Bytes)
+    recipient: getBytes(recipient),
+    tokenAddresses: tokenAddresses.map((addr) => getBytes(addr)),
+    cumulativeRewardAmounts: cumulativeRewardAmounts.map(toBeArray)
   };
   const rewardProto = FarmingRewards.create(reward);
   const rewardBytes = FarmingRewards.encode(rewardProto).finish();
 
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'FarmingRewards']);
-  const signedData = pack(['bytes32', 'bytes'], [domain, rewardBytes]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const domain = solidityPackedKeccak256(
+    ['uint256', 'address', 'string'],
+    [chainId, contractAddress, 'FarmingRewards']
+  );
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, rewardBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
 
   return { rewardBytes, sigs };
 }
 
-async function getAcctAmtPairs(accounts: string[], amounts: BigNumber[]): Promise<protobuf.Message[]> {
+async function getAcctAmtPairs(accounts: string[], amounts: bigint[]): Promise<protobuf.Message[]> {
   const { AcctAmtPair } = await getProtos();
   expect(accounts.length).to.equal(amounts.length);
   const pairs = [];
   for (let i = 0; i < accounts.length; i++) {
     const pair = {
-      account: hex2Bytes(accounts[i]),
-      amount: uint2Bytes(amounts[i])
+      account: getBytes(accounts[i]),
+      amount: toBeArray(amounts[i])
     };
     const pairProto = AcctAmtPair.create(pair);
     pairs.push(pairProto);
@@ -142,29 +133,29 @@ export async function getSlashRequest(
   expireTime: number,
   jailPeriod: number,
   collectorAddrs: string[],
-  collectorAmts: BigNumber[],
+  collectorAmts: bigint[],
   signers: Wallet[],
   chainId: number,
   contractAddress: string
-): Promise<{ slashBytes: Uint8Array; sigs: number[][] }> {
+): Promise<{ slashBytes: Uint8Array; sigs: string[] }> {
   const { Slash } = await getProtos();
 
   const collectors = await getAcctAmtPairs(collectorAddrs, collectorAmts);
   const slash = {
-    validator: hex2Bytes(validatorAddr),
-    nonce: nonce,
-    slashFactor: slashFactor,
-    expireTime: expireTime,
-    jailPeriod: jailPeriod,
-    collectors: collectors
+    validator: getBytes(validatorAddr),
+    nonce,
+    slashFactor,
+    expireTime,
+    jailPeriod,
+    collectors
   };
   const slashProto = Slash.create(slash);
   const slashBytes = Slash.encode(slashProto).finish();
 
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Slash']);
-  const signedData = pack(['bytes32', 'bytes'], [domain, slashBytes]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Slash']);
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, slashBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
 
   return { slashBytes, sigs };
 }
@@ -173,29 +164,29 @@ export async function getRelayRequest(
   sender: string,
   receiver: string,
   token: string,
-  amount: BigNumber,
+  amount: bigint,
   srcChainId: number,
   dstChainId: number,
   srcTransferId: string,
-  signers: Wallet[],
+  signers: (Wallet | SignerWithAddress)[],
   contractAddress: string
-): Promise<{ relayBytes: Uint8Array; sigs: number[][] }> {
+): Promise<{ relayBytes: Uint8Array; sigs: string[] }> {
   const { Relay } = await getProtos();
   const relay = {
-    sender: hex2Bytes(sender),
-    receiver: hex2Bytes(receiver),
-    token: hex2Bytes(token),
-    amount: uint2Bytes(amount),
-    srcChainId: srcChainId,
-    dstChainId: dstChainId,
-    srcTransferId: hex2Bytes(srcTransferId)
+    sender: getBytes(sender),
+    receiver: getBytes(receiver),
+    token: getBytes(token),
+    amount: toBeArray(amount),
+    srcChainId,
+    dstChainId,
+    srcTransferId: getBytes(srcTransferId)
   };
   const relayProto = Relay.create(relay);
   const relayBytes = Relay.encode(relayProto).finish();
 
-  const domain = keccak256(['uint256', 'address', 'string'], [dstChainId, contractAddress, 'Relay']);
-  const signedData = pack(['bytes32', 'bytes'], [domain, relayBytes]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [dstChainId, contractAddress, 'Relay']);
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, relayBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
 
   const signerAddrs = [];
   for (let i = 0; i < signers.length; i++) {
@@ -203,7 +194,7 @@ export async function getRelayRequest(
   }
 
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
 
   return { relayBytes, sigs };
 }
@@ -213,26 +204,26 @@ export async function getWithdrawRequest(
   seqnum: number,
   receiver: string,
   token: string,
-  amount: BigNumber,
+  amount: bigint,
   refid: string,
   signers: Wallet[],
   contractAddress: string
-): Promise<{ withdrawBytes: Uint8Array; sigs: number[][] }> {
+): Promise<{ withdrawBytes: Uint8Array; sigs: string[] }> {
   const { WithdrawMsg } = await getProtos();
   const withdraw = {
     chainid: chainId,
     seqnum: seqnum,
-    receiver: hex2Bytes(receiver),
-    token: hex2Bytes(token),
-    amount: uint2Bytes(amount),
-    refid: hex2Bytes(refid)
+    receiver: getBytes(receiver),
+    token: getBytes(token),
+    amount: toBeArray(amount),
+    refid: getBytes(refid)
   };
   const withdrawProto = WithdrawMsg.create(withdraw);
   const withdrawBytes = WithdrawMsg.encode(withdrawProto).finish();
 
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'WithdrawMsg']);
-  const signedData = pack(['bytes32', 'bytes'], [domain, withdrawBytes]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'WithdrawMsg']);
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, withdrawBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
 
   const signerAddrs = [];
   for (let i = 0; i < signers.length; i++) {
@@ -240,36 +231,36 @@ export async function getWithdrawRequest(
   }
 
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
   return { withdrawBytes, sigs };
 }
 
 export async function getMintRequest(
   token: string,
   account: string,
-  amount: BigNumber,
+  amount: bigint,
   depositor: string,
   refChainId: number,
   refId: string,
   signers: Wallet[],
   chainId: number,
   contractAddress: string
-): Promise<{ mintBytes: Uint8Array; sigs: number[][] }> {
+): Promise<{ mintBytes: Uint8Array; sigs: string[] }> {
   const { Mint } = await getProtos();
   const mint = {
-    token: hex2Bytes(token),
-    account: hex2Bytes(account),
-    amount: uint2Bytes(amount),
-    depositor: hex2Bytes(depositor),
-    refChainId: refChainId,
-    refId: hex2Bytes(refId)
+    token: getBytes(token),
+    account: getBytes(account),
+    amount: toBeArray(amount),
+    depositor: getBytes(depositor),
+    refChainId,
+    refId: getBytes(refId)
   };
   const mintProto = Mint.create(mint);
   const mintBytes = Mint.encode(mintProto).finish();
 
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Mint']);
-  const signedData = pack(['bytes32', 'bytes'], [domain, mintBytes]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Mint']);
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, mintBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
 
   const signerAddrs = [];
   for (let i = 0; i < signers.length; i++) {
@@ -277,6 +268,6 @@ export async function getMintRequest(
   }
 
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
   return { mintBytes, sigs };
 }

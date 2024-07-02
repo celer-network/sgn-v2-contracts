@@ -1,15 +1,22 @@
 import { expect } from 'chai';
+import {
+  AbiCoder,
+  AbstractSigner,
+  getBytes,
+  parseUnits,
+  solidityPacked,
+  solidityPackedKeccak256,
+  toNumber
+} from 'ethers';
 import { ethers } from 'hardhat';
 
-import { BigNumber } from '@ethersproject/bignumber';
-import { keccak256, pack } from '@ethersproject/solidity';
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
+import { HardhatEthersSigner, SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
 import { Bridge, MessageBus, MsgTest, TestERC20 } from '../typechain';
-import { deployMessageContracts, loadFixture } from './lib/common';
+import { deployMessageContracts } from './lib/common';
 import * as consts from './lib/constants';
-import { calculateSignatures, getRelayRequest, hex2Bytes } from './lib/proto';
+import { calculateSignatures, getRelayRequest } from './lib/proto';
 
 type RouteInfoStruct = {
   sender: string;
@@ -19,27 +26,29 @@ type RouteInfoStruct = {
 };
 
 type RouteInfo2Struct = {
-  sender: number[];
+  sender: Uint8Array;
   receiver: string;
   srcChainId: number;
   srcTxHash: string;
 };
+
+const abiCoder = AbiCoder.defaultAbiCoder();
 
 async function computeMessageIdAndSigs(
   chainId: number,
   msgbus: string,
   route: RouteInfoStruct,
   message: string,
-  signers: Wallet[]
+  signers: AbstractSigner[]
 ) {
-  const messageId = keccak256(
+  const messageId = solidityPackedKeccak256(
     ['uint8', 'address', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
     [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
   );
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message']);
-  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message']);
+  const signedData = solidityPacked(['bytes32', 'bytes32'], [domain, messageId]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
   return { messageId, sigs };
 }
 
@@ -48,16 +57,16 @@ async function computeMessage2IdAndSigs(
   msgbus: string,
   route: RouteInfo2Struct,
   message: string,
-  signers: Wallet[]
+  signers: AbstractSigner[]
 ) {
-  const messageId = keccak256(
+  const messageId = solidityPackedKeccak256(
     ['uint8', 'bytes', 'address', 'uint64', 'bytes32', 'uint64', 'bytes'],
     [consts.TYPE_MSG_ONLY, route.sender, route.receiver, route.srcChainId, route.srcTxHash, chainId, message]
   );
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message2']);
-  const signedData = pack(['bytes32', 'bytes32'], [domain, messageId]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures(signers, hex2Bytes(signedDataHash));
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'Message2']);
+  const signedData = solidityPacked(['bytes32', 'bytes32'], [domain, messageId]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
   return { messageId, sigs };
 }
 
@@ -68,13 +77,13 @@ async function getMessageWithTransferRequest(
   sender: string,
   receiver: string,
   token: string,
-  amount: BigNumber,
+  amount: bigint,
   srcChainId: number,
   refId: string,
   srcTxHash: string,
   message: string,
-  signer: Wallet,
-  power: BigNumber
+  signer: SignerWithAddress,
+  power: bigint
 ) {
   const relayReq = await getRelayRequest(
     sender,
@@ -94,15 +103,18 @@ async function getMessageWithTransferRequest(
     powers: [power]
   };
 
-  const xferId = keccak256(
+  const xferId = solidityPackedKeccak256(
     ['address', 'address', 'address', 'uint256', 'uint64', 'uint64', 'bytes32'],
     [sender, receiver, token, amount, srcChainId, chainId, refId]
   );
-  const messageId = keccak256(['uint8', 'address', 'bytes32'], [consts.TYPE_MSG_XFER, bridge, xferId]);
-  const domain = keccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'MessageWithTransfer']);
-  const signedData = pack(['bytes32', 'bytes32', 'bytes', 'bytes32'], [domain, messageId, message, srcTxHash]);
-  const signedDataHash = keccak256(['bytes'], [signedData]);
-  const sigs = await calculateSignatures([signer], hex2Bytes(signedDataHash));
+  const messageId = solidityPackedKeccak256(['uint8', 'address', 'bytes32'], [consts.TYPE_MSG_XFER, bridge, xferId]);
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, msgbus, 'MessageWithTransfer']);
+  const signedData = solidityPacked(
+    ['bytes32', 'bytes32', 'bytes', 'bytes32'],
+    [domain, messageId, message, srcTxHash]
+  );
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+  const sigs = await calculateSignatures([signer], getBytes(signedDataHash));
 
   const transferInfo = {
     t: consts.XFER_TYPE_LQ_RELAY,
@@ -128,16 +140,17 @@ async function getMessageWithTransferRequest(
 }
 
 describe('Message Tests', function () {
-  async function fixture([admin]: Wallet[]) {
-    const { bridge, msgbus, msgtest, token } = await deployMessageContracts(admin);
+  async function fixture() {
+    const [admin] = await ethers.getSigners();
+    const { bridge, msgBus, msgTest, token } = await deployMessageContracts(admin);
     await bridge.resetSigners([admin.address], [parseUnits('1')]);
-    return { admin, bridge, msgbus, msgtest, token };
+    return { admin, bridge, msgBus, msgTest, token };
   }
 
-  let admin: Wallet;
+  let admin: HardhatEthersSigner;
   let bridge: Bridge;
-  let msgbus: MessageBus;
-  let msgtest: MsgTest;
+  let msgBus: MessageBus;
+  let msgTest: MsgTest;
   let token: TestERC20;
   let chainId: number;
 
@@ -146,25 +159,25 @@ describe('Message Tests', function () {
     admin = res.admin;
     bridge = res.bridge;
     token = res.token;
-    msgbus = res.msgbus;
-    msgtest = res.msgtest;
-    chainId = (await ethers.provider.getNetwork()).chainId;
+    msgBus = res.msgBus;
+    msgTest = res.msgTest;
+    chainId = toNumber((await ethers.provider.getNetwork()).chainId);
   });
 
   it('should execute msg correctly', async function () {
-    const hash = keccak256(['string'], ['hello']);
+    const hash = solidityPackedKeccak256(['string'], ['hello']);
     const srcChainId = 5;
     const routeInfo = {
       sender: admin.address,
-      receiver: msgtest.address,
+      receiver: await msgTest.getAddress(),
       srcChainId: srcChainId,
       srcTxHash: hash // fake tx hash
     };
     let nonce = 1;
-    let message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    let res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    let message = abiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    let res = await computeMessageIdAndSigs(chainId, await msgBus.getAddress(), routeInfo, message, [admin]);
     await expect(
-      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+      msgBus.getFunction('executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])')(
         message,
         routeInfo,
         res.sigs,
@@ -172,22 +185,29 @@ describe('Message Tests', function () {
         [parseUnits('1')]
       )
     )
-      .to.emit(msgtest, 'MessageReceived')
+      .to.emit(msgTest, 'MessageReceived')
       .withArgs(admin.address, srcChainId, nonce, hash)
-      .to.emit(msgbus, 'Executed')
-      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_SUCCESS, msgtest.address, srcChainId, hash);
+      .to.emit(msgBus, 'Executed')
+      .withArgs(
+        consts.TYPE_MSG_ONLY,
+        res.messageId,
+        consts.MSG_TX_SUCCESS,
+        await msgTest.getAddress(),
+        srcChainId,
+        hash
+      );
 
     const routeInfo2 = {
-      sender: hex2Bytes(admin.address),
-      receiver: msgtest.address,
+      sender: getBytes(admin.address),
+      receiver: await msgTest.getAddress(),
       srcChainId: srcChainId,
       srcTxHash: hash // fake tx hash
     };
     nonce = 2;
-    message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    res = await computeMessage2IdAndSigs(chainId, msgbus.address, routeInfo2, message, [admin]);
+    message = abiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    res = await computeMessage2IdAndSigs(chainId, await msgBus.getAddress(), routeInfo2, message, [admin]);
     await expect(
-      msgbus.functions['executeMessage(bytes,(bytes,address,uint64,bytes32),bytes[],address[],uint256[])'](
+      msgBus.getFunction('executeMessage(bytes,(bytes,address,uint64,bytes32),bytes[],address[],uint256[])')(
         message,
         routeInfo2,
         res.sigs,
@@ -195,16 +215,23 @@ describe('Message Tests', function () {
         [parseUnits('1')]
       )
     )
-      .to.emit(msgtest, 'Message2Received')
-      .withArgs(pack(['address'], [admin.address]), srcChainId, nonce, hash)
-      .to.emit(msgbus, 'Executed')
-      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_SUCCESS, msgtest.address, srcChainId, hash);
+      .to.emit(msgTest, 'Message2Received')
+      .withArgs(solidityPacked(['address'], [admin.address]), srcChainId, nonce, hash)
+      .to.emit(msgBus, 'Executed')
+      .withArgs(
+        consts.TYPE_MSG_ONLY,
+        res.messageId,
+        consts.MSG_TX_SUCCESS,
+        await msgTest.getAddress(),
+        srcChainId,
+        hash
+      );
 
     nonce = 100000000000001;
-    message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    message = abiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    res = await computeMessageIdAndSigs(chainId, await msgBus.getAddress(), routeInfo, message, [admin]);
     await expect(
-      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+      msgBus.getFunction('executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])')(
         message,
         routeInfo,
         res.sigs,
@@ -212,16 +239,16 @@ describe('Message Tests', function () {
         [parseUnits('1')]
       )
     )
-      .to.emit(msgbus, 'CallReverted')
+      .to.emit(msgBus, 'CallReverted')
       .withArgs('invalid nonce')
-      .to.emit(msgbus, 'Executed')
-      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_FAIL, msgtest.address, srcChainId, hash);
+      .to.emit(msgBus, 'Executed')
+      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_FAIL, await msgTest.getAddress(), srcChainId, hash);
 
     nonce = 100000000000002;
-    message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    message = abiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    res = await computeMessageIdAndSigs(chainId, await msgBus.getAddress(), routeInfo, message, [admin]);
     await expect(
-      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+      msgBus.getFunction('executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])')(
         message,
         routeInfo,
         res.sigs,
@@ -229,16 +256,16 @@ describe('Message Tests', function () {
         [parseUnits('1')]
       )
     )
-      .to.emit(msgbus, 'CallReverted')
+      .to.emit(msgBus, 'CallReverted')
       .withArgs('Transaction reverted silently')
-      .to.emit(msgbus, 'Executed')
-      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_FAIL, msgtest.address, srcChainId, hash);
+      .to.emit(msgBus, 'Executed')
+      .withArgs(consts.TYPE_MSG_ONLY, res.messageId, consts.MSG_TX_FAIL, await msgTest.getAddress(), srcChainId, hash);
 
     nonce = 100000000000004;
-    message = ethers.utils.defaultAbiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
-    res = await computeMessageIdAndSigs(chainId, msgbus.address, routeInfo, message, [admin]);
+    message = abiCoder.encode(['uint64', 'bytes'], [nonce, hash]);
+    res = await computeMessageIdAndSigs(chainId, await msgBus.getAddress(), routeInfo, message, [admin]);
     await expect(
-      msgbus.functions['executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])'](
+      msgBus.getFunction('executeMessage(bytes,(address,address,uint64,bytes32),bytes[],address[],uint256[])')(
         message,
         routeInfo,
         res.sigs,
@@ -249,19 +276,19 @@ describe('Message Tests', function () {
   });
 
   it('should execute msg with transfer correctly', async function () {
-    await token.approve(bridge.address, parseUnits('100'));
-    await bridge.addLiquidity(token.address, parseUnits('50'));
-    const hash = keccak256(['string'], ['hello']);
+    await token.approve(bridge.getAddress(), parseUnits('100'));
+    await bridge.addLiquidity(token.getAddress(), parseUnits('50'));
+    const hash = solidityPackedKeccak256(['string'], ['hello']);
     const amount = parseUnits('1');
     const srcChainId = 5;
-    const message = ethers.utils.defaultAbiCoder.encode(['address', 'bytes'], [admin.address, hash]);
+    const message = abiCoder.encode(['address', 'bytes'], [admin.address, hash]);
     const res = await getMessageWithTransferRequest(
       chainId,
-      msgbus.address,
-      bridge.address,
+      await msgBus.getAddress(),
+      await bridge.getAddress(),
       admin.address,
-      msgtest.address,
-      token.address,
+      await msgTest.getAddress(),
+      await token.getAddress(),
       amount,
       srcChainId,
       hash, // fake src transfer Id
@@ -270,14 +297,21 @@ describe('Message Tests', function () {
       admin,
       parseUnits('1')
     );
-    await expect(msgbus.transferAndExecuteMsg(res.bridgeTransferParams, res.executionParams))
-      .to.emit(msgbus, 'Executed')
-      .withArgs(consts.TYPE_MSG_XFER, res.messageId, consts.MSG_TX_SUCCESS, msgtest.address, srcChainId, hash)
-      .to.emit(msgtest, 'MessageReceivedWithTransfer')
-      .withArgs(token.address, amount, admin.address, srcChainId, admin.address, hash);
+    await expect(msgBus.transferAndExecuteMsg(res.bridgeTransferParams, res.executionParams))
+      .to.emit(msgBus, 'Executed')
+      .withArgs(
+        consts.TYPE_MSG_XFER,
+        res.messageId,
+        consts.MSG_TX_SUCCESS,
+        await msgTest.getAddress(),
+        srcChainId,
+        hash
+      )
+      .to.emit(msgTest, 'MessageReceivedWithTransfer')
+      .withArgs(await token.getAddress(), amount, admin.address, srcChainId, admin.address, hash);
 
     await expect(
-      msgbus.executeMessageWithTransfer(
+      msgBus.executeMessageWithTransfer(
         message,
         res.executionParams.transfer,
         res.executionParams.sigs,

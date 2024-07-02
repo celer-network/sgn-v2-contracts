@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { AbiCoder } from 'ethers/lib/utils';
+import { AbiCoder } from 'ethers';
 import { DeployFunction } from 'hardhat-deploy/types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
@@ -48,7 +48,10 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   // await hre.run('verify:verify', { address: proxy.address, constructorArguments: proxyArgs });
   console.log(
     'Encoded proxy constructor args',
-    new AbiCoder().encode(['address', 'address', 'bytes'], [sentinel.address, proxyAdmin.address, encodedInitData])
+    AbiCoder.defaultAbiCoder().encode(
+      ['address', 'address', 'bytes'],
+      [sentinel.address, proxyAdmin.address, encodedInitData]
+    )
   );
 };
 

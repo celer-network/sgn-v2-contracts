@@ -1,4 +1,4 @@
-import { parseUnits } from '@ethersproject/units';
+import { parseUnits } from 'ethers';
 
 export const PROPOSAL_DEPOSIT = 100;
 export const VOTING_PERIOD = 20;
@@ -60,8 +60,6 @@ export const GovInternalTokenTransfer = 5;
 export const GovParamActivePeriod = 0;
 export const GovParamQuorumThreshold = 1;
 export const GovParamFastPassThreshold = 2;
-
-export const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
 export const userPrivKeys = [
   '0x36f2243a51a0f879b1859fff1a663ac04aeebca1bcff4d7dc5a8b38e53211199',

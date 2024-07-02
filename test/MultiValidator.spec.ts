@@ -1,14 +1,16 @@
 import { expect } from 'chai';
+import { parseUnits, Wallet } from 'ethers';
+import { ethers } from 'hardhat';
 
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
+import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
 import { Staking, TestERC20 } from '../typechain';
-import { advanceBlockNumber, deployContracts, getAccounts, loadFixture } from './lib/common';
+import { advanceBlockNumber, deployContracts, getAccounts } from './lib/common';
 import * as consts from './lib/constants';
 
 describe('Multiple validators Tests', function () {
-  async function fixture([admin]: Wallet[]) {
+  async function fixture() {
+    const [admin] = await ethers.getSigners();
     const { staking, celr } = await deployContracts(admin);
     return { admin, staking, celr };
   }
@@ -21,7 +23,7 @@ describe('Multiple validators Tests', function () {
     staking = res.staking;
     celr = res.celr;
     validators = await getAccounts(res.admin, [celr], 8);
-    await celr.approve(staking.address, parseUnits('100'));
+    await celr.approve(staking.getAddress(), parseUnits('100'));
     const stakes = [
       parseUnits('6'),
       parseUnits('2'),
@@ -32,7 +34,7 @@ describe('Multiple validators Tests', function () {
       parseUnits('9')
     ];
     for (let i = 0; i < 8; i++) {
-      await celr.connect(validators[i]).approve(staking.address, parseUnits('100'));
+      await celr.connect(validators[i]).approve(staking.getAddress(), parseUnits('100'));
       await staking
         .connect(validators[i])
         .initializeValidator(validators[i].address, consts.MIN_SELF_DELEGATION, consts.COMMISSION_RATE);
@@ -46,7 +48,7 @@ describe('Multiple validators Tests', function () {
 
   it('should getQuorumTokens successfully', async function () {
     const quorum = await staking.getQuorumTokens();
-    expect(quorum).to.equal(parseUnits('42').add(1));
+    expect(quorum).to.equal(parseUnits('42') + 1n);
   });
 
   it('should fail to bondValidator before delegating enough stake', async function () {
@@ -63,7 +65,7 @@ describe('Multiple validators Tests', function () {
       .withArgs(validators[7].address, consts.STATUS_BONDED);
 
     const quorum = await staking.getQuorumTokens();
-    expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
+    expect(quorum).to.equal((parseUnits('68') * 2n) / 3n + 1n);
   });
 
   it('should remove validator due to undelegate and add new validator successfully', async function () {
@@ -71,14 +73,14 @@ describe('Multiple validators Tests', function () {
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[1].address, consts.STATUS_UNBONDING);
     let quorum = await staking.getQuorumTokens();
-    expect(quorum).to.equal(parseUnits('58').mul(2).div(3).add(1));
+    expect(quorum).to.equal((parseUnits('58') * 2n) / 3n + 1n);
 
     await staking.connect(validators[7]).delegate(validators[7].address, parseUnits('8'));
     await expect(staking.connect(validators[7]).bondValidator())
       .to.emit(staking, 'ValidatorStatusUpdate')
       .withArgs(validators[7].address, consts.STATUS_BONDED);
     quorum = await staking.getQuorumTokens();
-    expect(quorum).to.equal(parseUnits('68').mul(2).div(3).add(1));
+    expect(quorum).to.equal((parseUnits('68') * 2n) / 3n + 1n);
   });
 
   describe('after one validator is replaced', async () => {
@@ -112,7 +114,7 @@ describe('Multiple validators Tests', function () {
       await staking.delegate(validators[1].address, parseUnits('5'));
       await staking.delegate(validators[5].address, parseUnits('3'));
       const quorum = await staking.getQuorumTokens();
-      expect(quorum).to.equal(parseUnits('77').mul(2).div(3).add(1));
+      expect(quorum).to.equal((parseUnits('77') * 2n) / 3n + 1n);
     });
   });
 });

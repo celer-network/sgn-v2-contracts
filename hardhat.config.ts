@@ -1,14 +1,14 @@
-import '@matterlabs/hardhat-zksync-deploy';
-import '@matterlabs/hardhat-zksync-solc';
+import '@nomicfoundation/hardhat-ethers';
+import '@nomicfoundation/hardhat-toolbox';
 import '@nomicfoundation/hardhat-verify';
-import '@nomiclabs/hardhat-ethers';
-import '@nomiclabs/hardhat-waffle';
-import '@oasisprotocol/sapphire-hardhat';
-import '@rumblefishdev/hardhat-kms-signer';
 import '@typechain/hardhat';
 import 'hardhat-contract-sizer';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
+import 'hardhat-signer-kms';
+import '@oasisprotocol/sapphire-hardhat';
+import '@matterlabs/hardhat-zksync-deploy';
+import '@matterlabs/hardhat-zksync-solc';
 // Imports the verify plugin before the upgradable plugin
 import '@matterlabs/hardhat-zksync-upgradable';
 import '@matterlabs/hardhat-zksync-verify';
@@ -455,7 +455,7 @@ const config: HardhatUserConfig = {
     xterio: getNetworkConfig(xterioEndpoint, kmsKeyId, xterioPrivateKey),
     opbnb: getNetworkConfig(opbnbEndpoint, kmsKeyId, opbnbPrivateKey),
     blast: getNetworkConfig(blastEndpoint, kmsKeyId, blastPrivateKey),
-    gravityAlphaMainnet: getNetworkConfig(gravityAlphaMainnetEndpoint, kmsKeyId, gravityAlphaMainnetPrivateKey),
+    gravityAlphaMainnet: getNetworkConfig(gravityAlphaMainnetEndpoint, kmsKeyId, gravityAlphaMainnetPrivateKey)
   },
   namedAccounts: {
     deployer: {
@@ -483,7 +483,7 @@ const config: HardhatUserConfig = {
   },
   typechain: {
     outDir: 'typechain',
-    target: 'ethers-v5'
+    target: 'ethers-v6'
   },
   etherscan: {
     apiKey: {
@@ -565,12 +565,15 @@ const config: HardhatUserConfig = {
   }
 };
 
-if (config.networks?.blast) {
-  config.networks.blast.minMaxPriorityFeePerGas = 3000000;
-}
-
-if (config.networks?.fantom) {
-  config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
-}
+// if (config.networks?.polygon) {
+//   config.networks.polygon.minMaxPriorityFeePerGas = 30000000000;
+// }
+// if (config.networks?.fantom) {
+//   config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
+// }
+// if (config.networks?.bsc) {
+//   config.networks.bsc.minMaxPriorityFeePerGas = 3000000000;
+//   config.networks.bsc.minMaxFeePerGas = 3000000000;
+// }
 
 export default config;

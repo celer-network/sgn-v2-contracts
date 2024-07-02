@@ -1,8 +1,5 @@
-import { Fixture } from 'ethereum-waffle';
-import { ethers, waffle } from 'hardhat';
-
-import { parseUnits } from '@ethersproject/units';
-import { Wallet } from '@ethersproject/wallet';
+import { parseUnits, Wallet, ZeroAddress } from 'ethers';
+import { ethers } from 'hardhat';
 
 import {
   Bridge,
@@ -44,13 +41,7 @@ import {
 } from '../../typechain';
 import * as consts from './constants';
 
-// Workaround for https://github.com/nomiclabs/hardhat/issues/849
-// TODO: Remove once fixed upstream.
-export function loadFixture<T>(fixture: Fixture<T>): Promise<T> {
-  const provider = waffle.provider;
-  return waffle.createFixtureLoader(provider.getWallets(), provider)(fixture);
-}
-
+import type { AbstractSigner, AddressLike, ContractRunner } from 'ethers';
 interface DeploymentInfo {
   staking: Staking;
   sgn: SGN;
@@ -61,16 +52,16 @@ interface DeploymentInfo {
   celr: TestERC20;
 }
 
-export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
-  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+export async function deployContracts(admin: ContractRunner): Promise<DeploymentInfo> {
+  const testERC20Factory = new TestERC20__factory();
   const celr = await testERC20Factory.connect(admin).deploy();
-  await celr.deployed();
+  const celrAddress = await celr.getAddress();
 
-  const stakingFactory = (await ethers.getContractFactory('Staking')) as Staking__factory;
+  const stakingFactory = new Staking__factory();
   const staking = await stakingFactory
     .connect(admin)
     .deploy(
-      celr.address,
+      celrAddress,
       consts.PROPOSAL_DEPOSIT,
       consts.VOTING_PERIOD,
       consts.UNBONDING_PERIOD,
@@ -81,27 +72,23 @@ export async function deployContracts(admin: Wallet): Promise<DeploymentInfo> {
       consts.VALIDATOR_BOND_INTERVAL,
       consts.MAX_SLASH_FACTOR
     );
-  await staking.deployed();
+  const stakingAddress = await staking.getAddress();
 
-  const sgnFactory = (await ethers.getContractFactory('SGN')) as SGN__factory;
-  const sgn = await sgnFactory.connect(admin).deploy(staking.address);
-  await sgn.deployed();
+  const sgnFactory = new SGN__factory();
+  const sgn = await sgnFactory.connect(admin).deploy(stakingAddress);
 
-  const stakingRewardFactory = (await ethers.getContractFactory('StakingReward')) as StakingReward__factory;
-  const stakingReward = await stakingRewardFactory.connect(admin).deploy(staking.address);
-  await stakingReward.deployed();
+  const stakingRewardFactory = new StakingReward__factory();
+  const stakingReward = await stakingRewardFactory.connect(admin).deploy(stakingAddress);
+  const stakingRewardAddress = await stakingReward.getAddress();
 
-  const farmingRewardsFactory = (await ethers.getContractFactory('FarmingRewards')) as FarmingRewards__factory;
-  const farmingRewards = await farmingRewardsFactory.connect(admin).deploy(staking.address);
-  await farmingRewards.deployed();
+  const farmingRewardsFactory = new FarmingRewards__factory();
+  const farmingRewards = await farmingRewardsFactory.connect(admin).deploy(stakingAddress);
 
-  const governFactory = (await ethers.getContractFactory('Govern')) as Govern__factory;
-  const govern = await governFactory.connect(admin).deploy(staking.address, celr.address, stakingReward.address);
-  await govern.deployed();
+  const governFactory = new Govern__factory();
+  const govern = await governFactory.connect(admin).deploy(stakingAddress, celrAddress, stakingRewardAddress);
 
-  const viewerFactory = (await ethers.getContractFactory('Viewer')) as Viewer__factory;
-  const viewer = await viewerFactory.connect(admin).deploy(staking.address);
-  await viewer.deployed();
+  const viewerFactory = new Viewer__factory();
+  const viewer = await viewerFactory.connect(admin).deploy(stakingAddress);
 
   return { staking, sgn, stakingReward, farmingRewards, govern, viewer, celr };
 }
@@ -113,60 +100,50 @@ interface BridgeInfo {
   pegToken: SingleBridgeToken;
 }
 
-export async function deployBridgeContracts(admin: Wallet): Promise<BridgeInfo> {
-  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+export async function deployBridgeContracts(admin: ContractRunner): Promise<BridgeInfo> {
+  const testERC20Factory = new TestERC20__factory();
   const token = await testERC20Factory.connect(admin).deploy();
-  await token.deployed();
+  await token.waitForDeployment();
 
-  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridgeFactory = new Bridge__factory();
   const bridge = await bridgeFactory.connect(admin).deploy();
-  await bridge.deployed();
+  await bridge.waitForDeployment();
 
-  const pegBridgeFactory = (await ethers.getContractFactory('PeggedTokenBridge')) as PeggedTokenBridge__factory;
-  const pegBridge = await pegBridgeFactory.connect(admin).deploy(bridge.address);
-  await pegBridge.deployed();
+  const pegBridgeFactory = new PeggedTokenBridge__factory();
+  const pegBridge = await pegBridgeFactory.connect(admin).deploy(bridge.getAddress());
+  await pegBridge.waitForDeployment();
 
-  const pegTokenFactory = (await ethers.getContractFactory('SingleBridgeToken')) as SingleBridgeToken__factory;
-  const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.address);
-  await pegToken.deployed();
+  const pegTokenFactory = new SingleBridgeToken__factory();
+  const pegToken = await pegTokenFactory.connect(admin).deploy('PegToken', 'PGT', 18, pegBridge.getAddress());
+  await pegToken.waitForDeployment();
 
   return { bridge, token, pegBridge, pegToken };
 }
 
 interface MessageInfo {
   bridge: Bridge;
-  msgbus: MessageBus;
-  msgtest: MsgTest;
+  msgBus: MessageBus;
+  msgTest: MsgTest;
   token: TestERC20;
 }
 
-export async function deployMessageContracts(admin: Wallet): Promise<MessageInfo> {
-  const testERC20Factory = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+export async function deployMessageContracts(admin: ContractRunner): Promise<MessageInfo> {
+  const testERC20Factory = new TestERC20__factory();
   const token = await testERC20Factory.connect(admin).deploy();
-  await token.deployed();
 
-  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridgeFactory = new Bridge__factory();
   const bridge = await bridgeFactory.connect(admin).deploy();
-  await bridge.deployed();
+  const bridgeAddress = await bridge.getAddress();
 
-  const msgbusFactory = (await ethers.getContractFactory('MessageBus')) as MessageBus__factory;
-  const msgbus = await msgbusFactory
+  const msgBusFactory = new MessageBus__factory();
+  const msgBus = await msgBusFactory
     .connect(admin)
-    .deploy(
-      bridge.address,
-      bridge.address,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero
-    );
-  await msgbus.deployed();
+    .deploy(bridgeAddress, bridgeAddress, ZeroAddress, ZeroAddress, ZeroAddress, ZeroAddress);
 
-  const msgtestFactory = (await ethers.getContractFactory('MsgTest')) as MsgTest__factory;
-  const msgtest = await msgtestFactory.connect(admin).deploy(msgbus.address);
-  await msgtest.deployed();
+  const msgTestFactory = new MsgTest__factory();
+  const msgTest = await msgTestFactory.connect(admin).deploy(msgBus.getAddress());
 
-  return { bridge, msgbus, msgtest, token };
+  return { bridge, msgBus, msgTest, token };
 }
 
 interface GovernedOwnerInfo {
@@ -174,33 +151,33 @@ interface GovernedOwnerInfo {
   proxy: GovernedOwnerProxy;
 }
 
-export async function deployGovernedOwner(admin: Wallet, initVoterNum: number): Promise<GovernedOwnerInfo> {
-  const proxyFactory = (await ethers.getContractFactory('GovernedOwnerProxy')) as GovernedOwnerProxy__factory;
-  const proxy = await proxyFactory.connect(admin).deploy(admin.address);
-  await proxy.deployed();
+export async function deployGovernedOwner(
+  admin: ContractRunner & AddressLike,
+  initVoterNum: number
+): Promise<GovernedOwnerInfo> {
+  const proxyFactory = new GovernedOwnerProxy__factory();
+  const proxy = await proxyFactory.connect(admin).deploy(admin);
 
   const voters: string[] = [];
   const powers: number[] = [];
   for (let i = 0; i < initVoterNum; i++) {
-    const voter = new ethers.Wallet(consts.userPrivKeys[i]).connect(ethers.provider);
+    const voter = new Wallet(consts.userPrivKeys[i]).connect(ethers.provider);
     voters.push(voter.address);
     powers.push(100);
   }
 
-  const govFactory = (await ethers.getContractFactory('SimpleGovernance')) as SimpleGovernance__factory;
-  const gov = await govFactory.connect(admin).deploy(voters, powers, [proxy.address], 3600, 60, 40);
-  await gov.deployed();
+  const govFactory = new SimpleGovernance__factory();
+  const gov = await govFactory.connect(admin).deploy(voters, powers, [proxy.getAddress()], 3600, 60, 40);
 
-  await proxy.initGov(gov.address);
+  await proxy.initGov(gov.getAddress());
 
   return { gov, proxy };
 }
 
-export async function deploySentinel(admin: Wallet): Promise<Sentinel> {
-  const factory = (await ethers.getContractFactory('Sentinel')) as Sentinel__factory;
+export async function deploySentinel(admin: ContractRunner): Promise<Sentinel> {
+  const factory = new Sentinel__factory();
   const sentinel = await factory.connect(admin).deploy([], [], []);
-  await sentinel.deployed();
-  return sentinel
+  return sentinel;
 }
 
 interface SwapInfo {
@@ -212,54 +189,43 @@ interface SwapInfo {
   weth: WETH;
 }
 
-export async function deploySwapContracts(admin: Wallet): Promise<SwapInfo> {
-  const testERC20FactoryA = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+export async function deploySwapContracts(admin: ContractRunner): Promise<SwapInfo> {
+  const testERC20FactoryA = new TestERC20__factory();
   const tokenA = await testERC20FactoryA.connect(admin).deploy();
-  await tokenA.deployed();
 
-  const testERC20FactoryB = (await ethers.getContractFactory('TestERC20')) as TestERC20__factory;
+  const testERC20FactoryB = new TestERC20__factory();
   const tokenB = await testERC20FactoryB.connect(admin).deploy();
-  await tokenB.deployed();
 
-  const bridgeFactory = (await ethers.getContractFactory('Bridge')) as Bridge__factory;
+  const bridgeFactory = new Bridge__factory();
   const bridge = await bridgeFactory.connect(admin).deploy();
-  await bridge.deployed();
+  const bridgeAddress = await bridge.getAddress();
 
-  const busFactory = (await ethers.getContractFactory('MessageBus')) as MessageBus__factory;
+  const busFactory = new MessageBus__factory();
   const bus = await busFactory
     .connect(admin)
-    .deploy(
-      bridge.address,
-      bridge.address,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero,
-      ethers.constants.AddressZero
-    );
-  await bus.deployed();
+    .deploy(bridgeAddress, bridgeAddress, ZeroAddress, ZeroAddress, ZeroAddress, ZeroAddress);
 
-  const swapFactory = (await ethers.getContractFactory('DummySwap')) as DummySwap__factory;
+  const swapFactory = new DummySwap__factory();
   const swap = await swapFactory.connect(admin).deploy(parseUnits('5')); // 5% fixed fake slippage
-  await swap.deployed();
 
-  const wethFactory = (await ethers.getContractFactory('WETH')) as WETH__factory;
+  const wethFactory = new WETH__factory();
   const weth = await wethFactory.connect(admin).deploy();
-  await weth.deployed();
 
-  const transferSwapFactory = (await ethers.getContractFactory('TransferSwap')) as TransferSwap__factory;
-  const transferSwap = await transferSwapFactory.connect(admin).deploy(bus.address, swap.address, weth.address);
-  await transferSwap.deployed();
+  const transferSwapFactory = new TransferSwap__factory();
+  const transferSwap = await transferSwapFactory
+    .connect(admin)
+    .deploy(bus.getAddress(), swap.getAddress(), weth.getAddress());
 
   return { tokenA, tokenB, transferSwap, swap, bridge, weth };
 }
 
-export async function getAccounts(admin: Wallet, assets: TestERC20[], num: number): Promise<Wallet[]> {
+export async function getAccounts(admin: AbstractSigner, assets: TestERC20[], num: number): Promise<Wallet[]> {
   const accounts: Wallet[] = [];
   for (let i = 0; i < num; i++) {
     accounts.push(new ethers.Wallet(consts.userPrivKeys[i]).connect(ethers.provider));
     await admin.sendTransaction({
       to: accounts[i].address,
-      value: parseUnits('10')
+      value: parseUnits('11')
     });
     for (let j = 0; j < assets.length; j++) {
       await assets[j].transfer(accounts[i].address, parseUnits('1000'));
@@ -289,7 +255,10 @@ export async function advanceBlockNumberTo(target: number): Promise<void> {
 export async function getBlockTime() {
   const blockNumber = await ethers.provider.getBlockNumber();
   const block = await ethers.provider.getBlock(blockNumber);
-  return block.timestamp;
+  if (block) {
+    return block.timestamp;
+  }
+  throw Error('invalid block number');
 }
 
 export async function advanceBlockTime(blkTime: number) {

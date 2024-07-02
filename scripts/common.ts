@@ -1,8 +1,7 @@
+import { Numeric, Overrides, parseUnits } from 'ethers';
 import { ethers, getNamedAccounts } from 'hardhat';
 
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-
-import type { Overrides } from 'ethers';
 
 export async function getDeployerSigner(): Promise<SignerWithAddress> {
   const deployer = (await getNamedAccounts())['deployer'];
@@ -20,4 +19,10 @@ export async function getFeeOverrides(): Promise<Overrides> {
     return { maxFeePerGas: feeData.maxFeePerGas, maxPriorityFeePerGas: feeData.maxPriorityFeePerGas || 0 };
   }
   return { gasPrice: feeData.gasPrice || 0 };
+}
+
+export function getParseUnitsCallback(
+  unitNames: (string | Numeric)[]
+): (value: string, index: number, array: string[]) => bigint {
+  return (s, i) => parseUnits(s, unitNames[i]);
 }

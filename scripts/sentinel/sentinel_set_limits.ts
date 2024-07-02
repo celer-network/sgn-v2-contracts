@@ -1,23 +1,13 @@
 import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
-import { BigNumber } from 'ethers';
-
-import { parseUnits } from '@ethersproject/units';
 
 import { Sentinel__factory } from '../../typechain';
-import { getDeployerSigner, getFeeOverrides } from '../common';
+import { TypedContractMethod } from '../../typechain/common';
+import { getDeployerSigner, getFeeOverrides, getParseUnitsCallback } from '../common';
 
-import type { ContractTransaction, Overrides } from '@ethersproject/contracts';
-import type { BigNumberish } from '@ethersproject/bignumber';
-
+import type { AddressLike, BigNumberish, Overrides } from 'ethers';
 dotenv.config();
-
-function getParseUnitsCallback(
-  unitNames: BigNumberish[]
-): (value: string, index: number, array: string[]) => BigNumber {
-  return (s, i) => parseUnits(s, unitNames[i]);
-}
 
 async function setLimitIfSpecified(
   limitEnv: string,
@@ -25,18 +15,17 @@ async function setLimitIfSpecified(
   tokens: string[],
   decimals: string[],
   methodName: string,
-  method: (
-    _target: string,
-    _tokens: string[],
-    _amounts: BigNumberish[],
-    overrides?: Overrides & { from?: string }
-  ) => Promise<ContractTransaction>,
+  method: TypedContractMethod<
+    [_target: string, _tokens: AddressLike[], _amounts: BigNumberish[]],
+    [void],
+    'nonpayable'
+  >,
   feeOverrides: Overrides
 ): Promise<void> {
   if (limitEnv) {
     const limitStr = limitEnv.split(',');
     if (limitEnv.length > 0 && limitStr.length === decimals.length) {
-      const limits = limitStr.map(getParseUnitsCallback(decimals));
+      const limits = limitStr.map(getParseUnitsCallback(decimals.map(Number)));
       await (await method(target, tokens, limits, feeOverrides)).wait();
       console.log(
         methodName,

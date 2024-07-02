@@ -1,19 +1,14 @@
 import 'hardhat-deploy';
 
 import * as dotenv from 'dotenv';
-import { parseUnits } from 'ethers';
 
 import { Bridge__factory, OriginalTokenVault__factory, PeggedTokenBridge__factory } from '../typechain';
 import { TypedContractMethod } from '../typechain/common';
-import { getDeployerSigner, getFeeOverrides } from './common';
+import { getDeployerSigner, getFeeOverrides, getParseUnitsCallback } from './common';
 
 import type { AddressLike, BigNumberish, Overrides } from 'ethers';
 
 dotenv.config();
-
-function getParseUnitsCallback(unitNames: string[]): (value: string, index: number, array: string[]) => bigint {
-  return (s, i) => parseUnits(s, unitNames[i]);
-}
 
 async function setLimitIfSpecified(
   limitEnv: string,
@@ -26,7 +21,7 @@ async function setLimitIfSpecified(
   if (limitEnv) {
     const limitStr = limitEnv.split(',');
     if (limitEnv.length > 0 && limitStr.length === decimals.length) {
-      const limits = limitStr.map(getParseUnitsCallback(decimals));
+      const limits = limitStr.map(getParseUnitsCallback(decimals.map(Number)));
       await (await method(tokens, limits, feeOverrides)).wait();
       console.log(
         methodName,

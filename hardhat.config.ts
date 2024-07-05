@@ -251,6 +251,9 @@ const scrollPrivateKey = process.env.SCROLL_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const zksyncEraEndpoint = process.env.ZKSYNC_ERA_ENDPOINT || DEFAULT_ENDPOINT;
 const zksyncEraPrivateKey = process.env.ZKSYNC_ERA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const holeskyEndpoint = process.env.HOLESKY_ENDPOINT || DEFAULT_ENDPOINT;
+const holeskyPrivateKey = process.env.HOLESKY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -288,6 +291,10 @@ const config: HardhatUserConfig = {
     ropsten: {
       url: ropstenEndpoint,
       accounts: [`0x${ropstenPrivateKey}`]
+    },
+    holesky: {
+      url: holeskyEndpoint,
+      accounts: [`0x${holeskyPrivateKey}`]
     },
     goerli: {
       url: goerliEndpoint,
@@ -465,6 +472,7 @@ const config: HardhatUserConfig = {
     apiKey: {
       // Testnets
       goerli: process.env.ETHERSCAN_API_KEY || '',
+      holesky: process.env.ETHERSCAN_API_KEY || '',
       avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY || '',
       bscTestnet: process.env.BSCSCAN_API_KEY || '',
       arbitrumTestnet: process.env.ARBISCAN_API_KEY || '',

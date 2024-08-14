@@ -5,7 +5,7 @@ pragma solidity 0.8.17;
 import "../safeguard/Ownable.sol";
 
 /**
- * @title A contract to initiate withdrawal requests for contracts tha provide liquidity to {Bridge}.
+ * @title A contract to initiate withdrawal requests for contracts that provide liquidity to {Bridge}.
  */
 contract WithdrawInbox is Ownable {
     // min allowed max slippage uint32 value is slippage * 1M, eg. 0.5% -> 5000

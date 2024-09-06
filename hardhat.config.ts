@@ -100,6 +100,9 @@ const oasysTestPrivateKey = process.env.OASYS_TEST_PRIVATE_KEY || DEFAULT_PRIVAT
 const antimatterB2TestEndpoint = process.env.ANTIMATTER_B2_TEST_ENDPOINT || DEFAULT_ENDPOINT;
 const antimatterB2TestPrivateKey = process.env.ANTIMATTER_B2_TEST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const holeskyEndpoint = process.env.HOLESKY_ENDPOINT || DEFAULT_ENDPOINT;
+const holeskyPrivateKey = process.env.HOLESKY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // Mainnets
 const ethMainnetEndpoint = process.env.ETH_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const ethMainnetPrivateKey = process.env.ETH_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
@@ -269,20 +272,20 @@ const blastPrivateKey = process.env.BLAST_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 const gravityAlphaMainnetEndpoint = process.env.GRAVITY_ALPHA_MAINNET_ENDPOINT || DEFAULT_ENDPOINT;
 const gravityAlphaMainnetPrivateKey = process.env.GRAVITY_ALPHA_MAINNET_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
-const holeskyEndpoint = process.env.HOLESKY_ENDPOINT || DEFAULT_ENDPOINT;
-const holeskyPrivateKey = process.env.HOLESKY_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+const flowEvmEndpoint = process.env.FLOW_EVM_ENDPOINT || DEFAULT_ENDPOINT;
+const flowEvmPrivateKey = process.env.FLOW_EVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
     ? {
-        url: url,
-        accounts: [`0x${privateKey}`]
-      }
+      url: url,
+      accounts: [`0x${privateKey}`]
+    }
     : {
-        url: url,
-        kmsKeyId: kmsKeyId
-      };
+      url: url,
+      kmsKeyId: kmsKeyId
+    };
   if (gasPrice) {
     network.gasPrice = gasPrice;
   }
@@ -462,7 +465,8 @@ const config: HardhatUserConfig = {
     xterio: getNetworkConfig(xterioEndpoint, kmsKeyId, xterioPrivateKey),
     opbnb: getNetworkConfig(opbnbEndpoint, kmsKeyId, opbnbPrivateKey),
     blast: getNetworkConfig(blastEndpoint, kmsKeyId, blastPrivateKey),
-    gravityAlphaMainnet: getNetworkConfig(gravityAlphaMainnetEndpoint, kmsKeyId, gravityAlphaMainnetPrivateKey)
+    gravityAlphaMainnet: getNetworkConfig(gravityAlphaMainnetEndpoint, kmsKeyId, gravityAlphaMainnetPrivateKey),
+    flowEvm: getNetworkConfig(flowEvmEndpoint, kmsKeyId, flowEvmPrivateKey),
   },
   namedAccounts: {
     deployer: {

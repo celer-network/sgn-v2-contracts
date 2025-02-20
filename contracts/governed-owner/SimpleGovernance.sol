@@ -160,12 +160,19 @@ contract SimpleGovernance {
         return proposalId;
     }
 
-    function voteProposal(uint256 _proposalId, bool _vote) external {
+    function voteProposal(uint256 _proposalId, bool _vote) public {
         require(voterPowers[msg.sender] > 0, "invalid voter");
         Proposal storage p = proposals[_proposalId];
         require(block.timestamp < p.deadline, "deadline passed");
         p.votes[msg.sender] = _vote;
         emit ProposalVoted(_proposalId, msg.sender, _vote);
+    }
+
+    function voteProposals(uint256[] calldata _proposalIds, bool[] calldata _votes) external {
+        require(_proposalIds.length == _votes.length, "proposalIds and votes length not match");
+        for (uint256 i = 0; i < _proposalIds.length; i++) {
+            voteProposal(_proposalIds[i], _votes[i]);
+        }
     }
 
     function executeProposal(

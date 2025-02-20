@@ -22,7 +22,9 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
 
     mapping(BridgeTransferLib.BridgeSendType => address) public bridges;
     mapping(bytes32 => address) public records;
+
     address public nativeWrap;
+    uint256 public nativeTokenTransferGas = 50000;
 
     event Deposited(address depositor, address token, uint256 amount);
     event BridgeUpdated(BridgeTransferLib.BridgeSendType bridgeSendType, address bridgeAddr);
@@ -117,7 +119,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
         if (_token == address(0)) {
             // refund asset is ETH
             if (address(this).balance >= _amount) {
-                (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+                (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
                 require(sent, "failed to send native token");
             } else {
                 // in case of refund asset is WETH
@@ -129,7 +131,7 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
                 IERC20(_token).safeTransfer(_receiver, _amount);
             } else {
                 // in case of refund asset is ETH
-                (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+                (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
                 require(sent, "failed to send native token");
             }
         } else {
@@ -158,6 +160,11 @@ contract ContractAsSender is ReentrancyGuard, Pauser {
     // set nativeWrap
     function setWrap(address _weth) external onlyOwner {
         nativeWrap = _weth;
+    }
+
+    // setNativeTransferGasUsed, native transfer will use this config.
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyOwner {
+        nativeTokenTransferGas = _gasUsed;
     }
 
     // This is needed to receive ETH if a refund asset is ETH

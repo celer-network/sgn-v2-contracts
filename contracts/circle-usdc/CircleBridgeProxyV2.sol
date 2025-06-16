@@ -34,7 +34,7 @@ contract CircleBridgeProxyV2 is FeeOperator, Governor, Pauser, ReentrancyGuard {
         uint256 amount,
         uint256 txFee,
         uint256 percFee,
-        uint256 minFinalityThreshold
+        uint32 minFinalityThreshold
     );
 
     constructor(address _circleBridge, address _feeCollector) FeeOperator(_feeCollector) {

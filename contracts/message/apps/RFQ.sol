@@ -52,6 +52,8 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     }
 
     address public nativeWrap;
+    uint256 public nativeTokenTransferGas = 50000;
+
     mapping(uint64 => address) public remoteRfqContracts;
     // msg => bool
     mapping(bytes32 => bool) public unconsumedMsg;
@@ -394,14 +396,14 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
 
     function _transferNativeToken(address _receiver, uint256 _amount) private {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
-        (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+        (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
         require(sent, "Rfq: failed to transfer native token");
     }
 
     function _withdrawNativeToken(address _receiver, uint256 _amount) private {
         require(nativeWrap != address(0), "Rfq: native wrap not set");
         IWETH(nativeWrap).withdraw(_amount);
-        (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+        (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
         require(sent, "Rfq: failed to withdraw native token");
     }
 
@@ -438,5 +440,9 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
 
     function setNativeWrap(address _nativeWrap) external onlyOwner {
         nativeWrap = _nativeWrap;
+    }
+
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyOwner {
+        nativeTokenTransferGas = _gasUsed;
     }
 }

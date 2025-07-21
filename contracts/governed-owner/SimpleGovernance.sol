@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../libraries/Utils.sol";
 
-// mainly used for governed-owner to do infrequent sgn/cbridge owner operations,
+// mainly used for governed multi owner to do infrequent owner operations,
 // relatively prefer easy-to-use over gas-efficiency
 contract SimpleGovernance {
     uint256 public constant THRESHOLD_DECIMAL = 100;
@@ -49,6 +49,8 @@ contract SimpleGovernance {
     // 2. Do not allow arbitrary fastpass proposal with calldata constructed by the proxy callers.
     // See ./proxies/CommonOwnerProxy.sol for example.
     mapping(address => bool) public proposerProxies;
+
+    uint256 public nativeTokenTransferGas = 50000;
 
     event Initiated(
         address[] voters,
@@ -158,12 +160,19 @@ contract SimpleGovernance {
         return proposalId;
     }
 
-    function voteProposal(uint256 _proposalId, bool _vote) external {
+    function voteProposal(uint256 _proposalId, bool _vote) public {
         require(voterPowers[msg.sender] > 0, "invalid voter");
         Proposal storage p = proposals[_proposalId];
         require(block.timestamp < p.deadline, "deadline passed");
         p.votes[msg.sender] = _vote;
         emit ProposalVoted(_proposalId, msg.sender, _vote);
+    }
+
+    function voteProposals(uint256[] calldata _proposalIds, bool[] calldata _votes) external {
+        require(_proposalIds.length == _votes.length, "proposalIds and votes length not match");
+        for (uint256 i = 0; i < _proposalIds.length; i++) {
+            voteProposal(_proposalIds[i], _votes[i]);
+        }
     }
 
     function executeProposal(
@@ -221,6 +230,11 @@ contract SimpleGovernance {
             _transfer(receiver, token, amount);
         }
         emit ProposalExecuted(_proposalId);
+    }
+
+    function setNativeTokenTransferGas(uint256 _gasUsed) external {
+        require(voterPowers[msg.sender] > 0, "invalid caller");
+        nativeTokenTransferGas = _gasUsed;
     }
 
     receive() external payable {}
@@ -323,7 +337,7 @@ contract SimpleGovernance {
         uint256 _amount
     ) private {
         if (_token == address(0)) {
-            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
             require(sent, "failed to send native token");
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);

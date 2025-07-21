@@ -27,6 +27,7 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
     mapping(address => uint256) public maxDeposit;
 
     address public nativeWrap;
+    uint256 public nativeTokenTransferGas = 50000;
 
     event Deposited(
         bytes32 depositId,
@@ -201,11 +202,15 @@ contract OriginalTokenVault is ReentrancyGuard, Pauser, VolumeControl, DelayedTr
         if (_token == nativeWrap) {
             // withdraw then transfer native to receiver
             IWETH(nativeWrap).withdraw(_amount);
-            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
             require(sent, "failed to send native token");
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
         }
+    }
+
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyGovernor {
+        nativeTokenTransferGas = _gasUsed;
     }
 
     receive() external payable {}

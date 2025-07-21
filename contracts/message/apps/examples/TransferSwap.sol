@@ -66,6 +66,7 @@ contract TransferSwap is MessageApp, Ownable {
 
     // erc20 wrap of gas token of this chain, eg. WETH
     address public nativeWrap;
+    uint256 public nativeTokenTransferGas = 50000;
 
     constructor(
         address _messageBus,
@@ -335,7 +336,7 @@ contract TransferSwap is MessageApp, Ownable {
         if (_nativeOut) {
             require(_token == nativeWrap, "token mismatch");
             IWETH(nativeWrap).withdraw(_amount);
-            (bool sent, ) = _receiver.call{value: _amount, gas: 50000}("");
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
             require(sent, "failed to send native");
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
@@ -361,6 +362,10 @@ contract TransferSwap is MessageApp, Ownable {
 
     function setNativeWrap(address _nativeWrap) external onlyOwner {
         nativeWrap = _nativeWrap;
+    }
+
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyOwner {
+        nativeTokenTransferGas = _gasUsed;
     }
 
     function setMessageBus(address _messageBus) public onlyOwner {

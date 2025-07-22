@@ -94,7 +94,7 @@ contract Signers is Ownable, ISigsVerifier {
         bytes[] calldata _sigs,
         address[] calldata _signers,
         uint256[] calldata _powers
-    ) private pure {
+    ) internal pure {
         require(_signers.length == _powers.length, "signers and powers length not match");
         uint256 totalPower; // sum of all signer.power
         for (uint256 i = 0; i < _signers.length; i++) {

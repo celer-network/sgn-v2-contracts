@@ -281,6 +281,9 @@ const redBellyPrivateKey = process.env.RED_BELLY_PRIVATE_KEY || DEFAULT_PRIVATE_
 const hyperEvmEndpoint = process.env.HYPER_EVM_ENDPOINT || DEFAULT_ENDPOINT;
 const hyperEvmPrivateKey = process.env.HYPER_EVM_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const unichainEndpoint = process.env.UNICHAIN_ENDPOINT || DEFAULT_ENDPOINT;
+const unichainPrivateKey = process.env.UNICHAIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -475,6 +478,7 @@ const config: HardhatUserConfig = {
     flowEvm: getNetworkConfig(flowEvmEndpoint, kmsKeyId, flowEvmPrivateKey),
     redBelly: getNetworkConfig(redBellyEndpoint, kmsKeyId, redBellyPrivateKey),
     hyperEvm: getNetworkConfig(hyperEvmEndpoint, kmsKeyId, hyperEvmPrivateKey),
+    uniChain: getNetworkConfig(unichainEndpoint, kmsKeyId, unichainPrivateKey)
   },
   namedAccounts: {
     deployer: {
@@ -531,6 +535,7 @@ const config: HardhatUserConfig = {
       base: process.env.BASE_API_KEY || '',
       scroll: process.env.SCROLLSCAN_API_KEY || '',
       redBelly: "routescan", // apiKey is not required, just set a placeholder
+      uniChain: process.env.UNICHAIN_API_KEY || '',
     },
     customChains: [
       {
@@ -571,6 +576,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: "https://api.routescan.io/v2/network/mainnet/evm/151/etherscan/api",
           browserURL: "https://routescan.io"
+        }
+      },
+      {
+        network: "uniChain",
+        chainId: 130,
+        urls: {
+          apiURL: "https://mainnet.unichain.org",
+          browserURL: "https://uniscan.xyz"
         }
       }
     ]

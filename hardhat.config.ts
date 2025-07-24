@@ -529,7 +529,8 @@ const config: HardhatUserConfig = {
       arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
       linea: process.env.LINEA_API_KEY || '',
       base: process.env.BASE_API_KEY || '',
-      scroll: process.env.SCROLLSCAN_API_KEY || ''
+      scroll: process.env.SCROLLSCAN_API_KEY || '',
+      redBelly: "routescan", // apiKey is not required, just set a placeholder
     },
     customChains: [
       {
@@ -562,6 +563,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: process.env.SCROLLSCAN_API_ENDPOINT || '',
           browserURL: process.env.SCROLL_EXPLORER || ''
+        }
+      },
+      {
+        network: "redBelly",
+        chainId: 151,
+        urls: {
+          apiURL: "https://api.routescan.io/v2/network/mainnet/evm/151/etherscan/api",
+          browserURL: "https://routescan.io"
         }
       }
     ]

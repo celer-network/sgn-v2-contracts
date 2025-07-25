@@ -13,7 +13,7 @@ import "../Staking.sol";
  *         validators from the Celer SGN to participate in BVN consensus by restaking their
  *         existing SGN staking power.
  */
-contract BVN {
+contract BvnRestaking {
     using ECDSA for bytes32;
 
     struct BvnValidator {

@@ -2,16 +2,16 @@
 
 pragma solidity 0.8.17;
 
-import "./BVN.sol";
+import "./BVNRestaking.sol";
 
 contract DelegatorOptIn {
-    BVN public immutable bvn;
+    BvnRestaking public immutable bvn;
 
     mapping(address => mapping(address => uint256)) optedIn; // delegator -> validator -> opted in timestamp
 
     event DelegatorOptedIn(address indexed delegator, address indexed validator, uint256 timestamp);
 
-    constructor(BVN _bvn) {
+    constructor(BvnRestaking _bvn) {
         bvn = _bvn;
     }
 

@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.17;
 
-import "./BVNRestaking.sol";
+import "./BvnRestaking.sol";
 
 contract DelegatorOptIn {
     BvnRestaking public immutable bvn;

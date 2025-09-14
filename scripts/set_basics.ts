@@ -24,21 +24,25 @@ async function setBridgeBasics(): Promise<void> {
   }
   const bridge = Bridge__factory.connect(bridgeAddr, deployerSigner);
   const pausersStr = process.env.BRIDGE_PAUSERS as string
-  const pausers = pausersStr.split(',');
-  if (pausers[0].length > 0) {
-    for (let i = 0; i < pausers.length; i++) {
-      const pauser = pausers[i];
-      await (await bridge.addPauser(pauser, feeOverrides)).wait();
-      console.log('addPauser', pauser);
+  if (pausersStr) {
+    const pausers = pausersStr.split(',');
+    if (pausers[0].length > 0) {
+      for (let i = 0; i < pausers.length; i++) {
+        const pauser = pausers[i];
+        await (await bridge.addPauser(pauser, feeOverrides)).wait();
+        console.log('addPauser', pauser);
+      }
     }
   }
   const governorsStr = process.env.BRIDGE_GOVERNORS as string
-  const governors = governorsStr.split(',');
-  if (governors[0].length > 0) {
-    for (let i = 0; i < governors.length; i++) {
-      const governor = governors[i];
-      await (await bridge.addGovernor(governor, feeOverrides)).wait();
-      console.log('addGovernor', governor);
+  if (governorsStr) {
+    const governors = governorsStr.split(',');
+    if (governors[0].length > 0) {
+      for (let i = 0; i < governors.length; i++) {
+        const governor = governors[i];
+        await (await bridge.addGovernor(governor, feeOverrides)).wait();
+        console.log('addGovernor', governor);
+      }
     }
   }
   const delayPeriod = process.env.BRIDGE_DELAY_PERIOD as string;

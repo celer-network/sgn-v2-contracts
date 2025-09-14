@@ -23,7 +23,8 @@ async function setBridgeBasics(): Promise<void> {
     return;
   }
   const bridge = Bridge__factory.connect(bridgeAddr, deployerSigner);
-  const pausers = (process.env.BRIDGE_PAUSERS as string).split(',');
+  const pausersStr = process.env.BRIDGE_PAUSERS as string
+  const pausers = pausersStr.split(',');
   if (pausers[0].length > 0) {
     for (let i = 0; i < pausers.length; i++) {
       const pauser = pausers[i];
@@ -31,7 +32,8 @@ async function setBridgeBasics(): Promise<void> {
       console.log('addPauser', pauser);
     }
   }
-  const governors = (process.env.BRIDGE_GOVERNORS as string).split(',');
+  const governorsStr = process.env.BRIDGE_GOVERNORS as string
+  const governors = governorsStr.split(',');
   if (governors[0].length > 0) {
     for (let i = 0; i < governors.length; i++) {
       const governor = governors[i];

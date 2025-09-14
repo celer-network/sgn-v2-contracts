@@ -59,6 +59,11 @@ async function setBridgeBasics(): Promise<void> {
     await (await bridge.setWrap(weth, feeOverrides)).wait();
     console.log('setWrap', weth);
   }
+  const ntfg = process.env.BRIDGE_NATIVE_TOKEN_TRANSFER_GAS as string;
+  if (ntfg) {
+    await (await bridge.setNativeTokenTransferGas(ntfg, feeOverrides)).wait();
+    console.log('setNativeTokenTransferGas', weth);
+  }
 }
 
 async function setPeggedTokenBridgeBasics(): Promise<void> {

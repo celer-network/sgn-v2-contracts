@@ -284,6 +284,9 @@ const hyperEvmPrivateKey = process.env.HYPER_EVM_PRIVATE_KEY || DEFAULT_PRIVATE_
 const unichainEndpoint = process.env.UNICHAIN_ENDPOINT || DEFAULT_ENDPOINT;
 const unichainPrivateKey = process.env.UNICHAIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const plasmaEndpoint = process.env.PLASMA_ENDPOINT || DEFAULT_ENDPOINT;
+const plasmaPrivateKey = process.env.PLASMA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 // use kmsKeyId if it's not empty, otherwise use privateKey
 function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gasPrice?: number): NetworkUserConfig {
   const network: NetworkUserConfig = !kmsKeyId
@@ -478,7 +481,8 @@ const config: HardhatUserConfig = {
     flowEvm: getNetworkConfig(flowEvmEndpoint, kmsKeyId, flowEvmPrivateKey),
     redBelly: getNetworkConfig(redBellyEndpoint, kmsKeyId, redBellyPrivateKey),
     hyperEvm: getNetworkConfig(hyperEvmEndpoint, kmsKeyId, hyperEvmPrivateKey),
-    uniChain: getNetworkConfig(unichainEndpoint, kmsKeyId, unichainPrivateKey)
+    uniChain: getNetworkConfig(unichainEndpoint, kmsKeyId, unichainPrivateKey),
+    plasma: getNetworkConfig(plasmaEndpoint, kmsKeyId, plasmaPrivateKey)
   },
   namedAccounts: {
     deployer: {

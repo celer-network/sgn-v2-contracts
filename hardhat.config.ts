@@ -284,6 +284,9 @@ const hyperEvmPrivateKey = process.env.HYPER_EVM_PRIVATE_KEY || DEFAULT_PRIVATE_
 const unichainEndpoint = process.env.UNICHAIN_ENDPOINT || DEFAULT_ENDPOINT;
 const unichainPrivateKey = process.env.UNICHAIN_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
+const tacEndpoint = process.env.TAC_ENDPOINT || DEFAULT_ENDPOINT;
+const tacPrivateKey = process.env.TAC_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
+
 const plasmaEndpoint = process.env.PLASMA_ENDPOINT || DEFAULT_ENDPOINT;
 const plasmaPrivateKey = process.env.PLASMA_PRIVATE_KEY || DEFAULT_PRIVATE_KEY;
 
@@ -302,6 +305,9 @@ function getNetworkConfig(url: string, kmsKeyId: string, privateKey: string, gas
     network.gasPrice = gasPrice;
   }
 
+  if (url === unichainEndpoint) {
+    network.minMaxPriorityFeePerGas = 1;
+  }
   return network;
 }
 
@@ -482,6 +488,7 @@ const config: HardhatUserConfig = {
     redBelly: getNetworkConfig(redBellyEndpoint, kmsKeyId, redBellyPrivateKey),
     hyperEvm: getNetworkConfig(hyperEvmEndpoint, kmsKeyId, hyperEvmPrivateKey),
     uniChain: getNetworkConfig(unichainEndpoint, kmsKeyId, unichainPrivateKey),
+    tac: getNetworkConfig(tacEndpoint, kmsKeyId, tacPrivateKey),
     plasma: getNetworkConfig(plasmaEndpoint, kmsKeyId, plasmaPrivateKey)
   },
   namedAccounts: {
@@ -617,9 +624,9 @@ const config: HardhatUserConfig = {
 // if (config.networks?.fantom) {
 //   config.networks.fantom.minMaxPriorityFeePerGas = 30000000000;
 // }
-// if (config.networks?.bsc) {
-//   config.networks.bsc.minMaxPriorityFeePerGas = 3000000000;
-//   config.networks.bsc.minMaxFeePerGas = 3000000000;
-// }
+if (config.networks?.bsc) {
+   config.networks.bsc.minMaxPriorityFeePerGas = 3000000000;
+   config.networks.bsc.minMaxFeePerGas = 3000000000;
+}
 
 export default config;

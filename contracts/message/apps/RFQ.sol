@@ -276,7 +276,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
-        _withdrawNativeToken(_quote.receiver, _quote.srcAmount);
+        _withdrawNativeToken(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 

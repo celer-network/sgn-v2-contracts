@@ -214,10 +214,14 @@ contract OriginalTokenVaultV2 is ReentrancyGuard, Pauser, VolumeControl, Delayed
         uint256 _amount
     ) private {
         if (_token == nativeWrap) {
-            // withdraw then transfer native to receiver
+            // unwrap then attempt native push; on failure, re-wrap and transfer WETH
             IWETH(nativeWrap).withdraw(_amount);
             (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
-            require(sent, "failed to send native token");
+            if (!sent) {
+                // preserve processed record by avoiding revert; re-wrap and transfer WETH
+                IWETH(nativeWrap).deposit{value: _amount}();
+                IERC20(nativeWrap).safeTransfer(_receiver, _amount);
+            }
         } else {
             IERC20(_token).safeTransfer(_receiver, _amount);
         }

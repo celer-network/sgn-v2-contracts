@@ -128,7 +128,7 @@ contract MessageBusSender is Ownable {
     /**
      * @notice Calculates the required fee for the message.
      * @param _message Arbitrary message bytes to be decoded by the destination app contract.
-     @ @return The required fee.
+     * @return The required fee.
      */
     function calcFee(bytes calldata _message) public view returns (uint256) {
         return feeBase + _message.length * feePerByte;

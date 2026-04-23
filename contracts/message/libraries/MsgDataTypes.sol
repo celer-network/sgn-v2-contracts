@@ -6,7 +6,7 @@ library MsgDataTypes {
     string constant ABORT_PREFIX = "MSG::ABORT:";
 
     // Add abort prefix in the reason string for require or revert.
-    // This will abort (revert) the message execution without markig it as failed state,
+    // This will abort (revert) the message execution without marking it as failed state,
     // making it possible to retry later.
     function abortReason(string memory reason) internal pure returns (string memory) {
         return string.concat(MsgDataTypes.ABORT_PREFIX, reason);

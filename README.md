@@ -180,7 +180,7 @@ Sometimes you also need to remove the duplicate `pragma solidity` lines.
 
 ### How it works
 
-proxy contract holds state and delegatecall all calls to actual impl contract. When upgrade, a new impl contract is deployed, and proxy is updated to point to the new contract. below from [openzeppelin doc](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#upgrading-via-the-proxy-pattern)
+proxy contract holds state and delegatecall all calls to actual impl contract. When upgrade, a new impl contract is deployed, and proxy is updated to point to the new contract. below from [openzeppelin doc](https://docs.openzeppelin.com/upgrades-plugins/proxies#upgrading-via-the-proxy-pattern)
 
 ```
 User ---- tx ---> Proxy ----------> Implementation_v0

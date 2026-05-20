@@ -104,7 +104,7 @@ contract MessageBusReceiver is Ownable {
             _powers
         );
         MsgDataTypes.TxStatus status;
-        IMessageReceiverApp.ExecutionStatus est = executeMessageWithTransfer(_transfer, _message);
+        (IMessageReceiverApp.ExecutionStatus est, uint256 valueLeft) = executeMessageWithTransfer(_transfer, _message);
         if (est == IMessageReceiverApp.ExecutionStatus.Success) {
             status = MsgDataTypes.TxStatus.Success;
         } else if (est == IMessageReceiverApp.ExecutionStatus.Retry) {
@@ -117,7 +117,7 @@ contract MessageBusReceiver is Ownable {
             );
             return;
         } else {
-            est = executeMessageWithTransferFallback(_transfer, _message);
+            est = executeMessageWithTransferFallback(_transfer, _message, valueLeft);
             if (est == IMessageReceiverApp.ExecutionStatus.Success) {
                 status = MsgDataTypes.TxStatus.Fallback;
             } else {
@@ -274,7 +274,7 @@ contract MessageBusReceiver is Ownable {
 
     function executeMessageWithTransfer(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
         private
-        returns (IMessageReceiverApp.ExecutionStatus)
+        returns (IMessageReceiverApp.ExecutionStatus status, uint256 valueLeft)
     {
         uint256 gasLeftBeforeExecution = gasleft();
         (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
@@ -289,18 +289,19 @@ contract MessageBusReceiver is Ownable {
             )
         );
         if (ok) {
-            return abi.decode((res), (IMessageReceiverApp.ExecutionStatus));
+            return (abi.decode((res), (IMessageReceiverApp.ExecutionStatus)), 0);
         }
         handleExecutionRevert(gasLeftBeforeExecution, res);
-        return IMessageReceiverApp.ExecutionStatus.Fail;
+        return (IMessageReceiverApp.ExecutionStatus.Fail, msg.value);
     }
 
-    function executeMessageWithTransferFallback(MsgDataTypes.TransferInfo calldata _transfer, bytes calldata _message)
-        private
-        returns (IMessageReceiverApp.ExecutionStatus)
-    {
+    function executeMessageWithTransferFallback(
+        MsgDataTypes.TransferInfo calldata _transfer,
+        bytes calldata _message,
+        uint256 _value
+    ) private returns (IMessageReceiverApp.ExecutionStatus) {
         uint256 gasLeftBeforeExecution = gasleft();
-        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: msg.value}(
+        (bool ok, bytes memory res) = address(_transfer.receiver).call{value: _value}(
             abi.encodeWithSelector(
                 IMessageReceiverApp.executeMessageWithTransferFallback.selector,
                 _transfer.sender,

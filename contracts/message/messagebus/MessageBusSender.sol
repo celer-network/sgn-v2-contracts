@@ -11,6 +11,7 @@ contract MessageBusSender is Ownable {
     uint256 public feeBase;
     uint256 public feePerByte;
     mapping(address => uint256) public withdrawnFees;
+    uint256 public nativeTokenTransferGas = 50000;
 
     event Message(address indexed sender, address receiver, uint256 dstChainId, bytes message, uint256 fee);
     // message to non-evm chain with >20 bytes addr
@@ -120,7 +121,7 @@ contract MessageBusSender is Ownable {
         uint256 amount = _cumulativeFee - withdrawnFees[_account];
         require(amount > 0, "No new amount to withdraw");
         withdrawnFees[_account] = _cumulativeFee;
-        (bool sent, ) = _account.call{value: amount, gas: 50000}("");
+        (bool sent, ) = _account.call{value: amount, gas: nativeTokenTransferGas}("");
         require(sent, "failed to withdraw fee");
         emit FeeWithdrawn(_account, amount);
     }
@@ -144,5 +145,9 @@ contract MessageBusSender is Ownable {
     function setFeeBase(uint256 _fee) external onlyOwner {
         feeBase = _fee;
         emit FeeBaseUpdated(feeBase);
+    }
+
+    function setNativeTokenTransferGas(uint256 _gasUsed) external onlyOwner {
+        nativeTokenTransferGas = _gasUsed;
     }
 }

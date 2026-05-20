@@ -194,6 +194,43 @@ describe('Slash Tests', function () {
       .withArgs(validators[0].address, consts.STATUS_UNBONDING);
   });
 
+  it('should not let zero-share residue drain later delegations', async function () {
+    const request = await getSlashRequest(
+      validators[0].address,
+      1,
+      1,
+      expireTime,
+      0,
+      [],
+      [],
+      signers,
+      chainId,
+      await staking.getAddress()
+    );
+    await staking.slash(request.slashBytes, request.sigs);
+
+    await staking.undelegateShares(validators[0].address, consts.DELEGATOR_STAKE);
+    const validatorRemainder = await staking.getValidatorTokens(validators[0].address);
+    await staking.connect(validators[0]).undelegateTokens(validators[0].address, validatorRemainder - 1n);
+
+    expect(await staking.getValidatorTokens(validators[0].address)).to.equal(1n);
+    expect((await staking.getDelegatorInfo(validators[0].address, admin.address)).shares).to.equal(0n);
+    expect((await staking.getDelegatorInfo(validators[0].address, validators[0].address)).shares).to.equal(0n);
+
+    await advanceBlockNumber(consts.UNBONDING_PERIOD);
+    await staking.confirmUnbondedValidator(validators[0].address);
+
+    await staking.connect(validators[1]).delegate(validators[0].address, parseUnits('2'));
+    const laterDelegatorInfo = await staking.getDelegatorInfo(validators[0].address, validators[1].address);
+    expect(laterDelegatorInfo.shares).to.equal(parseUnits('2'));
+
+    await expect(staking.connect(validators[2]).undelegateTokens(validators[0].address, parseUnits('1'))).to.be
+      .reverted;
+    await expect(staking.connect(validators[1]).undelegateTokens(validators[0].address, parseUnits('1')))
+      .to.emit(staking, 'Undelegated')
+      .withArgs(validators[0].address, validators[1].address, parseUnits('1'));
+  });
+
   it('should unbond validator due to slash with jail period', async function () {
     const request = await getSlashRequest(
       validators[0].address,

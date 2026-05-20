@@ -79,6 +79,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event TreasuryAddrUpdated(address treasuryAddr);
     event FeeCollected(address treasuryAddr, address token, uint256 amount);
+    event TokenRescued(address receiver, address token, uint256 amount);
 
     constructor(address _messageBus) {
         messageBus = _messageBus;
@@ -316,6 +317,21 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         protocolFee[_token] = 0;
         IERC20(_token).safeTransfer(treasuryAddr, feeAmount);
         emit FeeCollected(treasuryAddr, _token, feeAmount);
+    }
+
+    function rescueToken(
+        address _token,
+        address _receiver,
+        uint256 _amount
+    ) external onlyOwner {
+        require(_receiver != address(0), "Rfq: invalid receiver");
+        if (_token == address(0)) {
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
+            require(sent, "Rfq: failed to rescue native token");
+        } else {
+            IERC20(_token).safeTransfer(_receiver, _amount);
+        }
+        emit TokenRescued(_receiver, _token, _amount);
     }
 
     function registerAllowedSigner(address _signer) external {

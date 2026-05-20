@@ -174,6 +174,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     function sameChainTransfer(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
         require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
+        quotes[quoteHash] = QuoteStatus.DstTransferred;
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -184,6 +185,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value == _quote.dstAmount, "Rfq: native token amount mismatch");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
+        quotes[quoteHash] = QuoteStatus.DstTransferredNative;
         _transferNativeToken(_quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -198,6 +200,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
         verifySigOfQuoteHash(_quote.liquidityProvider, quoteHash, _sig);
+        quotes[quoteHash] = QuoteStatus.DstTransferred;
         IERC20(_quote.dstToken).safeTransferFrom(_quote.liquidityProvider, _quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);

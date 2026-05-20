@@ -1,21 +1,22 @@
 import { expect } from 'chai';
-import { Wallet } from 'ethers';
+import { parseUnits, Wallet } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 
-import { Bridge, PeggedTokenBridge, Sentinel } from '../typechain';
+import { Bridge, PeggedTokenBridge, Sentinel, TestERC20 } from '../typechain';
 import { deployBridgeContracts, deploySentinel, getAccounts } from './lib/common';
 
 describe('Sentinel Tests', function () {
   async function fixture() {
     const [admin] = await ethers.getSigners();
-    const { bridge, pegBridge } = await deployBridgeContracts(admin);
+    const { bridge, token, pegBridge } = await deployBridgeContracts(admin);
     const sentinel = await deploySentinel(admin);
-    return { admin, bridge, pegBridge, sentinel };
+    return { admin, bridge, token, pegBridge, sentinel };
   }
 
   let bridge: Bridge;
+  let token: TestERC20;
   let pegBridge: PeggedTokenBridge;
   let sentinel: Sentinel;
   let guards: Wallet[];
@@ -26,6 +27,7 @@ describe('Sentinel Tests', function () {
     const res = await loadFixture(fixture);
     const accounts = await getAccounts(res.admin, [], 5);
     bridge = res.bridge;
+    token = res.token;
     pegBridge = res.pegBridge;
     sentinel = res.sentinel;
     guards = [accounts[0], accounts[1]];
@@ -38,6 +40,7 @@ describe('Sentinel Tests', function () {
     await bridge.addPauser(sentinelAddress);
     await pegBridge.addPauser(sentinelAddress);
     await bridge.addGovernor(sentinelAddress);
+    await pegBridge.addGovernor(sentinelAddress);
   });
 
   it('should pass guard tests', async function () {
@@ -134,5 +137,90 @@ describe('Sentinel Tests', function () {
     await expect(sentinel.connect(governor).setDelayPeriod(bridge.getAddress(), 5))
       .to.emit(bridge, 'DelayPeriodUpdated')
       .withArgs(5);
+  });
+
+  it('should only allow guarded delay threshold tightening', async function () {
+    const tokenAddress = await token.getAddress();
+    const bridgeAddress = await bridge.getAddress();
+
+    await expect(sentinel.connect(governor).setDelayThresholds(bridgeAddress, [tokenAddress], [parseUnits('10')]))
+      .to.emit(bridge, 'DelayThresholdUpdated')
+      .withArgs(tokenAddress, parseUnits('10'));
+
+    await expect(sentinel.connect(governor).setDelayThresholds(bridgeAddress, [tokenAddress], [parseUnits('5')]))
+      .to.emit(bridge, 'DelayThresholdUpdated')
+      .withArgs(tokenAddress, parseUnits('5'));
+
+    await expect(
+      sentinel.connect(governor).setDelayThresholds(bridgeAddress, [tokenAddress], [parseUnits('6')])
+    ).to.be.revertedWith('not in relax mode, can only reduce threshold');
+
+    await expect(sentinel.connect(governor).setDelayThresholds(bridgeAddress, [tokenAddress], [0])).to.be.revertedWith(
+      'not in relax mode, can only reduce threshold'
+    );
+
+    await sentinel.connect(guards[0]).relax();
+    await sentinel.connect(guards[1]).relax();
+
+    await expect(sentinel.connect(governor).setDelayThresholds(bridgeAddress, [tokenAddress], [parseUnits('6')]))
+      .to.emit(bridge, 'DelayThresholdUpdated')
+      .withArgs(tokenAddress, parseUnits('6'));
+
+    await expect(sentinel.connect(governor).setDelayThresholds(bridgeAddress, [tokenAddress], [0]))
+      .to.emit(bridge, 'DelayThresholdUpdated')
+      .withArgs(tokenAddress, 0);
+  });
+
+  it('should treat zero caps as unlimited in guarded mode', async function () {
+    const tokenAddress = await token.getAddress();
+    const bridgeAddress = await bridge.getAddress();
+    const pegBridgeAddress = await pegBridge.getAddress();
+
+    await expect(sentinel.connect(governor).setEpochVolumeCaps(bridgeAddress, [tokenAddress], [parseUnits('10')]))
+      .to.emit(bridge, 'EpochVolumeUpdated')
+      .withArgs(tokenAddress, parseUnits('10'));
+
+    await expect(sentinel.connect(governor).setMaxSend(bridgeAddress, [tokenAddress], [parseUnits('10')]))
+      .to.emit(bridge, 'MaxSendUpdated')
+      .withArgs(tokenAddress, parseUnits('10'));
+
+    await expect(sentinel.connect(governor).setMaxBurn(pegBridgeAddress, [tokenAddress], [parseUnits('10')]))
+      .to.emit(pegBridge, 'MaxBurnUpdated')
+      .withArgs(tokenAddress, parseUnits('10'));
+
+    await expect(sentinel.connect(governor).setEpochVolumeCaps(bridgeAddress, [tokenAddress], [parseUnits('5')]))
+      .to.emit(bridge, 'EpochVolumeUpdated')
+      .withArgs(tokenAddress, parseUnits('5'));
+
+    await expect(sentinel.connect(governor).setMaxSend(bridgeAddress, [tokenAddress], [parseUnits('5')]))
+      .to.emit(bridge, 'MaxSendUpdated')
+      .withArgs(tokenAddress, parseUnits('5'));
+
+    await expect(sentinel.connect(governor).setMaxBurn(pegBridgeAddress, [tokenAddress], [parseUnits('5')]))
+      .to.emit(pegBridge, 'MaxBurnUpdated')
+      .withArgs(tokenAddress, parseUnits('5'));
+
+    await expect(
+      sentinel.connect(governor).setEpochVolumeCaps(bridgeAddress, [tokenAddress], [parseUnits('6')])
+    ).to.be.revertedWith('not in relax mode, can only reduce cap');
+
+    await expect(sentinel.connect(governor).setMaxSend(bridgeAddress, [tokenAddress], [0])).to.be.revertedWith(
+      'not in relax mode, can only reduce maxSend'
+    );
+
+    await expect(sentinel.connect(governor).setMaxBurn(pegBridgeAddress, [tokenAddress], [0])).to.be.revertedWith(
+      'not in relax mode, can only reduce maxBurn'
+    );
+
+    await sentinel.connect(guards[0]).relax();
+    await sentinel.connect(guards[1]).relax();
+
+    await expect(sentinel.connect(governor).setMaxSend(bridgeAddress, [tokenAddress], [parseUnits('20')]))
+      .to.emit(bridge, 'MaxSendUpdated')
+      .withArgs(tokenAddress, parseUnits('20'));
+
+    await expect(sentinel.connect(governor).setMaxBurn(pegBridgeAddress, [tokenAddress], [0]))
+      .to.emit(pegBridge, 'MaxBurnUpdated')
+      .withArgs(tokenAddress, 0);
   });
 });

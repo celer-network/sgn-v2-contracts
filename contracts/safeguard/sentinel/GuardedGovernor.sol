@@ -94,7 +94,10 @@ abstract contract GuardedGovernor is Guard {
         if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).delayThresholds(_tokens[i]);
-                require(_thresholds[i] > current, "not in relax mode, can only increase threshold");
+                require(
+                    _isNonRelaxedThresholdUpdate(_thresholds[i], current),
+                    "not in relax mode, can only reduce threshold"
+                );
             }
         }
         IBridge(_target).setDelayThresholds(_tokens, _thresholds);
@@ -118,7 +121,7 @@ abstract contract GuardedGovernor is Guard {
         if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).epochVolumeCaps(_tokens[i]);
-                require(_caps[i] < current, "not in relax mode, can only reduce cap");
+                require(_isNonRelaxedCapUpdate(_caps[i], current), "not in relax mode, can only reduce cap");
             }
         }
         IBridge(_target).setEpochVolumeCaps(_tokens, _caps);
@@ -162,7 +165,7 @@ abstract contract GuardedGovernor is Guard {
         if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).maxSend(_tokens[i]);
-                require(_amounts[i] < current, "not in relax mode, can only reduce maxSend");
+                require(_isNonRelaxedCapUpdate(_amounts[i], current), "not in relax mode, can only reduce maxSend");
             }
         }
         IBridge(_target).setMaxSend(_tokens, _amounts);
@@ -200,7 +203,7 @@ abstract contract GuardedGovernor is Guard {
         if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).maxDeposit(_tokens[i]);
-                require(_amounts[i] < current, "not in relax mode, can only reduce maxDeposit");
+                require(_isNonRelaxedCapUpdate(_amounts[i], current), "not in relax mode, can only reduce maxDeposit");
             }
         }
         IBridge(_target).setMaxDeposit(_tokens, _amounts);
@@ -228,10 +231,24 @@ abstract contract GuardedGovernor is Guard {
         if (!relaxed) {
             for (uint256 i = 0; i < _tokens.length; i++) {
                 uint256 current = IBridge(_target).maxBurn(_tokens[i]);
-                require(_amounts[i] < current, "not in relax mode, can only reduce maxBurn");
+                require(_isNonRelaxedCapUpdate(_amounts[i], current), "not in relax mode, can only reduce maxBurn");
             }
         }
         IBridge(_target).setMaxBurn(_tokens, _amounts);
+    }
+
+    function _isNonRelaxedCapUpdate(uint256 _newValue, uint256 _current) private pure returns (bool) {
+        if (_current == 0) {
+            return _newValue > 0;
+        }
+        return _newValue > 0 && _newValue < _current;
+    }
+
+    function _isNonRelaxedThresholdUpdate(uint256 _newThreshold, uint256 _current) private pure returns (bool) {
+        if (_current == 0) {
+            return _newThreshold > 0;
+        }
+        return _newThreshold > 0 && _newThreshold < _current;
     }
 
     function isGovernor(address _account) public view returns (bool) {

@@ -364,20 +364,19 @@ library BridgeTransferLib {
     ) internal returns (ReceiveInfo memory) {
         ReceiveInfo memory recv;
         PbPegged.Withdraw memory request = PbPegged.decWithdraw(_request);
-        if (IOriginalTokenVaultV2(_bridgeAddr).records(request.refId)) {
-            recv.transferId = keccak256(
-                abi.encodePacked(
-                    request.receiver,
-                    request.token,
-                    request.amount,
-                    request.burnAccount,
-                    request.refChainId,
-                    request.refId,
-                    _bridgeAddr
-                )
-            );
-        } else {
-            recv.transferId = IOriginalTokenVaultV2(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
+        recv.transferId = keccak256(
+            abi.encodePacked(
+                request.receiver,
+                request.token,
+                request.amount,
+                request.burnAccount,
+                request.refChainId,
+                request.refId,
+                _bridgeAddr
+            )
+        );
+        if (!IOriginalTokenVaultV2(_bridgeAddr).records(recv.transferId)) {
+            IOriginalTokenVaultV2(_bridgeAddr).withdraw(_request, _sigs, _signers, _powers);
         }
         recv.refid = request.refId;
         recv.receiver = request.receiver;
@@ -408,20 +407,19 @@ library BridgeTransferLib {
     ) internal returns (ReceiveInfo memory) {
         ReceiveInfo memory recv;
         PbPegged.Mint memory request = PbPegged.decMint(_request);
-        if (IPeggedTokenBridgeV2(_bridgeAddr).records(request.refId)) {
-            recv.transferId = keccak256(
-                abi.encodePacked(
-                    request.account,
-                    request.token,
-                    request.amount,
-                    request.depositor,
-                    request.refChainId,
-                    request.refId,
-                    _bridgeAddr
-                )
-            );
-        } else {
-            recv.transferId = IPeggedTokenBridgeV2(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
+        recv.transferId = keccak256(
+            abi.encodePacked(
+                request.account,
+                request.token,
+                request.amount,
+                request.depositor,
+                request.refChainId,
+                request.refId,
+                _bridgeAddr
+            )
+        );
+        if (!IPeggedTokenBridgeV2(_bridgeAddr).records(recv.transferId)) {
+            IPeggedTokenBridgeV2(_bridgeAddr).mint(_request, _sigs, _signers, _powers);
         }
         recv.refid = request.refId;
         recv.receiver = request.account;

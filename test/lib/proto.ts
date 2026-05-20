@@ -22,6 +22,7 @@ interface Proto {
   Relay: protobuf.Type;
   WithdrawMsg: protobuf.Type;
   Mint: protobuf.Type;
+  Withdraw: protobuf.Type;
 }
 
 async function getProtos(): Promise<Proto> {
@@ -39,6 +40,7 @@ async function getProtos(): Promise<Proto> {
   const Relay = bridge.lookupType('bridge.Relay');
   const WithdrawMsg = pool.lookupType('pool.WithdrawMsg');
   const Mint = pegged.lookupType('pegged.Mint');
+  const Withdraw = pegged.lookupType('pegged.Withdraw');
 
   return {
     Slash,
@@ -47,7 +49,8 @@ async function getProtos(): Promise<Proto> {
     AcctAmtPair,
     Relay,
     WithdrawMsg,
-    Mint
+    Mint,
+    Withdraw
   };
 }
 
@@ -270,4 +273,36 @@ export async function getMintRequest(
   signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
   const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
   return { mintBytes, sigs };
+}
+
+export async function getPeggedWithdrawRequest(
+  token: string,
+  receiver: string,
+  amount: bigint,
+  burnAccount: string,
+  refChainId: number,
+  refId: string,
+  signers: Wallet[],
+  chainId: number,
+  contractAddress: string
+): Promise<{ withdrawBytes: Uint8Array; sigs: string[] }> {
+  const { Withdraw } = await getProtos();
+  const withdraw = {
+    token: getBytes(token),
+    receiver: getBytes(receiver),
+    amount: toBeArray(amount),
+    burnAccount: getBytes(burnAccount),
+    refChainId,
+    refId: getBytes(refId)
+  };
+  const withdrawProto = Withdraw.create(withdraw);
+  const withdrawBytes = Withdraw.encode(withdrawProto).finish();
+
+  const domain = solidityPackedKeccak256(['uint256', 'address', 'string'], [chainId, contractAddress, 'Withdraw']);
+  const signedData = solidityPacked(['bytes32', 'bytes'], [domain, withdrawBytes]);
+  const signedDataHash = solidityPackedKeccak256(['bytes'], [signedData]);
+
+  signers.sort((a, b) => (a.address.toLowerCase() > b.address.toLowerCase() ? 1 : -1));
+  const sigs = await calculateSignatures(signers, getBytes(signedDataHash));
+  return { withdrawBytes, sigs };
 }

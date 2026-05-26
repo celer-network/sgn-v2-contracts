@@ -10,12 +10,15 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   const { deployer } = await getNamedAccounts();
   const args = [process.env.PROXY_ADMIN_OWNER];
   const proxyAdmin = await deploy('DefaultProxyAdmin', {
-    contract: 'ProxyAdmin',
+    contract: 'contracts/miscs/proxy-admin/ProxyAdmin.sol:ProxyAdmin',
     from: deployer,
     log: true,
-    args: args
+    args: args,
+    skipIfAlreadyDeployed: true
   });
-  await hre.run('verify:verify', { address: proxyAdmin.address, constructorArguments: args });
+  if (proxyAdmin.newlyDeployed) {
+    await hre.run('verify:verify', { address: proxyAdmin.address, constructorArguments: args });
+  }
 };
 
 deployFunc.tags = ['DefaultProxyAdmin'];

@@ -27,6 +27,8 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     args: constructorArgs,
     proxy: {
       proxyContract: 'OptimizedTransparentProxy',
+      owner: process.env.PROXY_ADMIN_OWNER,
+      viaAdminContract: { name: 'DefaultProxyAdmin' },
       execute: {
         // only called when proxy is deployed, it'll call MessageBus contract.init
         // with proper args
@@ -59,5 +61,5 @@ const deployFunc: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 };
 
 deployFunc.tags = ['MessageBusInit'];
-deployFunc.dependencies = [];
+deployFunc.dependencies = ['DefaultProxyAdmin'];
 export default deployFunc;

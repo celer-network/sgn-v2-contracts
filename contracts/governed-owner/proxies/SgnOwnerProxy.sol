@@ -64,9 +64,9 @@ abstract contract SgnOwnerProxy is OwnerProxyBase {
     ) external {
         bytes memory data;
         if (_token == address(0)) {
-            data = abi.encodeWithSelector(bytes4(keccak256(bytes("drainToken(uint256"))), _amount);
+            data = abi.encodeWithSelector(bytes4(keccak256(bytes("drainToken(uint256)"))), _amount);
         } else {
-            data = abi.encodeWithSelector(bytes4(keccak256(bytes("drainToken(address,uint256"))), _token, _amount);
+            data = abi.encodeWithSelector(bytes4(keccak256(bytes("drainToken(address,uint256)"))), _token, _amount);
         }
         uint256 proposalId = gov.createProposal(msg.sender, _target, data, sg.ProposalType.ExternalDefault);
         emit DrainTokenProposalCreated(proposalId, _target, _token, _amount);

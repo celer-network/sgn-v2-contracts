@@ -79,6 +79,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     event FeePercUpdated(uint64[] chainIds, uint32[] feePercs);
     event TreasuryAddrUpdated(address treasuryAddr);
     event FeeCollected(address treasuryAddr, address token, uint256 amount);
+    event TokenRescued(address receiver, address token, uint256 amount);
 
     constructor(address _messageBus) {
         messageBus = _messageBus;
@@ -174,6 +175,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
     function sameChainTransfer(Quote calldata _quote, bool _releaseNative) external payable whenNotPaused {
         require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
+        quotes[quoteHash] = QuoteStatus.DstTransferred;
         IERC20(_quote.dstToken).safeTransferFrom(msg.sender, _quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -184,6 +186,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         require(_quote.dstToken == nativeWrap, "Rfq: dst token mismatch");
         require(msg.value == _quote.dstAmount, "Rfq: native token amount mismatch");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
+        quotes[quoteHash] = QuoteStatus.DstTransferredNative;
         _transferNativeToken(_quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -198,6 +201,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         require(_quote.srcChainId == _quote.dstChainId, "Rfq: not same chain swap");
         (bytes32 quoteHash, ) = _dstTransferCheck(_quote);
         verifySigOfQuoteHash(_quote.liquidityProvider, quoteHash, _sig);
+        quotes[quoteHash] = QuoteStatus.DstTransferred;
         IERC20(_quote.dstToken).safeTransferFrom(_quote.liquidityProvider, _quote.receiver, _quote.dstAmount);
         _srcRelease(_quote, quoteHash, _releaseNative);
         emit DstTransferred(quoteHash, _quote.receiver, _quote.dstToken, _quote.dstAmount);
@@ -276,7 +280,7 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         require(_quote.srcToken == nativeWrap, "Rfq: src token mismatch");
         (bytes32 quoteHash, address receiver) = _executeRefund(_quote, _execMsgCallData);
         quotes[quoteHash] = QuoteStatus.SrcRefundedNative;
-        _withdrawNativeToken(_quote.receiver, _quote.srcAmount);
+        _withdrawNativeToken(receiver, _quote.srcAmount);
         emit Refunded(quoteHash, receiver, _quote.srcToken, _quote.srcAmount);
     }
 
@@ -313,6 +317,21 @@ contract RFQ is MessageSenderApp, MessageReceiverApp, Pauser, Governor {
         protocolFee[_token] = 0;
         IERC20(_token).safeTransfer(treasuryAddr, feeAmount);
         emit FeeCollected(treasuryAddr, _token, feeAmount);
+    }
+
+    function rescueToken(
+        address _token,
+        address _receiver,
+        uint256 _amount
+    ) external onlyOwner {
+        require(_receiver != address(0), "Rfq: invalid receiver");
+        if (_token == address(0)) {
+            (bool sent, ) = _receiver.call{value: _amount, gas: nativeTokenTransferGas}("");
+            require(sent, "Rfq: failed to rescue native token");
+        } else {
+            IERC20(_token).safeTransfer(_receiver, _amount);
+        }
+        emit TokenRescued(_receiver, _token, _amount);
     }
 
     function registerAllowedSigner(address _signer) external {

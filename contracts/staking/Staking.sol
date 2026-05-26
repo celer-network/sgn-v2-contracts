@@ -213,6 +213,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         dt.Validator storage validator = validators[_valAddr];
         require(validator.status != dt.ValidatorStatus.Null, "Validator is not initialized");
         uint256 shares = _tokenToShare(_tokens, validator.tokens, validator.shares);
+        require(shares > 0, "zero shares");
 
         dt.Delegator storage delegator = validator.delegators[delAddr];
         delegator.shares += shares;
@@ -251,6 +252,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         dt.Validator storage validator = validators[_valAddr];
         require(validator.status != dt.ValidatorStatus.Null, "Validator is not initialized");
         uint256 shares = _tokenToShare(_tokens, validator.tokens, validator.shares);
+        require(shares > 0, "zero shares");
         _undelegate(validator, _valAddr, _tokens, shares);
     }
 
@@ -747,7 +749,7 @@ contract Staking is ISigsVerifier, Pauser, Whitelist {
         uint256 totalTokens,
         uint256 totalShares
     ) private pure returns (uint256) {
-        if (totalTokens == 0) {
+        if (totalTokens == 0 || totalShares == 0) {
             return tokens;
         }
         return (tokens * totalShares) / totalTokens;
